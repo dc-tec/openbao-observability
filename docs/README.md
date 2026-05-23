@@ -20,6 +20,7 @@ Use these runbooks when the generated alert rules fire:
 - [OpenBao sealed unexpectedly](./runbooks/openbao-sealed-unexpectedly.md)
 - [No active OpenBao leader](./runbooks/no-active-openbao-leader.md)
 - [Multiple active OpenBao nodes](./runbooks/multiple-active-nodes.md)
+- [OpenBao Raft and Autopilot health](./runbooks/raft-autopilot-health.md)
 - [Audit request and response failures](./runbooks/audit-request-response-failures.md)
 - [Audit log stream missing](./runbooks/audit-log-stream-missing.md)
 

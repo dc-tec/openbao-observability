@@ -1,0 +1,249 @@
+version: v0.1
+status: draft
+uid: openbao-ha-raft
+title: OpenBao HA/Raft
+refresh: 30s
+tags:
+  - openbao
+  - raft
+  - reference
+  - generated
+timeRange:
+  from: now-1h
+  to: now
+datasources:
+  metrics:
+    type: prometheus
+    uid: prometheus
+  logs:
+    type: loki
+    uid: loki
+panels:
+  - id: raft-peers
+    title: Raft peers
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:raft_peers:max
+    unit: none
+    description: Shows the normalized Raft peer count.
+    grid:
+      x: 0
+      y: 0
+      w: 6
+      h: 4
+  - id: autopilot-health
+    title: Autopilot health
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:autopilot_healthy:max
+    unit: none
+    description: Shows whether OpenBao Autopilot reports the Raft cluster as healthy.
+    grid:
+      x: 6
+      y: 0
+      w: 6
+      h: 4
+  - id: failure-tolerance
+    title: Failure tolerance
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:autopilot_failure_tolerance:max
+    unit: none
+    description: Shows the number of voter failures Autopilot reports the cluster can tolerate.
+    grid:
+      x: 12
+      y: 0
+      w: 6
+      h: 4
+  - id: unhealthy-raft-nodes
+    title: Unhealthy Raft nodes
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(1 - openbao:autopilot_node_healthy:min)
+    unit: none
+    description: Shows the number of Raft nodes Autopilot reports as unhealthy.
+    grid:
+      x: 18
+      y: 0
+      w: 6
+      h: 4
+  - id: active-nodes
+    title: Active nodes
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:core_active:sum
+    unit: none
+    description: Shows the number of active OpenBao nodes.
+    grid:
+      x: 0
+      y: 4
+      w: 6
+      h: 4
+  - id: unsealed-nodes
+    title: Unsealed nodes
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:core_unsealed:sum
+    unit: none
+    description: Shows the number of unsealed OpenBao nodes.
+    grid:
+      x: 6
+      y: 4
+      w: 6
+      h: 4
+  - id: leader-transitions
+    title: Leader transitions
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(increase(vault_raft_state_leader[30m])) or vector(0)
+    unit: none
+    description: Shows Raft leader transitions over the last 30 minutes.
+    grid:
+      x: 12
+      y: 4
+      w: 6
+      h: 4
+  - id: candidate-transitions
+    title: Candidate transitions
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(increase(vault_raft_state_candidate[30m])) or vector(0)
+    unit: none
+    description: Shows Raft candidate transitions over the last 30 minutes.
+    grid:
+      x: 18
+      y: 4
+      w: 6
+      h: 4
+  - id: autopilot-node-health
+    title: Autopilot node health
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:autopilot_node_healthy:min
+    legend: "{{node_id}}"
+    unit: none
+    description: Shows Autopilot node health by Raft node ID.
+    grid:
+      x: 0
+      y: 8
+      w: 8
+      h: 8
+  - id: raft-commit-index
+    title: Raft commit index
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: max by (instance, peer_id) (vault_raft_storage_stats_commit_index)
+    legend: "{{peer_id}} commit"
+    unit: none
+    description: Shows Raft commit index by peer.
+    grid:
+      x: 8
+      y: 8
+      w: 8
+      h: 8
+  - id: raft-applied-index
+    title: Raft applied index
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: max by (instance, peer_id) (vault_raft_storage_stats_applied_index)
+    legend: "{{peer_id}} applied"
+    unit: none
+    description: Shows Raft applied index by peer.
+    grid:
+      x: 16
+      y: 8
+      w: 8
+      h: 8
+  - id: raft-fsm-pending
+    title: FSM pending
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: max by (instance, peer_id) (vault_raft_storage_stats_fsm_pending)
+    legend: "{{peer_id}}"
+    unit: none
+    description: Shows pending Raft FSM work by peer.
+    grid:
+      x: 0
+      y: 16
+      w: 8
+      h: 8
+  - id: raft-term
+    title: Raft term
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: max by (instance, peer_id) (vault_raft_storage_stats_term)
+    legend: "{{peer_id}}"
+    unit: none
+    description: Shows the current Raft term by peer.
+    grid:
+      x: 8
+      y: 16
+      w: 8
+      h: 8
+  - id: leader-last-contact
+    title: Leader last contact p99
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: max by (instance) (vault_raft_leader_lastContact{quantile="0.99"})
+    legend: "{{instance}}"
+    unit: ms
+    description: Shows the p99 leader last-contact timer where OpenBao exposes it.
+    grid:
+      x: 16
+      y: 16
+      w: 8
+      h: 8
+  - id: replication-heartbeat
+    title: Replication heartbeat p99
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: max by (peer_id) (vault_raft_replication_heartbeat{quantile="0.99"})
+    legend: "{{peer_id}}"
+    unit: ms
+    description: Shows the p99 Raft replication heartbeat timer by peer.
+    grid:
+      x: 0
+      y: 24
+      w: 12
+      h: 8
+  - id: append-entries-logs
+    title: Append entries logs
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: max by (peer_id) (vault_raft_replication_appendEntries_logs)
+    legend: "{{peer_id}}"
+    unit: none
+    description: Shows append-entries log counts by peer.
+    grid:
+      x: 12
+      y: 24
+      w: 12
+      h: 8
+  - id: raft-storage-logs
+    title: Raft and storage logs
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.operational"} |~ "(?i)raft|storage|autopilot"'
+    description: Shows OpenBao operational logs related to Raft, storage, and Autopilot.
+    grid:
+      x: 0
+      y: 32
+      w: 24
+      h: 9

@@ -32,6 +32,8 @@ contracts-verify:
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
 		--contract "contracts/dashboards/openbao-overview.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
+		--contract "contracts/dashboards/openbao-ha-raft.yaml"
+	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
 		--contract "contracts/dashboards/openbao-audit-overview.yaml"
 
 fixtures-openbao:
@@ -55,6 +57,9 @@ generate:
 	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
 		--contract "contracts/dashboards/openbao-overview.yaml" \
 		--output "generated/grafana/openbao-overview.json"
+	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
+		--contract "contracts/dashboards/openbao-ha-raft.yaml" \
+		--output "generated/grafana/openbao-ha-raft.json"
 	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
 		--contract "contracts/dashboards/openbao-audit-overview.yaml" \
 		--output "generated/grafana/openbao-audit-overview.json"
