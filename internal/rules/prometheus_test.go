@@ -13,6 +13,7 @@ func TestGeneratePrometheusRules(t *testing.T) {
 	dir := t.TempDir()
 	contractPath := filepath.Join(dir, "contract.yaml")
 	outputPath := filepath.Join(dir, "rules.yaml")
+	ruleFilePath := filepath.Join(dir, "prometheus-rules.yaml")
 
 	if err := os.WriteFile(contractPath, []byte(ruleContract()), 0o644); err != nil {
 		t.Fatalf("write contract: %v", err)
@@ -21,6 +22,7 @@ func TestGeneratePrometheusRules(t *testing.T) {
 	err := GeneratePrometheusRules(GenerateOptions{
 		ContractPath: contractPath,
 		OutputPath:   outputPath,
+		RuleFilePath: ruleFilePath,
 		SourcePrefix: "openbao",
 	})
 	if err != nil {
@@ -44,6 +46,24 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		if !strings.Contains(text, fragment) {
 			t.Fatalf("generated rules missing %q:\n%s", fragment, text)
 		}
+	}
+
+	ruleFileContent, err := os.ReadFile(ruleFilePath)
+	if err != nil {
+		t.Fatalf("read Prometheus rule file: %v", err)
+	}
+	ruleFileText := string(ruleFileContent)
+	for _, fragment := range []string{
+		"groups:",
+		"name: openbao.recording",
+		"record: openbao:core_active:sum",
+	} {
+		if !strings.Contains(ruleFileText, fragment) {
+			t.Fatalf("generated Prometheus rule file missing %q:\n%s", fragment, ruleFileText)
+		}
+	}
+	if strings.Contains(ruleFileText, "kind: PrometheusRule") {
+		t.Fatalf("native Prometheus rule file contains PrometheusRule wrapper:\n%s", ruleFileText)
 	}
 }
 
@@ -74,6 +94,7 @@ func TestGenerateAlertRules(t *testing.T) {
 	dir := t.TempDir()
 	contractPath := filepath.Join(dir, "alerts.yaml")
 	prometheusOutputPath := filepath.Join(dir, "prometheus-alerts.yaml")
+	prometheusRuleFilePath := filepath.Join(dir, "prometheus-alert-rules.yaml")
 	lokiOutputPath := filepath.Join(dir, "loki-alerts.yaml")
 
 	if err := os.WriteFile(contractPath, []byte(alertContract()), 0o644); err != nil {
@@ -81,10 +102,11 @@ func TestGenerateAlertRules(t *testing.T) {
 	}
 
 	err := GenerateAlertRules(GenerateAlertOptions{
-		ContractPath:         contractPath,
-		PrometheusOutputPath: prometheusOutputPath,
-		LokiOutputPath:       lokiOutputPath,
-		SourcePrefix:         "openbao",
+		ContractPath:           contractPath,
+		PrometheusOutputPath:   prometheusOutputPath,
+		PrometheusRuleFilePath: prometheusRuleFilePath,
+		LokiOutputPath:         lokiOutputPath,
+		SourcePrefix:           "openbao",
 	})
 	if err != nil {
 		t.Fatalf("GenerateAlertRules returned error: %v", err)
@@ -104,6 +126,25 @@ func TestGenerateAlertRules(t *testing.T) {
 		if !strings.Contains(prometheusText, fragment) {
 			t.Fatalf("Prometheus alerts missing %q:\n%s", fragment, prometheusText)
 		}
+	}
+
+	prometheusRuleFileContent, err := os.ReadFile(prometheusRuleFilePath)
+	if err != nil {
+		t.Fatalf("read Prometheus alert rule file: %v", err)
+	}
+	prometheusRuleFileText := string(prometheusRuleFileContent)
+	for _, fragment := range []string{
+		"groups:",
+		"name: openbao.alerts",
+		"alert: OpenBaoNoActiveNode",
+		"expr: sum(openbao_core_active) == 0",
+	} {
+		if !strings.Contains(prometheusRuleFileText, fragment) {
+			t.Fatalf("Prometheus alert rule file missing %q:\n%s", fragment, prometheusRuleFileText)
+		}
+	}
+	if strings.Contains(prometheusRuleFileText, "kind: PrometheusRule") {
+		t.Fatalf("native Prometheus alert rule file contains PrometheusRule wrapper:\n%s", prometheusRuleFileText)
 	}
 
 	lokiContent, err := os.ReadFile(lokiOutputPath)

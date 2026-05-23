@@ -13,10 +13,11 @@ directory.
 ## Start here
 
 - Run `make fixtures-openbao` to capture OpenBao `2.5.4` Docker fixtures.
+- Run `make compose-up` to start the local Docker Compose reference stack.
 - Run `make test-unit` to run Go tests without fixture capture.
 - Run `make test-fixtures` to validate the captured metrics and audit samples.
 - Run `make contracts-verify` to validate metric contracts against fixtures.
-- Run `make generate` to generate Prometheus recording rules.
+- Run `make generate` to generate Prometheus rules and alert artifacts.
 
 Implementation planning notes are local-only files under `workstreams/` with a
 `.local.md` suffix. Git ignores those files.
@@ -28,6 +29,7 @@ Implementation planning notes are local-only files under `workstreams/` with a
 | `contracts/` | Source contracts for metrics, log streams, alerts, and dashboards. |
 | `cmd/` | Go command-line entry points for project tooling. |
 | `docs/` | User-facing documentation written with the project style guide. |
+| `examples/` | Runnable local and deployment examples, including Docker Compose. |
 | `fixtures/` | Captured metrics and log fixtures used by tests. |
 | `generated/` | Generated artifacts produced from contracts. |
 | `internal/` | Go packages that implement fixture capture and validation. |

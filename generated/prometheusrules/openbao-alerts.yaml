@@ -8,7 +8,7 @@ spec:
         - name: openbao.alerts
           rules:
             - alert: OpenBaoUnreachable
-              expr: min_over_time(up{job=~"$job"}[5m]) == 0
+              expr: min_over_time(up{job=~"openbao.*"}[5m]) == 0
               for: 5m
               labels:
                 severity: critical

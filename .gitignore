@@ -2,3 +2,4 @@
 /fixtures/captured/
 /tmp/
 /workstreams/*.local.md
+/examples/docker-compose/.env

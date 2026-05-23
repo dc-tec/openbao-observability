@@ -14,14 +14,16 @@ import (
 type GenerateOptions struct {
 	ContractPath string
 	OutputPath   string
+	RuleFilePath string
 	SourcePrefix string
 }
 
 type GenerateAlertOptions struct {
-	ContractPath         string
-	PrometheusOutputPath string
-	LokiOutputPath       string
-	SourcePrefix         string
+	ContractPath           string
+	PrometheusOutputPath   string
+	PrometheusRuleFilePath string
+	LokiOutputPath         string
+	SourcePrefix           string
 }
 
 type prometheusRule struct {
@@ -32,6 +34,10 @@ type prometheusRule struct {
 }
 
 type prometheusRuleSpec struct {
+	Groups []prometheusRuleGroup `yaml:"groups"`
+}
+
+type prometheusRuleFile struct {
 	Groups []prometheusRuleGroup `yaml:"groups"`
 }
 
@@ -93,8 +99,15 @@ func GeneratePrometheusRules(opts GenerateOptions) error {
 	if err := writeYAML(opts.OutputPath, document); err != nil {
 		return err
 	}
-
 	fmt.Printf("generated PrometheusRule at %s\n", opts.OutputPath)
+
+	if opts.RuleFilePath != "" {
+		if err := writeYAML(opts.RuleFilePath, buildPrometheusRuleFile(document)); err != nil {
+			return err
+		}
+		fmt.Printf("generated Prometheus rule file at %s\n", opts.RuleFilePath)
+	}
+
 	return nil
 }
 
@@ -123,6 +136,13 @@ func GenerateAlertRules(opts GenerateAlertOptions) error {
 		return err
 	}
 	fmt.Printf("generated Prometheus alert rules at %s\n", opts.PrometheusOutputPath)
+
+	if opts.PrometheusRuleFilePath != "" {
+		if err := writeYAML(opts.PrometheusRuleFilePath, buildPrometheusRuleFile(prometheusDocument)); err != nil {
+			return err
+		}
+		fmt.Printf("generated Prometheus alert rule file at %s\n", opts.PrometheusRuleFilePath)
+	}
 
 	lokiDocument := buildLokiAlertDocument(*contract, sourcePrefix)
 	if err := writeYAML(opts.LokiOutputPath, lokiDocument); err != nil {
@@ -154,6 +174,12 @@ func (o GenerateAlertOptions) withDefaults() GenerateAlertOptions {
 		o.LokiOutputPath = filepath.Join("generated", "loki", "openbao-alerts.yaml")
 	}
 	return o
+}
+
+func buildPrometheusRuleFile(document prometheusRule) prometheusRuleFile {
+	return prometheusRuleFile{
+		Groups: document.Spec.Groups,
+	}
 }
 
 func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string) prometheusRule {

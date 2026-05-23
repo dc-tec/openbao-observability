@@ -8,7 +8,7 @@ alerts:
     severity: critical
     signal: metrics
     for: 5m
-    expression: min_over_time(up{job=~"$job"}[5m]) == 0
+    expression: min_over_time(up{job=~"openbao.*"}[5m]) == 0
     summary: OpenBao metrics scrape is failing
     description: Prometheus cannot scrape OpenBao for at least 5 minutes.
     runbook: docs/runbooks/openbao-metrics-scrape-failing.md

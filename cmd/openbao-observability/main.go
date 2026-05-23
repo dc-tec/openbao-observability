@@ -172,6 +172,7 @@ func runGeneratePrometheusRules(args []string) error {
 	opts := rules.GenerateOptions{}
 	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "metrics", "openbao-core.yaml"), "metric contract path")
 	fs.StringVar(&opts.OutputPath, "output", filepath.Join("generated", "prometheusrules", "openbao-recording-rules.yaml"), "output PrometheusRule path")
+	fs.StringVar(&opts.RuleFilePath, "rule-output", "", "optional native Prometheus rule file path")
 	fs.StringVar(&opts.SourcePrefix, "source-prefix", "", "source metric prefix; defaults to metricPrefixes.default")
 
 	if err := fs.Parse(args); err != nil {
@@ -187,6 +188,7 @@ func runGenerateAlertRules(args []string) error {
 	opts := rules.GenerateAlertOptions{}
 	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "alerts", "critical.yaml"), "alert contract path")
 	fs.StringVar(&opts.PrometheusOutputPath, "prometheus-output", filepath.Join("generated", "prometheusrules", "openbao-alerts.yaml"), "output PrometheusRule path")
+	fs.StringVar(&opts.PrometheusRuleFilePath, "prometheus-rule-output", "", "optional native Prometheus alert rule file path")
 	fs.StringVar(&opts.LokiOutputPath, "loki-output", filepath.Join("generated", "loki", "openbao-alerts.yaml"), "output Loki alert path")
 	fs.StringVar(&opts.SourcePrefix, "source-prefix", "", "source metric prefix; defaults to sourcePrefix from contract")
 

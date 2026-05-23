@@ -1,0 +1,50 @@
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+loki.source.file "openbao_operational" {
+  targets = [
+    {
+      __path__             = "/var/lib/openbao/logs/openbao.log",
+      "cluster"           = "compose",
+      "component"         = "openbao",
+      "deployment_profile" = "docker-compose",
+      "environment"       = "local",
+      "job"               = "openbao",
+      "log_stream"        = "openbao.operational",
+    },
+  ]
+  forward_to = [loki.write.local.receiver]
+
+  file_match {
+    enabled     = true
+    sync_period = "10s"
+  }
+}
+
+loki.source.file "openbao_audit" {
+  targets = [
+    {
+      __path__             = "/var/lib/openbao/audit/audit.jsonl",
+      "cluster"           = "compose",
+      "component"         = "openbao",
+      "deployment_profile" = "docker-compose",
+      "environment"       = "local",
+      "job"               = "openbao",
+      "log_stream"        = "openbao.audit",
+    },
+  ]
+  forward_to = [loki.write.local.receiver]
+
+  file_match {
+    enabled     = true
+    sync_period = "10s"
+  }
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

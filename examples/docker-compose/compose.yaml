@@ -1,0 +1,121 @@
+name: openbao-observability
+
+services:
+  openbao:
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
+    user: "0"
+    command:
+      - server
+      - -dev
+      - -dev-root-token-id=${OPENBAO_ROOT_TOKEN:-root}
+      - -dev-listen-address=0.0.0.0:8200
+      - -config=/openbao/config/config.hcl
+    ports:
+      - 127.0.0.1:${OPENBAO_PORT:-18200}:8200
+    volumes:
+      - ./openbao/config.hcl:/openbao/config/config.hcl:ro
+      - openbao-audit:/openbao/file
+      - openbao-logs:/openbao/logs
+    healthcheck:
+      test: ["CMD-SHELL", "BAO_ADDR=http://127.0.0.1:8200 bao status >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+
+  openbao-init:
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
+    user: "0"
+    depends_on:
+      openbao:
+        condition: service_healthy
+    environment:
+      BAO_ADDR: http://openbao:8200
+      BAO_TOKEN: ${OPENBAO_ROOT_TOKEN:-root}
+    command:
+      - sh
+      - -ec
+      - |
+        cat >/tmp/openbao-metrics-policy.hcl <<'EOF'
+        path "sys/metrics" {
+          capabilities = ["read", "list"]
+        }
+        EOF
+        bao policy write openbao-metrics /tmp/openbao-metrics-policy.hcl
+        bao token create -policy=openbao-metrics -ttl=24h -field=token > /run/openbao/metrics-token
+        chmod 0444 /run/openbao/metrics-token
+    volumes:
+      - metrics-token:/run/openbao
+    restart: "no"
+
+  prometheus:
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.11.2}
+    depends_on:
+      openbao-init:
+        condition: service_completed_successfully
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    ports:
+      - 127.0.0.1:${PROMETHEUS_PORT:-19090}:9090
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../../generated/prometheus:/etc/prometheus/rules:ro
+      - metrics-token:/etc/prometheus/secrets/openbao-metrics-token:ro
+      - prometheus-data:/prometheus
+
+  loki:
+    image: ${LOKI_IMAGE:-grafana/loki:3.7.2}
+    command:
+      - -config.file=/etc/loki/loki.yaml
+    ports:
+      - 127.0.0.1:${LOKI_PORT:-13100}:3100
+    volumes:
+      - ./loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki-data:/loki
+
+  alloy:
+    image: ${ALLOY_IMAGE:-grafana/alloy:v1.16.1}
+    depends_on:
+      - loki
+      - openbao
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    ports:
+      - 127.0.0.1:${ALLOY_PORT:-12345}:12345
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - openbao-audit:/var/lib/openbao/audit:ro
+      - openbao-logs:/var/lib/openbao/logs:ro
+      - alloy-data:/var/lib/alloy/data
+
+  grafana:
+    image: ${GRAFANA_IMAGE:-grafana/grafana:13.0.1}
+    depends_on:
+      - prometheus
+      - loki
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_DEFAULT_THEME: light
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+    ports:
+      - 127.0.0.1:${GRAFANA_PORT:-13000}:3000
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  alloy-data:
+  grafana-data:
+  loki-data:
+  metrics-token:
+  openbao-audit:
+  openbao-logs:
+  prometheus-data:
