@@ -11,6 +11,11 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 
 - [Configure a secure metrics scrape](./metrics/secure-metrics-scrape.md)
 - [Configure an all-node metrics scrape](./metrics/all-node-metrics-scrape.md)
+- [Configure declarative audit devices](./audit/declarative-audit.md)
+
+## References
+
+- [Understand metric prefixes and recording rules](./contracts/metric-prefix.md)
 
 ## Runbooks
 
