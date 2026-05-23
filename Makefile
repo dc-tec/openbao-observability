@@ -11,6 +11,8 @@ contracts-verify:
 	$(GO) run ./cmd/openbao-observability contracts verify \
 		--contract "contracts/metrics/openbao-core.yaml" \
 		--fixtures "$(FIXTURE_DIR)"
+	$(GO) run ./cmd/openbao-observability contracts verify-alerts \
+		--contract "contracts/alerts/critical.yaml"
 
 fixtures-openbao:
 	$(GO) run ./cmd/openbao-observability fixtures capture \
@@ -24,6 +26,10 @@ generate:
 	$(GO) run ./cmd/openbao-observability generate prometheus-rules \
 		--contract "contracts/metrics/openbao-core.yaml" \
 		--output "generated/prometheusrules/openbao-recording-rules.yaml"
+	$(GO) run ./cmd/openbao-observability generate alert-rules \
+		--contract "contracts/alerts/critical.yaml" \
+		--prometheus-output "generated/prometheusrules/openbao-alerts.yaml" \
+		--loki-output "generated/loki/openbao-alerts.yaml"
 
 test: test-fixtures contracts-verify test-unit
 

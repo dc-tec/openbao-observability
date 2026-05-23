@@ -50,6 +50,8 @@ func runContracts(args []string) error {
 	switch args[0] {
 	case "verify":
 		return runContractsVerify(args[1:])
+	case "verify-alerts":
+		return runContractsVerifyAlerts(args[1:])
 	case "-h", "--help", "help":
 		return contractsUsage()
 	default:
@@ -80,6 +82,8 @@ func runGenerate(args []string) error {
 	}
 
 	switch args[0] {
+	case "alert-rules":
+		return runGenerateAlertRules(args[1:])
 	case "prometheus-rules":
 		return runGeneratePrometheusRules(args[1:])
 	case "-h", "--help", "help":
@@ -104,6 +108,20 @@ func runContractsVerify(args []string) error {
 	}
 
 	return contracts.VerifyMetricContract(opts)
+}
+
+func runContractsVerifyAlerts(args []string) error {
+	fs := flag.NewFlagSet("contracts verify-alerts", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := contracts.VerifyAlertOptions{}
+	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "alerts", "critical.yaml"), "alert contract path")
+	fs.StringVar(&opts.SourcePrefix, "source-prefix", "", "source metric prefix; defaults to sourcePrefix from contract")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	return contracts.VerifyAlertContract(opts)
 }
 
 func runFixturesCapture(ctx context.Context, args []string) error {
@@ -163,6 +181,22 @@ func runGeneratePrometheusRules(args []string) error {
 	return rules.GeneratePrometheusRules(opts)
 }
 
+func runGenerateAlertRules(args []string) error {
+	fs := flag.NewFlagSet("generate alert-rules", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := rules.GenerateAlertOptions{}
+	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "alerts", "critical.yaml"), "alert contract path")
+	fs.StringVar(&opts.PrometheusOutputPath, "prometheus-output", filepath.Join("generated", "prometheusrules", "openbao-alerts.yaml"), "output PrometheusRule path")
+	fs.StringVar(&opts.LokiOutputPath, "loki-output", filepath.Join("generated", "loki", "openbao-alerts.yaml"), "output Loki alert path")
+	fs.StringVar(&opts.SourcePrefix, "source-prefix", "", "source metric prefix; defaults to sourcePrefix from contract")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	return rules.GenerateAlertRules(opts)
+}
+
 func inferVersion(dir string) string {
 	base := filepath.Base(filepath.Clean(dir))
 	if version, ok := strings.CutPrefix(base, "openbao-"); ok {
@@ -220,7 +254,8 @@ func contractsUsage() error {
 
 func contractsUsageText() string {
 	return `usage:
-  openbao-observability contracts verify [flags]`
+  openbao-observability contracts verify [flags]
+  openbao-observability contracts verify-alerts [flags]`
 }
 
 func fixturesUsageText() string {
@@ -235,5 +270,6 @@ func generateUsage() error {
 
 func generateUsageText() string {
 	return `usage:
+  openbao-observability generate alert-rules [flags]
   openbao-observability generate prometheus-rules [flags]`
 }

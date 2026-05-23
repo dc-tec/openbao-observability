@@ -53,7 +53,7 @@ func TestValidatePromQLRejectsInvalidExpression(t *testing.T) {
 			Groups: []prometheusRuleGroup{
 				{
 					Name: "test",
-					Rules: []recordingRule{
+					Rules: []prometheusRuleItem{
 						{Record: "openbao:invalid", Expr: "sum("},
 					},
 				},
@@ -67,6 +67,58 @@ func TestValidatePromQLRejectsInvalidExpression(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "openbao:invalid") {
 		t.Fatalf("error does not include rule name: %v", err)
+	}
+}
+
+func TestGenerateAlertRules(t *testing.T) {
+	dir := t.TempDir()
+	contractPath := filepath.Join(dir, "alerts.yaml")
+	prometheusOutputPath := filepath.Join(dir, "prometheus-alerts.yaml")
+	lokiOutputPath := filepath.Join(dir, "loki-alerts.yaml")
+
+	if err := os.WriteFile(contractPath, []byte(alertContract()), 0o644); err != nil {
+		t.Fatalf("write alert contract: %v", err)
+	}
+
+	err := GenerateAlertRules(GenerateAlertOptions{
+		ContractPath:         contractPath,
+		PrometheusOutputPath: prometheusOutputPath,
+		LokiOutputPath:       lokiOutputPath,
+		SourcePrefix:         "openbao",
+	})
+	if err != nil {
+		t.Fatalf("GenerateAlertRules returned error: %v", err)
+	}
+
+	prometheusContent, err := os.ReadFile(prometheusOutputPath)
+	if err != nil {
+		t.Fatalf("read Prometheus output: %v", err)
+	}
+	prometheusText := string(prometheusContent)
+	for _, fragment := range []string{
+		"kind: PrometheusRule",
+		"alert: OpenBaoNoActiveNode",
+		"expr: sum(openbao_core_active) == 0",
+		"runbook_url: docs/runbooks/no-active-openbao-leader.md",
+	} {
+		if !strings.Contains(prometheusText, fragment) {
+			t.Fatalf("Prometheus alerts missing %q:\n%s", fragment, prometheusText)
+		}
+	}
+
+	lokiContent, err := os.ReadFile(lokiOutputPath)
+	if err != nil {
+		t.Fatalf("read Loki output: %v", err)
+	}
+	lokiText := string(lokiContent)
+	for _, fragment := range []string{
+		"kind: LokiAlertRules",
+		"alert: OpenBaoAuditStreamMissing",
+		"expr: absent_over_time({log_stream=\"openbao.audit\"}[10m])",
+	} {
+		if !strings.Contains(lokiText, fragment) {
+			t.Fatalf("Loki alerts missing %q:\n%s", fragment, lokiText)
+		}
 	}
 }
 
@@ -97,5 +149,32 @@ metrics:
   - id: core_active
     prometheusName: ${p}_core_active
     required: true
+`
+}
+
+func alertContract() string {
+	return `version: v0.1
+status: draft
+metricPrefixVariable: ${p}
+sourcePrefix: vault
+alerts:
+  - id: OpenBaoNoActiveNode
+    type: prometheus
+    severity: critical
+    signal: metrics
+    for: 2m
+    expression: sum(${p}_core_active) == 0
+    summary: OpenBao has no active node
+    description: No active OpenBao node is visible to Prometheus.
+    runbook: docs/runbooks/no-active-openbao-leader.md
+  - id: OpenBaoAuditStreamMissing
+    type: loki
+    severity: critical
+    signal: loki
+    for: 10m
+    expression: absent_over_time({log_stream="openbao.audit"}[10m])
+    summary: OpenBao audit log stream is missing
+    description: Loki has not received OpenBao audit logs for the alert window.
+    runbook: docs/runbooks/audit-log-stream-missing.md
 `
 }
