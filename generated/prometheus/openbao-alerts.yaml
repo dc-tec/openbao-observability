@@ -35,6 +35,17 @@ groups:
             description: No active OpenBao node is visible to Prometheus.
             runbook_url: docs/runbooks/no-active-openbao-leader.md
             summary: OpenBao has no active node
+        - alert: OpenBaoMultipleActiveNodes
+          expr: sum(vault_core_active) > 1
+          for: 2m
+          labels:
+            severity: critical
+            signal: metrics
+            source_prefix: vault
+          annotations:
+            description: More than one active OpenBao node is visible to Prometheus.
+            runbook_url: docs/runbooks/multiple-active-nodes.md
+            summary: OpenBao has multiple active nodes
         - alert: OpenBaoAuditRequestFailures
           expr: sum(increase(vault_audit_log_request_failure[5m])) > 0
           for: 0m
@@ -46,3 +57,14 @@ groups:
             description: OpenBao reported at least one audit request logging failure.
             runbook_url: docs/runbooks/audit-request-response-failures.md
             summary: OpenBao audit request logging failed
+        - alert: OpenBaoAuditResponseFailures
+          expr: sum(increase(vault_audit_log_response_failure[5m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+            signal: metrics
+            source_prefix: vault
+          annotations:
+            description: OpenBao reported at least one audit response logging failure.
+            runbook_url: docs/runbooks/audit-request-response-failures.md
+            summary: OpenBao audit response logging failed

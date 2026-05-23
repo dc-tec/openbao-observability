@@ -14,6 +14,7 @@ Use these runbooks when the generated alert rules fire:
 - [OpenBao metrics scrape failing](./runbooks/openbao-metrics-scrape-failing.md)
 - [OpenBao sealed unexpectedly](./runbooks/openbao-sealed-unexpectedly.md)
 - [No active OpenBao leader](./runbooks/no-active-openbao-leader.md)
+- [Multiple active OpenBao nodes](./runbooks/multiple-active-nodes.md)
 - [Audit request and response failures](./runbooks/audit-request-response-failures.md)
 - [Audit log stream missing](./runbooks/audit-log-stream-missing.md)
 

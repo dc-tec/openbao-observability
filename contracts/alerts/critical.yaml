@@ -30,6 +30,15 @@ alerts:
     summary: OpenBao has no active node
     description: No active OpenBao node is visible to Prometheus.
     runbook: docs/runbooks/no-active-openbao-leader.md
+  - id: OpenBaoMultipleActiveNodes
+    type: prometheus
+    severity: critical
+    signal: metrics
+    for: 2m
+    expression: sum(${p}_core_active) > 1
+    summary: OpenBao has multiple active nodes
+    description: More than one active OpenBao node is visible to Prometheus.
+    runbook: docs/runbooks/multiple-active-nodes.md
   - id: OpenBaoAuditRequestFailures
     type: prometheus
     severity: critical
@@ -38,6 +47,15 @@ alerts:
     expression: sum(increase(${p}_audit_log_request_failure[5m])) > 0
     summary: OpenBao audit request logging failed
     description: OpenBao reported at least one audit request logging failure.
+    runbook: docs/runbooks/audit-request-response-failures.md
+  - id: OpenBaoAuditResponseFailures
+    type: prometheus
+    severity: critical
+    signal: metrics
+    for: 0m
+    expression: sum(increase(${p}_audit_log_response_failure[5m])) > 0
+    summary: OpenBao audit response logging failed
+    description: OpenBao reported at least one audit response logging failure.
     runbook: docs/runbooks/audit-request-response-failures.md
   - id: OpenBaoAuditStreamMissing
     type: loki

@@ -145,8 +145,9 @@ before making membership changes.
 
 ### More than one node appears active
 
-Treat this as a possible split-brain condition. Stop automated remediation and
-escalate to the OpenBao and storage owners.
+Switch to [Multiple active OpenBao nodes](./multiple-active-nodes.md). Treat the
+incident as possible split brain until you prove the signal is a scrape
+artifact.
 
 ## What's next
 

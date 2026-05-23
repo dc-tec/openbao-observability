@@ -121,6 +121,10 @@ func TestGenerateAlertRules(t *testing.T) {
 		"kind: PrometheusRule",
 		"alert: OpenBaoNoActiveNode",
 		"expr: sum(openbao_core_active) == 0",
+		"alert: OpenBaoMultipleActiveNodes",
+		"expr: sum(openbao_core_active) > 1",
+		"alert: OpenBaoAuditResponseFailures",
+		"expr: sum(increase(openbao_audit_log_response_failure[5m])) > 0",
 		"runbook_url: docs/runbooks/no-active-openbao-leader.md",
 	} {
 		if !strings.Contains(prometheusText, fragment) {
@@ -138,6 +142,10 @@ func TestGenerateAlertRules(t *testing.T) {
 		"name: openbao.alerts",
 		"alert: OpenBaoNoActiveNode",
 		"expr: sum(openbao_core_active) == 0",
+		"alert: OpenBaoMultipleActiveNodes",
+		"expr: sum(openbao_core_active) > 1",
+		"alert: OpenBaoAuditResponseFailures",
+		"expr: sum(increase(openbao_audit_log_response_failure[5m])) > 0",
 	} {
 		if !strings.Contains(prometheusRuleFileText, fragment) {
 			t.Fatalf("Prometheus alert rule file missing %q:\n%s", fragment, prometheusRuleFileText)
@@ -208,6 +216,24 @@ alerts:
     summary: OpenBao has no active node
     description: No active OpenBao node is visible to Prometheus.
     runbook: docs/runbooks/no-active-openbao-leader.md
+  - id: OpenBaoMultipleActiveNodes
+    type: prometheus
+    severity: critical
+    signal: metrics
+    for: 2m
+    expression: sum(${p}_core_active) > 1
+    summary: OpenBao has multiple active nodes
+    description: More than one active OpenBao node is visible to Prometheus.
+    runbook: docs/runbooks/multiple-active-nodes.md
+  - id: OpenBaoAuditResponseFailures
+    type: prometheus
+    severity: critical
+    signal: metrics
+    for: 0m
+    expression: sum(increase(${p}_audit_log_response_failure[5m])) > 0
+    summary: OpenBao audit response logging failed
+    description: OpenBao reported at least one audit response logging failure.
+    runbook: docs/runbooks/audit-request-response-failures.md
   - id: OpenBaoAuditStreamMissing
     type: loki
     severity: critical
