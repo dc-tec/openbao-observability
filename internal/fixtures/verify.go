@@ -31,6 +31,15 @@ func Verify(opts VerifyOptions) error {
 			return err
 		}
 	}
+	if err := checkRaftMetrics(opts, "vault"); err != nil {
+		return err
+	}
+	if err := checkRaftMetadata(opts, "vault"); err != nil {
+		return err
+	}
+	if err := checkRaftAuditJSON(opts, "vault"); err != nil {
+		return err
+	}
 
 	fmt.Printf("fixture checks passed for %s\n", opts.FixtureDir)
 	return nil
@@ -115,6 +124,147 @@ func checkAPIAuditRejection(opts VerifyOptions, prefix string) error {
 
 func checkAuditJSON(opts VerifyOptions, prefix string) error {
 	path := filepath.Join(opts.FixtureDir, "logs", "audit", fmt.Sprintf("openbao-%s-%s-prefix.jsonl", opts.Version, prefix))
+	return checkAuditJSONFile(path)
+}
+
+func checkRaftMetrics(opts VerifyOptions, prefix string) error {
+	var leaderMetrics promtext.Families
+	for index := 0; index < raftNodeCount; index++ {
+		nodeID := fmt.Sprintf("node%d", index)
+		path := filepath.Join(opts.FixtureDir, "metrics", fmt.Sprintf("openbao-%s-raft-%s-%s.prom", opts.Version, prefix, nodeID))
+		families, err := promtext.LoadFamilies(path)
+		if err != nil {
+			return err
+		}
+
+		for _, metric := range []string{
+			prefix + "_core_active",
+			prefix + "_core_unsealed",
+			prefix + "_raft_get",
+			prefix + "_runtime_num_goroutines",
+		} {
+			if !families.HasMetric(metric) {
+				return fmt.Errorf("missing expected Raft metric in %s: %s", path, metric)
+			}
+		}
+
+		if index == 0 {
+			leaderMetrics = families
+		}
+	}
+
+	for _, metric := range []string{
+		prefix + "_autopilot_failure_tolerance",
+		prefix + "_autopilot_healthy",
+		prefix + "_autopilot_node_healthy",
+	} {
+		if !leaderMetrics.HasMetric(metric) {
+			return fmt.Errorf("missing expected Raft leader metric: %s", metric)
+		}
+	}
+	if !hasAnyGaugeValue(leaderMetrics, prefix+"_autopilot_healthy", 1) {
+		return fmt.Errorf("missing healthy Autopilot gauge value")
+	}
+	if !hasAnyGaugeValue(leaderMetrics, prefix+"_autopilot_failure_tolerance", 1) {
+		return fmt.Errorf("missing Autopilot failure tolerance of one voter")
+	}
+	if !hasAnyGaugeValue(leaderMetrics, prefix+"_core_active", 1) {
+		return fmt.Errorf("missing active leader gauge value in Raft fixture")
+	}
+	for index := 0; index < raftNodeCount; index++ {
+		nodeID := fmt.Sprintf("node%d", index)
+		if !leaderMetrics.HasMetricWithLabel(prefix+"_autopilot_node_healthy", "node_id", nodeID) {
+			return fmt.Errorf("missing Autopilot healthy node series for %s", nodeID)
+		}
+	}
+
+	return nil
+}
+
+func hasAnyGaugeValue(families promtext.Families, name string, value float64) bool {
+	family, ok := families[name]
+	if !ok {
+		return false
+	}
+	for _, metric := range family.GetMetric() {
+		if metric.GetGauge().GetValue() == value {
+			return true
+		}
+	}
+	return false
+}
+
+func checkRaftMetadata(opts VerifyOptions, prefix string) error {
+	peersPath := filepath.Join(opts.FixtureDir, "metadata", fmt.Sprintf("openbao-%s-raft-%s-peers.json", opts.Version, prefix))
+	content, err := os.ReadFile(peersPath)
+	if err != nil {
+		return fmt.Errorf("read Raft peers fixture %s: %w", peersPath, err)
+	}
+	servers, err := parseRaftServers(content)
+	if err != nil {
+		return err
+	}
+	if len(servers) != raftNodeCount {
+		return fmt.Errorf("expected %d Raft peers in %s, found %d", raftNodeCount, peersPath, len(servers))
+	}
+
+	var leaders int
+	seen := map[string]bool{}
+	for _, server := range servers {
+		if server.Leader {
+			leaders++
+		}
+		if !server.Voter {
+			return fmt.Errorf("Raft peer %s is not a voter in %s", server.NodeID, peersPath)
+		}
+		seen[server.NodeID] = true
+	}
+	if leaders != 1 {
+		return fmt.Errorf("expected exactly one Raft leader in %s, found %d", peersPath, leaders)
+	}
+	for index := 0; index < raftNodeCount; index++ {
+		nodeID := fmt.Sprintf("node%d", index)
+		if !seen[nodeID] {
+			return fmt.Errorf("missing Raft peer %s in %s", nodeID, peersPath)
+		}
+	}
+
+	autopilotPath := filepath.Join(opts.FixtureDir, "metadata", fmt.Sprintf("openbao-%s-raft-%s-autopilot-state.json", opts.Version, prefix))
+	content, err = os.ReadFile(autopilotPath)
+	if err != nil {
+		return fmt.Errorf("read Autopilot fixture %s: %w", autopilotPath, err)
+	}
+	state, err := parseAutopilotState(content)
+	if err != nil {
+		return err
+	}
+	if !state.Healthy {
+		return fmt.Errorf("Autopilot reports unhealthy state in %s", autopilotPath)
+	}
+	if state.FailureTolerance < 1 {
+		return fmt.Errorf("expected Autopilot failure tolerance >= 1 in %s, found %d", autopilotPath, state.FailureTolerance)
+	}
+	if len(state.Servers) != raftNodeCount {
+		return fmt.Errorf("expected %d Autopilot servers in %s, found %d", raftNodeCount, autopilotPath, len(state.Servers))
+	}
+	for id, server := range state.Servers {
+		if !server.Healthy {
+			return fmt.Errorf("Autopilot server %s is unhealthy in %s", id, autopilotPath)
+		}
+		if server.NodeType != "voter" {
+			return fmt.Errorf("Autopilot server %s has node type %q in %s", id, server.NodeType, autopilotPath)
+		}
+	}
+
+	return nil
+}
+
+func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
+	path := filepath.Join(opts.FixtureDir, "logs", "audit", fmt.Sprintf("openbao-%s-raft-%s-node0.jsonl", opts.Version, prefix))
+	return checkAuditJSONFile(path)
+}
+
+func checkAuditJSONFile(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("open audit fixture %s: %w", path, err)

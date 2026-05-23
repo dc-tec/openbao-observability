@@ -3,6 +3,8 @@ package fixtures
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -22,8 +24,22 @@ type CaptureOptions struct {
 type captureRun struct {
 	options    CaptureOptions
 	containers []string
+	networks   []string
 	tempDirs   []string
 }
+
+type raftNode struct {
+	Index     int
+	ID        string
+	Container string
+	Port      int
+	Config    string
+}
+
+const (
+	raftNodeCount     = 3
+	fixtureAdminToken = "openbao-observability-fixture-token"
+)
 
 func Capture(ctx context.Context, opts CaptureOptions) error {
 	opts = opts.withDefaults()
@@ -44,6 +60,9 @@ func Capture(ctx context.Context, opts CaptureOptions) error {
 		if err := run.capturePrefix(ctx, prefix, opts.PortBase+index); err != nil {
 			return err
 		}
+	}
+	if err := run.captureRaft(ctx, "vault", opts.PortBase+20); err != nil {
+		return err
 	}
 
 	fmt.Printf("captured OpenBao fixtures in %s\n", opts.OutputDir)
@@ -143,6 +162,254 @@ func (r *captureRun) capturePrefix(ctx context.Context, prefix string, port int)
 	return nil
 }
 
+func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase int) error {
+	opts := r.options
+	versionID := strings.ReplaceAll(opts.Version, ".", "-")
+	network := fmt.Sprintf("openbao-observability-%s-raft", versionID)
+
+	_, _, _ = combined(ctx, "docker", "network", "rm", network)
+	if _, _, err := combined(ctx, "docker", "network", "create", network); err != nil {
+		return fmt.Errorf("create Docker network for Raft fixture: %w", err)
+	}
+	r.networks = append(r.networks, network)
+
+	tempDir, err := os.MkdirTemp("/tmp", "openbao-observability-raft.")
+	if err != nil {
+		return fmt.Errorf("create temp Raft fixture directory: %w", err)
+	}
+	r.tempDirs = append(r.tempDirs, tempDir)
+
+	sealDir := filepath.Join(tempDir, "seal")
+	if err := os.MkdirAll(sealDir, 0o700); err != nil {
+		return fmt.Errorf("create static seal directory: %w", err)
+	}
+	sealKeyPath := filepath.Join(sealDir, "static-unseal.key")
+	if err := writeStaticSealKey(sealKeyPath); err != nil {
+		return err
+	}
+
+	nodes := make([]raftNode, 0, raftNodeCount)
+	for index := 0; index < raftNodeCount; index++ {
+		node := raftNode{
+			Index:     index,
+			ID:        fmt.Sprintf("node%d", index),
+			Container: fmt.Sprintf("openbao-observability-%s-raft-node%d", versionID, index),
+			Port:      portBase + index,
+			Config:    filepath.Join(tempDir, fmt.Sprintf("node%d.hcl", index)),
+		}
+		if err := writeRaftConfig(prefix, node, index == 0, nodes, node.Config); err != nil {
+			return err
+		}
+		nodes = append(nodes, node)
+	}
+
+	for _, node := range nodes {
+		_, _, _ = combined(ctx, "docker", "rm", "-f", node.Container)
+		r.containers = append(r.containers, node.Container)
+	}
+
+	if err := r.startRaftNode(ctx, nodes[0], network, sealDir); err != nil {
+		return err
+	}
+	if err := waitForInitializedUnsealed(ctx, nodes[0].Port, raftMetadataPath(opts, prefix, nodes[0].ID, "health.json")); err != nil {
+		return err
+	}
+	if err := r.captureVersion(ctx, nodes[0].Container, raftPrefix(prefix)); err != nil {
+		return err
+	}
+
+	for _, node := range nodes[1:] {
+		if err := r.startRaftNode(ctx, node, network, sealDir); err != nil {
+			return err
+		}
+	}
+	for _, node := range nodes[1:] {
+		if err := waitForInitializedUnsealed(ctx, node.Port, raftMetadataPath(opts, prefix, node.ID, "health.json")); err != nil {
+			return err
+		}
+	}
+	if err := r.waitForRaftVoters(ctx, nodes[0], raftNodeCount); err != nil {
+		return err
+	}
+	if err := r.waitForAutopilotTolerance(ctx, nodes[0], raftNodeCount, 1); err != nil {
+		return err
+	}
+	if err := r.exerciseRaft(ctx, nodes[0], prefix); err != nil {
+		return err
+	}
+	if err := r.captureRaftState(ctx, nodes, prefix); err != nil {
+		return err
+	}
+	if err := r.captureRaftMetrics(ctx, nodes, prefix); err != nil {
+		return err
+	}
+	if err := r.captureRaftAuditLog(ctx, nodes[0], prefix); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeStaticSealKey(path string) error {
+	key := make([]byte, 32)
+	if _, err := rand.Read(key); err != nil {
+		return fmt.Errorf("generate static seal key: %w", err)
+	}
+	if err := os.WriteFile(path, key, 0o600); err != nil {
+		return fmt.Errorf("write static seal key %s: %w", path, err)
+	}
+	return nil
+}
+
+func (r *captureRun) startRaftNode(ctx context.Context, node raftNode, network, sealDir string) error {
+	_, _, err := combined(ctx,
+		"docker",
+		"run",
+		"--detach",
+		"--name", node.Container,
+		"--network", network,
+		"--publish", fmt.Sprintf("127.0.0.1:%d:8200", node.Port),
+		"--mount", "type=tmpfs,destination=/bao/data",
+		"--volume", node.Config+":/bao/config/config.hcl:ro",
+		"--volume", sealDir+":/bao/seal:ro",
+		r.options.Image,
+		"server",
+		"-config=/bao/config/config.hcl",
+	)
+	if err != nil {
+		return fmt.Errorf("start OpenBao Raft container %s: %w", node.ID, err)
+	}
+	return nil
+}
+
+func writeRaftConfig(prefix string, node raftNode, initialize bool, existingNodes []raftNode, path string) error {
+	var retryJoin strings.Builder
+	if !initialize {
+		for _, leader := range existingNodes {
+			fmt.Fprintf(&retryJoin, `
+
+  retry_join {
+    leader_api_addr = "http://%s:8200"
+  }`, leader.Container)
+		}
+	}
+
+	config := fmt.Sprintf(`ui = true
+cluster_name = "openbao-observability-fixture"
+api_addr     = "http://%s:8200"
+cluster_addr = "http://%s:8201"
+
+storage "raft" {
+  path                   = "/bao/data"
+  node_id                = "%s"
+  performance_multiplier = 1%s
+}
+
+listener "tcp" {
+  address         = "0.0.0.0:8200"
+  cluster_address = "0.0.0.0:8201"
+  tls_disable     = true
+
+  telemetry {
+    unauthenticated_metrics_access = true
+  }
+}
+
+seal "static" {
+  current_key_id = "fixture-1"
+  current_key    = "file:///bao/seal/static-unseal.key"
+}
+
+telemetry {
+  prometheus_retention_time = "30s"
+  disable_hostname          = true
+  metrics_prefix           = "%s"
+}
+
+audit "file" "local-file" {
+  description = "Validation audit file."
+
+  options {
+    file_path     = "/tmp/openbao-audit.jsonl"
+    format        = "json"
+    hmac_accessor = "true"
+    log_raw       = "false"
+  }
+}
+%s`, node.Container, node.Container, node.ID, retryJoin.String(), prefix, raftInitializeBlock(initialize))
+
+	if err := os.WriteFile(path, []byte(config), 0o600); err != nil {
+		return fmt.Errorf("write OpenBao Raft config %s: %w", path, err)
+	}
+	return nil
+}
+
+func raftInitializeBlock(enabled bool) string {
+	if !enabled {
+		return ""
+	}
+
+	return fmt.Sprintf(`
+
+initialize "fixture-foundation" {
+  request "enable-userpass-auth" {
+    operation = "update"
+    path      = "sys/auth/userpass"
+
+    data = {
+      type = "userpass"
+    }
+  }
+
+  request "enable-secret-kv-v2" {
+    operation = "update"
+    path      = "sys/mounts/secret"
+
+    data = {
+      type        = "kv"
+      description = "Fixture KV engine for observability reference captures."
+
+      options = {
+        version = "2"
+      }
+    }
+  }
+
+  request "create-fixture-admin-policy" {
+    operation = "update"
+    path      = "sys/policies/acl/fixture-admin"
+
+    data = {
+      policy = <<EOT
+path "*" {
+  capabilities = ["create", "read", "update", "delete", "list", "sudo"]
+}
+EOT
+    }
+  }
+
+  request "create-demo-admin-user" {
+    operation = "update"
+    path      = "auth/userpass/users/demo-admin"
+
+    data = {
+      password       = "openbao-observability"
+      token_policies = ["fixture-admin"]
+    }
+  }
+
+  request "create-fixture-token" {
+    operation = "update"
+    path      = "auth/token/create-orphan"
+
+    data = {
+      id       = "%s"
+      policies = ["fixture-admin"]
+    }
+  }
+}`, fixtureAdminToken)
+}
+
 func writeConfig(prefix, path string) error {
 	config := fmt.Sprintf(`telemetry {
   prometheus_retention_time = "30s"
@@ -205,6 +472,52 @@ func waitForHealth(ctx context.Context, port int, outputPath string) error {
 	}
 
 	return fmt.Errorf("OpenBao did not become healthy on %s: %w", url, lastErr)
+}
+
+func waitForInitializedUnsealed(ctx context.Context, port int, outputPath string) error {
+	client := &http.Client{Timeout: 2 * time.Second}
+	url := fmt.Sprintf("http://127.0.0.1:%d/v1/sys/health", port)
+	deadline := time.Now().Add(90 * time.Second)
+
+	var lastErr error
+	for time.Now().Before(deadline) {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return err
+		}
+
+		resp, err := client.Do(req)
+		if err == nil {
+			body, readErr := readAndClose(resp.Body)
+			if readErr != nil {
+				return readErr
+			}
+			var health struct {
+				Initialized bool `json:"initialized"`
+				Sealed      bool `json:"sealed"`
+			}
+			if err := json.Unmarshal(body, &health); err != nil {
+				lastErr = fmt.Errorf("parse health response from %s: %w", url, err)
+			} else if health.Initialized && !health.Sealed {
+				if err := os.WriteFile(outputPath, body, 0o644); err != nil {
+					return fmt.Errorf("write Raft health fixture %s: %w", outputPath, err)
+				}
+				return nil
+			} else {
+				lastErr = fmt.Errorf("health endpoint returned initialized=%v sealed=%v", health.Initialized, health.Sealed)
+			}
+		} else {
+			lastErr = err
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(500 * time.Millisecond):
+		}
+	}
+
+	return fmt.Errorf("OpenBao did not become initialized and unsealed on %s: %w", url, lastErr)
 }
 
 func (r *captureRun) captureVersion(ctx context.Context, container, prefix string) error {
@@ -274,7 +587,137 @@ func (r *captureRun) exerciseOpenBao(ctx context.Context, container, prefix stri
 	return writeFile(metadataPath(r.options, prefix, "exercise.txt"), output.Bytes())
 }
 
+func (r *captureRun) exerciseRaft(ctx context.Context, node raftNode, prefix string) error {
+	var output bytes.Buffer
+	commands := [][]string{
+		{"bao", "kv", "put", "secret/observability", "sample=raft"},
+		{"bao", "kv", "get", "-format=json", "secret/observability"},
+		{"bao", "auth", "list", "-format=json"},
+		{"bao", "secrets", "list", "-format=json"},
+		{"bao", "token", "lookup", "-format=json"},
+		{"bao", "token", "create", "-policy=fixture-admin", "-ttl=1m"},
+	}
+
+	for _, command := range commands {
+		out, _, err := r.baoExec(ctx, node, command...)
+		output.Write(out)
+		if !bytes.HasSuffix(out, []byte("\n")) {
+			output.WriteByte('\n')
+		}
+		if err != nil {
+			_ = writeFile(raftClusterMetadataPath(r.options, prefix, "exercise.txt"), output.Bytes())
+			return fmt.Errorf("exercise OpenBao Raft command %q: %w", strings.Join(command, " "), err)
+		}
+	}
+
+	return writeFile(raftClusterMetadataPath(r.options, prefix, "exercise.txt"), output.Bytes())
+}
+
+func (r *captureRun) captureRaftState(ctx context.Context, nodes []raftNode, prefix string) error {
+	leader := nodes[0]
+	if err := r.captureRaftCommand(ctx, leader, raftClusterMetadataPath(r.options, prefix, "peers.json"), "bao", "operator", "raft", "list-peers", "-format=json"); err != nil {
+		return err
+	}
+	if err := r.captureRaftCommand(ctx, leader, raftClusterMetadataPath(r.options, prefix, "autopilot-state.json"), "bao", "operator", "raft", "autopilot", "state", "-format=json"); err != nil {
+		return err
+	}
+	for _, node := range nodes {
+		if err := r.captureRaftCommand(ctx, node, raftMetadataPath(r.options, prefix, node.ID, "status.json"), "bao", "status", "-format=json"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *captureRun) captureRaftCommand(ctx context.Context, node raftNode, outputPath string, command ...string) error {
+	out, _, err := r.baoExec(ctx, node, command...)
+	if err != nil {
+		return fmt.Errorf("capture OpenBao Raft command %q from %s: %w", strings.Join(command, " "), node.ID, err)
+	}
+	return writeFile(outputPath, out)
+}
+
+func (r *captureRun) waitForRaftVoters(ctx context.Context, leader raftNode, expected int) error {
+	deadline := time.Now().Add(90 * time.Second)
+	var lastErr error
+	for time.Now().Before(deadline) {
+		out, _, err := r.baoExec(ctx, leader, "bao", "operator", "raft", "list-peers", "-format=json")
+		if err == nil {
+			servers, parseErr := parseRaftServers(out)
+			if parseErr != nil {
+				lastErr = parseErr
+			} else if countVoters(servers) == expected {
+				return nil
+			} else {
+				lastErr = fmt.Errorf("expected %d Raft voters, found %d across %d peers", expected, countVoters(servers), len(servers))
+			}
+		} else {
+			lastErr = err
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(1 * time.Second):
+		}
+	}
+
+	return fmt.Errorf("OpenBao Raft peers did not converge to %d voters: %w", expected, lastErr)
+}
+
+func (r *captureRun) waitForAutopilotTolerance(ctx context.Context, leader raftNode, expectedServers, minFailureTolerance int) error {
+	deadline := time.Now().Add(120 * time.Second)
+	var lastErr error
+	for time.Now().Before(deadline) {
+		out, _, err := r.baoExec(ctx, leader, "bao", "operator", "raft", "autopilot", "state", "-format=json")
+		if err == nil {
+			state, parseErr := parseAutopilotState(out)
+			if parseErr != nil {
+				lastErr = parseErr
+			} else if state.Healthy && len(state.Servers) == expectedServers && state.FailureTolerance >= minFailureTolerance {
+				return nil
+			} else {
+				lastErr = fmt.Errorf("autopilot healthy=%v servers=%d failure_tolerance=%d", state.Healthy, len(state.Servers), state.FailureTolerance)
+			}
+		} else {
+			lastErr = err
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(1 * time.Second):
+		}
+	}
+
+	return fmt.Errorf("OpenBao Autopilot did not reach failure tolerance %d: %w", minFailureTolerance, lastErr)
+}
+
+func (r *captureRun) baoExec(ctx context.Context, node raftNode, command ...string) ([]byte, int, error) {
+	args := []string{
+		"exec",
+		"-e", "BAO_ADDR=http://127.0.0.1:8200",
+		"-e", "BAO_TOKEN=" + fixtureAdminToken,
+		node.Container,
+	}
+	args = append(args, command...)
+	return combined(ctx, "docker", args...)
+}
+
 func (r *captureRun) captureMetrics(ctx context.Context, prefix string, port int) error {
+	return captureMetricsFromPort(ctx, prefix, port, r.options.RootToken, metricsPath(r.options, prefix))
+}
+
+func (r *captureRun) captureRaftMetrics(ctx context.Context, nodes []raftNode, prefix string) error {
+	for _, node := range nodes {
+		if err := captureMetricsFromPort(ctx, raftPrefix(prefix)+"-"+node.ID, node.Port, fixtureAdminToken, raftMetricsPath(r.options, prefix, node.ID)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func captureMetricsFromPort(ctx context.Context, label string, port int, token, outputPath string) error {
 	client := &http.Client{Timeout: 5 * time.Second}
 	url := fmt.Sprintf("http://127.0.0.1:%d/v1/sys/metrics?format=prometheus", port)
 
@@ -282,11 +725,13 @@ func (r *captureRun) captureMetrics(ctx context.Context, prefix string, port int
 	if err != nil {
 		return err
 	}
-	req.Header.Set("X-Vault-Token", r.options.RootToken)
+	if token != "" {
+		req.Header.Set("X-Vault-Token", token)
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("fetch metrics for %s: %w", prefix, err)
+		return fmt.Errorf("fetch metrics for %s: %w", label, err)
 	}
 
 	body, err := readAndClose(resp.Body)
@@ -294,10 +739,10 @@ func (r *captureRun) captureMetrics(ctx context.Context, prefix string, port int
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("metrics endpoint for %s returned %s: %s", prefix, resp.Status, string(body))
+		return fmt.Errorf("metrics endpoint for %s returned %s: %s", label, resp.Status, string(body))
 	}
 
-	return writeFile(metricsPath(r.options, prefix), body)
+	return writeFile(outputPath, body)
 }
 
 func (r *captureRun) captureAuditLog(ctx context.Context, container, prefix string) error {
@@ -308,9 +753,20 @@ func (r *captureRun) captureAuditLog(ctx context.Context, container, prefix stri
 	return writeFile(auditPath(r.options, prefix), out)
 }
 
+func (r *captureRun) captureRaftAuditLog(ctx context.Context, node raftNode, prefix string) error {
+	out, _, err := combined(ctx, "docker", "exec", node.Container, "sh", "-c", "cat /tmp/openbao-audit.jsonl")
+	if err != nil {
+		return fmt.Errorf("capture Raft audit log for %s: %w", prefix, err)
+	}
+	return writeFile(raftAuditPath(r.options, prefix, node.ID), out)
+}
+
 func (r *captureRun) cleanup(ctx context.Context) {
 	for _, container := range r.containers {
 		_, _, _ = combined(ctx, "docker", "rm", "-f", container)
+	}
+	for _, network := range r.networks {
+		_, _, _ = combined(ctx, "docker", "network", "rm", network)
 	}
 	for _, dir := range r.tempDirs {
 		_ = os.RemoveAll(dir)
@@ -327,4 +783,24 @@ func metricsPath(opts CaptureOptions, prefix string) string {
 
 func auditPath(opts CaptureOptions, prefix string) string {
 	return filepath.Join(opts.OutputDir, "logs", "audit", fmt.Sprintf("openbao-%s-%s-prefix.jsonl", opts.Version, prefix))
+}
+
+func raftPrefix(prefix string) string {
+	return "raft-" + prefix
+}
+
+func raftClusterMetadataPath(opts CaptureOptions, prefix, suffix string) string {
+	return filepath.Join(opts.OutputDir, "metadata", fmt.Sprintf("openbao-%s-raft-%s-%s", opts.Version, prefix, suffix))
+}
+
+func raftMetadataPath(opts CaptureOptions, prefix, nodeID, suffix string) string {
+	return filepath.Join(opts.OutputDir, "metadata", fmt.Sprintf("openbao-%s-raft-%s-%s-%s", opts.Version, prefix, nodeID, suffix))
+}
+
+func raftMetricsPath(opts CaptureOptions, prefix, nodeID string) string {
+	return filepath.Join(opts.OutputDir, "metrics", fmt.Sprintf("openbao-%s-raft-%s-%s.prom", opts.Version, prefix, nodeID))
+}
+
+func raftAuditPath(opts CaptureOptions, prefix, nodeID string) string {
+	return filepath.Join(opts.OutputDir, "logs", "audit", fmt.Sprintf("openbao-%s-raft-%s-%s.jsonl", opts.Version, prefix, nodeID))
 }
