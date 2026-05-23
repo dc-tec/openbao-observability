@@ -55,6 +55,8 @@ evaluation and contract validation.
 
 Grafana uses `admin` / `admin` by default. Change the local password in
 `examples/docker-compose/.env` when you need a different local credential.
+The stack provisions the generated `OpenBao overview` dashboard in the
+`OpenBao` folder.
 
 ## Verify the result
 
@@ -124,8 +126,10 @@ Grafana uses `admin` / `admin` by default. Change the local password in
 
 ## Query the data
 
-In Grafana, use the provisioned `Prometheus` data source to run these PromQL
-queries:
+In Grafana, open **Dashboards**, select the `OpenBao` folder, and open
+`OpenBao overview`.
+
+Use the provisioned `Prometheus` data source to run these PromQL queries:
 
 ```promql
 vault_core_active

@@ -1,5 +1,7 @@
 # Dashboards
 
-This directory contains generated Grafana dashboard artifacts. Source dashboard
-definitions live in contracts and generator code, not in hand-edited JSON.
+This directory contains dashboard documentation and dashboard-specific source
+material that is not part of the contract system.
 
+Dashboard contracts live in `contracts/dashboards/`. Generated Grafana JSON
+artifacts live in `generated/grafana/`.

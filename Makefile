@@ -27,6 +27,8 @@ contracts-verify:
 		--fixtures "$(FIXTURE_DIR)"
 	$(GO) run ./cmd/openbao-observability contracts verify-alerts \
 		--contract "contracts/alerts/critical.yaml"
+	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
+		--contract "contracts/dashboards/openbao-overview.yaml"
 
 fixtures-openbao:
 	$(GO) run ./cmd/openbao-observability fixtures capture \
@@ -46,6 +48,9 @@ generate:
 		--prometheus-output "generated/prometheusrules/openbao-alerts.yaml" \
 		--prometheus-rule-output "generated/prometheus/openbao-alerts.yaml" \
 		--loki-output "generated/loki/openbao-alerts.yaml"
+	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
+		--contract "contracts/dashboards/openbao-overview.yaml" \
+		--output "generated/grafana/openbao-overview.json"
 
 test: test-fixtures contracts-verify test-unit
 

@@ -17,7 +17,8 @@ directory.
 - Run `make test-unit` to run Go tests without fixture capture.
 - Run `make test-fixtures` to validate the captured metrics and audit samples.
 - Run `make contracts-verify` to validate metric contracts against fixtures.
-- Run `make generate` to generate Prometheus rules and alert artifacts.
+- Run `make generate` to generate Prometheus rules, alert artifacts, and
+  Grafana dashboards.
 
 Implementation planning notes are local-only files under `workstreams/` with a
 `.local.md` suffix. Git ignores those files.

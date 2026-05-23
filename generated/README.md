@@ -6,3 +6,4 @@ generated files by hand.
 - `prometheus/`: native Prometheus rule files.
 - `prometheusrules/`: Prometheus Operator `PrometheusRule` manifests.
 - `loki/`: Loki alert reference artifacts.
+- `grafana/`: Grafana dashboard JSON files.

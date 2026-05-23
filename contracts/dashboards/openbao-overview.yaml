@@ -1,0 +1,122 @@
+version: v0.1
+status: draft
+uid: openbao-overview
+title: OpenBao overview
+refresh: 30s
+tags:
+  - openbao
+  - reference
+  - generated
+timeRange:
+  from: now-1h
+  to: now
+datasources:
+  metrics:
+    type: prometheus
+    uid: prometheus
+  logs:
+    type: loki
+    uid: loki
+panels:
+  - id: scrape-health
+    title: Scrape health
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: min(up{job="openbao"})
+    unit: none
+    description: Shows whether Prometheus can scrape OpenBao.
+    grid:
+      x: 0
+      y: 0
+      w: 6
+      h: 4
+  - id: active-nodes
+    title: Active nodes
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:core_active:sum
+    unit: none
+    description: Shows the number of active OpenBao nodes.
+    grid:
+      x: 6
+      y: 0
+      w: 6
+      h: 4
+  - id: unsealed-nodes
+    title: Unsealed nodes
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:core_unsealed:sum
+    unit: none
+    description: Shows the number of unsealed OpenBao nodes.
+    grid:
+      x: 12
+      y: 0
+      w: 6
+      h: 4
+  - id: audit-request-failures
+    title: Audit request failures
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:audit_log_request_failure:increase5m
+    unit: none
+    description: Shows audit request logging failures over 5 minutes.
+    grid:
+      x: 18
+      y: 0
+      w: 6
+      h: 4
+  - id: lease-count
+    title: Lease count
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:expire_num_leases:max
+    unit: short
+    description: Shows the maximum observed lease count.
+    grid:
+      x: 0
+      y: 4
+      w: 12
+      h: 8
+  - id: goroutines
+    title: Goroutines
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:runtime_num_goroutines:max
+    unit: short
+    description: Shows the maximum observed Go goroutine count.
+    grid:
+      x: 12
+      y: 4
+      w: 12
+      h: 8
+  - id: audit-stream
+    title: Audit stream
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit"}'
+    description: Shows OpenBao audit events collected by Alloy.
+    grid:
+      x: 0
+      y: 12
+      w: 12
+      h: 9
+  - id: operational-errors
+    title: Operational errors
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.operational"} |= "error"'
+    description: Shows OpenBao operational log entries containing error.
+    grid:
+      x: 12
+      y: 12
+      w: 12
+      h: 9

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/dc-tec/openbao-observability/internal/contracts"
+	dashboardgen "github.com/dc-tec/openbao-observability/internal/dashboards"
 	"github.com/dc-tec/openbao-observability/internal/fixtures"
 	"github.com/dc-tec/openbao-observability/internal/rules"
 )
@@ -52,6 +53,8 @@ func runContracts(args []string) error {
 		return runContractsVerify(args[1:])
 	case "verify-alerts":
 		return runContractsVerifyAlerts(args[1:])
+	case "verify-dashboards":
+		return runContractsVerifyDashboards(args[1:])
 	case "-h", "--help", "help":
 		return contractsUsage()
 	default:
@@ -84,6 +87,8 @@ func runGenerate(args []string) error {
 	switch args[0] {
 	case "alert-rules":
 		return runGenerateAlertRules(args[1:])
+	case "grafana-dashboard":
+		return runGenerateGrafanaDashboard(args[1:])
 	case "prometheus-rules":
 		return runGeneratePrometheusRules(args[1:])
 	case "-h", "--help", "help":
@@ -122,6 +127,19 @@ func runContractsVerifyAlerts(args []string) error {
 	}
 
 	return contracts.VerifyAlertContract(opts)
+}
+
+func runContractsVerifyDashboards(args []string) error {
+	fs := flag.NewFlagSet("contracts verify-dashboards", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := contracts.VerifyDashboardOptions{}
+	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "dashboards", "openbao-overview.yaml"), "dashboard contract path")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	return contracts.VerifyDashboardContract(opts)
 }
 
 func runFixturesCapture(ctx context.Context, args []string) error {
@@ -199,6 +217,20 @@ func runGenerateAlertRules(args []string) error {
 	return rules.GenerateAlertRules(opts)
 }
 
+func runGenerateGrafanaDashboard(args []string) error {
+	fs := flag.NewFlagSet("generate grafana-dashboard", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := dashboardgen.GenerateOptions{}
+	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "dashboards", "openbao-overview.yaml"), "dashboard contract path")
+	fs.StringVar(&opts.OutputPath, "output", filepath.Join("generated", "grafana", "openbao-overview.json"), "output Grafana dashboard JSON path")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	return dashboardgen.GenerateGrafanaDashboard(opts)
+}
+
 func inferVersion(dir string) string {
 	base := filepath.Base(filepath.Clean(dir))
 	if version, ok := strings.CutPrefix(base, "openbao-"); ok {
@@ -246,6 +278,8 @@ commands:
   contracts verify     verify contracts against captured fixtures
   fixtures capture    capture OpenBao Docker fixtures
   fixtures verify     verify captured OpenBao fixtures
+  generate grafana-dashboard
+                      generate Grafana dashboard JSON
   generate prometheus-rules
                       generate Prometheus recording rules`
 }
@@ -257,7 +291,8 @@ func contractsUsage() error {
 func contractsUsageText() string {
 	return `usage:
   openbao-observability contracts verify [flags]
-  openbao-observability contracts verify-alerts [flags]`
+  openbao-observability contracts verify-alerts [flags]
+  openbao-observability contracts verify-dashboards [flags]`
 }
 
 func fixturesUsageText() string {
@@ -273,5 +308,6 @@ func generateUsage() error {
 func generateUsageText() string {
 	return `usage:
   openbao-observability generate alert-rules [flags]
+  openbao-observability generate grafana-dashboard [flags]
   openbao-observability generate prometheus-rules [flags]`
 }
