@@ -13,6 +13,7 @@ directory.
 ## Start here
 
 - Run `make fixtures-openbao` to capture OpenBao `2.5.4` Docker fixtures.
+- Run `make test-unit` to run Go tests without fixture capture.
 - Run `make test-fixtures` to validate the captured metrics and audit samples.
 - Run `make contracts-verify` to validate metric contracts against fixtures.
 - Run `make generate` to generate Prometheus recording rules.

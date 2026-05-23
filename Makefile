@@ -5,7 +5,7 @@ OPENBAO_ROOT_TOKEN ?= root
 FIXTURE_DIR ?= fixtures/captured/openbao-$(OPENBAO_VERSION)
 GO ?= go
 
-.PHONY: contracts-verify fixtures-openbao generate test test-fixtures
+.PHONY: contracts-verify fixtures-openbao generate test test-fixtures test-unit
 
 contracts-verify:
 	$(GO) run ./cmd/openbao-observability contracts verify \
@@ -25,7 +25,9 @@ generate:
 		--contract "contracts/metrics/openbao-core.yaml" \
 		--output "generated/prometheusrules/openbao-recording-rules.yaml"
 
-test: test-fixtures contracts-verify
+test: test-fixtures contracts-verify test-unit
+
+test-unit:
 	$(GO) test ./...
 
 test-fixtures:
