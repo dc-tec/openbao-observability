@@ -8,7 +8,11 @@ import (
 )
 
 func TestLoadAlertContract(t *testing.T) {
-	path := writeAlertContract(t, t.TempDir(), baseAlertContract())
+	root := writeAlertTestRepository(t, baseAlertContract(), []string{
+		"docs/runbooks/no-active-openbao-leader.md",
+		"docs/runbooks/audit-log-stream-missing.md",
+	})
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
 
 	contract, err := LoadAlertContract(path)
 	if err != nil {
@@ -24,11 +28,16 @@ func TestLoadAlertContract(t *testing.T) {
 }
 
 func TestVerifyAlertContract(t *testing.T) {
-	path := writeAlertContract(t, t.TempDir(), baseAlertContract())
+	root := writeAlertTestRepository(t, baseAlertContract(), []string{
+		"docs/runbooks/no-active-openbao-leader.md",
+		"docs/runbooks/audit-log-stream-missing.md",
+	})
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
 
 	err := VerifyAlertContract(VerifyAlertOptions{
-		ContractPath: path,
-		SourcePrefix: "openbao",
+		ContractPath:   path,
+		SourcePrefix:   "openbao",
+		RepositoryRoot: root,
 	})
 	if err != nil {
 		t.Fatalf("VerifyAlertContract returned error: %v", err)
@@ -37,13 +46,32 @@ func TestVerifyAlertContract(t *testing.T) {
 
 func TestVerifyAlertContractRejectsInvalidPromQL(t *testing.T) {
 	contract := strings.Replace(baseAlertContract(), "sum(${p}_core_active) == 0", "sum(", 1)
-	path := writeAlertContract(t, t.TempDir(), contract)
+	root := writeAlertTestRepository(t, contract, []string{
+		"docs/runbooks/no-active-openbao-leader.md",
+		"docs/runbooks/audit-log-stream-missing.md",
+	})
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
 
-	err := VerifyAlertContract(VerifyAlertOptions{ContractPath: path})
+	err := VerifyAlertContract(VerifyAlertOptions{ContractPath: path, RepositoryRoot: root})
 	if err == nil {
 		t.Fatal("expected invalid PromQL to fail")
 	}
 	if !strings.Contains(err.Error(), "OpenBaoNoActiveNode") {
+		t.Fatalf("error does not include alert id: %v", err)
+	}
+}
+
+func TestVerifyAlertContractRejectsMissingRunbook(t *testing.T) {
+	root := writeAlertTestRepository(t, baseAlertContract(), []string{
+		"docs/runbooks/no-active-openbao-leader.md",
+	})
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
+
+	err := VerifyAlertContract(VerifyAlertOptions{ContractPath: path, RepositoryRoot: root})
+	if err == nil {
+		t.Fatal("expected missing runbook to fail")
+	}
+	if !strings.Contains(err.Error(), "OpenBaoAuditStreamMissing") {
 		t.Fatalf("error does not include alert id: %v", err)
 	}
 }
@@ -59,7 +87,8 @@ func TestLoadAlertContractRejectsDuplicateIDs(t *testing.T) {
     description: duplicate
     runbook: docs/runbooks/duplicate.md
 `
-	path := writeAlertContract(t, t.TempDir(), contract)
+	root := writeAlertTestRepository(t, contract, nil)
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
 
 	_, err := LoadAlertContract(path)
 	if err == nil {
@@ -70,14 +99,27 @@ func TestLoadAlertContractRejectsDuplicateIDs(t *testing.T) {
 	}
 }
 
-func writeAlertContract(t *testing.T, dir, content string) string {
+func writeAlertTestRepository(t *testing.T, content string, runbooks []string) string {
 	t.Helper()
 
-	path := filepath.Join(dir, "alerts.yaml")
+	root := t.TempDir()
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("create alert contract directory: %v", err)
+	}
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("write alert contract: %v", err)
 	}
-	return path
+	for _, runbook := range runbooks {
+		runbookPath := filepath.Join(root, filepath.FromSlash(runbook))
+		if err := os.MkdirAll(filepath.Dir(runbookPath), 0o755); err != nil {
+			t.Fatalf("create runbook directory: %v", err)
+		}
+		if err := os.WriteFile(runbookPath, []byte("# Test runbook\n"), 0o644); err != nil {
+			t.Fatalf("write runbook: %v", err)
+		}
+	}
+	return root
 }
 
 func baseAlertContract() string {

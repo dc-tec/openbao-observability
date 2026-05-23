@@ -121,6 +121,7 @@ func runContractsVerifyAlerts(args []string) error {
 	opts := contracts.VerifyAlertOptions{}
 	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "alerts", "critical.yaml"), "alert contract path")
 	fs.StringVar(&opts.SourcePrefix, "source-prefix", "", "source metric prefix; defaults to sourcePrefix from contract")
+	fs.StringVar(&opts.RepositoryRoot, "repository-root", ".", "repository root used to resolve local runbook paths")
 
 	if err := fs.Parse(args); err != nil {
 		return err

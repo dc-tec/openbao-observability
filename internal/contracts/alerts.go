@@ -3,6 +3,7 @@ package contracts
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -33,8 +34,9 @@ type Alert struct {
 }
 
 type VerifyAlertOptions struct {
-	ContractPath string
-	SourcePrefix string
+	ContractPath   string
+	SourcePrefix   string
+	RepositoryRoot string
 }
 
 func LoadAlertContract(path string) (*AlertContract, error) {
@@ -72,6 +74,10 @@ func VerifyAlertContract(opts VerifyAlertOptions) error {
 		return err
 	}
 
+	if err := contract.ValidateRunbooks(opts.RepositoryRoot); err != nil {
+		return err
+	}
+
 	fmt.Printf("alert contract verified at %s\n", opts.ContractPath)
 	return nil
 }
@@ -79,6 +85,9 @@ func VerifyAlertContract(opts VerifyAlertOptions) error {
 func (o VerifyAlertOptions) withDefaults() VerifyAlertOptions {
 	if o.ContractPath == "" {
 		o.ContractPath = filepath.Join("contracts", "alerts", "critical.yaml")
+	}
+	if o.RepositoryRoot == "" {
+		o.RepositoryRoot = "."
 	}
 	return o
 }
@@ -116,6 +125,46 @@ func (c AlertContract) RenderExpression(expression, sourcePrefix string) string 
 		variable = "${p}"
 	}
 	return strings.ReplaceAll(expression, variable, sourcePrefix)
+}
+
+func (c AlertContract) ValidateRunbooks(repositoryRoot string) error {
+	if repositoryRoot == "" {
+		repositoryRoot = "."
+	}
+
+	for _, alert := range c.Alerts {
+		if isExternalRunbook(alert.Runbook) {
+			continue
+		}
+		if filepath.IsAbs(alert.Runbook) {
+			return fmt.Errorf("alert %s runbook path must be repository-relative: %s", alert.ID, alert.Runbook)
+		}
+
+		cleaned := path.Clean(alert.Runbook)
+		if cleaned == "." || cleaned == ".." || strings.HasPrefix(cleaned, "../") {
+			return fmt.Errorf("alert %s runbook path must stay inside the repository: %s", alert.ID, alert.Runbook)
+		}
+		if !strings.HasSuffix(cleaned, ".md") {
+			return fmt.Errorf("alert %s runbook path must point to a markdown file: %s", alert.ID, alert.Runbook)
+		}
+
+		info, err := os.Stat(filepath.Join(repositoryRoot, filepath.FromSlash(cleaned)))
+		if err != nil {
+			if os.IsNotExist(err) {
+				return fmt.Errorf("alert %s runbook does not exist: %s", alert.ID, alert.Runbook)
+			}
+			return fmt.Errorf("stat runbook for alert %s: %w", alert.ID, err)
+		}
+		if info.IsDir() {
+			return fmt.Errorf("alert %s runbook path is a directory: %s", alert.ID, alert.Runbook)
+		}
+	}
+
+	return nil
+}
+
+func isExternalRunbook(runbook string) bool {
+	return strings.HasPrefix(runbook, "https://") || strings.HasPrefix(runbook, "http://")
 }
 
 func (c AlertContract) validateShape(path string) error {
