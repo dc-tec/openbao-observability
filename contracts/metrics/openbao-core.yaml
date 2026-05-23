@@ -1,0 +1,70 @@
+version: v0.1
+status: draft
+openbaoVersion: "2.5.4"
+metricPrefixes:
+  supported:
+    - vault
+    - openbao
+  default: vault
+normalization:
+  recordingRulePrefix: openbao
+  notes:
+    - Raw OpenBao metrics do not expose a consistent cluster label across all families.
+    - Recording rules should add or normalize cluster, namespace, pod, job, and instance labels from scrape metadata.
+fixtures:
+  required:
+    - fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-vault-prefix.prom
+    - fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-openbao-prefix.prom
+metrics:
+  - id: core_active
+    docsName: vault.core.active
+    prometheusName: ${p}_core_active
+    required: true
+    overview: true
+    notes:
+      - Observed with a cluster label in OpenBao 2.5.4 dev mode.
+  - id: core_unsealed
+    docsName: vault.core.unsealed
+    prometheusName: ${p}_core_unsealed
+    required: true
+    overview: true
+    notes:
+      - Observed with both cluster="" and a real cluster label in OpenBao 2.5.4 dev mode.
+      - Generated rules must exclude or normalize the empty cluster series.
+  - id: core_handle_request
+    docsName: vault.core.handle_request
+    prometheusName: ${p}_core_handle_request
+    required: true
+    overview: true
+  - id: audit_log_request_failure
+    docsName: vault.audit.log_request_failure
+    prometheusName: ${p}_audit_log_request_failure
+    required: true
+    overview: true
+  - id: audit_log_response_failure
+    docsName: vault.audit.log_response_failure
+    prometheusName: ${p}_audit_log_response_failure
+    required: true
+    overview: true
+  - id: audit_device_log_request
+    docsName: vault.audit.{DEVICE}.log_request
+    prometheusName: ${p}_audit_<device>__log_request
+    fixturePrometheusName: ${p}_audit_local_file__log_request
+    required: true
+    overview: false
+    notes:
+      - Device name local-file is sanitized as local_file.
+  - id: expire_num_leases
+    docsName: vault.expire.num_leases
+    prometheusName: ${p}_expire_num_leases
+    required: true
+    overview: true
+    notes:
+      - Observed without a cluster label in OpenBao 2.5.4 dev mode.
+  - id: runtime_num_goroutines
+    docsName: vault.runtime.num_goroutines
+    prometheusName: ${p}_runtime_num_goroutines
+    required: true
+    overview: true
+    notes:
+      - Observed without a cluster label in OpenBao 2.5.4 dev mode.

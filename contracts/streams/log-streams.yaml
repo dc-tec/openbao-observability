@@ -1,0 +1,55 @@
+version: v0.1
+status: draft
+streams:
+  - id: openbao.operational
+    default: enabled
+    source: OpenBao server logs
+    format: json
+    access: sre-platform
+    retention: 14-30d
+  - id: openbao.completed_requests
+    default: disabled
+    source: OpenBao completed request logging
+    format: json
+    access: break-glass
+    retention: 24-72h
+  - id: openbao.audit
+    default: enabled
+    source: OpenBao audit devices
+    format: jsonl
+    access: security-restricted
+    retention: 7-30d
+  - id: openbao.audit_archive
+    default: production-enabled
+    source: Security archive pipeline
+    format: backend-native
+    access: security-compliance
+    retention: organization-policy
+allowedLabels:
+  - cluster
+  - environment
+  - region
+  - namespace
+  - app
+  - component
+  - log_stream
+  - deployment_profile
+  - pod
+  - container
+  - instance
+forbiddenLabels:
+  - request_id
+  - request_path
+  - secret_path
+  - mount_path
+  - namespace_path
+  - client_token
+  - token_accessor
+  - entity_id
+  - auth_accessor
+  - client_ip
+  - remote_address
+  - policy
+  - user_name
+  - display_name
+

@@ -1,0 +1,30 @@
+version: v0.1
+status: draft
+metricPrefixVariable: ${p}
+alerts:
+  - id: OpenBaoUnreachable
+    severity: critical
+    signal: metrics
+    expression: min_over_time(up{job=~"$job"}[5m]) == 0
+    runbook: docs/runbooks/openbao-metrics-scrape-failing.md
+  - id: OpenBaoSealedUnexpectedly
+    severity: critical
+    signal: metrics
+    expression: ${p}_core_unsealed{cluster!=""} == 0
+    runbook: docs/runbooks/openbao-sealed-unexpectedly.md
+  - id: OpenBaoNoActiveNode
+    severity: critical
+    signal: metrics
+    expression: sum(${p}_core_active) == 0
+    runbook: docs/runbooks/no-active-openbao-leader.md
+  - id: OpenBaoAuditRequestFailures
+    severity: critical
+    signal: metrics
+    expression: sum(increase(${p}_audit_log_request_failure[5m])) > 0
+    runbook: docs/runbooks/audit-request-response-failures.md
+  - id: OpenBaoAuditStreamMissing
+    severity: critical
+    signal: loki
+    expression: absent_over_time({log_stream="openbao.audit"}[10m])
+    runbook: docs/runbooks/audit-log-stream-missing.md
+
