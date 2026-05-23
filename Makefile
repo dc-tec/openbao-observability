@@ -1,13 +1,15 @@
 OPENBAO_VERSION ?= 2.5.4
 OPENBAO_IMAGE ?= quay.io/openbao/openbao:$(OPENBAO_VERSION)
+PROMETHEUS_IMAGE ?= prom/prometheus:v3.11.2
 OPENBAO_PORT_BASE ?= 18220
 OPENBAO_ROOT_TOKEN ?= root
 FIXTURE_DIR ?= fixtures/captured/openbao-$(OPENBAO_VERSION)
 COMPOSE_FILE ?= examples/docker-compose/compose.yaml
 COMPOSE_PROJECT_DIR ?= examples/docker-compose
 GO ?= go
+PROMTOOL ?= docker run --rm --entrypoint promtool -v "$(CURDIR):/workspace:ro" "$(PROMETHEUS_IMAGE)"
 
-.PHONY: compose-config compose-down compose-reset compose-up contracts-verify fixtures-openbao generate test test-fixtures test-unit
+.PHONY: compose-config compose-down compose-reset compose-up contracts-verify fixtures-openbao generate test test-fixtures test-unit validate-generated
 
 compose-config:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" config
@@ -52,7 +54,7 @@ generate:
 		--contract "contracts/dashboards/openbao-overview.yaml" \
 		--output "generated/grafana/openbao-overview.json"
 
-test: test-fixtures contracts-verify test-unit
+test: test-fixtures contracts-verify validate-generated test-unit
 
 test-unit:
 	$(GO) test ./...
@@ -61,3 +63,8 @@ test-fixtures:
 	$(GO) run ./cmd/openbao-observability fixtures verify \
 		--version "$(OPENBAO_VERSION)" \
 		--dir "$(FIXTURE_DIR)"
+
+validate-generated:
+	$(PROMTOOL) check rules \
+		/workspace/generated/prometheus/openbao-recording-rules.yaml \
+		/workspace/generated/prometheus/openbao-alerts.yaml

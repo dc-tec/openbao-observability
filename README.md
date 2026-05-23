@@ -19,6 +19,8 @@ directory.
 - Run `make contracts-verify` to validate metric contracts against fixtures.
 - Run `make generate` to generate Prometheus rules, alert artifacts, and
   Grafana dashboards.
+- Run `make validate-generated` to validate generated Prometheus rule files
+  with `promtool`.
 
 Implementation planning notes are local-only files under `workstreams/` with a
 `.local.md` suffix. Git ignores those files.

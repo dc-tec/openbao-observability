@@ -32,9 +32,8 @@ jobs:
       - name: Generate artifacts
         run: make generate
 
-      - name: Run tests
+      - name: Run tests and validators
         run: make test
 
       - name: Check generated files
         run: git diff --exit-code
-
