@@ -21,6 +21,8 @@ directory.
   Grafana dashboards.
 - Run `make validate-generated` to validate generated Prometheus rule files
   with `promtool`.
+- Run `make validate-dashboard-queries` against a running Compose stack to
+  validate dashboard PromQL and LogQL against Prometheus and Loki.
 
 Implementation planning notes are local-only files under `workstreams/` with a
 `.local.md` suffix. Git ignores those files.

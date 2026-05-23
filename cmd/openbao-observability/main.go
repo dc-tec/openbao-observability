@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dc-tec/openbao-observability/internal/contracts"
 	dashboardgen "github.com/dc-tec/openbao-observability/internal/dashboards"
@@ -36,6 +37,8 @@ func run(ctx context.Context, args []string) error {
 		return runFixtures(ctx, args[1:])
 	case "generate":
 		return runGenerate(args[1:])
+	case "validate":
+		return runValidate(ctx, args[1:])
 	case "-h", "--help", "help":
 		return usage()
 	default:
@@ -100,6 +103,21 @@ func runGenerate(args []string) error {
 	}
 }
 
+func runValidate(ctx context.Context, args []string) error {
+	if len(args) < 1 {
+		return validateUsage()
+	}
+
+	switch args[0] {
+	case "dashboard-queries":
+		return runValidateDashboardQueries(ctx, args[1:])
+	case "-h", "--help", "help":
+		return validateUsage()
+	default:
+		return fmt.Errorf("unknown validate command %q\n\n%s", args[0], validateUsageText())
+	}
+}
+
 func runContractsVerify(args []string) error {
 	version := envString("OPENBAO_VERSION", defaultOpenBAOVersion)
 	defaultFixtureDir := filepath.Join("fixtures", "captured", "openbao-"+version)
@@ -146,11 +164,7 @@ func runContractsVerifyDashboards(args []string) error {
 }
 
 func runContractsVerifyStreams(args []string) error {
-	defaultDashboardContracts := strings.Join([]string{
-		filepath.Join("contracts", "dashboards", "openbao-overview.yaml"),
-		filepath.Join("contracts", "dashboards", "openbao-ha-raft.yaml"),
-		filepath.Join("contracts", "dashboards", "openbao-audit-overview.yaml"),
-	}, ",")
+	defaultDashboardContracts := strings.Join(defaultDashboardContractPaths(), ",")
 
 	fs := flag.NewFlagSet("contracts verify-streams", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -257,6 +271,53 @@ func runGenerateGrafanaDashboard(args []string) error {
 	return dashboardgen.GenerateGrafanaDashboard(opts)
 }
 
+func runValidateDashboardQueries(ctx context.Context, args []string) error {
+	defaultDashboardContracts := strings.Join(defaultDashboardContractPaths(), ",")
+	defaultGeneratedDashboards := strings.Join([]string{
+		filepath.Join("generated", "grafana", "openbao-overview.json"),
+		filepath.Join("generated", "grafana", "openbao-ha-raft.json"),
+		filepath.Join("generated", "grafana", "openbao-audit-overview.json"),
+	}, ",")
+
+	fs := flag.NewFlagSet("validate dashboard-queries", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := dashboardgen.QueryValidationOptions{}
+	var contractsCSV string
+	var generatedCSV string
+	var queryRange string
+	var step string
+	var timeout string
+	fs.StringVar(&contractsCSV, "contracts", defaultDashboardContracts, "comma-separated dashboard contract paths")
+	fs.StringVar(&generatedCSV, "generated", defaultGeneratedDashboards, "comma-separated generated Grafana dashboard JSON paths")
+	fs.StringVar(&opts.PrometheusURL, "prometheus-url", envString("PROMETHEUS_URL", "http://127.0.0.1:19090"), "Prometheus base URL")
+	fs.StringVar(&opts.LokiURL, "loki-url", envString("LOKI_URL", "http://127.0.0.1:13100"), "Loki base URL")
+	fs.StringVar(&queryRange, "range", "15m", "query range duration")
+	fs.StringVar(&step, "step", "30s", "query step duration")
+	fs.StringVar(&timeout, "timeout", "10s", "per-query timeout")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	var err error
+	opts.Range, err = time.ParseDuration(queryRange)
+	if err != nil {
+		return fmt.Errorf("parse --range: %w", err)
+	}
+	opts.Step, err = time.ParseDuration(step)
+	if err != nil {
+		return fmt.Errorf("parse --step: %w", err)
+	}
+	opts.Timeout, err = time.ParseDuration(timeout)
+	if err != nil {
+		return fmt.Errorf("parse --timeout: %w", err)
+	}
+	opts.ContractPaths = splitCSV(contractsCSV)
+	opts.GeneratedPaths = splitCSV(generatedCSV)
+
+	return dashboardgen.ValidateDashboardQueries(ctx, opts)
+}
+
 func inferVersion(dir string) string {
 	base := filepath.Base(filepath.Clean(dir))
 	if version, ok := strings.CutPrefix(base, "openbao-"); ok {
@@ -298,6 +359,14 @@ func splitCSV(value string) []string {
 	return values
 }
 
+func defaultDashboardContractPaths() []string {
+	return []string{
+		filepath.Join("contracts", "dashboards", "openbao-overview.yaml"),
+		filepath.Join("contracts", "dashboards", "openbao-ha-raft.yaml"),
+		filepath.Join("contracts", "dashboards", "openbao-audit-overview.yaml"),
+	}
+}
+
 func usage() error {
 	return fmt.Errorf("%s", usageText())
 }
@@ -311,6 +380,7 @@ func usageText() string {
   openbao-observability contracts <command>
   openbao-observability fixtures <command>
   openbao-observability generate <command>
+  openbao-observability validate <command>
 
 commands:
   contracts verify     verify metric contracts against captured fixtures
@@ -325,7 +395,9 @@ commands:
   generate grafana-dashboard
                       generate Grafana dashboard JSON
   generate prometheus-rules
-                      generate Prometheus recording rules`
+                      generate Prometheus recording rules
+  validate dashboard-queries
+                      validate dashboard queries against Prometheus and Loki`
 }
 
 func contractsUsage() error {
@@ -350,9 +422,18 @@ func generateUsage() error {
 	return fmt.Errorf("%s", generateUsageText())
 }
 
+func validateUsage() error {
+	return fmt.Errorf("%s", validateUsageText())
+}
+
 func generateUsageText() string {
 	return `usage:
   openbao-observability generate alert-rules [flags]
   openbao-observability generate grafana-dashboard [flags]
   openbao-observability generate prometheus-rules [flags]`
+}
+
+func validateUsageText() string {
+	return `usage:
+  openbao-observability validate dashboard-queries [flags]`
 }

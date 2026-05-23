@@ -198,6 +198,15 @@ production all-node scraping.
 
    Expected output includes `"database": "ok"`.
 
+10. Validate dashboard queries against the local backends.
+
+    ```shell
+    make validate-dashboard-queries
+    ```
+
+    Expected output confirms that dashboard PromQL and LogQL queries validate
+    against Prometheus and Loki.
+
 ## Query the data
 
 In Grafana, open **Dashboards**, select the `OpenBao` folder, and open
