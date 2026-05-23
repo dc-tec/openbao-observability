@@ -1,57 +1,113 @@
 name: openbao-observability
 
 services:
-  openbao:
+  openbao-seal-init:
     image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
     user: "0"
     command:
-      - server
-      - -dev
-      - -dev-root-token-id=${OPENBAO_ROOT_TOKEN:-root}
-      - -dev-listen-address=0.0.0.0:8200
-      - -config=/openbao/config/config.hcl
-    ports:
-      - 127.0.0.1:${OPENBAO_PORT:-18200}:8200
+      - sh
+      - -ec
+      - |
+        if [ ! -s /openbao/seal/static-unseal.key ]; then
+          head -c 32 /dev/urandom > /openbao/seal/static-unseal.key
+        fi
+        chown -R 100:1000 \
+          /openbao/seal \
+          /openbao/node0/audit /openbao/node0/data /openbao/node0/logs \
+          /openbao/node1/audit /openbao/node1/data /openbao/node1/logs \
+          /openbao/node2/audit /openbao/node2/data /openbao/node2/logs
+        chmod 0600 /openbao/seal/static-unseal.key
     volumes:
-      - ./openbao/config.hcl:/openbao/config/config.hcl:ro
-      - openbao-audit:/openbao/file
-      - openbao-logs:/openbao/logs
+      - openbao-seal:/openbao/seal
+      - openbao-node0-audit:/openbao/node0/audit
+      - openbao-node0-data:/openbao/node0/data
+      - openbao-node0-logs:/openbao/node0/logs
+      - openbao-node1-audit:/openbao/node1/audit
+      - openbao-node1-data:/openbao/node1/data
+      - openbao-node1-logs:/openbao/node1/logs
+      - openbao-node2-audit:/openbao/node2/audit
+      - openbao-node2-data:/openbao/node2/data
+      - openbao-node2-logs:/openbao/node2/logs
+    restart: "no"
+
+  openbao-node0:
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
+    user: "0"
+    depends_on:
+      openbao-seal-init:
+        condition: service_completed_successfully
+    command:
+      - server
+      - -config=/openbao/node0.hcl
+    ports:
+      - 127.0.0.1:${OPENBAO_NODE0_PORT:-18200}:8200
+    volumes:
+      - ./openbao/node0.hcl:/openbao/node0.hcl:ro
+      - openbao-seal:/openbao/seal:ro
+      - openbao-node0-audit:/openbao/audit
+      - openbao-node0-data:/openbao/data
+      - openbao-node0-logs:/openbao/logs
     healthcheck:
       test: ["CMD-SHELL", "BAO_ADDR=http://127.0.0.1:8200 bao status >/dev/null"]
       interval: 5s
       timeout: 3s
       retries: 24
 
-  openbao-init:
+  openbao-node1:
     image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
     user: "0"
     depends_on:
-      openbao:
+      openbao-node0:
         condition: service_healthy
-    environment:
-      BAO_ADDR: http://openbao:8200
-      BAO_TOKEN: ${OPENBAO_ROOT_TOKEN:-root}
     command:
-      - sh
-      - -ec
-      - |
-        cat >/tmp/openbao-metrics-policy.hcl <<'EOF'
-        path "sys/metrics" {
-          capabilities = ["read", "list"]
-        }
-        EOF
-        bao policy write openbao-metrics /tmp/openbao-metrics-policy.hcl
-        bao token create -policy=openbao-metrics -ttl=24h -field=token > /run/openbao/metrics-token
-        chmod 0444 /run/openbao/metrics-token
+      - server
+      - -config=/openbao/node1.hcl
+    ports:
+      - 127.0.0.1:${OPENBAO_NODE1_PORT:-18201}:8200
     volumes:
-      - metrics-token:/run/openbao
-    restart: "no"
+      - ./openbao/node1.hcl:/openbao/node1.hcl:ro
+      - openbao-seal:/openbao/seal:ro
+      - openbao-node1-audit:/openbao/audit
+      - openbao-node1-data:/openbao/data
+      - openbao-node1-logs:/openbao/logs
+    healthcheck:
+      test: ["CMD-SHELL", "BAO_ADDR=http://127.0.0.1:8200 bao status >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+
+  openbao-node2:
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
+    user: "0"
+    depends_on:
+      openbao-node0:
+        condition: service_healthy
+    command:
+      - server
+      - -config=/openbao/node2.hcl
+    ports:
+      - 127.0.0.1:${OPENBAO_NODE2_PORT:-18202}:8200
+    volumes:
+      - ./openbao/node2.hcl:/openbao/node2.hcl:ro
+      - openbao-seal:/openbao/seal:ro
+      - openbao-node2-audit:/openbao/audit
+      - openbao-node2-data:/openbao/data
+      - openbao-node2-logs:/openbao/logs
+    healthcheck:
+      test: ["CMD-SHELL", "BAO_ADDR=http://127.0.0.1:8200 bao status >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
 
   prometheus:
     image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.11.2}
     depends_on:
-      openbao-init:
-        condition: service_completed_successfully
+      openbao-node0:
+        condition: service_healthy
+      openbao-node1:
+        condition: service_healthy
+      openbao-node2:
+        condition: service_healthy
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -61,7 +117,6 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../../generated/prometheus:/etc/prometheus/rules:ro
-      - metrics-token:/etc/prometheus/secrets/openbao-metrics-token:ro
       - prometheus-data:/prometheus
 
   loki:
@@ -78,7 +133,9 @@ services:
     image: ${ALLOY_IMAGE:-grafana/alloy:v1.16.1}
     depends_on:
       - loki
-      - openbao
+      - openbao-node0
+      - openbao-node1
+      - openbao-node2
     command:
       - run
       - --server.http.listen-addr=0.0.0.0:12345
@@ -88,8 +145,12 @@ services:
       - 127.0.0.1:${ALLOY_PORT:-12345}:12345
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
-      - openbao-audit:/var/lib/openbao/audit:ro
-      - openbao-logs:/var/lib/openbao/logs:ro
+      - openbao-node0-audit:/var/lib/openbao/node0/audit:ro
+      - openbao-node0-logs:/var/lib/openbao/node0/logs:ro
+      - openbao-node1-audit:/var/lib/openbao/node1/audit:ro
+      - openbao-node1-logs:/var/lib/openbao/node1/logs:ro
+      - openbao-node2-audit:/var/lib/openbao/node2/audit:ro
+      - openbao-node2-logs:/var/lib/openbao/node2/logs:ro
       - alloy-data:/var/lib/alloy/data
 
   grafana:
@@ -116,7 +177,14 @@ volumes:
   alloy-data:
   grafana-data:
   loki-data:
-  metrics-token:
-  openbao-audit:
-  openbao-logs:
+  openbao-node0-audit:
+  openbao-node0-data:
+  openbao-node0-logs:
+  openbao-node1-audit:
+  openbao-node1-data:
+  openbao-node1-logs:
+  openbao-node2-audit:
+  openbao-node2-data:
+  openbao-node2-logs:
+  openbao-seal:
   prometheus-data:

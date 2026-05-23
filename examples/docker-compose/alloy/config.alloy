@@ -3,16 +3,17 @@ logging {
   format = "logfmt"
 }
 
-loki.source.file "openbao_operational" {
+loki.source.file "openbao_node0_operational" {
   targets = [
     {
-      __path__             = "/var/lib/openbao/logs/openbao.log",
-      "cluster"           = "compose",
-      "component"         = "openbao",
+      __path__              = "/var/lib/openbao/node0/logs/openbao.log",
+      "cluster"            = "compose",
+      "component"          = "openbao",
       "deployment_profile" = "docker-compose",
-      "environment"       = "local",
-      "job"               = "openbao",
-      "log_stream"        = "openbao.operational",
+      "environment"        = "local",
+      "job"                = "openbao",
+      "log_stream"         = "openbao.operational",
+      "node_id"            = "node0",
     },
   ]
   forward_to = [loki.write.local.receiver]
@@ -23,16 +24,101 @@ loki.source.file "openbao_operational" {
   }
 }
 
-loki.source.file "openbao_audit" {
+loki.source.file "openbao_node0_audit" {
   targets = [
     {
-      __path__             = "/var/lib/openbao/audit/audit.jsonl",
-      "cluster"           = "compose",
-      "component"         = "openbao",
+      __path__              = "/var/lib/openbao/node0/audit/audit.jsonl",
+      "cluster"            = "compose",
+      "component"          = "openbao",
       "deployment_profile" = "docker-compose",
-      "environment"       = "local",
-      "job"               = "openbao",
-      "log_stream"        = "openbao.audit",
+      "environment"        = "local",
+      "job"                = "openbao",
+      "log_stream"         = "openbao.audit",
+      "node_id"            = "node0",
+    },
+  ]
+  forward_to = [loki.write.local.receiver]
+
+  file_match {
+    enabled     = true
+    sync_period = "10s"
+  }
+}
+
+loki.source.file "openbao_node1_operational" {
+  targets = [
+    {
+      __path__              = "/var/lib/openbao/node1/logs/openbao.log",
+      "cluster"            = "compose",
+      "component"          = "openbao",
+      "deployment_profile" = "docker-compose",
+      "environment"        = "local",
+      "job"                = "openbao",
+      "log_stream"         = "openbao.operational",
+      "node_id"            = "node1",
+    },
+  ]
+  forward_to = [loki.write.local.receiver]
+
+  file_match {
+    enabled     = true
+    sync_period = "10s"
+  }
+}
+
+loki.source.file "openbao_node1_audit" {
+  targets = [
+    {
+      __path__              = "/var/lib/openbao/node1/audit/audit.jsonl",
+      "cluster"            = "compose",
+      "component"          = "openbao",
+      "deployment_profile" = "docker-compose",
+      "environment"        = "local",
+      "job"                = "openbao",
+      "log_stream"         = "openbao.audit",
+      "node_id"            = "node1",
+    },
+  ]
+  forward_to = [loki.write.local.receiver]
+
+  file_match {
+    enabled     = true
+    sync_period = "10s"
+  }
+}
+
+loki.source.file "openbao_node2_operational" {
+  targets = [
+    {
+      __path__              = "/var/lib/openbao/node2/logs/openbao.log",
+      "cluster"            = "compose",
+      "component"          = "openbao",
+      "deployment_profile" = "docker-compose",
+      "environment"        = "local",
+      "job"                = "openbao",
+      "log_stream"         = "openbao.operational",
+      "node_id"            = "node2",
+    },
+  ]
+  forward_to = [loki.write.local.receiver]
+
+  file_match {
+    enabled     = true
+    sync_period = "10s"
+  }
+}
+
+loki.source.file "openbao_node2_audit" {
+  targets = [
+    {
+      __path__              = "/var/lib/openbao/node2/audit/audit.jsonl",
+      "cluster"            = "compose",
+      "component"          = "openbao",
+      "deployment_profile" = "docker-compose",
+      "environment"        = "local",
+      "job"                = "openbao",
+      "log_stream"         = "openbao.audit",
+      "node_id"            = "node2",
     },
   ]
   forward_to = [loki.write.local.receiver]

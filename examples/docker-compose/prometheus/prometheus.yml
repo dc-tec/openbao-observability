@@ -11,10 +11,11 @@ scrape_configs:
     params:
       format:
         - prometheus
-    bearer_token_file: /etc/prometheus/secrets/openbao-metrics-token/metrics-token
     static_configs:
       - targets:
-          - openbao:8200
+          - openbao-node0:8200
+          - openbao-node1:8200
+          - openbao-node2:8200
         labels:
           cluster: compose
           deployment_profile: docker-compose

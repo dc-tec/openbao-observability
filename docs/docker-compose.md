@@ -1,18 +1,20 @@
 # Run the Docker Compose stack
 
-Use this how-to to run a local OpenBao Observability reference stack with
-OpenBao, Prometheus, Loki, Grafana Alloy, and Grafana. The stack is for local
-evaluation and contract validation.
+Use this how-to to run a local OpenBao Observability reference stack with a
+three-node OpenBao Raft cluster, Prometheus, Loki, Grafana Alloy, and Grafana.
+The stack is for local evaluation and contract validation.
 
 > [!WARNING]
-> This stack runs OpenBao in dev mode with a local root token. You must not use
-> it for production, shared environments, or sensitive data.
+> This stack uses HTTP, a local static seal key, deterministic local credentials,
+> and unauthenticated metrics access inside the Compose network. You must not
+> use it for production, shared environments, or sensitive data.
 
 ## Before you begin
 
 - Install Docker with Docker Compose.
 - Run commands from the repository root.
 - Generate the latest rule artifacts before you start the stack.
+- Reset the Compose volumes when you switch from an older single-node stack.
 
 ## Start the stack
 
@@ -22,13 +24,19 @@ evaluation and contract validation.
    make generate
    ```
 
-2. Start the Compose services.
+2. Remove old local Compose volumes when you change the OpenBao topology.
+
+   ```shell
+   make compose-reset
+   ```
+
+3. Start the Compose services.
 
    ```shell
    make compose-up
    ```
 
-3. Check that the services are running.
+4. Check that the services are running.
 
    ```shell
    docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml ps -a
@@ -36,8 +44,10 @@ evaluation and contract validation.
 
    Expected services:
 
-   - `openbao`
-   - `openbao-init`
+   - `openbao-seal-init`
+   - `openbao-node0`
+   - `openbao-node1`
+   - `openbao-node2`
    - `prometheus`
    - `loki`
    - `alloy`
@@ -47,24 +57,57 @@ evaluation and contract validation.
 
 | Service | URL | Purpose |
 | ------- | --- | ------- |
-| OpenBao | `http://127.0.0.1:18200` | Local OpenBao dev server. |
+| OpenBao node 0 | `http://127.0.0.1:18200` | Raft bootstrap node and expected active node. |
+| OpenBao node 1 | `http://127.0.0.1:18201` | Raft follower. |
+| OpenBao node 2 | `http://127.0.0.1:18202` | Raft follower. |
 | Prometheus | `http://127.0.0.1:19090` | Metrics, recording rules, and alerts. |
 | Loki | `http://127.0.0.1:13100` | Local log backend. |
 | Alloy | `http://127.0.0.1:12345` | Collector status UI. |
-| Grafana | `http://127.0.0.1:13000` | Explore metrics and logs. |
+| Grafana | `http://127.0.0.1:13000` | Explore metrics, logs, and dashboards. |
 
 Grafana uses `admin` / `admin` by default. Change the local password in
 `examples/docker-compose/.env` when you need a different local credential.
 The stack provisions the generated `OpenBao overview` dashboard in the
 `OpenBao` folder.
 
+## Understand the local OpenBao setup
+
+The stack starts `openbao-seal-init` first. That one-shot container writes a
+32-byte static seal key into a named Docker volume if the key does not already
+exist.
+
+`openbao-node0` starts next and performs self-initialization. Only node 0 has
+an `initialize` block. The self-initialization creates:
+
+- the `userpass` auth method,
+- a KV v2 `secret/` mount,
+- a local `compose-admin` policy,
+- a local `openbao-metrics` policy,
+- the `demo-admin` user, and
+- a deterministic local metrics token named
+  `openbao-observability-metrics-token`.
+
+`openbao-node1` and `openbao-node2` use `retry_join` to join node 0. They do
+not initialize OpenBao, and they unseal through the shared local static seal
+key.
+
+Prometheus scrapes all three OpenBao nodes. The local OpenBao listener enables
+`unauthenticated_metrics_access` so standby nodes expose metrics in this local
+profile. Use a private metrics-only listener or equivalent network controls for
+production all-node scraping.
+
 ## Verify the result
 
-1. Check OpenBao health.
+1. Check OpenBao health on each node.
 
    ```shell
-   curl -fsS http://127.0.0.1:18200/v1/sys/health
+   curl -sS http://127.0.0.1:18200/v1/sys/health
+   curl -sS http://127.0.0.1:18201/v1/sys/health
+   curl -sS http://127.0.0.1:18202/v1/sys/health
    ```
+
+   This check does not use `-f` because standby nodes return a standby health
+   status code while still reporting an initialized and unsealed node.
 
    Expected output includes:
 
@@ -76,7 +119,31 @@ The stack provisions the generated `OpenBao overview` dashboard in the
    }
    ```
 
-2. Check Prometheus readiness.
+2. Log in with the local demo user.
+
+   ```shell
+   export BAO_ADDR=http://127.0.0.1:18200
+   bao login -method=userpass username=demo-admin password=openbao-observability
+   ```
+
+3. Check Raft peers.
+
+   ```shell
+   bao operator raft list-peers
+   ```
+
+   Expected output includes `node0`, `node1`, and `node2` as voters.
+
+4. Check Autopilot state.
+
+   ```shell
+   bao operator raft autopilot state
+   ```
+
+   Expected output includes a healthy cluster and a failure tolerance of `1`
+   after Autopilot converges.
+
+5. Check Prometheus readiness.
 
    ```shell
    curl -fsS http://127.0.0.1:19090/-/ready
@@ -88,23 +155,29 @@ The stack provisions the generated `OpenBao overview` dashboard in the
    Prometheus Server is Ready.
    ```
 
-3. Check the OpenBao scrape target.
+6. Check the OpenBao scrape targets.
 
    ```shell
-   curl -fsS 'http://127.0.0.1:19090/api/v1/query?query=up%7Bjob%3D%22openbao%22%7D'
+   curl -fsS -G http://127.0.0.1:19090/api/v1/query \
+     --data-urlencode 'query=up{job="openbao"}'
    ```
 
-   Expected output includes `"value"` with `1`.
+   Expected output includes three `up` series with value `1`.
 
-4. Check an OpenBao metric.
+7. Check Raft recording rules.
 
    ```shell
-   curl -fsS 'http://127.0.0.1:19090/api/v1/query?query=vault_core_active'
+   curl -fsS -G http://127.0.0.1:19090/api/v1/query \
+     --data-urlencode 'query=openbao:raft_peers:max'
+
+   curl -fsS -G http://127.0.0.1:19090/api/v1/query \
+     --data-urlencode 'query=openbao:autopilot_failure_tolerance:max'
    ```
 
-   Expected output includes the `vault_core_active` metric with value `1`.
+   Expected output includes peer count `3` and failure tolerance `1` after the
+   rule evaluation interval passes.
 
-5. Check Loki stream labels.
+8. Check Loki stream labels.
 
    ```shell
    curl -fsS http://127.0.0.1:13100/loki/api/v1/label/log_stream/values
@@ -116,7 +189,7 @@ The stack provisions the generated `OpenBao overview` dashboard in the
    ["openbao.audit","openbao.operational"]
    ```
 
-6. Check Grafana health.
+9. Check Grafana health.
 
    ```shell
    curl -fsS -u admin:admin http://127.0.0.1:13000/api/health
@@ -132,11 +205,15 @@ In Grafana, open **Dashboards**, select the `OpenBao` folder, and open
 Use the provisioned `Prometheus` data source to run these PromQL queries:
 
 ```promql
-vault_core_active
+up{job="openbao"}
 ```
 
 ```promql
-openbao:core_active:sum
+openbao:raft_peers:max
+```
+
+```promql
+openbao:autopilot_node_healthy:min
 ```
 
 Use the provisioned `Loki` data source to run these LogQL queries:
@@ -147,6 +224,12 @@ Use the provisioned `Loki` data source to run these LogQL queries:
 
 ```logql
 {log_stream="openbao.audit"}
+```
+
+Filter by Raft node when you need one node's logs:
+
+```logql
+{log_stream="openbao.operational", node_id="node1"}
 ```
 
 ## Change local settings
@@ -175,7 +258,8 @@ Stop containers and keep named volumes:
 make compose-down
 ```
 
-Stop containers and remove named volumes:
+Stop containers and remove named volumes, including the local Raft data and
+static seal key:
 
 ```shell
 make compose-reset
@@ -183,7 +267,7 @@ make compose-reset
 
 ## Troubleshooting
 
-### Prometheus has no OpenBao target
+### Prometheus has no OpenBao targets
 
 Regenerate the rule files and restart the stack.
 
@@ -193,22 +277,41 @@ make compose-down
 make compose-up
 ```
 
-Check the init container if Prometheus still does not start.
+Check the OpenBao node logs if Prometheus still does not scrape the nodes.
 
 ```shell
-docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml logs openbao-init
+docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml logs openbao-node0
+docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml logs openbao-node1
+docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml logs openbao-node2
 ```
+
+### The Raft cluster does not reach three voters
+
+Check that node 0 initialized before node 1 and node 2 started.
+
+```shell
+docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml logs openbao-node0
+```
+
+Then inspect the follower logs for retry join errors.
+
+```shell
+docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml logs openbao-node1 openbao-node2
+```
+
+Run `make compose-reset` when a local Raft volume contains a failed or stale
+test cluster.
 
 ### Loki has no OpenBao streams
 
-Check that Alloy is tailing both OpenBao files.
+Check that Alloy is tailing the per-node OpenBao files.
 
 ```shell
 docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml logs alloy
 ```
 
-The Alloy logs include `start tailing file` for the audit and operational log
-files when collection is active.
+The Alloy logs include `start tailing file` for audit and operational log files
+when collection is active.
 
 ### Grafana has no data sources
 
@@ -227,10 +330,16 @@ The stack mounts provisioning files from
 - Inspect Prometheus Operator rule artifacts in `generated/prometheusrules/`.
 - Use `contracts/alerts/critical.yaml` as the source of truth for local alert
   changes.
+- Use [OpenBao Raft and Autopilot health](./runbooks/raft-autopilot-health.md)
+  when a Raft or Autopilot alert fires.
 
-Source: OpenBao documents dev mode as insecure and ephemeral in the
-[OpenBao dev server documentation][openbao-dev-server]. OpenBao documents the
-Prometheus metrics endpoint in the
+Source: OpenBao documents static seal configuration in the
+[OpenBao static seal documentation][openbao-static-seal]. OpenBao documents
+self-initialization in the
+[OpenBao self-initialization documentation][openbao-self-init]. OpenBao
+documents integrated storage and Raft join behavior in the
+[OpenBao integrated storage documentation][openbao-integrated-storage]. OpenBao
+documents the Prometheus metrics endpoint in the
 [OpenBao telemetry documentation][openbao-telemetry]. OpenBao documents
 configuration-defined audit devices in the
 [OpenBao declarative audit documentation][openbao-audit]. Grafana documents
@@ -239,5 +348,7 @@ local file collection in the
 
 [alloy-file-source]: https://grafana.com/docs/alloy/latest/reference/components/loki/loki.source.file/
 [openbao-audit]: https://openbao.org/docs/configuration/audit/
-[openbao-dev-server]: https://openbao.org/docs/concepts/dev-server/
+[openbao-integrated-storage]: https://openbao.org/docs/concepts/integrated-storage/
+[openbao-self-init]: https://openbao.org/docs/configuration/self-init/
+[openbao-static-seal]: https://openbao.org/docs/configuration/seal/static/
 [openbao-telemetry]: https://openbao.org/docs/configuration/telemetry/
