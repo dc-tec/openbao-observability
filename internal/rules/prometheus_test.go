@@ -40,6 +40,10 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"record: openbao:core_active:sum",
 		"expr: sum(openbao_core_active)",
 		"expr: sum(openbao_core_unsealed{cluster!=\"\"})",
+		"record: openbao:raft_peers:max",
+		"expr: max(openbao_raft_peers)",
+		"record: openbao:autopilot_node_healthy:min",
+		"expr: min by (node_id) (openbao_autopilot_node_healthy)",
 		"source_prefix: openbao",
 	}
 	for _, fragment := range required {

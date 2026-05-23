@@ -10,6 +10,22 @@ groups:
           expr: sum(vault_core_unsealed{cluster!=""})
           labels:
             source_prefix: vault
+        - record: openbao:raft_peers:max
+          expr: max(vault_raft_peers)
+          labels:
+            source_prefix: vault
+        - record: openbao:autopilot_healthy:max
+          expr: max(vault_autopilot_healthy)
+          labels:
+            source_prefix: vault
+        - record: openbao:autopilot_failure_tolerance:max
+          expr: max(vault_autopilot_failure_tolerance)
+          labels:
+            source_prefix: vault
+        - record: openbao:autopilot_node_healthy:min
+          expr: min by (node_id) (vault_autopilot_node_healthy)
+          labels:
+            source_prefix: vault
         - record: openbao:audit_log_request_failure:increase5m
           expr: sum(increase(vault_audit_log_request_failure[5m]))
           labels:

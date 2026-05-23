@@ -44,6 +44,7 @@ type DashboardPanel struct {
 	Signal      string        `yaml:"signal"`
 	Datasource  string        `yaml:"datasource"`
 	Expression  string        `yaml:"expression"`
+	Legend      string        `yaml:"legend"`
 	Unit        string        `yaml:"unit"`
 	Description string        `yaml:"description"`
 	Grid        DashboardGrid `yaml:"grid"`

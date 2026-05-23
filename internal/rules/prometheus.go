@@ -207,6 +207,26 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
+							Record: recordPrefix + ":raft_peers:max",
+							Expr:   "max(" + metricName(sourcePrefix, "raft_peers") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":autopilot_healthy:max",
+							Expr:   "max(" + metricName(sourcePrefix, "autopilot_healthy") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":autopilot_failure_tolerance:max",
+							Expr:   "max(" + metricName(sourcePrefix, "autopilot_failure_tolerance") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":autopilot_node_healthy:min",
+							Expr:   "min by (node_id) (" + metricName(sourcePrefix, "autopilot_node_healthy") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
 							Record: recordPrefix + ":audit_log_request_failure:increase5m",
 							Expr:   "sum(increase(" + metricName(sourcePrefix, "audit_log_request_failure") + "[5m]))",
 							Labels: ruleLabels(sourcePrefix),

@@ -276,6 +276,9 @@ func target(panel contracts.DashboardPanel, datasource grafanaDatasourceRef, ref
 	if panel.Signal == "metrics" {
 		result.Format = "time_series"
 		result.LegendFormat = panel.Title
+		if panel.Legend != "" {
+			result.LegendFormat = panel.Legend
+		}
 		result.Range = true
 		return result
 	}

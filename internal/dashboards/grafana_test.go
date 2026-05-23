@@ -47,6 +47,8 @@ func TestGenerateGrafanaDashboard(t *testing.T) {
 		`"uid": "prometheus"`,
 		`"uid": "loki"`,
 		`"expr": "openbao:core_active:sum"`,
+		`"expr": "openbao:autopilot_node_healthy:min"`,
+		`"legendFormat": "{{node_id}}"`,
 		`"expr": "{log_stream=\"openbao.audit\"}"`,
 	} {
 		if !strings.Contains(text, fragment) {
@@ -66,11 +68,11 @@ func TestBuildGrafanaDashboardUsesStablePanelIDs(t *testing.T) {
 	}
 
 	document := buildGrafanaDashboard(*contract)
-	if len(document.Panels) != 2 {
-		t.Fatalf("panel count = %d, want 2", len(document.Panels))
+	if len(document.Panels) != 3 {
+		t.Fatalf("panel count = %d, want 3", len(document.Panels))
 	}
-	if document.Panels[0].ID != 1 || document.Panels[1].ID != 2 {
-		t.Fatalf("panel IDs = %d, %d; want 1, 2", document.Panels[0].ID, document.Panels[1].ID)
+	if document.Panels[0].ID != 1 || document.Panels[1].ID != 2 || document.Panels[2].ID != 3 {
+		t.Fatalf("panel IDs = %d, %d, %d; want 1, 2, 3", document.Panels[0].ID, document.Panels[1].ID, document.Panels[2].ID)
 	}
 }
 
@@ -105,6 +107,19 @@ panels:
       y: 0
       w: 6
       h: 4
+  - id: autopilot-node-health
+    title: Autopilot node health
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:autopilot_node_healthy:min
+    legend: "{{node_id}}"
+    unit: none
+    grid:
+      x: 0
+      y: 4
+      w: 12
+      h: 8
   - id: audit-stream
     title: Audit stream
     type: logs
@@ -113,7 +128,7 @@ panels:
     expression: '{log_stream="openbao.audit"}'
     grid:
       x: 0
-      y: 4
+      y: 12
       w: 12
       h: 8
 `

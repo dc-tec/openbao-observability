@@ -70,6 +70,72 @@ panels:
       y: 0
       w: 6
       h: 4
+  - id: raft-peers
+    title: Raft peers
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:raft_peers:max
+    unit: none
+    description: Shows the maximum observed Raft peer count.
+    grid:
+      x: 0
+      y: 4
+      w: 6
+      h: 4
+  - id: autopilot-health
+    title: Autopilot health
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:autopilot_healthy:max
+    unit: none
+    description: Shows whether OpenBao Autopilot reports the Raft cluster as healthy.
+    grid:
+      x: 6
+      y: 4
+      w: 6
+      h: 4
+  - id: autopilot-failure-tolerance
+    title: Failure tolerance
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:autopilot_failure_tolerance:max
+    unit: none
+    description: Shows the number of voter failures Autopilot reports the cluster can tolerate.
+    grid:
+      x: 12
+      y: 4
+      w: 6
+      h: 4
+  - id: autopilot-unhealthy-nodes
+    title: Unhealthy Raft nodes
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(1 - openbao:autopilot_node_healthy:min)
+    unit: none
+    description: Shows the number of Raft nodes Autopilot reports as unhealthy.
+    grid:
+      x: 18
+      y: 4
+      w: 6
+      h: 4
+  - id: autopilot-node-health
+    title: Autopilot node health
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:autopilot_node_healthy:min
+    legend: "{{node_id}}"
+    unit: none
+    description: Shows Autopilot node health by Raft node ID.
+    grid:
+      x: 0
+      y: 8
+      w: 8
+      h: 8
   - id: lease-count
     title: Lease count
     type: timeseries
@@ -79,9 +145,9 @@ panels:
     unit: short
     description: Shows the maximum observed lease count.
     grid:
-      x: 0
-      y: 4
-      w: 12
+      x: 8
+      y: 8
+      w: 8
       h: 8
   - id: goroutines
     title: Goroutines
@@ -92,9 +158,9 @@ panels:
     unit: short
     description: Shows the maximum observed Go goroutine count.
     grid:
-      x: 12
-      y: 4
-      w: 12
+      x: 16
+      y: 8
+      w: 8
       h: 8
   - id: audit-stream
     title: Audit stream
@@ -105,7 +171,7 @@ panels:
     description: Shows OpenBao audit events collected by Alloy.
     grid:
       x: 0
-      y: 12
+      y: 16
       w: 12
       h: 9
   - id: operational-errors
@@ -117,6 +183,6 @@ panels:
     description: Shows OpenBao operational log entries containing error.
     grid:
       x: 12
-      y: 12
+      y: 16
       w: 12
       h: 9
