@@ -46,6 +46,57 @@ groups:
             description: More than one active OpenBao node is visible to Prometheus.
             runbook_url: docs/runbooks/multiple-active-nodes.md
             summary: OpenBao has multiple active nodes
+        - alert: OpenBaoRaftPeerCountLow
+          expr: max(vault_raft_peers) < 3
+          for: 2m
+          labels:
+            component: raft
+            severity: critical
+            signal: metrics
+            source_prefix: vault
+          annotations:
+            description: OpenBao Raft reports fewer than three peers, which removes the baseline redundancy expected for this reference architecture.
+            runbook_url: docs/runbooks/raft-autopilot-health.md
+            summary: OpenBao Raft peer count is below the HA baseline
+        - alert: OpenBaoAutopilotUnhealthy
+          expr: max(vault_autopilot_healthy) == 0
+          for: 2m
+          labels:
+            component: raft
+            severity: critical
+            signal: metrics
+            source_prefix: vault
+            subsystem: autopilot
+          annotations:
+            description: OpenBao Autopilot reports that the integrated storage cluster is unhealthy.
+            runbook_url: docs/runbooks/raft-autopilot-health.md
+            summary: OpenBao Autopilot reports an unhealthy cluster
+        - alert: OpenBaoAutopilotFailureToleranceLost
+          expr: max(vault_raft_peers) >= 3 and max(vault_autopilot_failure_tolerance) < 1
+          for: 2m
+          labels:
+            component: raft
+            severity: critical
+            signal: metrics
+            source_prefix: vault
+            subsystem: autopilot
+          annotations:
+            description: OpenBao Autopilot reports that the Raft cluster cannot lose a voter while maintaining the configured HA baseline.
+            runbook_url: docs/runbooks/raft-autopilot-health.md
+            summary: OpenBao Autopilot has no tolerated voter failure
+        - alert: OpenBaoAutopilotNodeUnhealthy
+          expr: vault_autopilot_node_healthy == 0
+          for: 2m
+          labels:
+            component: raft
+            severity: critical
+            signal: metrics
+            source_prefix: vault
+            subsystem: autopilot
+          annotations:
+            description: OpenBao Autopilot reports that at least one known Raft node is unhealthy.
+            runbook_url: docs/runbooks/raft-autopilot-health.md
+            summary: OpenBao Autopilot reports an unhealthy node
         - alert: OpenBaoAuditRequestFailures
           expr: sum(increase(vault_audit_log_request_failure[5m])) > 0
           for: 0m

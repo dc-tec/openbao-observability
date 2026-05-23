@@ -36,6 +36,35 @@ metrics:
     prometheusName: ${p}_core_handle_request
     required: true
     overview: true
+  - id: raft_peers
+    docsName: vault.raft.peers
+    prometheusName: ${p}_raft_peers
+    required: false
+    overview: false
+    notes:
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture.
+      - Present when OpenBao uses integrated storage with Raft.
+  - id: autopilot_healthy
+    docsName: vault.autopilot.healthy
+    prometheusName: ${p}_autopilot_healthy
+    required: false
+    overview: false
+    notes:
+      - Observed on the active node in the OpenBao 2.5.4 HA/Raft fixture.
+  - id: autopilot_failure_tolerance
+    docsName: vault.autopilot.failure_tolerance
+    prometheusName: ${p}_autopilot_failure_tolerance
+    required: false
+    overview: false
+    notes:
+      - Observed on the active node in the OpenBao 2.5.4 HA/Raft fixture.
+  - id: autopilot_node_healthy
+    docsName: vault.autopilot.node_healthy
+    prometheusName: ${p}_autopilot_node_healthy
+    required: false
+    overview: false
+    notes:
+      - Observed with a node_id label in the OpenBao 2.5.4 HA/Raft fixture.
   - id: audit_log_request_failure
     docsName: vault.audit.log_request_failure
     prometheusName: ${p}_audit_log_request_failure

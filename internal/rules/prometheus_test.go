@@ -123,6 +123,9 @@ func TestGenerateAlertRules(t *testing.T) {
 		"expr: sum(openbao_core_active) == 0",
 		"alert: OpenBaoMultipleActiveNodes",
 		"expr: sum(openbao_core_active) > 1",
+		"alert: OpenBaoAutopilotFailureToleranceLost",
+		"expr: max(openbao_raft_peers) >= 3 and max(openbao_autopilot_failure_tolerance) < 1",
+		"component: raft",
 		"alert: OpenBaoAuditResponseFailures",
 		"expr: sum(increase(openbao_audit_log_response_failure[5m])) > 0",
 		"runbook_url: docs/runbooks/no-active-openbao-leader.md",
@@ -144,6 +147,8 @@ func TestGenerateAlertRules(t *testing.T) {
 		"expr: sum(openbao_core_active) == 0",
 		"alert: OpenBaoMultipleActiveNodes",
 		"expr: sum(openbao_core_active) > 1",
+		"alert: OpenBaoAutopilotFailureToleranceLost",
+		"expr: max(openbao_raft_peers) >= 3 and max(openbao_autopilot_failure_tolerance) < 1",
 		"alert: OpenBaoAuditResponseFailures",
 		"expr: sum(increase(openbao_audit_log_response_failure[5m])) > 0",
 	} {
@@ -225,6 +230,18 @@ alerts:
     summary: OpenBao has multiple active nodes
     description: More than one active OpenBao node is visible to Prometheus.
     runbook: docs/runbooks/multiple-active-nodes.md
+  - id: OpenBaoAutopilotFailureToleranceLost
+    type: prometheus
+    severity: critical
+    signal: metrics
+    for: 2m
+    expression: max(${p}_raft_peers) >= 3 and max(${p}_autopilot_failure_tolerance) < 1
+    summary: OpenBao Autopilot has no tolerated voter failure
+    description: OpenBao Autopilot reports that the Raft cluster cannot lose a voter while maintaining the configured HA baseline.
+    runbook: docs/runbooks/raft-autopilot-health.md
+    labels:
+      component: raft
+      subsystem: autopilot
   - id: OpenBaoAuditResponseFailures
     type: prometheus
     severity: critical
