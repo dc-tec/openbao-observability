@@ -29,6 +29,8 @@ contracts-verify:
 		--fixtures "$(FIXTURE_DIR)"
 	$(GO) run ./cmd/openbao-observability contracts verify-alerts \
 		--contract "contracts/alerts/critical.yaml"
+	$(GO) run ./cmd/openbao-observability contracts verify-streams \
+		--contract "contracts/streams/log-streams.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
 		--contract "contracts/dashboards/openbao-overview.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \

@@ -33,6 +33,7 @@ allowedLabels:
   - app
   - component
   - log_stream
+  - node_id
   - deployment_profile
   - pod
   - container
@@ -52,4 +53,3 @@ forbiddenLabels:
   - policy
   - user_name
   - display_name
-

@@ -1,0 +1,275 @@
+package contracts
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+
+	"gopkg.in/yaml.v3"
+)
+
+type StreamContract struct {
+	Version         string   `yaml:"version"`
+	Status          string   `yaml:"status"`
+	Streams         []Stream `yaml:"streams"`
+	AllowedLabels   []string `yaml:"allowedLabels"`
+	ForbiddenLabels []string `yaml:"forbiddenLabels"`
+}
+
+type Stream struct {
+	ID        string `yaml:"id"`
+	Default   string `yaml:"default"`
+	Source    string `yaml:"source"`
+	Format    string `yaml:"format"`
+	Access    string `yaml:"access"`
+	Retention string `yaml:"retention"`
+}
+
+type VerifyStreamOptions struct {
+	ContractPath           string
+	AlertContractPath      string
+	DashboardContractPaths []string
+}
+
+var (
+	labelMatcherPattern = regexp.MustCompile(`(?:^|,)\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:=~|!~|=|!=)`)
+	logGroupingPattern  = regexp.MustCompile(`(?i)\b(?:by|without)\s*\(([^)]*)\)`)
+)
+
+func LoadStreamContract(path string) (*StreamContract, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read stream contract %s: %w", path, err)
+	}
+
+	var contract StreamContract
+	if err := yaml.Unmarshal(content, &contract); err != nil {
+		return nil, fmt.Errorf("parse stream contract %s: %w", path, err)
+	}
+
+	if err := contract.validateShape(path); err != nil {
+		return nil, err
+	}
+
+	return &contract, nil
+}
+
+func VerifyStreamContract(opts VerifyStreamOptions) error {
+	opts = opts.withDefaults()
+
+	contract, err := LoadStreamContract(opts.ContractPath)
+	if err != nil {
+		return err
+	}
+
+	if opts.AlertContractPath != "" {
+		alertContract, err := LoadAlertContract(opts.AlertContractPath)
+		if err != nil {
+			return err
+		}
+		for _, alert := range alertContract.Alerts {
+			if alert.Type != "loki" {
+				continue
+			}
+			if err := contract.ValidateLogExpression(alert.Expression); err != nil {
+				return fmt.Errorf("validate Loki labels for alert %s: %w", alert.ID, err)
+			}
+		}
+	}
+
+	for _, dashboardPath := range opts.DashboardContractPaths {
+		dashboardContract, err := LoadDashboardContract(dashboardPath)
+		if err != nil {
+			return err
+		}
+		for _, panel := range dashboardContract.Panels {
+			if panel.Signal != "logs" {
+				continue
+			}
+			if err := contract.ValidateLogExpression(panel.Expression); err != nil {
+				return fmt.Errorf("validate Loki labels for dashboard panel %s in %s: %w", panel.ID, dashboardPath, err)
+			}
+		}
+	}
+
+	fmt.Printf("stream contract verified at %s\n", opts.ContractPath)
+	return nil
+}
+
+func (o VerifyStreamOptions) withDefaults() VerifyStreamOptions {
+	if o.ContractPath == "" {
+		o.ContractPath = filepath.Join("contracts", "streams", "log-streams.yaml")
+	}
+	if o.AlertContractPath == "" {
+		o.AlertContractPath = filepath.Join("contracts", "alerts", "critical.yaml")
+	}
+	if len(o.DashboardContractPaths) == 0 {
+		o.DashboardContractPaths = []string{
+			filepath.Join("contracts", "dashboards", "openbao-overview.yaml"),
+			filepath.Join("contracts", "dashboards", "openbao-ha-raft.yaml"),
+			filepath.Join("contracts", "dashboards", "openbao-audit-overview.yaml"),
+		}
+	}
+	return o
+}
+
+func (c StreamContract) ValidateLogExpression(expression string) error {
+	allowed := stringSet(c.AllowedLabels)
+	forbidden := stringSet(c.ForbiddenLabels)
+
+	for _, selector := range logSelectors(expression) {
+		for _, match := range labelMatcherPattern.FindAllStringSubmatch(selector, -1) {
+			label := match[1]
+			if forbidden[label] {
+				return fmt.Errorf("selector uses forbidden Loki label %q", label)
+			}
+			if !allowed[label] {
+				return fmt.Errorf("selector uses label %q that is not listed in allowedLabels", label)
+			}
+		}
+	}
+
+	for _, match := range logGroupingPattern.FindAllStringSubmatch(expression, -1) {
+		for _, label := range splitLabelList(match[1]) {
+			if forbidden[label] {
+				return fmt.Errorf("grouping uses forbidden Loki label %q", label)
+			}
+			if !allowed[label] {
+				return fmt.Errorf("grouping uses label %q that is not listed in allowedLabels", label)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c StreamContract) validateShape(path string) error {
+	if len(c.Streams) == 0 {
+		return fmt.Errorf("stream contract %s has no streams", path)
+	}
+	if len(c.AllowedLabels) == 0 {
+		return fmt.Errorf("stream contract %s has no allowedLabels", path)
+	}
+	if len(c.ForbiddenLabels) == 0 {
+		return fmt.Errorf("stream contract %s has no forbiddenLabels", path)
+	}
+
+	seenStreams := map[string]bool{}
+	for _, stream := range c.Streams {
+		if stream.ID == "" {
+			return fmt.Errorf("stream contract %s has a stream without an id", path)
+		}
+		if seenStreams[stream.ID] {
+			return fmt.Errorf("stream contract %s has duplicate stream id %q", path, stream.ID)
+		}
+		seenStreams[stream.ID] = true
+		if stream.Default == "" {
+			return fmt.Errorf("stream %s is missing default", stream.ID)
+		}
+		if stream.Source == "" {
+			return fmt.Errorf("stream %s is missing source", stream.ID)
+		}
+		if stream.Format == "" {
+			return fmt.Errorf("stream %s is missing format", stream.ID)
+		}
+		if stream.Access == "" {
+			return fmt.Errorf("stream %s is missing access", stream.ID)
+		}
+		if stream.Retention == "" {
+			return fmt.Errorf("stream %s is missing retention", stream.ID)
+		}
+	}
+
+	allowed := stringSet(c.AllowedLabels)
+	if !allowed["log_stream"] {
+		return fmt.Errorf("stream contract %s must allow the log_stream routing label", path)
+	}
+
+	if err := validateLabelList("allowedLabels", c.AllowedLabels); err != nil {
+		return fmt.Errorf("stream contract %s: %w", path, err)
+	}
+	if err := validateLabelList("forbiddenLabels", c.ForbiddenLabels); err != nil {
+		return fmt.Errorf("stream contract %s: %w", path, err)
+	}
+
+	for _, label := range c.ForbiddenLabels {
+		if allowed[label] {
+			return fmt.Errorf("stream contract %s lists label %q as both allowed and forbidden", path, label)
+		}
+	}
+
+	return nil
+}
+
+func validateLabelList(name string, labels []string) error {
+	seen := map[string]bool{}
+	for _, label := range labels {
+		if label == "" {
+			return fmt.Errorf("%s contains an empty label", name)
+		}
+		if seen[label] {
+			return fmt.Errorf("%s contains duplicate label %q", name, label)
+		}
+		seen[label] = true
+	}
+	return nil
+}
+
+func logSelectors(expression string) []string {
+	selectors := []string{}
+	inQuote := false
+	escaped := false
+	start := -1
+
+	for i, r := range expression {
+		if escaped {
+			escaped = false
+			continue
+		}
+		if r == '\\' && inQuote {
+			escaped = true
+			continue
+		}
+		if r == '"' {
+			inQuote = !inQuote
+			continue
+		}
+		if inQuote {
+			continue
+		}
+		switch r {
+		case '{':
+			if start == -1 {
+				start = i + 1
+			}
+		case '}':
+			if start != -1 {
+				selectors = append(selectors, expression[start:i])
+				start = -1
+			}
+		}
+	}
+
+	return selectors
+}
+
+func splitLabelList(value string) []string {
+	labels := []string{}
+	for _, item := range strings.Split(value, ",") {
+		label := strings.TrimSpace(item)
+		if label != "" {
+			labels = append(labels, label)
+		}
+	}
+	return labels
+}
+
+func stringSet(values []string) map[string]bool {
+	set := make(map[string]bool, len(values))
+	for _, value := range values {
+		set[value] = true
+	}
+	return set
+}

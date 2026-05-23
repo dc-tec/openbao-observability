@@ -55,6 +55,8 @@ func runContracts(args []string) error {
 		return runContractsVerifyAlerts(args[1:])
 	case "verify-dashboards":
 		return runContractsVerifyDashboards(args[1:])
+	case "verify-streams":
+		return runContractsVerifyStreams(args[1:])
 	case "-h", "--help", "help":
 		return contractsUsage()
 	default:
@@ -141,6 +143,29 @@ func runContractsVerifyDashboards(args []string) error {
 	}
 
 	return contracts.VerifyDashboardContract(opts)
+}
+
+func runContractsVerifyStreams(args []string) error {
+	defaultDashboardContracts := strings.Join([]string{
+		filepath.Join("contracts", "dashboards", "openbao-overview.yaml"),
+		filepath.Join("contracts", "dashboards", "openbao-ha-raft.yaml"),
+		filepath.Join("contracts", "dashboards", "openbao-audit-overview.yaml"),
+	}, ",")
+
+	fs := flag.NewFlagSet("contracts verify-streams", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := contracts.VerifyStreamOptions{}
+	var dashboardContracts string
+	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "streams", "log-streams.yaml"), "stream contract path")
+	fs.StringVar(&opts.AlertContractPath, "alert-contract", filepath.Join("contracts", "alerts", "critical.yaml"), "alert contract path")
+	fs.StringVar(&dashboardContracts, "dashboard-contracts", defaultDashboardContracts, "comma-separated dashboard contract paths")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	opts.DashboardContractPaths = splitCSV(dashboardContracts)
+	return contracts.VerifyStreamContract(opts)
 }
 
 func runFixturesCapture(ctx context.Context, args []string) error {
@@ -261,6 +286,18 @@ func envInt(key string, fallback int) int {
 	return parsed
 }
 
+func splitCSV(value string) []string {
+	parts := strings.Split(value, ",")
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			values = append(values, trimmed)
+		}
+	}
+	return values
+}
+
 func usage() error {
 	return fmt.Errorf("%s", usageText())
 }
@@ -276,7 +313,13 @@ func usageText() string {
   openbao-observability generate <command>
 
 commands:
-  contracts verify     verify contracts against captured fixtures
+  contracts verify     verify metric contracts against captured fixtures
+  contracts verify-alerts
+                      verify alert contracts
+  contracts verify-dashboards
+                      verify dashboard contracts
+  contracts verify-streams
+                      verify log stream contracts
   fixtures capture    capture OpenBao Docker fixtures
   fixtures verify     verify captured OpenBao fixtures
   generate grafana-dashboard
@@ -293,7 +336,8 @@ func contractsUsageText() string {
 	return `usage:
   openbao-observability contracts verify [flags]
   openbao-observability contracts verify-alerts [flags]
-  openbao-observability contracts verify-dashboards [flags]`
+  openbao-observability contracts verify-dashboards [flags]
+  openbao-observability contracts verify-streams [flags]`
 }
 
 func fixturesUsageText() string {
