@@ -1,0 +1,69 @@
+# Secure active-node OpenBao metrics scrape for Prometheus Operator.
+#
+# Before applying this manifest, create these objects in the openbao namespace:
+# - Secret/openbao-metrics-token with key "token"
+# - ConfigMap/openbao-metrics-ca with key "ca.crt"
+apiVersion: v1
+kind: Service
+metadata:
+  name: openbao-active-metrics
+  namespace: openbao
+  labels:
+    app.kubernetes.io/name: openbao
+    app.kubernetes.io/instance: openbao
+    app.kubernetes.io/component: metrics
+    openbao.observability/scrape-profile: active
+spec:
+  type: ClusterIP
+  publishNotReadyAddresses: false
+  selector:
+    app.kubernetes.io/name: openbao
+    app.kubernetes.io/instance: openbao
+    component: server
+    openbao-active: "true"
+  ports:
+    - name: https-metrics
+      port: 8202
+      targetPort: 8202
+      protocol: TCP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: openbao-active-metrics
+  namespace: openbao
+  labels:
+    app.kubernetes.io/name: openbao
+    app.kubernetes.io/instance: openbao
+    release: kube-prometheus-stack
+spec:
+  jobLabel: app.kubernetes.io/name
+  namespaceSelector:
+    matchNames:
+      - openbao
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openbao
+      app.kubernetes.io/instance: openbao
+      app.kubernetes.io/component: metrics
+      openbao.observability/scrape-profile: active
+  endpoints:
+    - port: https-metrics
+      path: /v1/sys/metrics
+      params:
+        format:
+          - prometheus
+      scheme: https
+      interval: 30s
+      scrapeTimeout: 10s
+      authorization:
+        type: Bearer
+        credentials:
+          name: openbao-metrics-token
+          key: token
+      tlsConfig:
+        ca:
+          configMap:
+            name: openbao-metrics-ca
+            key: ca.crt
+        serverName: openbao-active-metrics.openbao.svc
