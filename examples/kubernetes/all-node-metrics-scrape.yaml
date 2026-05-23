@@ -1,0 +1,73 @@
+# Private all-node OpenBao metrics scrape for Prometheus Operator.
+#
+# This profile requires a dedicated metrics-only OpenBao listener that is
+# reachable only from Prometheus or an equivalent collector path.
+#
+# Before applying this manifest, create ConfigMap/openbao-metrics-ca with key
+# "ca.crt" in the openbao namespace.
+apiVersion: v1
+kind: Service
+metadata:
+  name: openbao-all-node-metrics
+  namespace: openbao
+  labels:
+    app.kubernetes.io/name: openbao
+    app.kubernetes.io/instance: openbao
+    app.kubernetes.io/component: metrics
+    openbao.observability/job: openbao-all-nodes
+    openbao.observability/scrape-profile: all-node
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: openbao
+    app.kubernetes.io/instance: openbao
+    component: server
+  ports:
+    - name: https-metrics
+      port: 8202
+      targetPort: 8202
+      protocol: TCP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: openbao-all-node-metrics
+  namespace: openbao
+  labels:
+    app.kubernetes.io/name: openbao
+    app.kubernetes.io/instance: openbao
+    release: kube-prometheus-stack
+spec:
+  jobLabel: openbao.observability/job
+  namespaceSelector:
+    matchNames:
+      - openbao
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openbao
+      app.kubernetes.io/instance: openbao
+      app.kubernetes.io/component: metrics
+      openbao.observability/scrape-profile: all-node
+  endpoints:
+    - port: https-metrics
+      path: /v1/sys/metrics
+      params:
+        format:
+          - prometheus
+      scheme: https
+      interval: 30s
+      scrapeTimeout: 10s
+      tlsConfig:
+        ca:
+          configMap:
+            name: openbao-metrics-ca
+            key: ca.crt
+        serverName: openbao-all-node-metrics.openbao.svc
+      relabelings:
+        - sourceLabels:
+            - __meta_kubernetes_pod_name
+          targetLabel: pod
+        - sourceLabels:
+            - __meta_kubernetes_pod_node_name
+          targetLabel: node

@@ -222,6 +222,8 @@ update, and patch its pod.
 
 ## What's next
 
+- Use [Configure an all-node metrics scrape](./all-node-metrics-scrape.md) when
+  you need standby, sealed-node, or per-pod Raft visibility.
 - Use [Run the Docker Compose stack](../docker-compose.md) when you need a
   local all-node HA scrape for dashboard validation.
 - Use [OpenBao metrics scrape failing](../runbooks/openbao-metrics-scrape-failing.md)

@@ -10,6 +10,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 ## How-tos
 
 - [Configure a secure metrics scrape](./metrics/secure-metrics-scrape.md)
+- [Configure an all-node metrics scrape](./metrics/all-node-metrics-scrape.md)
 
 ## Runbooks
 
