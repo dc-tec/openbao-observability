@@ -41,7 +41,7 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"expr: sum(openbao_core_active)",
 		"expr: sum(openbao_core_unsealed{cluster!=\"\"})",
 		"record: openbao:raft_peers:max",
-		"expr: max(openbao_raft_peers)",
+		"expr: max(openbao_raft_peers) or count(count by (peer_id) (openbao_raft_storage_stats_commit_index))",
 		"record: openbao:autopilot_node_healthy:min",
 		"expr: min by (node_id) (openbao_autopilot_node_healthy)",
 		"record: openbao:audit_log_request:avg5m",
@@ -130,7 +130,7 @@ func TestGenerateAlertRules(t *testing.T) {
 		"alert: OpenBaoMultipleActiveNodes",
 		"expr: sum(openbao_core_active) > 1",
 		"alert: OpenBaoAutopilotFailureToleranceLost",
-		"expr: max(openbao_raft_peers) >= 3 and max(openbao_autopilot_failure_tolerance) < 1",
+		"expr: openbao:raft_peers:max >= 3 and openbao:autopilot_failure_tolerance:max < 1",
 		"component: raft",
 		"alert: OpenBaoAuditResponseFailures",
 		"expr: sum(increase(openbao_audit_log_response_failure[5m])) > 0",
@@ -154,7 +154,7 @@ func TestGenerateAlertRules(t *testing.T) {
 		"alert: OpenBaoMultipleActiveNodes",
 		"expr: sum(openbao_core_active) > 1",
 		"alert: OpenBaoAutopilotFailureToleranceLost",
-		"expr: max(openbao_raft_peers) >= 3 and max(openbao_autopilot_failure_tolerance) < 1",
+		"expr: openbao:raft_peers:max >= 3 and openbao:autopilot_failure_tolerance:max < 1",
 		"alert: OpenBaoAuditResponseFailures",
 		"expr: sum(increase(openbao_audit_log_response_failure[5m])) > 0",
 	} {
@@ -241,7 +241,7 @@ alerts:
     severity: critical
     signal: metrics
     for: 2m
-    expression: max(${p}_raft_peers) >= 3 and max(${p}_autopilot_failure_tolerance) < 1
+    expression: openbao:raft_peers:max >= 3 and openbao:autopilot_failure_tolerance:max < 1
     summary: OpenBao Autopilot has no tolerated voter failure
     description: OpenBao Autopilot reports that the Raft cluster cannot lose a voter while maintaining the configured HA baseline.
     runbook: docs/runbooks/raft-autopilot-health.md

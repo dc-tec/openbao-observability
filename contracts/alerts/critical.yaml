@@ -44,7 +44,7 @@ alerts:
     severity: critical
     signal: metrics
     for: 2m
-    expression: max(${p}_raft_peers) < 3
+    expression: openbao:raft_peers:max < 3
     summary: OpenBao Raft peer count is below the HA baseline
     description: OpenBao Raft reports fewer than three peers, which removes the baseline redundancy expected for this reference architecture.
     runbook: docs/runbooks/raft-autopilot-health.md
@@ -55,7 +55,7 @@ alerts:
     severity: critical
     signal: metrics
     for: 2m
-    expression: max(${p}_autopilot_healthy) == 0
+    expression: openbao:autopilot_healthy:max == 0
     summary: OpenBao Autopilot reports an unhealthy cluster
     description: OpenBao Autopilot reports that the integrated storage cluster is unhealthy.
     runbook: docs/runbooks/raft-autopilot-health.md
@@ -67,7 +67,7 @@ alerts:
     severity: critical
     signal: metrics
     for: 2m
-    expression: max(${p}_raft_peers) >= 3 and max(${p}_autopilot_failure_tolerance) < 1
+    expression: openbao:raft_peers:max >= 3 and openbao:autopilot_failure_tolerance:max < 1
     summary: OpenBao Autopilot has no tolerated voter failure
     description: OpenBao Autopilot reports that the Raft cluster cannot lose a voter while maintaining the configured HA baseline.
     runbook: docs/runbooks/raft-autopilot-health.md
@@ -79,7 +79,7 @@ alerts:
     severity: critical
     signal: metrics
     for: 2m
-    expression: ${p}_autopilot_node_healthy == 0
+    expression: openbao:autopilot_node_healthy:min == 0
     summary: OpenBao Autopilot reports an unhealthy node
     description: OpenBao Autopilot reports that at least one known Raft node is unhealthy.
     runbook: docs/runbooks/raft-autopilot-health.md

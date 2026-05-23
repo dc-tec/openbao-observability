@@ -11,7 +11,7 @@ groups:
           labels:
             source_prefix: vault
         - record: openbao:raft_peers:max
-          expr: max(vault_raft_peers)
+          expr: max(vault_raft_peers) or count(count by (peer_id) (vault_raft_storage_stats_commit_index))
           labels:
             source_prefix: vault
         - record: openbao:autopilot_healthy:max

@@ -47,7 +47,7 @@ groups:
             runbook_url: docs/runbooks/multiple-active-nodes.md
             summary: OpenBao has multiple active nodes
         - alert: OpenBaoRaftPeerCountLow
-          expr: max(vault_raft_peers) < 3
+          expr: openbao:raft_peers:max < 3
           for: 2m
           labels:
             component: raft
@@ -59,7 +59,7 @@ groups:
             runbook_url: docs/runbooks/raft-autopilot-health.md
             summary: OpenBao Raft peer count is below the HA baseline
         - alert: OpenBaoAutopilotUnhealthy
-          expr: max(vault_autopilot_healthy) == 0
+          expr: openbao:autopilot_healthy:max == 0
           for: 2m
           labels:
             component: raft
@@ -72,7 +72,7 @@ groups:
             runbook_url: docs/runbooks/raft-autopilot-health.md
             summary: OpenBao Autopilot reports an unhealthy cluster
         - alert: OpenBaoAutopilotFailureToleranceLost
-          expr: max(vault_raft_peers) >= 3 and max(vault_autopilot_failure_tolerance) < 1
+          expr: openbao:raft_peers:max >= 3 and openbao:autopilot_failure_tolerance:max < 1
           for: 2m
           labels:
             component: raft
@@ -85,7 +85,7 @@ groups:
             runbook_url: docs/runbooks/raft-autopilot-health.md
             summary: OpenBao Autopilot has no tolerated voter failure
         - alert: OpenBaoAutopilotNodeUnhealthy
-          expr: vault_autopilot_node_healthy == 0
+          expr: openbao:autopilot_node_healthy:min == 0
           for: 2m
           labels:
             component: raft

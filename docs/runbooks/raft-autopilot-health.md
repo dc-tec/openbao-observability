@@ -22,42 +22,32 @@ cluster lost a peer, lost failure tolerance, or has an unhealthy Raft node.
 1. Check the Raft peer count.
 
    ```promql
-   max(
-     ${p}_raft_peers
-   )
+   openbao:raft_peers:max
    ```
-
-   - `${p}`: Metric prefix for your deployment. Use `vault` for the OpenBao
-     default prefix or `openbao` when you configured
-     `metrics_prefix = "openbao"`.
 
 2. Check cluster-level Autopilot health.
 
    ```promql
-   max(
-     ${p}_autopilot_healthy
-   )
+   openbao:autopilot_healthy:max
    ```
 
 3. Check current Autopilot failure tolerance.
 
    ```promql
-   max(
-     ${p}_autopilot_failure_tolerance
-   )
+   openbao:autopilot_failure_tolerance:max
    ```
 
 4. Identify unhealthy nodes when `OpenBaoAutopilotNodeUnhealthy` fires.
 
    ```promql
-   ${p}_autopilot_node_healthy == 0
+   openbao:autopilot_node_healthy:min == 0
    ```
 
 5. Compare the alerting series with target freshness.
 
    ```promql
    timestamp(
-     ${p}_autopilot_node_healthy
+     openbao:autopilot_node_healthy:min
    )
    ```
 
@@ -121,31 +111,25 @@ cluster lost a peer, lost failure tolerance, or has an unhealthy Raft node.
 1. Confirm the peer count is back at the expected baseline.
 
    ```promql
-   max(
-     ${p}_raft_peers
-   )
+   openbao:raft_peers:max
    ```
 
 2. Confirm Autopilot reports a healthy cluster.
 
    ```promql
-   max(
-     ${p}_autopilot_healthy
-   )
+   openbao:autopilot_healthy:max
    ```
 
 3. Confirm Autopilot has failure tolerance for at least one voter.
 
    ```promql
-   max(
-     ${p}_autopilot_failure_tolerance
-   )
+   openbao:autopilot_failure_tolerance:max
    ```
 
 4. Confirm every known node reports healthy.
 
    ```promql
-   ${p}_autopilot_node_healthy
+   openbao:autopilot_node_healthy:min
    ```
 
 5. Confirm the CLI output matches the metrics.
@@ -165,6 +149,15 @@ cluster lost a peer, lost failure tolerance, or has an unhealthy Raft node.
 Check Prometheus target freshness, federation, relabeling, and scrape
 deduplication before changing OpenBao. Stale metrics can make a recovered node
 look unhealthy after Autopilot has already converged.
+
+### The raw peer gauge is missing
+
+Use `openbao:raft_peers:max` for alert triage. The recording rule uses
+the raw peer gauge, such as `vault_raft_peers` or `openbao_raft_peers`, when
+OpenBao exposes it. It falls back to counting
+`vault_raft_storage_stats_commit_index` or
+`openbao_raft_storage_stats_commit_index` by `peer_id` when the raw peer gauge
+is absent from the current scrape.
 
 ### Autopilot is healthy but failure tolerance is zero
 

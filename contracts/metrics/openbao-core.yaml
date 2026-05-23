@@ -42,8 +42,17 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.4 HA/Raft fixture.
-      - Present when OpenBao uses integrated storage with Raft.
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture on the active node.
+      - Not always present in current live all-node scrapes.
+      - Recording rules fall back to counting raft_storage_stats_commit_index by peer_id.
+  - id: raft_storage_stats_commit_index
+    docsName: vault.raft_storage.stats.commit_index
+    prometheusName: ${p}_raft_storage_stats_commit_index
+    required: false
+    overview: false
+    notes:
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture and live Compose HA stack.
+      - Used as the fallback source for normalized Raft peer count.
   - id: autopilot_healthy
     docsName: vault.autopilot.healthy
     prometheusName: ${p}_autopilot_healthy

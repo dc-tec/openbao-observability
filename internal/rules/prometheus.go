@@ -208,7 +208,7 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":raft_peers:max",
-							Expr:   "max(" + metricName(sourcePrefix, "raft_peers") + ")",
+							Expr:   raftPeerCountExpression(sourcePrefix),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -339,6 +339,13 @@ func buildLokiAlertDocument(contract contracts.AlertContract, sourcePrefix strin
 
 func metricName(prefix, id string) string {
 	return prefix + "_" + strings.TrimPrefix(id, "_")
+}
+
+func raftPeerCountExpression(sourcePrefix string) string {
+	rawPeerCount := "max(" + metricName(sourcePrefix, "raft_peers") + ")"
+	storageStatsMetric := metricName(sourcePrefix, "raft_storage_stats_commit_index")
+	storageStatsPeerCount := "count(count by (peer_id) (" + storageStatsMetric + "))"
+	return rawPeerCount + " or " + storageStatsPeerCount
 }
 
 func validatePromQL(document prometheusRule) error {

@@ -318,6 +318,14 @@ Do not merge a panel or alert as “confirmed” until its metric name, labels, 
 
 Observed OpenBao v2.5.2 and v2.5.4 caveat: raw Prometheus label sets are not uniform. `*_core_active` had a `cluster` label, `*_core_unsealed` emitted both `cluster=""` and a real cluster value, while `*_expire_num_leases` and runtime gauges were unlabeled in a dev profile. Generated recording rules should normalize labels from scrape metadata and should not assume every raw OpenBao metric has a usable `cluster` label.
 
+Observed OpenBao v2.5.4 HA/Raft caveat: `vault_raft_peers` was present in the
+captured HA/Raft fixture on the active node, but absent from the current live
+Docker Compose all-node scrape. The live stack still exposed
+`vault_raft_storage_stats_commit_index{peer_id=...}` on every Raft node.
+Normalized peer-count recording rules should therefore prefer `*_raft_peers`
+when present and fall back to counting `*_raft_storage_stats_commit_index` by
+`peer_id` in all-node scrape profiles.
+
 ## 6. Overview dashboard contract
 
 ### 6.1 Contract metadata
