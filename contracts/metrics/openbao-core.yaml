@@ -75,6 +75,20 @@ metrics:
     prometheusName: ${p}_audit_log_response_failure
     required: true
     overview: true
+  - id: audit_log_request
+    docsName: vault.audit.log_request
+    prometheusName: ${p}_audit_log_request
+    required: true
+    overview: true
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+  - id: audit_log_response
+    docsName: vault.audit.log_response
+    prometheusName: ${p}_audit_log_response
+    required: true
+    overview: true
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
   - id: audit_device_log_request
     docsName: vault.audit.{DEVICE}.log_request
     prometheusName: ${p}_audit_<device>__log_request

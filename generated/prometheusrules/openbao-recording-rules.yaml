@@ -39,6 +39,22 @@ spec:
               expr: sum(increase(vault_audit_log_response_failure[5m]))
               labels:
                 source_prefix: vault
+            - record: openbao:audit_log_request:rate5m
+              expr: sum(rate(vault_audit_log_request_count[5m]))
+              labels:
+                source_prefix: vault
+            - record: openbao:audit_log_response:rate5m
+              expr: sum(rate(vault_audit_log_response_count[5m]))
+              labels:
+                source_prefix: vault
+            - record: openbao:audit_log_request:avg5m
+              expr: sum(rate(vault_audit_log_request_sum[5m])) / clamp_min(sum(rate(vault_audit_log_request_count[5m])), 0.001)
+              labels:
+                source_prefix: vault
+            - record: openbao:audit_log_response:avg5m
+              expr: sum(rate(vault_audit_log_response_sum[5m])) / clamp_min(sum(rate(vault_audit_log_response_count[5m])), 0.001)
+              labels:
+                source_prefix: vault
             - record: openbao:expire_num_leases:max
               expr: max(vault_expire_num_leases)
               labels:

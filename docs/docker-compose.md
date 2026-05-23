@@ -68,7 +68,8 @@ The stack is for local evaluation and contract validation.
 Grafana uses `admin` / `admin` by default. Change the local password in
 `examples/docker-compose/.env` when you need a different local credential.
 The stack provisions the generated `OpenBao overview` dashboard in the
-`OpenBao` folder.
+`OpenBao` folder. It also provisions the generated `OpenBao audit overview`
+dashboard.
 
 ## Understand the local OpenBao setup
 
@@ -200,7 +201,7 @@ production all-node scraping.
 ## Query the data
 
 In Grafana, open **Dashboards**, select the `OpenBao` folder, and open
-`OpenBao overview`.
+`OpenBao overview` or `OpenBao audit overview`.
 
 Use the provisioned `Prometheus` data source to run these PromQL queries:
 
@@ -224,6 +225,12 @@ Use the provisioned `Loki` data source to run these LogQL queries:
 
 ```logql
 {log_stream="openbao.audit"}
+```
+
+Use this query when you need audit event volume by Raft node:
+
+```logql
+sum by (node_id) (count_over_time({log_stream="openbao.audit"}[5m]))
 ```
 
 Filter by Raft node when you need one node's logs:

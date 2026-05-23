@@ -31,6 +31,8 @@ contracts-verify:
 		--contract "contracts/alerts/critical.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
 		--contract "contracts/dashboards/openbao-overview.yaml"
+	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
+		--contract "contracts/dashboards/openbao-audit-overview.yaml"
 
 fixtures-openbao:
 	$(GO) run ./cmd/openbao-observability fixtures capture \
@@ -53,6 +55,9 @@ generate:
 	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
 		--contract "contracts/dashboards/openbao-overview.yaml" \
 		--output "generated/grafana/openbao-overview.json"
+	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
+		--contract "contracts/dashboards/openbao-audit-overview.yaml" \
+		--output "generated/grafana/openbao-audit-overview.json"
 
 test: test-fixtures contracts-verify validate-generated test-unit
 

@@ -237,6 +237,26 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
+							Record: recordPrefix + ":audit_log_request:rate5m",
+							Expr:   "sum(rate(" + metricName(sourcePrefix, "audit_log_request_count") + "[5m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":audit_log_response:rate5m",
+							Expr:   "sum(rate(" + metricName(sourcePrefix, "audit_log_response_count") + "[5m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":audit_log_request:avg5m",
+							Expr:   "sum(rate(" + metricName(sourcePrefix, "audit_log_request_sum") + "[5m])) / clamp_min(sum(rate(" + metricName(sourcePrefix, "audit_log_request_count") + "[5m])), 0.001)",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":audit_log_response:avg5m",
+							Expr:   "sum(rate(" + metricName(sourcePrefix, "audit_log_response_sum") + "[5m])) / clamp_min(sum(rate(" + metricName(sourcePrefix, "audit_log_response_count") + "[5m])), 0.001)",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
 							Record: recordPrefix + ":expire_num_leases:max",
 							Expr:   "max(" + metricName(sourcePrefix, "expire_num_leases") + ")",
 							Labels: ruleLabels(sourcePrefix),

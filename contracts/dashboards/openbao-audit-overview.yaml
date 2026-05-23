@@ -1,0 +1,138 @@
+version: v0.1
+status: draft
+uid: openbao-audit-overview
+title: OpenBao audit overview
+refresh: 30s
+tags:
+  - audit
+  - generated
+  - openbao
+  - reference
+timeRange:
+  from: now-1h
+  to: now
+datasources:
+  metrics:
+    type: prometheus
+    uid: prometheus
+  logs:
+    type: loki
+    uid: loki
+panels:
+  - id: audit-request-failures
+    title: Request failures
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:audit_log_request_failure:increase5m
+    unit: none
+    description: Shows audit request logging failures over 5 minutes.
+    grid:
+      x: 0
+      y: 0
+      w: 6
+      h: 4
+  - id: audit-response-failures
+    title: Response failures
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:audit_log_response_failure:increase5m
+    unit: none
+    description: Shows audit response logging failures over 5 minutes.
+    grid:
+      x: 6
+      y: 0
+      w: 6
+      h: 4
+  - id: audit-request-rate
+    title: Request audit rate
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:audit_log_request:rate5m
+    unit: ops
+    description: Shows audited request entries per second over 5 minutes.
+    grid:
+      x: 12
+      y: 0
+      w: 6
+      h: 4
+  - id: audit-response-rate
+    title: Response audit rate
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:audit_log_response:rate5m
+    unit: ops
+    description: Shows audited response entries per second over 5 minutes.
+    grid:
+      x: 18
+      y: 0
+      w: 6
+      h: 4
+  - id: audit-latency
+    title: Audit latency
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: label_replace(openbao:audit_log_request:avg5m, "audit_phase", "request", "source_prefix", ".*") or label_replace(openbao:audit_log_response:avg5m, "audit_phase", "response", "source_prefix", ".*")
+    legend: "{{audit_phase}}"
+    unit: ms
+    description: Shows average request and response audit logging latency over 5 minutes.
+    grid:
+      x: 0
+      y: 4
+      w: 12
+      h: 8
+  - id: audit-event-volume
+    title: Audit event volume
+    type: timeseries
+    signal: logs
+    datasource: logs
+    expression: sum by (node_id) (count_over_time({log_stream="openbao.audit"}[5m]))
+    legend: "{{node_id}}"
+    unit: short
+    description: Shows audit log entries collected by Loki per node over 5 minutes.
+    grid:
+      x: 12
+      y: 4
+      w: 12
+      h: 8
+  - id: audit-request-response-balance
+    title: Request/response balance
+    type: timeseries
+    signal: logs
+    datasource: logs
+    expression: sum(count_over_time({log_stream="openbao.audit"} | json | type="request" [10m])) - sum(count_over_time({log_stream="openbao.audit"} | json | type="response" [10m]))
+    unit: short
+    description: Shows the difference between audited request and response entries over 10 minutes.
+    grid:
+      x: 0
+      y: 12
+      w: 12
+      h: 8
+  - id: high-risk-system-mutations
+    title: System mutations
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*"'
+    description: Shows audited mutations against high-risk system paths.
+    grid:
+      x: 12
+      y: 12
+      w: 12
+      h: 8
+  - id: audit-stream
+    title: Audit stream
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit"}'
+    description: Shows recent OpenBao audit log entries.
+    grid:
+      x: 0
+      y: 20
+      w: 24
+      h: 9
