@@ -12,6 +12,7 @@ import (
 
 	"github.com/dc-tec/openbao-observability/internal/contracts"
 	dashboardgen "github.com/dc-tec/openbao-observability/internal/dashboards"
+	docverify "github.com/dc-tec/openbao-observability/internal/docs"
 	"github.com/dc-tec/openbao-observability/internal/fixtures"
 	"github.com/dc-tec/openbao-observability/internal/rules"
 )
@@ -115,6 +116,8 @@ func runValidate(ctx context.Context, args []string) error {
 	switch args[0] {
 	case "dashboard-queries":
 		return runValidateDashboardQueries(ctx, args[1:])
+	case "docs":
+		return runValidateDocs(args[1:])
 	case "-h", "--help", "help":
 		return validateUsage()
 	default:
@@ -364,6 +367,20 @@ func runValidateDashboardQueries(ctx context.Context, args []string) error {
 	return dashboardgen.ValidateDashboardQueries(ctx, opts)
 }
 
+func runValidateDocs(args []string) error {
+	fs := flag.NewFlagSet("validate docs", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := docverify.VerifyOptions{}
+	fs.StringVar(&opts.RepositoryRoot, "repository-root", ".", "repository root")
+	fs.StringVar(&opts.DocsRoot, "docs-root", filepath.Join("docs"), "documentation root")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	return docverify.Verify(opts)
+}
+
 func inferVersion(dir string) string {
 	base := filepath.Base(filepath.Clean(dir))
 	if version, ok := strings.CutPrefix(base, "openbao-"); ok {
@@ -451,7 +468,8 @@ commands:
   generate prometheus-rules
                       generate Prometheus recording rules
   validate dashboard-queries
-                      validate dashboard queries against Prometheus and Loki`
+                      validate dashboard queries against Prometheus and Loki
+  validate docs       validate user-facing Markdown documentation`
 }
 
 func contractsUsage() error {
@@ -491,5 +509,6 @@ func generateUsageText() string {
 
 func validateUsageText() string {
 	return `usage:
-  openbao-observability validate dashboard-queries [flags]`
+  openbao-observability validate dashboard-queries [flags]
+  openbao-observability validate docs [flags]`
 }

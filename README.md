@@ -17,6 +17,8 @@ directory.
 - Run `make test-unit` to run Go tests without fixture capture.
 - Run `make test-fixtures` to validate the captured metrics and audit samples.
 - Run `make contracts-verify` to validate metric contracts against fixtures.
+- Run `make docs-verify` to validate user-facing documentation style and
+  internal links.
 - Run `make generate` to generate Prometheus rules, alert artifacts, and
   Grafana dashboards.
 - Run `make validate-generated` to validate generated Prometheus rule files
