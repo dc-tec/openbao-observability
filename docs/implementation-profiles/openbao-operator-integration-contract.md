@@ -122,8 +122,8 @@ The `Active` scrape profile is the production baseline.
 | Known limitation | Standby, sealed-node, follower, read-replica, and per-node runtime detail is incomplete. |
 
 Use this profile when you need the lowest-risk metrics exposure model. It is
-also the right fallback when the operator version or platform does not yet
-support a private all-node listener.
+also the right fallback when an older operator version or platform profile does
+not support a private all-node listener.
 
 ## All-node scrape contract
 

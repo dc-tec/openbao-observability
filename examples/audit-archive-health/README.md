@@ -74,6 +74,38 @@ pipeline's current state into the five reference metrics.
    - `<cluster_name>`: OpenBao cluster name.
    - `<environment_name>`: Environment name such as `production`.
 
+## Run with Docker Compose
+
+Use the optional Compose profile when you want the local reference stack to
+scrape this exporter and evaluate the generated archive alert.
+
+```shell
+make compose-audit-archive-up
+```
+
+The profile starts a local status writer that updates the demo status file
+every 30 seconds. Prometheus uses
+`examples/docker-compose/prometheus/prometheus.audit-archive.yml` so the
+default stack does not show a down target when the profile is not enabled.
+
+Stop the profile with:
+
+```shell
+make compose-audit-archive-down
+```
+
+## Scrape in Kubernetes
+
+Use `examples/kubernetes/audit-archive-health-scrape.yaml` when your platform
+deploys the exporter and you want Prometheus Operator to scrape it.
+
+Before you apply the example:
+
+- Replace the namespace if your monitoring stack does not use `monitoring`.
+- Replace the `ServiceMonitor` labels so your Prometheus resource selects it.
+- Deploy the exporter image and make sure its Pod uses the
+  `app.kubernetes.io/name=openbao-audit-archive-health` label.
+
 ## Status file contract
 
 Write the status file atomically from the archive pipeline. For example, write

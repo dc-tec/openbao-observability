@@ -6,6 +6,7 @@ OPENBAO_PORT_BASE ?= 18220
 OPENBAO_ROOT_TOKEN ?= root
 FIXTURE_DIR ?= fixtures/captured/openbao-$(OPENBAO_VERSION)
 COMPOSE_FILE ?= examples/docker-compose/compose.yaml
+COMPOSE_AUDIT_ARCHIVE_FILE ?= examples/docker-compose/compose.audit-archive.yaml
 COMPOSE_PROJECT_DIR ?= examples/docker-compose
 GO ?= go
 PROMTOOL ?= docker run --rm --entrypoint promtool -v "$(CURDIR):/workspace:ro" "$(PROMETHEUS_IMAGE)"
@@ -14,19 +15,31 @@ LOKI_URL ?= http://127.0.0.1:13100
 DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml,contracts/dashboards/openbao-operational-logs.yaml,contracts/dashboards/openbao-audit-investigation.yaml,contracts/dashboards/openbao-auth-identity.yaml,contracts/dashboards/openbao-token-lease-lifecycle.yaml,contracts/dashboards/openbao-database-secrets.yaml,contracts/dashboards/openbao-secret-engines-mounts.yaml,contracts/dashboards/openbao-runtime-storage.yaml
 GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json,generated/grafana/openbao-operational-logs.json,generated/grafana/openbao-audit-investigation.json,generated/grafana/openbao-auth-identity.json,generated/grafana/openbao-token-lease-lifecycle.json,generated/grafana/openbao-database-secrets.json,generated/grafana/openbao-secret-engines-mounts.json,generated/grafana/openbao-runtime-storage.json
 
-.PHONY: compose-config compose-down compose-reset compose-up contracts-verify docs-verify fixtures-openbao fixtures-scenarios generate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
+.PHONY: compose-audit-archive-config compose-audit-archive-down compose-audit-archive-reset compose-audit-archive-up compose-config compose-down compose-reset compose-up contracts-verify docs-verify fixtures-openbao fixtures-scenarios generate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
 
 compose-config:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" config
 
+compose-audit-archive-config:
+	PROMETHEUS_CONFIG=./prometheus/prometheus.audit-archive.yml docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" -f "$(COMPOSE_AUDIT_ARCHIVE_FILE)" --profile audit-archive config
+
 compose-up:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" up -d
+
+compose-audit-archive-up:
+	PROMETHEUS_CONFIG=./prometheus/prometheus.audit-archive.yml docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" -f "$(COMPOSE_AUDIT_ARCHIVE_FILE)" --profile audit-archive up -d --build
 
 compose-down:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" down
 
+compose-audit-archive-down:
+	PROMETHEUS_CONFIG=./prometheus/prometheus.audit-archive.yml docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" -f "$(COMPOSE_AUDIT_ARCHIVE_FILE)" --profile audit-archive down
+
 compose-reset:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" down --volumes
+
+compose-audit-archive-reset:
+	PROMETHEUS_CONFIG=./prometheus/prometheus.audit-archive.yml docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" -f "$(COMPOSE_AUDIT_ARCHIVE_FILE)" --profile audit-archive down --volumes
 
 contracts-verify:
 	$(GO) run ./cmd/openbao-observability contracts verify \

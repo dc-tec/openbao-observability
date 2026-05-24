@@ -80,17 +80,18 @@ available in the platform:
 | ---------- | ------------ | --------------------- |
 | OpenBao telemetry stanza with Prometheus retention | Active-node and all-node metrics | The operator should render this from `spec.observability.metrics` and optional `spec.telemetry`. |
 | Stable Kubernetes service registration labels | Active-node scrape | The operator should keep OpenBao Kubernetes service registration enabled so the active pod can be selected. |
-| Metrics Service and `ServiceMonitor` or equivalent scrape object | Active-node and all-node metrics | The operator can own this directly, or the platform can apply this repository's scrape manifests with operator pod labels. |
+| Metrics Service and `ServiceMonitor` or equivalent scrape object | Active-node and all-node metrics | Current operator `main` can own workload metrics resources from `spec.observability.metrics`; the platform can still apply equivalent resources when it owns scraping. |
 | Metrics token Secret or private metrics-only listener | Secure active scrape or private all-node scrape | Use a scoped token for the secure active-node baseline. Use a private metrics-only listener only after network isolation review. |
 | Metrics listener port and NetworkPolicy ingress | Private all-node scrape | The operator needs first-class support for a dedicated metrics listener, pod port, Service port, and restricted ingress. |
 | Declarative audit devices | Audit dashboards, alerts, and investigation | The operator should render `spec.audit`; the platform still owns audit collection, retention, and archive controls. |
 
-If the operator version you run does not own a workload `ServiceMonitor`, apply
-the scrape manifests from this repository as platform resources and make the
-selectors match the operator-managed pod labels. If the operator version does
-not expose a dedicated metrics-only listener, use the secure active-node scrape
-as the supported baseline and treat all-node scraping as a future operator
-integration item.
+Current operator `main` supports workload telemetry, metrics Services,
+`ServiceMonitor` resources, and a dedicated metrics-only listener through
+`spec.observability.metrics`. For older operator versions, apply the scrape
+manifests from this repository as platform resources and make the selectors
+match the operator-managed pod labels. If the operator version does not expose
+a dedicated metrics-only listener, use the secure active-node scrape as the
+supported baseline.
 
 Use the [OpenBao Operator integration contract](./openbao-operator-integration-contract.md)
 for the expected labels, Service shapes, scrape profile behavior, log stream
@@ -138,8 +139,9 @@ other's responsibilities.
   workload telemetry, audit-log handling, and generated dashboards.
 - Publish compatibility guidance that pairs operator release validation with the
   OpenBao versions covered by this repository's fixtures.
-- Add an operator-managed example that enables workload telemetry and applies
-  this repository's generated Prometheus rules and dashboards.
+- Keep the operator-managed examples aligned with the operator `main`
+  observability API and this repository's generated Prometheus rules and
+  dashboards.
 - Add dashboard links from operator dashboards to OpenBao workload dashboards
   by cluster and namespace.
 - Add runbook cross-links so operator lifecycle alerts can point to workload
@@ -181,7 +183,7 @@ For production operator-managed clusters:
 - Use [OpenBao Operator production checklist](https://dc-tec.github.io/openbao-operator/docs/operate/production-checklist)
   before you route production traffic to an operator-managed cluster.
 
-Source: This profile reflects the public
+Source: This profile reflects the current public `main` branch of
 [`dc-tec/openbao-operator`](https://github.com/dc-tec/openbao-operator)
 README and its operator observability, compatibility, production checklist, and
 operator invariants documentation.

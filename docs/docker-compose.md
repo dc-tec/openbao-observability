@@ -55,6 +55,47 @@ and Grafana. The stack is for local evaluation and contract validation.
    - `alloy`
    - `grafana`
 
+## Start the audit archive profile
+
+Use this optional profile when you want to exercise the
+`OpenBaoAuditArchiveDegraded` alert end to end in the local stack.
+
+1. Start the stack with the audit archive health exporter.
+
+   ```shell
+   make compose-audit-archive-up
+   ```
+
+   This command uses `examples/docker-compose/compose.audit-archive.yaml`,
+   builds the example exporter, starts a local status writer, and runs
+   Prometheus with `prometheus.audit-archive.yml`.
+
+2. Check the exporter endpoint.
+
+   ```shell
+   curl -fsS http://127.0.0.1:19110/metrics
+   ```
+
+   Expected output includes:
+
+   ```text
+   openbao_audit_archive_enabled{backend="compose-demo",pipeline="openbao-audit-archive"} 1
+   openbao_audit_archive_delivery_success{backend="compose-demo",pipeline="openbao-audit-archive"} 1
+   ```
+
+3. Check that Prometheus sees the archive health target.
+
+   ```shell
+   curl -fsS -G http://127.0.0.1:19090/api/v1/query \
+     --data-urlencode 'query=up{job="openbao-audit-archive-health"}'
+   ```
+
+4. Stop the profile with the matching target when you no longer need it.
+
+   ```shell
+   make compose-audit-archive-down
+   ```
+
 ## Open the local endpoints
 
 | Service | URL | Purpose |
@@ -66,6 +107,7 @@ and Grafana. The stack is for local evaluation and contract validation.
 | Prometheus | `http://127.0.0.1:19090` | Metrics, recording rules, and alerts. |
 | Loki | `http://127.0.0.1:13100` | Local log backend. |
 | Alloy | `http://127.0.0.1:12345` | Collector status UI. |
+| Audit archive health | `http://127.0.0.1:19110` | Optional archive health exporter profile. |
 | Grafana | `http://127.0.0.1:13000` | Explore metrics, logs, and dashboards. |
 
 Grafana uses `admin` / `admin` by default. Change the local password in
@@ -120,6 +162,12 @@ production all-node scraping.
 `openbao-audit-canary` reads `secret/data/observability/audit-canary` every 60
 seconds with a token that only has the `audit-canary` policy. This creates a
 known audited request for the `OpenBaoAuditCanaryMissing` alert.
+
+The optional audit archive profile starts a local status writer and the audit
+archive health exporter. The status writer updates a demo archive status file
+every 30 seconds. The exporter exposes the reference
+`openbao_audit_archive_*` metrics that drive the
+`OpenBaoAuditArchiveDegraded` alert.
 
 ## Verify the result
 
@@ -414,6 +462,12 @@ static seal key:
 make compose-reset
 ```
 
+Stop containers and remove volumes for the optional audit archive profile:
+
+```shell
+make compose-audit-archive-reset
+```
+
 ## Troubleshooting
 
 ### Prometheus has no OpenBao targets
@@ -473,6 +527,23 @@ docker compose --project-directory examples/docker-compose -f examples/docker-co
 The stack mounts provisioning files from
 `examples/docker-compose/grafana/provisioning`.
 
+### The audit archive health target is down
+
+Use the audit archive profile targets when you start and stop the stack.
+
+```shell
+make compose-audit-archive-up
+```
+
+Then check the status writer and exporter logs.
+
+```shell
+docker compose --project-directory examples/docker-compose \
+  -f examples/docker-compose/compose.yaml \
+  -f examples/docker-compose/compose.audit-archive.yaml \
+  --profile audit-archive logs audit-archive-status-writer audit-archive-health
+```
+
 ## What's next
 
 - Inspect generated rule files in `generated/prometheus/`.
@@ -483,6 +554,8 @@ The stack mounts provisioning files from
 - Use `contracts/alerts/` as the source of truth for local alert changes.
 - Use [OpenBao Raft and Autopilot health](./runbooks/raft-autopilot-health.md)
   when a Raft or Autopilot alert fires.
+- Use [Audit archive degraded](./runbooks/audit-archive-degraded.md) when the
+  optional archive health profile reports degraded delivery.
 
 Source: OpenBao documents static seal configuration in the
 [OpenBao static seal documentation][openbao-static-seal]. OpenBao documents

@@ -8,5 +8,7 @@ VM-style OpenBao observability profiles.
   audit archive health metrics.
 - `kubernetes/`: reusable Kubernetes manifests for secure active-node and
   private all-node scrape profiles.
+- `kubernetes/audit-archive-health-scrape.yaml`: Service and ServiceMonitor
+  example for scraping an audit archive health exporter.
 - `kubernetes/operator-managed/`: merge patches and adoption steps for
   OpenBao clusters managed by `dc-tec/openbao-operator`.

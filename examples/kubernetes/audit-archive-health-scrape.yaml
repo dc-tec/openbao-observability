@@ -1,0 +1,40 @@
+# Example scrape objects for an audit archive health exporter.
+#
+# Deploy the exporter through your platform pipeline, then adapt the labels,
+# namespace, and ServiceMonitor selector below.
+apiVersion: v1
+kind: Service
+metadata:
+  name: openbao-audit-archive-health
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: openbao-audit-archive-health
+    app.kubernetes.io/component: audit-archive-health
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: openbao-audit-archive-health
+  ports:
+    - name: http-metrics
+      port: 19110
+      targetPort: http-metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: openbao-audit-archive-health
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames:
+      - monitoring
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openbao-audit-archive-health
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

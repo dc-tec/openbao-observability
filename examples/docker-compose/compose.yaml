@@ -133,7 +133,7 @@ services:
     ports:
       - 127.0.0.1:${PROMETHEUS_PORT:-19090}:9090
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${PROMETHEUS_CONFIG:-./prometheus/prometheus.yml}:/etc/prometheus/prometheus.yml:ro
       - ../../generated/prometheus:/etc/prometheus/rules:ro
       - prometheus-data:/prometheus
 

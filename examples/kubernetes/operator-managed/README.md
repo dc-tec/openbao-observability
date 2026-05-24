@@ -17,6 +17,8 @@ OpenBao workload. The examples show merge patches for existing
 ## Before you begin
 
 - Install OpenBao Operator and create a production-ready `OpenBaoCluster`.
+- Use an operator build or release that includes `spec.observability.metrics`.
+  This API is present on the operator `main` branch.
 - Install Prometheus Operator if you want the operator to render
   `ServiceMonitor` resources.
 - Create or rotate a scoped OpenBao token that can read `sys/metrics`.
@@ -140,6 +142,8 @@ these checks pass:
 - Recording rules evaluate for the selected source prefix.
 - OpenBao operational logs and operator logs land in separate streams.
 - Audit logs land in a restricted stream and have an archive decision.
+- Audit archive health metrics are published when the environment requires
+  durable archive delivery.
 - Grafana can load the generated dashboards.
 
 ## What's next
@@ -152,3 +156,5 @@ these checks pass:
   for the active scrape model.
 - Use [All-node metrics scrape](../../../docs/metrics/all-node-metrics-scrape.md)
   for HA/Raft and per-node diagnostics.
+- Use [Audit archive health example](../../audit-archive-health/) when you
+  need to publish the archive health metrics consumed by the generated alert.

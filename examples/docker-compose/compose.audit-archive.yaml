@@ -1,0 +1,49 @@
+services:
+  audit-archive-status-writer:
+    image: ${AUDIT_ARCHIVE_STATUS_WRITER_IMAGE:-alpine:3.22}
+    profiles:
+      - audit-archive
+    command:
+      - sh
+      - -ec
+      - |
+        while true; do
+          timestamp="$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          cat > /archive/status.json.tmp <<EOF
+        {
+          "enabled": true,
+          "delivery_success": true,
+          "last_success_timestamp": "$${timestamp}",
+          "delivery_failures_total": 0,
+          "dead_letter_records_total": 0,
+          "backend": "compose-demo",
+          "pipeline": "openbao-audit-archive"
+        }
+        EOF
+          mv /archive/status.json.tmp /archive/status.json
+          sleep "$${AUDIT_ARCHIVE_STATUS_INTERVAL_SECONDS:-30}"
+        done
+    volumes:
+      - audit-archive-health-status:/archive
+
+  audit-archive-health:
+    profiles:
+      - audit-archive
+    build:
+      context: ../..
+      dockerfile: examples/audit-archive-health/exporter/Dockerfile
+    depends_on:
+      - audit-archive-status-writer
+    command:
+      - --enabled
+      - --status-file=/archive/status.json
+      - --listen-address=:19110
+      - --backend=compose-demo
+      - --pipeline=openbao-audit-archive
+    ports:
+      - 127.0.0.1:${AUDIT_ARCHIVE_HEALTH_PORT:-19110}:19110
+    volumes:
+      - audit-archive-health-status:/archive:ro
+
+volumes:
+  audit-archive-health-status:
