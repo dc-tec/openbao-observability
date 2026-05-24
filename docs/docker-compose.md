@@ -473,6 +473,9 @@ The stack mounts provisioning files from
 ## What's next
 
 - Inspect generated rule files in `generated/prometheus/`.
+- Inspect prefix-specific rule variants in
+  `generated/prometheus/vault-prefix/` and
+  `generated/prometheus/openbao-prefix/`.
 - Inspect Prometheus Operator rule artifacts in `generated/prometheusrules/`.
 - Use `contracts/alerts/` as the source of truth for local alert changes.
 - Use [OpenBao Raft and Autopilot health](./runbooks/raft-autopilot-health.md)

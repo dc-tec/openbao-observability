@@ -62,18 +62,36 @@ stable across deployments.
 | Raft peer count | `vault_raft_peers` | `openbao_raft_peers` | `openbao:raft_peers:max` |
 | Autopilot health | `vault_autopilot_healthy` | `openbao_autopilot_healthy` | `openbao:autopilot_healthy:max` |
 
-Generate rules for the source prefix that your OpenBao deployment emits.
+The repository ships generated rule variants for both supported source
+prefixes. Use the variant that matches the metrics your OpenBao deployment
+emits.
+
+| Source prefix | Native Prometheus rules | Prometheus Operator rules |
+| ------------- | ----------------------- | ------------------------- |
+| `vault` | `generated/prometheus/vault-prefix/` | `generated/prometheusrules/vault-prefix/` |
+| `openbao` | `generated/prometheus/openbao-prefix/` | `generated/prometheusrules/openbao-prefix/` |
+
+The top-level `generated/prometheus/openbao-recording-rules.yaml` and
+`generated/prometheusrules/openbao-recording-rules.yaml` files remain the
+default `vault` variant for the local Docker Compose stack.
+
+Regenerate all variants after you change the metric contract, alert contracts,
+or generator code.
+
+```shell
+make generate
+```
+
+You can still generate a single custom output with `--source-prefix` when you
+need a one-off path.
 
 ```shell
 go run ./cmd/openbao-observability generate prometheus-rules \
   --contract contracts/metrics/openbao-core.yaml \
-  --source-prefix vault \
-  --output generated/prometheusrules/openbao-recording-rules.yaml \
-  --rule-output generated/prometheus/openbao-recording-rules.yaml
+  --source-prefix openbao \
+  --output /tmp/openbao-recording-rules.yaml \
+  --rule-output /tmp/openbao-native-rules.yaml
 ```
-
-Use `--source-prefix openbao` when your OpenBao servers emit `openbao_*`
-metrics.
 
 ## Query source metrics during validation
 
@@ -141,6 +159,10 @@ make verify-live
 | `contracts/metrics/openbao-core.yaml` | Defines source metric names, supported prefixes, fixture expectations, and normalization notes. |
 | `generated/prometheus/openbao-recording-rules.yaml` | Native Prometheus rule file for the local Compose stack. |
 | `generated/prometheusrules/openbao-recording-rules.yaml` | Prometheus Operator `PrometheusRule` artifact. |
+| `generated/prometheus/vault-prefix/` | Native Prometheus rules for OpenBao deployments that emit `vault_*` metrics. |
+| `generated/prometheus/openbao-prefix/` | Native Prometheus rules for OpenBao deployments that emit `openbao_*` metrics. |
+| `generated/prometheusrules/vault-prefix/` | Prometheus Operator rules for OpenBao deployments that emit `vault_*` metrics. |
+| `generated/prometheusrules/openbao-prefix/` | Prometheus Operator rules for OpenBao deployments that emit `openbao_*` metrics. |
 | `contracts/dashboards/openbao-overview.yaml` | Overview dashboard contract that consumes normalized rules. |
 | `contracts/dashboards/openbao-ha-raft.yaml` | HA/Raft dashboard contract that consumes normalized rules and validated Raft source metrics. |
 | `contracts/dashboards/openbao-audit-investigation.yaml` | Audit investigation dashboard contract that uses query-time audit fields without turning them into Loki labels. |
