@@ -132,7 +132,6 @@ func (r *captureRun) capturePrefix(ctx context.Context, prefix string, port int)
 	_, _, err = combined(ctx,
 		"docker",
 		"run",
-		"--rm",
 		"--detach",
 		"--name", name,
 		"--publish", fmt.Sprintf("127.0.0.1:%d:8200", port),
