@@ -124,7 +124,11 @@ func hasClusterWithPrefix(families promtext.Families, name, prefix string) bool 
 }
 
 func checkAPIAuditRejection(opts VerifyOptions, prefix string) error {
-	path := filepath.Join(opts.FixtureDir, "metadata", fmt.Sprintf("openbao-%s-%s-api-audit-enable.txt", opts.Version, prefix))
+	path := filepath.Join(
+		opts.FixtureDir,
+		"metadata",
+		fmt.Sprintf("openbao-%s-%s-api-audit-enable.txt", opts.Version, prefix),
+	)
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("read API audit rejection fixture %s: %w", path, err)
@@ -145,14 +149,23 @@ func checkAPIAuditRejection(opts VerifyOptions, prefix string) error {
 }
 
 func checkAuditJSON(opts VerifyOptions, prefix string) error {
-	path := filepath.Join(opts.FixtureDir, "logs", "audit", fmt.Sprintf("openbao-%s-%s-prefix.jsonl", opts.Version, prefix))
+	path := filepath.Join(
+		opts.FixtureDir,
+		"logs",
+		"audit",
+		fmt.Sprintf("openbao-%s-%s-prefix.jsonl", opts.Version, prefix),
+	)
 	return checkAuditJSONFile(path)
 }
 
 func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 	var leaderMetrics promtext.Families
 	for _, nodeID := range raftAllNodeIDs() {
-		path := filepath.Join(opts.FixtureDir, "metrics", fmt.Sprintf("openbao-%s-raft-%s-%s.prom", opts.Version, prefix, nodeID))
+		path := filepath.Join(
+			opts.FixtureDir,
+			"metrics",
+			fmt.Sprintf("openbao-%s-raft-%s-%s.prom", opts.Version, prefix, nodeID),
+		)
 		families, err := promtext.LoadFamilies(path)
 		if err != nil {
 			return err
@@ -205,7 +218,11 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 		return fmt.Errorf("missing Raft peer count of %d in Raft fixture", raftNodeCount)
 	}
 	if !leaderMetrics.HasMetricWithLabel(prefix+"_secret_lease_creation", "namespace", fixtureNamespace) {
-		return fmt.Errorf("missing %s namespace label on %s_secret_lease_creation in Raft fixture", fixtureNamespace, prefix)
+		return fmt.Errorf(
+			"missing %s namespace label on %s_secret_lease_creation in Raft fixture",
+			fixtureNamespace,
+			prefix,
+		)
 	}
 	namespaceMetricPrefix := prefix + "_" + sanitizedMetricPathFragment(fixtureNamespace) + "_pki"
 	for _, metric := range []string{
@@ -247,7 +264,11 @@ func hasAnyGaugeValue(families promtext.Families, name string, value float64) bo
 }
 
 func checkRaftMetadata(opts VerifyOptions, prefix string) error {
-	peersPath := filepath.Join(opts.FixtureDir, "metadata", fmt.Sprintf("openbao-%s-raft-%s-peers.json", opts.Version, prefix))
+	peersPath := filepath.Join(
+		opts.FixtureDir,
+		"metadata",
+		fmt.Sprintf("openbao-%s-raft-%s-peers.json", opts.Version, prefix),
+	)
 	content, err := os.ReadFile(peersPath)
 	if err != nil {
 		return fmt.Errorf("read Raft peers fixture %s: %w", peersPath, err)
@@ -263,7 +284,12 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 		return fmt.Errorf("expected %d Raft voters in %s, found %d", raftVoterCount, peersPath, countVoters(servers))
 	}
 	if countNonVoters(servers) != raftReadReplicaCount {
-		return fmt.Errorf("expected %d Raft non-voters in %s, found %d", raftReadReplicaCount, peersPath, countNonVoters(servers))
+		return fmt.Errorf(
+			"expected %d Raft non-voters in %s, found %d",
+			raftReadReplicaCount,
+			peersPath,
+			countNonVoters(servers),
+		)
 	}
 
 	var leaders int
@@ -291,7 +317,11 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 		}
 	}
 
-	autopilotPath := filepath.Join(opts.FixtureDir, "metadata", fmt.Sprintf("openbao-%s-raft-%s-autopilot-state.json", opts.Version, prefix))
+	autopilotPath := filepath.Join(
+		opts.FixtureDir,
+		"metadata",
+		fmt.Sprintf("openbao-%s-raft-%s-autopilot-state.json", opts.Version, prefix),
+	)
 	content, err = os.ReadFile(autopilotPath)
 	if err != nil {
 		return fmt.Errorf("read Autopilot fixture %s: %w", autopilotPath, err)
@@ -304,10 +334,19 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 		return fmt.Errorf("autopilot reports unhealthy state in %s", autopilotPath)
 	}
 	if state.FailureTolerance < 1 {
-		return fmt.Errorf("expected Autopilot failure tolerance >= 1 in %s, found %d", autopilotPath, state.FailureTolerance)
+		return fmt.Errorf(
+			"expected Autopilot failure tolerance >= 1 in %s, found %d",
+			autopilotPath,
+			state.FailureTolerance,
+		)
 	}
 	if len(state.Servers) != raftNodeCount {
-		return fmt.Errorf("expected %d Autopilot servers in %s, found %d", raftNodeCount, autopilotPath, len(state.Servers))
+		return fmt.Errorf(
+			"expected %d Autopilot servers in %s, found %d",
+			raftNodeCount,
+			autopilotPath,
+			len(state.Servers),
+		)
 	}
 	autopilotVoters := 0
 	autopilotNonVoters := 0
@@ -325,17 +364,32 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 		}
 	}
 	if autopilotVoters != raftVoterCount {
-		return fmt.Errorf("expected %d Autopilot voters in %s, found %d", raftVoterCount, autopilotPath, autopilotVoters)
+		return fmt.Errorf(
+			"expected %d Autopilot voters in %s, found %d",
+			raftVoterCount,
+			autopilotPath,
+			autopilotVoters,
+		)
 	}
 	if autopilotNonVoters != raftReadReplicaCount {
-		return fmt.Errorf("expected %d Autopilot non-voters in %s, found %d", raftReadReplicaCount, autopilotPath, autopilotNonVoters)
+		return fmt.Errorf(
+			"expected %d Autopilot non-voters in %s, found %d",
+			raftReadReplicaCount,
+			autopilotPath,
+			autopilotNonVoters,
+		)
 	}
 
 	return nil
 }
 
 func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
-	path := filepath.Join(opts.FixtureDir, "logs", "audit", fmt.Sprintf("openbao-%s-raft-%s-node0.jsonl", opts.Version, prefix))
+	path := filepath.Join(
+		opts.FixtureDir,
+		"logs",
+		"audit",
+		fmt.Sprintf("openbao-%s-raft-%s-node0.jsonl", opts.Version, prefix),
+	)
 	if err := checkAuditJSONFile(path); err != nil {
 		return err
 	}
@@ -412,7 +466,12 @@ func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
 
 func checkReadReplicaAuditJSON(opts VerifyOptions, prefix string) error {
 	for _, nodeID := range raftReadReplicaIDs() {
-		path := filepath.Join(opts.FixtureDir, "logs", "audit", fmt.Sprintf("openbao-%s-raft-%s-%s.jsonl", opts.Version, prefix, nodeID))
+		path := filepath.Join(
+			opts.FixtureDir,
+			"logs",
+			"audit",
+			fmt.Sprintf("openbao-%s-raft-%s-%s.jsonl", opts.Version, prefix, nodeID),
+		)
 		if err := checkAuditJSONFile(path); err != nil {
 			return err
 		}
@@ -433,7 +492,11 @@ func checkReadReplicaAuditJSON(opts VerifyOptions, prefix string) error {
 }
 
 func checkReadReplicaExercise(opts VerifyOptions, prefix, nodeID string) error {
-	path := filepath.Join(opts.FixtureDir, "metadata", fmt.Sprintf("openbao-%s-raft-%s-%s-exercise.txt", opts.Version, prefix, nodeID))
+	path := filepath.Join(
+		opts.FixtureDir,
+		"metadata",
+		fmt.Sprintf("openbao-%s-raft-%s-%s-exercise.txt", opts.Version, prefix, nodeID),
+	)
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("read read-replica exercise fixture %s: %w", path, err)
@@ -448,7 +511,11 @@ func checkReadReplicaExercise(opts VerifyOptions, prefix, nodeID string) error {
 }
 
 func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
-	path := filepath.Join(opts.FixtureDir, "metadata", fmt.Sprintf("openbao-%s-raft-%s-scenario.json", opts.Version, prefix))
+	path := filepath.Join(
+		opts.FixtureDir,
+		"metadata",
+		fmt.Sprintf("openbao-%s-raft-%s-scenario.json", opts.Version, prefix),
+	)
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("read scenario fixture %s: %w", path, err)
@@ -692,7 +759,12 @@ func checkAuditNonRootNamespaceCount(path string, minimum int) error {
 		return err
 	}
 	if count < minimum {
-		return fmt.Errorf("audit fixture %s contains %d non-root request.namespace.id values, want at least %d", path, count, minimum)
+		return fmt.Errorf(
+			"audit fixture %s contains %d non-root request.namespace.id values, want at least %d",
+			path,
+			count,
+			minimum,
+		)
 	}
 	return nil
 }

@@ -99,7 +99,10 @@ func TestVerifyDashboardContractAppliesVariableDefaults(t *testing.T) {
 		t.Fatalf("LoadDashboardContract returned error: %v", err)
 	}
 
-	expression := contract.ExpressionWithDefaultVariables(`{log_stream="openbao.audit"} | json request_id="request.id" | request_id=~"${request_id:raw}"`)
+	expression := contract.ExpressionWithDefaultVariables(
+		`{log_stream="openbao.audit"} | json request_id="request.id" | ` +
+			`request_id=~"${request_id:raw}"`,
+	)
 	if !strings.Contains(expression, `request_id=~".*"`) {
 		t.Fatalf("expression = %q, want default variable interpolation", expression)
 	}

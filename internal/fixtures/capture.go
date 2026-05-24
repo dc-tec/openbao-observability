@@ -246,7 +246,8 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 	if err := r.startRaftNode(ctx, voters[0], network, sealDir); err != nil {
 		return err
 	}
-	if err := waitForInitializedUnsealed(ctx, voters[0].Port, raftMetadataPath(opts, prefix, voters[0].ID, "health.json")); err != nil {
+	healthPath := raftMetadataPath(opts, prefix, voters[0].ID, "health.json")
+	if err := waitForInitializedUnsealed(ctx, voters[0].Port, healthPath); err != nil {
 		return err
 	}
 	if err := r.captureVersion(ctx, voters[0].Container, raftPrefix(prefix)); err != nil {
@@ -259,7 +260,8 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 		}
 	}
 	for _, node := range voters[1:] {
-		if err := waitForInitializedUnsealed(ctx, node.Port, raftMetadataPath(opts, prefix, node.ID, "health.json")); err != nil {
+		healthPath := raftMetadataPath(opts, prefix, node.ID, "health.json")
+		if err := waitForInitializedUnsealed(ctx, node.Port, healthPath); err != nil {
 			return err
 		}
 	}
@@ -275,7 +277,8 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 		}
 	}
 	for _, node := range readReplicas {
-		if err := waitForInitializedUnsealed(ctx, node.Port, raftMetadataPath(opts, prefix, node.ID, "health.json")); err != nil {
+		healthPath := raftMetadataPath(opts, prefix, node.ID, "health.json")
+		if err := waitForInitializedUnsealed(ctx, node.Port, healthPath); err != nil {
 			return err
 		}
 	}
@@ -361,7 +364,16 @@ func waitForPostgres(ctx context.Context, container string) error {
 	deadline := time.Now().Add(60 * time.Second)
 	var lastErr error
 	for time.Now().Before(deadline) {
-		_, _, err := dockerCombined(ctx, "exec", container, "pg_isready", "-U", fixturePostgresUser, "-d", fixturePostgresDB)
+		_, _, err := dockerCombined(
+			ctx,
+			"exec",
+			container,
+			"pg_isready",
+			"-U",
+			fixturePostgresUser,
+			"-d",
+			fixturePostgresDB,
+		)
 		if err == nil {
 			return nil
 		}
@@ -376,7 +388,13 @@ func waitForPostgres(ctx context.Context, container string) error {
 	return fmt.Errorf("PostgreSQL fixture did not become ready: %w", lastErr)
 }
 
-func writeRaftConfig(prefix string, node raftNode, initialize bool, existingNodes []raftNode, databaseHost, path string) error {
+func writeRaftConfig(
+	prefix string,
+	node raftNode,
+	initialize bool,
+	existingNodes []raftNode,
+	databaseHost, path string,
+) error {
 	var retryJoin strings.Builder
 	if !initialize {
 		for _, leader := range existingNodes {
@@ -434,7 +452,15 @@ audit "file" "local-file" {
     log_raw       = "false"
   }
 }
-%s`, node.Container, node.Container, node.ID, nonVoterConfig, retryJoin.String(), prefix, raftInitializeBlock(initialize, databaseHost))
+%s`,
+		node.Container,
+		node.Container,
+		node.ID,
+		nonVoterConfig,
+		retryJoin.String(),
+		prefix,
+		raftInitializeBlock(initialize, databaseHost),
+	)
 
 	if err := os.WriteFile(path, []byte(config), 0o644); err != nil {
 		return fmt.Errorf("write OpenBao Raft config %s: %w", path, err)
@@ -750,7 +776,13 @@ func dockerDiagnostics(ctx context.Context, container string) string {
 		return ""
 	}
 
-	inspect, _, _ := dockerCombined(ctx, "inspect", "--format", "state={{.State.Status}} exit={{.State.ExitCode}} error={{.State.Error}}", container)
+	inspect, _, _ := dockerCombined(
+		ctx,
+		"inspect",
+		"--format",
+		"state={{.State.Status}} exit={{.State.ExitCode}} error={{.State.Error}}",
+		container,
+	)
 	logs, _, _ := dockerCombined(ctx, "logs", "--tail", "120", container)
 
 	var builder strings.Builder
@@ -924,7 +956,12 @@ func (r *captureRun) exerciseRaftReadReplica(ctx context.Context, node raftNode,
 		}
 		if err != nil {
 			_ = writeFile(raftClusterMetadataPath(r.options, prefix, node.ID+"-exercise.txt"), output.Bytes())
-			return fmt.Errorf("exercise OpenBao Raft read replica command %q on %s: %w", strings.Join(command, " "), node.ID, err)
+			return fmt.Errorf(
+				"exercise OpenBao Raft read replica command %q on %s: %w",
+				strings.Join(command, " "),
+				node.ID,
+				err,
+			)
 		}
 	}
 
@@ -941,21 +978,52 @@ func (r *captureRun) runRaftScenario(ctx context.Context, node raftNode, prefix,
 
 func (r *captureRun) captureRaftState(ctx context.Context, nodes []raftNode, prefix string) error {
 	leader := nodes[0]
-	if err := r.captureRaftCommand(ctx, leader, raftClusterMetadataPath(r.options, prefix, "peers.json"), "bao", "operator", "raft", "list-peers", "-format=json"); err != nil {
+	if err := r.captureRaftCommand(
+		ctx,
+		leader,
+		raftClusterMetadataPath(r.options, prefix, "peers.json"),
+		"bao",
+		"operator",
+		"raft",
+		"list-peers",
+		"-format=json",
+	); err != nil {
 		return err
 	}
-	if err := r.captureRaftCommand(ctx, leader, raftClusterMetadataPath(r.options, prefix, "autopilot-state.json"), "bao", "operator", "raft", "autopilot", "state", "-format=json"); err != nil {
+	if err := r.captureRaftCommand(
+		ctx,
+		leader,
+		raftClusterMetadataPath(r.options, prefix, "autopilot-state.json"),
+		"bao",
+		"operator",
+		"raft",
+		"autopilot",
+		"state",
+		"-format=json",
+	); err != nil {
 		return err
 	}
 	for _, node := range nodes {
-		if err := r.captureRaftCommand(ctx, node, raftMetadataPath(r.options, prefix, node.ID, "status.json"), "bao", "status", "-format=json"); err != nil {
+		if err := r.captureRaftCommand(
+			ctx,
+			node,
+			raftMetadataPath(r.options, prefix, node.ID, "status.json"),
+			"bao",
+			"status",
+			"-format=json",
+		); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *captureRun) captureRaftCommand(ctx context.Context, node raftNode, outputPath string, command ...string) error {
+func (r *captureRun) captureRaftCommand(
+	ctx context.Context,
+	node raftNode,
+	outputPath string,
+	command ...string,
+) error {
 	out, _, err := r.baoExec(ctx, node, command...)
 	if err != nil {
 		return fmt.Errorf("capture OpenBao Raft command %q from %s: %w", strings.Join(command, " "), node.ID, err)
@@ -963,7 +1031,11 @@ func (r *captureRun) captureRaftCommand(ctx context.Context, node raftNode, outp
 	return writeFile(outputPath, out)
 }
 
-func (r *captureRun) waitForRaftTopology(ctx context.Context, leader raftNode, expectedPeers, expectedVoters int) error {
+func (r *captureRun) waitForRaftTopology(
+	ctx context.Context,
+	leader raftNode,
+	expectedPeers, expectedVoters int,
+) error {
 	deadline := time.Now().Add(90 * time.Second)
 	var lastErr error
 	for time.Now().Before(deadline) {
@@ -975,7 +1047,13 @@ func (r *captureRun) waitForRaftTopology(ctx context.Context, leader raftNode, e
 			} else if len(servers) == expectedPeers && countVoters(servers) == expectedVoters {
 				return nil
 			} else {
-				lastErr = fmt.Errorf("expected %d Raft peers with %d voters, found %d peers with %d voters", expectedPeers, expectedVoters, len(servers), countVoters(servers))
+				lastErr = fmt.Errorf(
+					"expected %d Raft peers with %d voters, found %d peers with %d voters",
+					expectedPeers,
+					expectedVoters,
+					len(servers),
+					countVoters(servers),
+				)
 			}
 		} else {
 			lastErr = err
@@ -988,10 +1066,19 @@ func (r *captureRun) waitForRaftTopology(ctx context.Context, leader raftNode, e
 		}
 	}
 
-	return fmt.Errorf("OpenBao Raft peers did not converge to %d peers with %d voters: %w", expectedPeers, expectedVoters, lastErr)
+	return fmt.Errorf(
+		"OpenBao Raft peers did not converge to %d peers with %d voters: %w",
+		expectedPeers,
+		expectedVoters,
+		lastErr,
+	)
 }
 
-func (r *captureRun) waitForAutopilotTolerance(ctx context.Context, leader raftNode, expectedServers, minFailureTolerance int) error {
+func (r *captureRun) waitForAutopilotTolerance(
+	ctx context.Context,
+	leader raftNode,
+	expectedServers, minFailureTolerance int,
+) error {
 	deadline := time.Now().Add(120 * time.Second)
 	var lastErr error
 	for time.Now().Before(deadline) {
@@ -1003,7 +1090,12 @@ func (r *captureRun) waitForAutopilotTolerance(ctx context.Context, leader raftN
 			} else if state.Healthy && len(state.Servers) == expectedServers && state.FailureTolerance >= minFailureTolerance {
 				return nil
 			} else {
-				lastErr = fmt.Errorf("autopilot healthy=%v servers=%d failure_tolerance=%d", state.Healthy, len(state.Servers), state.FailureTolerance)
+				lastErr = fmt.Errorf(
+					"autopilot healthy=%v servers=%d failure_tolerance=%d",
+					state.Healthy,
+					len(state.Servers),
+					state.FailureTolerance,
+				)
 			}
 		} else {
 			lastErr = err
@@ -1037,7 +1129,13 @@ func (r *captureRun) captureMetrics(ctx context.Context, prefix string, port int
 
 func (r *captureRun) captureRaftMetrics(ctx context.Context, nodes []raftNode, prefix string) error {
 	for _, node := range nodes {
-		if err := captureMetricsFromPort(ctx, raftPrefix(prefix)+"-"+node.ID, node.Port, fixtureAdminToken, raftMetricsPath(r.options, prefix, node.ID)); err != nil {
+		if err := captureMetricsFromPort(
+			ctx,
+			raftPrefix(prefix)+"-"+node.ID,
+			node.Port,
+			fixtureAdminToken,
+			raftMetricsPath(r.options, prefix, node.ID),
+		); err != nil {
 			return err
 		}
 	}
@@ -1109,7 +1207,12 @@ func metricsPath(opts CaptureOptions, prefix string) string {
 }
 
 func auditPath(opts CaptureOptions, prefix string) string {
-	return filepath.Join(opts.OutputDir, "logs", "audit", fmt.Sprintf("openbao-%s-%s-prefix.jsonl", opts.Version, prefix))
+	return filepath.Join(
+		opts.OutputDir,
+		"logs",
+		"audit",
+		fmt.Sprintf("openbao-%s-%s-prefix.jsonl", opts.Version, prefix),
+	)
 }
 
 func raftPrefix(prefix string) string {
@@ -1121,13 +1224,26 @@ func raftClusterMetadataPath(opts CaptureOptions, prefix, suffix string) string 
 }
 
 func raftMetadataPath(opts CaptureOptions, prefix, nodeID, suffix string) string {
-	return filepath.Join(opts.OutputDir, "metadata", fmt.Sprintf("openbao-%s-raft-%s-%s-%s", opts.Version, prefix, nodeID, suffix))
+	return filepath.Join(
+		opts.OutputDir,
+		"metadata",
+		fmt.Sprintf("openbao-%s-raft-%s-%s-%s", opts.Version, prefix, nodeID, suffix),
+	)
 }
 
 func raftMetricsPath(opts CaptureOptions, prefix, nodeID string) string {
-	return filepath.Join(opts.OutputDir, "metrics", fmt.Sprintf("openbao-%s-raft-%s-%s.prom", opts.Version, prefix, nodeID))
+	return filepath.Join(
+		opts.OutputDir,
+		"metrics",
+		fmt.Sprintf("openbao-%s-raft-%s-%s.prom", opts.Version, prefix, nodeID),
+	)
 }
 
 func raftAuditPath(opts CaptureOptions, prefix, nodeID string) string {
-	return filepath.Join(opts.OutputDir, "logs", "audit", fmt.Sprintf("openbao-%s-raft-%s-%s.jsonl", opts.Version, prefix, nodeID))
+	return filepath.Join(
+		opts.OutputDir,
+		"logs",
+		"audit",
+		fmt.Sprintf("openbao-%s-raft-%s-%s.jsonl", opts.Version, prefix, nodeID),
+	)
 }

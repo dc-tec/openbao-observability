@@ -233,7 +233,11 @@ func buildGrafanaVariables(variables []contracts.DashboardVariable) []grafanaVar
 	return grafanaVariables
 }
 
-func buildGrafanaPanel(contract contracts.DashboardContract, panel contracts.DashboardPanel, numericID int) grafanaPanel {
+func buildGrafanaPanel(
+	contract contracts.DashboardContract,
+	panel contracts.DashboardPanel,
+	numericID int,
+) grafanaPanel {
 	datasource := datasourceRef(contract, panel.Datasource)
 	return grafanaPanel{
 		Datasource:  datasource,

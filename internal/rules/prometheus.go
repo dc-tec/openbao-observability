@@ -251,7 +251,10 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":core_mount_table_num_entries:max",
-							Expr:   "max by (local, type) (" + metricName(sourcePrefix, "core_mount_table_num_entries") + ")",
+							Expr: "max by (local, type) (" + metricName(
+								sourcePrefix,
+								"core_mount_table_num_entries",
+							) + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -351,7 +354,10 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":token_creation_by_auth:increase15m",
-							Expr:   "sum by (auth_method) (increase(" + metricName(sourcePrefix, "token_creation") + "[15m]))",
+							Expr: "sum by (auth_method) (increase(" + metricName(
+								sourcePrefix,
+								"token_creation",
+							) + "[15m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -481,7 +487,10 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":barrier_estimated_encryptions:increase15m",
-							Expr:   "sum by (term) (increase(" + metricName(sourcePrefix, "barrier_estimated_encryptions") + "[15m]))",
+							Expr: "sum by (term) (increase(" + metricName(
+								sourcePrefix,
+								"barrier_estimated_encryptions",
+							) + "[15m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -511,12 +520,18 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":secret_lease_creation_by_engine:increase15m",
-							Expr:   "sum by (secret_engine) (increase(" + metricName(sourcePrefix, "secret_lease_creation") + "[15m]))",
+							Expr: "sum by (secret_engine) (increase(" + metricName(
+								sourcePrefix,
+								"secret_lease_creation",
+							) + "[15m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":secret_lease_creation_by_engine_namespace:increase15m",
-							Expr:   "sum by (namespace, secret_engine) (increase(" + metricName(sourcePrefix, "secret_lease_creation") + "[15m]))",
+							Expr: "sum by (namespace, secret_engine) (increase(" + metricName(
+								sourcePrefix,
+								"secret_lease_creation",
+							) + "[15m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -711,7 +726,13 @@ func summaryRateExpression(sourcePrefix, id string) string {
 }
 
 func summaryAverageExpression(sourcePrefix, id string) string {
-	return "sum(rate(" + metricName(sourcePrefix, id+"_sum") + "[5m])) / clamp_min(sum(rate(" + metricName(sourcePrefix, id+"_count") + "[5m])), 0.001)"
+	return "sum(rate(" + metricName(
+		sourcePrefix,
+		id+"_sum",
+	) + "[5m])) / clamp_min(sum(rate(" + metricName(
+		sourcePrefix,
+		id+"_count",
+	) + "[5m])), 0.001)"
 }
 
 func cacheHitRatioExpression(sourcePrefix string) string {

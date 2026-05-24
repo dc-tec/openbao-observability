@@ -92,7 +92,12 @@ func ValidateDashboardQueries(ctx context.Context, opts QueryValidationOptions) 
 		}
 	}
 
-	fmt.Printf("validated %d dashboard queries against Prometheus and Loki (%d metrics, %d logs)\n", metricQueries+logQueries, metricQueries, logQueries)
+	fmt.Printf(
+		"validated %d dashboard queries against Prometheus and Loki (%d metrics, %d logs)\n",
+		metricQueries+logQueries,
+		metricQueries,
+		logQueries,
+	)
 	return nil
 }
 
@@ -192,7 +197,12 @@ func loadDashboardQueries(opts QueryValidationOptions) ([]dashboardQuery, error)
 					signal = signalFromDatasource(panel.Datasource.Type)
 				}
 				if signal == "" {
-					return nil, fmt.Errorf("generated dashboard %s panel %q has unsupported datasource type %q", path, panel.Title, target.Datasource.Type)
+					return nil, fmt.Errorf(
+						"generated dashboard %s panel %q has unsupported datasource type %q",
+						path,
+						panel.Title,
+						target.Datasource.Type,
+					)
 				}
 				queries = append(queries, dashboardQuery{
 					Source:     path,
@@ -247,7 +257,13 @@ func newPrometheusAPI(address string) (v1.API, error) {
 	return v1.NewAPI(client), nil
 }
 
-func validatePrometheusQuery(ctx context.Context, api v1.API, query dashboardQuery, window v1.Range, timeout time.Duration) error {
+func validatePrometheusQuery(
+	ctx context.Context,
+	api v1.API,
+	query dashboardQuery,
+	window v1.Range,
+	timeout time.Duration,
+) error {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -261,7 +277,13 @@ func validatePrometheusQuery(ctx context.Context, api v1.API, query dashboardQue
 	return nil
 }
 
-func validateLokiQuery(ctx context.Context, client *http.Client, baseURL string, query dashboardQuery, queryRange, step time.Duration) error {
+func validateLokiQuery(
+	ctx context.Context,
+	client *http.Client,
+	baseURL string,
+	query dashboardQuery,
+	queryRange, step time.Duration,
+) error {
 	now := time.Now()
 	end := now
 	start := now.Add(-queryRange)
@@ -300,7 +322,12 @@ func validateLokiQuery(ctx context.Context, client *http.Client, baseURL string,
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		if body.Error != "" {
-			return fmt.Errorf("validate LogQL for %s: Loki returned HTTP %d: %s", query.describe(), response.StatusCode, body.Error)
+			return fmt.Errorf(
+				"validate LogQL for %s: Loki returned HTTP %d: %s",
+				query.describe(),
+				response.StatusCode,
+				body.Error,
+			)
 		}
 		return fmt.Errorf("validate LogQL for %s: Loki returned HTTP %d", query.describe(), response.StatusCode)
 	}

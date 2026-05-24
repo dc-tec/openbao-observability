@@ -31,7 +31,9 @@ var (
 	referenceLinkPattern       = regexp.MustCompile(`!?\[[^\]]+\]\[([^\]]+)\]`)
 	inlineLinkPattern          = regexp.MustCompile(`!?\[([^\]]+)\]\(([^)]+)\)`)
 	plainSchemePattern         = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9+.-]*:`)
-	bannedPhrasePattern        = regexp.MustCompile(`(?i)\b(simply|just|easily|quickly|obviously|please)\b|\bnote that\b|\bit should be noted\b|\bas mentioned above\b`)
+	bannedPhrasePattern        = regexp.MustCompile(
+		`(?i)\b(simply|just|easily|quickly|obviously|please)\b|\bnote that\b|\bit should be noted\b|\bas mentioned above\b`,
+	)
 )
 
 func Verify(opts VerifyOptions) error {
@@ -146,7 +148,10 @@ func verifyStructure(rel, path string, lines []string) issueList {
 		if strings.TrimSpace(line) != "" {
 			firstContentLine = i + 1
 			if !strings.HasPrefix(line, "# ") {
-				issues = append(issues, issue{Path: rel, Line: i + 1, Message: "first non-empty line must be the H1 title"})
+				issues = append(
+					issues,
+					issue{Path: rel, Line: i + 1, Message: "first non-empty line must be the H1 title"},
+				)
 			}
 			break
 		}
@@ -196,14 +201,25 @@ func verifyStructure(rel, path string, lines []string) issueList {
 		}
 		lastHeadingLevel = level
 		if strings.ContainsAny(text, "`[]*") {
-			issues = append(issues, issue{Path: rel, Line: lineNo, Message: "headings must not contain code, links, or emphasis"})
+			issues = append(
+				issues,
+				issue{Path: rel, Line: lineNo, Message: "headings must not contain code, links, or emphasis"},
+			)
 		}
-		if strings.HasSuffix(text, ".") || strings.HasSuffix(text, ":") || strings.HasSuffix(text, "?") || strings.HasSuffix(text, "!") {
+		if strings.HasSuffix(text, ".") || strings.HasSuffix(text, ":") || strings.HasSuffix(text, "?") ||
+			strings.HasSuffix(text, "!") {
 			issues = append(issues, issue{Path: rel, Line: lineNo, Message: "headings must not end with punctuation"})
 		}
 		slug := headingSlug(text)
 		if previous, ok := headings[slug]; ok {
-			issues = append(issues, issue{Path: rel, Line: lineNo, Message: fmt.Sprintf("duplicate heading %q also appears on line %d", text, previous)})
+			issues = append(
+				issues,
+				issue{
+					Path:    rel,
+					Line:    lineNo,
+					Message: fmt.Sprintf("duplicate heading %q also appears on line %d", text, previous),
+				},
+			)
 		}
 		headings[slug] = lineNo
 		if level == 2 && text == "Before you begin" {
@@ -222,10 +238,16 @@ func verifyStructure(rel, path string, lines []string) issueList {
 	}
 	if requiresProcedureSections(path) {
 		if !hasBeforeYouBegin {
-			issues = append(issues, issue{Path: rel, Message: "how-to and runbook pages must include ## Before you begin"})
+			issues = append(
+				issues,
+				issue{Path: rel, Message: "how-to and runbook pages must include ## Before you begin"},
+			)
 		}
 		if !hasVerifyResult {
-			issues = append(issues, issue{Path: rel, Message: "how-to and runbook pages must include ## Verify the result"})
+			issues = append(
+				issues,
+				issue{Path: rel, Message: "how-to and runbook pages must include ## Verify the result"},
+			)
 		}
 	}
 	return issues
@@ -261,7 +283,10 @@ func verifyStyle(rel string, lines []string) issueList {
 			if !inFence {
 				info := strings.TrimSpace(strings.TrimPrefix(trimmed, "```"))
 				if info == "" {
-					issues = append(issues, issue{Path: rel, Line: lineNo, Message: "fenced code blocks must include a language tag"})
+					issues = append(
+						issues,
+						issue{Path: rel, Line: lineNo, Message: "fenced code blocks must include a language tag"},
+					)
 				}
 			}
 			inFence = !inFence
@@ -274,7 +299,10 @@ func verifyStyle(rel string, lines []string) issueList {
 			issues = append(issues, issue{Path: rel, Line: lineNo, Message: "do not use em dashes"})
 		}
 		if match := bannedPhrasePattern.FindString(line); match != "" {
-			issues = append(issues, issue{Path: rel, Line: lineNo, Message: fmt.Sprintf("avoid banned style-guide phrase %q", match)})
+			issues = append(
+				issues,
+				issue{Path: rel, Line: lineNo, Message: fmt.Sprintf("avoid banned style-guide phrase %q", match)},
+			)
 		}
 	}
 	if inFence {
@@ -298,7 +326,14 @@ func verifyLinks(repoRoot, docsRoot, rel, path string, lines []string, refs map[
 				continue
 			}
 			if _, ok := refs[id]; !ok {
-				issues = append(issues, issue{Path: rel, Line: lineNo, Message: fmt.Sprintf("reference link %q has no definition", match[1])})
+				issues = append(
+					issues,
+					issue{
+						Path:    rel,
+						Line:    lineNo,
+						Message: fmt.Sprintf("reference link %q has no definition", match[1]),
+					},
+				)
 			}
 		}
 		for _, match := range inlineLinkPattern.FindAllStringSubmatch(line, -1) {
@@ -320,7 +355,9 @@ func validateTarget(repoRoot, docsRoot, rel, sourcePath string, line int, target
 	}
 	if plainSchemePattern.MatchString(target) {
 		if strings.Contains(target, "github.com/dc-tec/openbao-observability") {
-			return issueList{{Path: rel, Line: line, Message: "internal links must use relative paths, not GitHub URLs"}}
+			return issueList{
+				{Path: rel, Line: line, Message: "internal links must use relative paths, not GitHub URLs"},
+			}
 		}
 		return nil
 	}
@@ -337,13 +374,23 @@ func validateTarget(repoRoot, docsRoot, rel, sourcePath string, line int, target
 	resolved := filepath.Clean(filepath.Join(filepath.Dir(sourcePath), filepath.FromSlash(targetPath)))
 	if _, err := os.Stat(resolved); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return issueList{{Path: rel, Line: line, Message: fmt.Sprintf("internal link target %q does not exist", target)}}
+			return issueList{
+				{Path: rel, Line: line, Message: fmt.Sprintf("internal link target %q does not exist", target)},
+			}
 		}
-		return issueList{{Path: rel, Line: line, Message: fmt.Sprintf("cannot stat internal link target %q: %v", target, err)}}
+		return issueList{
+			{Path: rel, Line: line, Message: fmt.Sprintf("cannot stat internal link target %q: %v", target, err)},
+		}
 	}
 
 	if !isInside(docsRoot, resolved) && !isInside(repoRoot, resolved) {
-		return issueList{{Path: rel, Line: line, Message: fmt.Sprintf("internal link target %q resolves outside the repository", target)}}
+		return issueList{
+			{
+				Path:    rel,
+				Line:    line,
+				Message: fmt.Sprintf("internal link target %q resolves outside the repository", target),
+			},
+		}
 	}
 	return nil
 }

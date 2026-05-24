@@ -105,7 +105,12 @@ func validateGeneratedSiteTarget(opts SiteLinkOptions, rel, target string) issue
 		return nil
 	}
 	if opts.BasePath != "/" && !strings.HasPrefix(target, opts.BasePath) {
-		return issueList{{Path: rel, Message: fmt.Sprintf("absolute site link %q does not include base path %q", target, opts.BasePath)}}
+		return issueList{
+			{
+				Path:    rel,
+				Message: fmt.Sprintf("absolute site link %q does not include base path %q", target, opts.BasePath),
+			},
+		}
 	}
 
 	targetPath := strings.SplitN(target, "#", 2)[0]
@@ -130,7 +135,9 @@ func validateGeneratedSiteTarget(opts SiteLinkOptions, rel, target string) issue
 
 	resolved := filepath.Clean(filepath.Join(opts.SiteRoot, sitePath))
 	if !isInside(opts.SiteRoot, resolved) {
-		return issueList{{Path: rel, Message: fmt.Sprintf("absolute site link %q resolves outside generated site root", target)}}
+		return issueList{
+			{Path: rel, Message: fmt.Sprintf("absolute site link %q resolves outside generated site root", target)},
+		}
 	}
 	if _, err := os.Stat(resolved); err != nil {
 		return issueList{{Path: rel, Message: fmt.Sprintf("absolute site link %q target does not exist", target)}}

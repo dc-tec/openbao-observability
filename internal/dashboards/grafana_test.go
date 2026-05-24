@@ -74,7 +74,12 @@ func TestBuildGrafanaDashboardUsesStablePanelIDs(t *testing.T) {
 		t.Fatalf("panel count = %d, want 3", len(document.Panels))
 	}
 	if document.Panels[0].ID != 1 || document.Panels[1].ID != 2 || document.Panels[2].ID != 3 {
-		t.Fatalf("panel IDs = %d, %d, %d; want 1, 2, 3", document.Panels[0].ID, document.Panels[1].ID, document.Panels[2].ID)
+		t.Fatalf(
+			"panel IDs = %d, %d, %d; want 1, 2, 3",
+			document.Panels[0].ID,
+			document.Panels[1].ID,
+			document.Panels[2].ID,
+		)
 	}
 }
 

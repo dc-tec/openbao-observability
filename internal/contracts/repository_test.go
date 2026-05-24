@@ -108,7 +108,12 @@ func TestVerifyRepositoryRejectsForbiddenGeneratedLokiLabel(t *testing.T) {
 
 func TestVerifyRepositoryRejectsPrefixVariantDrift(t *testing.T) {
 	root := writeRepositoryTestRepository(t, baseDashboardContract(), defaultRepositoryDocsIndex())
-	writeRepositoryTestFile(t, root, "generated/prometheus/openbao-prefix/openbao-recording-rules.yaml", nativeRecordingRules("openbao", "vault_core_active"))
+	writeRepositoryTestFile(
+		t,
+		root,
+		"generated/prometheus/openbao-prefix/openbao-recording-rules.yaml",
+		nativeRecordingRules("openbao", "vault_core_active"),
+	)
 
 	err := VerifyRepository(VerifyRepositoryOptions{RepositoryRoot: root})
 	if err == nil {
@@ -246,13 +251,43 @@ func writeRepositoryGeneratedRuleVariants(t *testing.T, root string) {
 			vaultContent = nativePrometheusAlerts("vault", "vault_core_active")
 			openbaoContent = nativePrometheusAlerts("openbao", "openbao_core_active")
 		}
-		writeRepositoryTestFile(t, root, filepath.ToSlash(filepath.Join("generated/prometheus", fileName)), vaultContent)
-		writeRepositoryTestFile(t, root, filepath.ToSlash(filepath.Join("generated/prometheus/vault-prefix", fileName)), vaultContent)
-		writeRepositoryTestFile(t, root, filepath.ToSlash(filepath.Join("generated/prometheus/openbao-prefix", fileName)), openbaoContent)
+		writeRepositoryTestFile(
+			t,
+			root,
+			filepath.ToSlash(filepath.Join("generated/prometheus", fileName)),
+			vaultContent,
+		)
+		writeRepositoryTestFile(
+			t,
+			root,
+			filepath.ToSlash(filepath.Join("generated/prometheus/vault-prefix", fileName)),
+			vaultContent,
+		)
+		writeRepositoryTestFile(
+			t,
+			root,
+			filepath.ToSlash(filepath.Join("generated/prometheus/openbao-prefix", fileName)),
+			openbaoContent,
+		)
 
-		writeRepositoryTestFile(t, root, filepath.ToSlash(filepath.Join("generated/prometheusrules", fileName)), prometheusRuleObject("openbao-test", vaultContent))
-		writeRepositoryTestFile(t, root, filepath.ToSlash(filepath.Join("generated/prometheusrules/vault-prefix", fileName)), prometheusRuleObject("openbao-test", vaultContent))
-		writeRepositoryTestFile(t, root, filepath.ToSlash(filepath.Join("generated/prometheusrules/openbao-prefix", fileName)), prometheusRuleObject("openbao-test", openbaoContent))
+		writeRepositoryTestFile(
+			t,
+			root,
+			filepath.ToSlash(filepath.Join("generated/prometheusrules", fileName)),
+			prometheusRuleObject("openbao-test", vaultContent),
+		)
+		writeRepositoryTestFile(
+			t,
+			root,
+			filepath.ToSlash(filepath.Join("generated/prometheusrules/vault-prefix", fileName)),
+			prometheusRuleObject("openbao-test", vaultContent),
+		)
+		writeRepositoryTestFile(
+			t,
+			root,
+			filepath.ToSlash(filepath.Join("generated/prometheusrules/openbao-prefix", fileName)),
+			prometheusRuleObject("openbao-test", openbaoContent),
+		)
 	}
 
 	lokiFiles := []string{
@@ -268,8 +303,18 @@ func writeRepositoryGeneratedRuleVariants(t *testing.T, root string) {
 			openbaoContent = lokiAlerts("openbao")
 		}
 		writeRepositoryTestFile(t, root, filepath.ToSlash(filepath.Join("generated/loki", fileName)), vaultContent)
-		writeRepositoryTestFile(t, root, filepath.ToSlash(filepath.Join("generated/loki/vault-prefix", fileName)), vaultContent)
-		writeRepositoryTestFile(t, root, filepath.ToSlash(filepath.Join("generated/loki/openbao-prefix", fileName)), openbaoContent)
+		writeRepositoryTestFile(
+			t,
+			root,
+			filepath.ToSlash(filepath.Join("generated/loki/vault-prefix", fileName)),
+			vaultContent,
+		)
+		writeRepositoryTestFile(
+			t,
+			root,
+			filepath.ToSlash(filepath.Join("generated/loki/openbao-prefix", fileName)),
+			openbaoContent,
+		)
 	}
 }
 
@@ -321,7 +366,9 @@ spec:
     - name: openbao.loki.alerts
       rules:
         - alert: OpenBaoAuditCanaryMissing
-          expr: absent_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary" [15m])
+          expr: >-
+            absent_over_time({log_stream="openbao.audit"} | json request_path="request.path" |
+            request_path="secret/data/observability/audit-canary" [15m])
           labels:
             source_prefix: ` + prefix + `
 `

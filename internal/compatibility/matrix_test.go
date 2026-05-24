@@ -12,6 +12,9 @@ func TestGenerateMatrixReportsFixtureCoverage(t *testing.T) {
 	contractPath := filepath.Join(root, "contracts", "metrics", "openbao-core.yaml")
 	fixtureDir := filepath.Join(root, "fixtures", "captured", "openbao-2.5.4")
 	outputPath := filepath.Join(root, "generated", "docs", "metric-compatibility-matrix.md")
+	metricPath := func(name string) string {
+		return filepath.Join(fixtureDir, "metrics", name)
+	}
 
 	writeFile(t, contractPath, `version: v0.1
 status: draft
@@ -37,18 +40,18 @@ metrics:
     required: false
     overview: true
 `)
-	writeFile(t, filepath.Join(fixtureDir, "metrics", "openbao-2.5.4-vault-prefix.prom"), `# HELP vault_core_active Active node status.
+	writeFile(t, metricPath("openbao-2.5.4-vault-prefix.prom"), `# HELP vault_core_active Active node status.
 # TYPE vault_core_active gauge
 vault_core_active{cluster="test"} 1
 `)
-	writeFile(t, filepath.Join(fixtureDir, "metrics", "openbao-2.5.4-openbao-prefix.prom"), `# HELP openbao_core_active Active node status.
+	writeFile(t, metricPath("openbao-2.5.4-openbao-prefix.prom"), `# HELP openbao_core_active Active node status.
 # TYPE openbao_core_active gauge
 openbao_core_active{cluster="test"} 1
 # HELP openbao_token_count Token count.
 # TYPE openbao_token_count gauge
 openbao_token_count{namespace="root"} 4
 `)
-	writeFile(t, filepath.Join(fixtureDir, "metrics", "openbao-2.5.4-raft-vault-node0.prom"), `# HELP vault_core_active Active node status.
+	writeFile(t, metricPath("openbao-2.5.4-raft-vault-node0.prom"), `# HELP vault_core_active Active node status.
 # TYPE vault_core_active gauge
 vault_core_active{cluster="test",instance="node0"} 1
 `)

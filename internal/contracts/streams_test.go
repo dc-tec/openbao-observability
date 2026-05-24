@@ -75,7 +75,10 @@ func TestValidateLogExpressionRejectsUnknownGroupingLabel(t *testing.T) {
 func TestValidateLogExpressionAllowsQueryTimeParsing(t *testing.T) {
 	contract := mustLoadStreamContract(t, baseStreamContract())
 
-	err := contract.ValidateLogExpression(`{log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"sys/.*"`)
+	err := contract.ValidateLogExpression(
+		`{log_stream="openbao.audit"} | json request_path="request.path" | ` +
+			`request_path=~"sys/.*"`,
+	)
 	if err != nil {
 		t.Fatalf("ValidateLogExpression returned error: %v", err)
 	}

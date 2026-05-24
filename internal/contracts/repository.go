@@ -123,11 +123,19 @@ func VerifyRepository(opts VerifyRepositoryOptions) error {
 		return err
 	}
 
-	recordingRules, err := loadRecordingRuleNames(filepath.Join(root, "generated", "prometheus", "openbao-recording-rules.yaml"))
+	recordingRules, err := loadRecordingRuleNames(
+		filepath.Join(root, "generated", "prometheus", "openbao-recording-rules.yaml"),
+	)
 	if err != nil {
 		return err
 	}
-	if err := verifyGeneratedDashboards(root, dashboardContractPaths, generatedDashboardPaths, recordingRules, streamContract); err != nil {
+	if err := verifyGeneratedDashboards(
+		root,
+		dashboardContractPaths,
+		generatedDashboardPaths,
+		recordingRules,
+		streamContract,
+	); err != nil {
 		return err
 	}
 	if err := verifyGeneratedAlerts(root, alertContractPaths, streamContract); err != nil {
@@ -152,7 +160,12 @@ func (o VerifyRepositoryOptions) withDefaults() VerifyRepositoryOptions {
 	return o
 }
 
-func verifyGeneratedDashboards(root string, contractPaths, generatedPaths []string, recordingRules map[string]bool, streamContract *StreamContract) error {
+func verifyGeneratedDashboards(
+	root string,
+	contractPaths, generatedPaths []string,
+	recordingRules map[string]bool,
+	streamContract *StreamContract,
+) error {
 	contractsByUID := map[string]dashboardContractFile{}
 	for _, contractPath := range contractPaths {
 		contract, err := LoadDashboardContract(contractPath)
@@ -162,11 +175,20 @@ func verifyGeneratedDashboards(root string, contractPaths, generatedPaths []stri
 		if err := contract.ValidateExpressions(); err != nil {
 			return fmt.Errorf("validate dashboard expressions in %s: %w", relPath(root, contractPath), err)
 		}
-		if err := validateDashboardContractLabelSafety(relPath(root, contractPath), contract, streamContract.ForbiddenLabels); err != nil {
+		if err := validateDashboardContractLabelSafety(
+			relPath(root, contractPath),
+			contract,
+			streamContract.ForbiddenLabels,
+		); err != nil {
 			return err
 		}
 		if previous, ok := contractsByUID[contract.UID]; ok {
-			return fmt.Errorf("dashboard uid %q is used by both %s and %s", contract.UID, relPath(root, previous.Path), relPath(root, contractPath))
+			return fmt.Errorf(
+				"dashboard uid %q is used by both %s and %s",
+				contract.UID,
+				relPath(root, previous.Path),
+				relPath(root, contractPath),
+			)
 		}
 		contractsByUID[contract.UID] = dashboardContractFile{Path: contractPath, Contract: contract}
 	}
@@ -181,10 +203,19 @@ func verifyGeneratedDashboards(root string, contractPaths, generatedPaths []stri
 			return err
 		}
 		if previous, ok := generatedByUID[dashboard.UID]; ok {
-			return fmt.Errorf("generated dashboard uid %q is used by both %s and %s", dashboard.UID, relPath(root, previous), relPath(root, generatedPath))
+			return fmt.Errorf(
+				"generated dashboard uid %q is used by both %s and %s",
+				dashboard.UID,
+				relPath(root, previous),
+				relPath(root, generatedPath),
+			)
 		}
 		if filepath.Base(generatedPath) != dashboard.UID+".json" {
-			return fmt.Errorf("generated dashboard %s filename must match uid %q", relPath(root, generatedPath), dashboard.UID)
+			return fmt.Errorf(
+				"generated dashboard %s filename must match uid %q",
+				relPath(root, generatedPath),
+				dashboard.UID,
+			)
 		}
 		generatedByUID[dashboard.UID] = generatedPath
 	}
@@ -192,20 +223,36 @@ func verifyGeneratedDashboards(root string, contractPaths, generatedPaths []stri
 	for uid, contractFile := range contractsByUID {
 		generatedPath, ok := generatedByUID[uid]
 		if !ok {
-			return fmt.Errorf("dashboard contract %s has no generated dashboard generated/grafana/%s.json", relPath(root, contractFile.Path), uid)
+			return fmt.Errorf(
+				"dashboard contract %s has no generated dashboard generated/grafana/%s.json",
+				relPath(root, contractFile.Path),
+				uid,
+			)
 		}
 		dashboard, err := loadGeneratedDashboard(generatedPath)
 		if err != nil {
 			return err
 		}
-		if err := verifyGeneratedDashboard(root, contractFile.Path, contractFile.Contract, generatedPath, dashboard, recordingRules, streamContract); err != nil {
+		if err := verifyGeneratedDashboard(
+			root,
+			contractFile.Path,
+			contractFile.Contract,
+			generatedPath,
+			dashboard,
+			recordingRules,
+			streamContract,
+		); err != nil {
 			return err
 		}
 	}
 
 	for uid, generatedPath := range generatedByUID {
 		if _, ok := contractsByUID[uid]; !ok {
-			return fmt.Errorf("generated dashboard %s has no source dashboard contract with uid %q", relPath(root, generatedPath), uid)
+			return fmt.Errorf(
+				"generated dashboard %s has no source dashboard contract with uid %q",
+				relPath(root, generatedPath),
+				uid,
+			)
 		}
 	}
 
@@ -217,67 +264,154 @@ type dashboardContractFile struct {
 	Contract *DashboardContract
 }
 
-func verifyGeneratedDashboard(root, contractPath string, contract *DashboardContract, generatedPath string, dashboard *generatedDashboard, recordingRules map[string]bool, streamContract *StreamContract) error {
+func verifyGeneratedDashboard(
+	root, contractPath string,
+	contract *DashboardContract,
+	generatedPath string,
+	dashboard *generatedDashboard,
+	recordingRules map[string]bool,
+	streamContract *StreamContract,
+) error {
 	if dashboard.Title != contract.Title {
-		return fmt.Errorf("generated dashboard %s title %q does not match contract %s title %q", relPath(root, generatedPath), dashboard.Title, relPath(root, contractPath), contract.Title)
+		return fmt.Errorf(
+			"generated dashboard %s title %q does not match contract %s title %q",
+			relPath(root, generatedPath),
+			dashboard.Title,
+			relPath(root, contractPath),
+			contract.Title,
+		)
 	}
 	if dashboard.Refresh != contract.Refresh {
-		return fmt.Errorf("generated dashboard %s refresh %q does not match contract %s refresh %q", relPath(root, generatedPath), dashboard.Refresh, relPath(root, contractPath), contract.Refresh)
+		return fmt.Errorf(
+			"generated dashboard %s refresh %q does not match contract %s refresh %q",
+			relPath(root, generatedPath),
+			dashboard.Refresh,
+			relPath(root, contractPath),
+			contract.Refresh,
+		)
 	}
 	if dashboard.Time.From != contract.TimeRange.From || dashboard.Time.To != contract.TimeRange.To {
-		return fmt.Errorf("generated dashboard %s time range %s..%s does not match contract %s time range %s..%s", relPath(root, generatedPath), dashboard.Time.From, dashboard.Time.To, relPath(root, contractPath), contract.TimeRange.From, contract.TimeRange.To)
+		return fmt.Errorf(
+			"generated dashboard %s time range %s..%s does not match contract %s time range %s..%s",
+			relPath(root, generatedPath),
+			dashboard.Time.From,
+			dashboard.Time.To,
+			relPath(root, contractPath),
+			contract.TimeRange.From,
+			contract.TimeRange.To,
+		)
 	}
 	if err := verifyGeneratedDashboardVariables(root, contractPath, contract, generatedPath, dashboard); err != nil {
 		return err
 	}
 	if len(dashboard.Panels) != len(contract.Panels) {
-		return fmt.Errorf("generated dashboard %s has %d panels, want %d from %s", relPath(root, generatedPath), len(dashboard.Panels), len(contract.Panels), relPath(root, contractPath))
+		return fmt.Errorf(
+			"generated dashboard %s has %d panels, want %d from %s",
+			relPath(root, generatedPath),
+			len(dashboard.Panels),
+			len(contract.Panels),
+			relPath(root, contractPath),
+		)
 	}
 
 	for i, panel := range contract.Panels {
 		generatedPanel := dashboard.Panels[i]
 		if generatedPanel.Title != panel.Title {
-			return fmt.Errorf("generated dashboard %s panel %d title %q does not match contract panel %s title %q", relPath(root, generatedPath), i+1, generatedPanel.Title, panel.ID, panel.Title)
+			return fmt.Errorf(
+				"generated dashboard %s panel %d title %q does not match contract panel %s title %q",
+				relPath(root, generatedPath),
+				i+1,
+				generatedPanel.Title,
+				panel.ID,
+				panel.Title,
+			)
 		}
 		if generatedPanel.Type != panel.Type {
-			return fmt.Errorf("generated dashboard %s panel %s type %q does not match contract type %q", relPath(root, generatedPath), panel.ID, generatedPanel.Type, panel.Type)
+			return fmt.Errorf(
+				"generated dashboard %s panel %s type %q does not match contract type %q",
+				relPath(root, generatedPath),
+				panel.ID,
+				generatedPanel.Type,
+				panel.Type,
+			)
 		}
 		if generatedPanel.GridPos != panel.Grid {
-			return fmt.Errorf("generated dashboard %s panel %s grid does not match contract", relPath(root, generatedPath), panel.ID)
+			return fmt.Errorf(
+				"generated dashboard %s panel %s grid does not match contract",
+				relPath(root, generatedPath),
+				panel.ID,
+			)
 		}
 
 		expectedDatasource, err := contractDatasource(contract, panel.Datasource)
 		if err != nil {
 			return fmt.Errorf("dashboard contract %s panel %s: %w", relPath(root, contractPath), panel.ID, err)
 		}
-		if generatedPanel.Datasource.Type != expectedDatasource.Type || generatedPanel.Datasource.UID != expectedDatasource.UID {
-			return fmt.Errorf("generated dashboard %s panel %s datasource %s/%s does not match contract %s/%s", relPath(root, generatedPath), panel.ID, generatedPanel.Datasource.Type, generatedPanel.Datasource.UID, expectedDatasource.Type, expectedDatasource.UID)
+		if generatedPanel.Datasource.Type != expectedDatasource.Type ||
+			generatedPanel.Datasource.UID != expectedDatasource.UID {
+			return fmt.Errorf(
+				"generated dashboard %s panel %s datasource %s/%s does not match contract %s/%s",
+				relPath(root, generatedPath),
+				panel.ID,
+				generatedPanel.Datasource.Type,
+				generatedPanel.Datasource.UID,
+				expectedDatasource.Type,
+				expectedDatasource.UID,
+			)
 		}
 		if len(generatedPanel.Targets) == 0 {
 			return fmt.Errorf("generated dashboard %s panel %s has no targets", relPath(root, generatedPath), panel.ID)
 		}
 		for _, target := range generatedPanel.Targets {
 			if target.Expr != panel.Expression {
-				return fmt.Errorf("generated dashboard %s panel %s target expression does not match contract", relPath(root, generatedPath), panel.ID)
+				return fmt.Errorf(
+					"generated dashboard %s panel %s target expression does not match contract",
+					relPath(root, generatedPath),
+					panel.ID,
+				)
 			}
 			if target.Datasource.Type != expectedDatasource.Type || target.Datasource.UID != expectedDatasource.UID {
-				return fmt.Errorf("generated dashboard %s panel %s target datasource %s/%s does not match contract %s/%s", relPath(root, generatedPath), panel.ID, target.Datasource.Type, target.Datasource.UID, expectedDatasource.Type, expectedDatasource.UID)
+				return fmt.Errorf(
+					"generated dashboard %s panel %s target datasource %s/%s does not match contract %s/%s",
+					relPath(root, generatedPath),
+					panel.ID,
+					target.Datasource.Type,
+					target.Datasource.UID,
+					expectedDatasource.Type,
+					expectedDatasource.UID,
+				)
 			}
 			switch panel.Signal {
 			case dashboardSignalMetrics:
-				if err := validatePromQLLabelSafety(contract.ExpressionWithDefaultVariables(target.Expr), streamContract.ForbiddenLabels); err != nil {
-					return fmt.Errorf("generated dashboard %s panel %s target labels: %w", relPath(root, generatedPath), panel.ID, err)
+				expression := contract.ExpressionWithDefaultVariables(target.Expr)
+				if err := validatePromQLLabelSafety(expression, streamContract.ForbiddenLabels); err != nil {
+					return fmt.Errorf(
+						"generated dashboard %s panel %s target labels: %w",
+						relPath(root, generatedPath),
+						panel.ID,
+						err,
+					)
 				}
 			case dashboardSignalLogs:
 				if err := streamContract.ValidateLogExpression(target.Expr); err != nil {
-					return fmt.Errorf("generated dashboard %s panel %s target labels: %w", relPath(root, generatedPath), panel.ID, err)
+					return fmt.Errorf(
+						"generated dashboard %s panel %s target labels: %w",
+						relPath(root, generatedPath),
+						panel.ID,
+						err,
+					)
 				}
 			}
 		}
 		if panel.Signal == dashboardSignalMetrics {
 			for _, ruleName := range recordingRuleReferences(panel.Expression) {
 				if !recordingRules[ruleName] {
-					return fmt.Errorf("dashboard contract %s panel %s references recording rule %s, but it is not generated", relPath(root, contractPath), panel.ID, ruleName)
+					return fmt.Errorf(
+						"dashboard contract %s panel %s references recording rule %s, but it is not generated",
+						relPath(root, contractPath),
+						panel.ID,
+						ruleName,
+					)
 				}
 			}
 		}
@@ -286,20 +420,49 @@ func verifyGeneratedDashboard(root, contractPath string, contract *DashboardCont
 	return nil
 }
 
-func verifyGeneratedDashboardVariables(root, contractPath string, contract *DashboardContract, generatedPath string, dashboard *generatedDashboard) error {
+func verifyGeneratedDashboardVariables(
+	root, contractPath string,
+	contract *DashboardContract,
+	generatedPath string,
+	dashboard *generatedDashboard,
+) error {
 	if len(dashboard.Templating.List) != len(contract.Variables) {
-		return fmt.Errorf("generated dashboard %s has %d variables, want %d from %s", relPath(root, generatedPath), len(dashboard.Templating.List), len(contract.Variables), relPath(root, contractPath))
+		return fmt.Errorf(
+			"generated dashboard %s has %d variables, want %d from %s",
+			relPath(root, generatedPath),
+			len(dashboard.Templating.List),
+			len(contract.Variables),
+			relPath(root, contractPath),
+		)
 	}
 	for i, variable := range contract.Variables {
 		generatedVariable := dashboard.Templating.List[i]
 		if generatedVariable.Name != variable.Name {
-			return fmt.Errorf("generated dashboard %s variable %d name %q does not match contract variable %q", relPath(root, generatedPath), i+1, generatedVariable.Name, variable.Name)
+			return fmt.Errorf(
+				"generated dashboard %s variable %d name %q does not match contract variable %q",
+				relPath(root, generatedPath),
+				i+1,
+				generatedVariable.Name,
+				variable.Name,
+			)
 		}
 		if generatedVariable.Type != variable.Type {
-			return fmt.Errorf("generated dashboard %s variable %s type %q does not match contract type %q", relPath(root, generatedPath), variable.Name, generatedVariable.Type, variable.Type)
+			return fmt.Errorf(
+				"generated dashboard %s variable %s type %q does not match contract type %q",
+				relPath(root, generatedPath),
+				variable.Name,
+				generatedVariable.Type,
+				variable.Type,
+			)
 		}
 		if generatedVariable.Current.Value != variable.Default {
-			return fmt.Errorf("generated dashboard %s variable %s default %q does not match contract default %q", relPath(root, generatedPath), variable.Name, generatedVariable.Current.Value, variable.Default)
+			return fmt.Errorf(
+				"generated dashboard %s variable %s default %q does not match contract default %q",
+				relPath(root, generatedPath),
+				variable.Name,
+				generatedVariable.Current.Value,
+				variable.Default,
+			)
 		}
 	}
 	return nil
@@ -331,7 +494,12 @@ func verifyGeneratedAlerts(root string, alertContractPaths []string, streamContr
 			return err
 		}
 		for _, alert := range contract.Alerts {
-			if err := validateAlertContractLabelSafety(relPath(root, contractPath), contract, alert, streamContract); err != nil {
+			if err := validateAlertContractLabelSafety(
+				relPath(root, contractPath),
+				contract,
+				alert,
+				streamContract,
+			); err != nil {
 				return err
 			}
 		}
@@ -339,19 +507,33 @@ func verifyGeneratedAlerts(root string, alertContractPaths []string, streamContr
 			switch alert.Type {
 			case alertTypePrometheus:
 				if previous, ok := expectedPrometheusAlerts[alert.ID]; ok {
-					return fmt.Errorf("prometheus alert %s is defined in both %s and %s", alert.ID, previous, relPath(root, contractPath))
+					return fmt.Errorf(
+						"prometheus alert %s is defined in both %s and %s",
+						alert.ID,
+						previous,
+						relPath(root, contractPath),
+					)
 				}
 				expectedPrometheusAlerts[alert.ID] = relPath(root, contractPath)
 			case alertTypeLoki:
 				if previous, ok := expectedLokiAlerts[alert.ID]; ok {
-					return fmt.Errorf("loki alert %s is defined in both %s and %s", alert.ID, previous, relPath(root, contractPath))
+					return fmt.Errorf(
+						"loki alert %s is defined in both %s and %s",
+						alert.ID,
+						previous,
+						relPath(root, contractPath),
+					)
 				}
 				expectedLokiAlerts[alert.ID] = relPath(root, contractPath)
 			}
 		}
 	}
 
-	generatedPrometheusAlerts, err := loadGeneratedAlertNames(root, filepath.Join("generated", "prometheus", "*.yaml"), false)
+	generatedPrometheusAlerts, err := loadGeneratedAlertNames(
+		root,
+		filepath.Join("generated", "prometheus", "*.yaml"),
+		false,
+	)
 	if err != nil {
 		return err
 	}
@@ -359,22 +541,41 @@ func verifyGeneratedAlerts(root string, alertContractPaths []string, streamContr
 	if err != nil {
 		return err
 	}
-	if err := compareNamedSets("generated Prometheus alerts", generatedPrometheusAlerts, expectedPrometheusAlerts); err != nil {
+	if err := compareNamedSets(
+		"generated Prometheus alerts",
+		generatedPrometheusAlerts,
+		expectedPrometheusAlerts,
+	); err != nil {
 		return err
 	}
 	if err := compareNamedSets("generated Loki alerts", generatedLokiAlerts, expectedLokiAlerts); err != nil {
 		return err
 	}
-	if err := verifyGeneratedRuleLabels(root, filepath.Join("generated", "prometheus", "*.yaml"), false, streamContract); err != nil {
+	if err := verifyGeneratedRuleLabels(
+		root,
+		filepath.Join("generated", "prometheus", "*.yaml"),
+		false,
+		streamContract,
+	); err != nil {
 		return err
 	}
-	if err := verifyGeneratedRuleLabels(root, filepath.Join("generated", "loki", "*.yaml"), true, streamContract); err != nil {
+	if err := verifyGeneratedRuleLabels(
+		root,
+		filepath.Join("generated", "loki", "*.yaml"),
+		true,
+		streamContract,
+	); err != nil {
 		return err
 	}
 	return nil
 }
 
-func validateAlertContractLabelSafety(source string, contract *AlertContract, alert Alert, streamContract *StreamContract) error {
+func validateAlertContractLabelSafety(
+	source string,
+	contract *AlertContract,
+	alert Alert,
+	streamContract *StreamContract,
+) error {
 	for label := range alert.Labels {
 		if stringSet(streamContract.ForbiddenLabels)[label] {
 			return fmt.Errorf("alert %s in %s uses forbidden alert label %q", alert.ID, source, label)
@@ -382,7 +583,10 @@ func validateAlertContractLabelSafety(source string, contract *AlertContract, al
 	}
 	switch alert.Type {
 	case alertTypePrometheus:
-		return validatePromQLLabelSafety(contract.RenderExpression(alert.Expression, contract.DefaultSourcePrefix()), streamContract.ForbiddenLabels)
+		return validatePromQLLabelSafety(
+			contract.RenderExpression(alert.Expression, contract.DefaultSourcePrefix()),
+			streamContract.ForbiddenLabels,
+		)
 	case alertTypeLoki:
 		return streamContract.ValidateLogExpression(alert.Expression)
 	default:
@@ -395,7 +599,8 @@ func validateDashboardContractLabelSafety(source string, contract *DashboardCont
 		if panel.Signal != dashboardSignalMetrics {
 			continue
 		}
-		if err := validatePromQLLabelSafety(contract.ExpressionWithDefaultVariables(panel.Expression), forbiddenLabels); err != nil {
+		expression := contract.ExpressionWithDefaultVariables(panel.Expression)
+		if err := validatePromQLLabelSafety(expression, forbiddenLabels); err != nil {
 			return fmt.Errorf("dashboard %s panel %s labels: %w", source, panel.ID, err)
 		}
 	}
@@ -434,7 +639,11 @@ func validatePromQLLabelSafety(expression string, forbiddenLabels []string) erro
 	return foundErr
 }
 
-func validateGeneratedDashboardSchema(root, generatedPath string, dashboard *generatedDashboard, streamContract *StreamContract) error {
+func validateGeneratedDashboardSchema(
+	root, generatedPath string,
+	dashboard *generatedDashboard,
+	streamContract *StreamContract,
+) error {
 	source := relPath(root, generatedPath)
 	if dashboard.UID == "" {
 		return fmt.Errorf("generated dashboard %s is missing uid", source)
@@ -505,13 +714,24 @@ func validateGeneratedDashboardSchema(root, generatedPath string, dashboard *gen
 				return fmt.Errorf("generated dashboard %s panel %d has target without refId", source, panel.ID)
 			}
 			if seenTargets[target.RefID] {
-				return fmt.Errorf("generated dashboard %s panel %d has duplicate target refId %q", source, panel.ID, target.RefID)
+				return fmt.Errorf(
+					"generated dashboard %s panel %d has duplicate target refId %q",
+					source,
+					panel.ID,
+					target.RefID,
+				)
 			}
 			seenTargets[target.RefID] = true
 			if target.Expr == "" {
-				return fmt.Errorf("generated dashboard %s panel %d target %s is missing expr", source, panel.ID, target.RefID)
+				return fmt.Errorf(
+					"generated dashboard %s panel %d target %s is missing expr",
+					source,
+					panel.ID,
+					target.RefID,
+				)
 			}
-			if err := validateGeneratedDatasource(source, fmt.Sprintf("panel %d target %s", panel.ID, target.RefID), target.Datasource); err != nil {
+			field := fmt.Sprintf("panel %d target %s", panel.ID, target.RefID)
+			if err := validateGeneratedDatasource(source, field, target.Datasource); err != nil {
 				return err
 			}
 			expression := target.Expr
@@ -521,14 +741,32 @@ func validateGeneratedDashboardSchema(root, generatedPath string, dashboard *gen
 			switch target.Datasource.Type {
 			case alertTypePrometheus:
 				if err := validatePromQLLabelSafety(expression, streamContract.ForbiddenLabels); err != nil {
-					return fmt.Errorf("generated dashboard %s panel %d target %s labels: %w", source, panel.ID, target.RefID, err)
+					return fmt.Errorf(
+						"generated dashboard %s panel %d target %s labels: %w",
+						source,
+						panel.ID,
+						target.RefID,
+						err,
+					)
 				}
 			case alertTypeLoki:
 				if err := streamContract.ValidateLogExpression(target.Expr); err != nil {
-					return fmt.Errorf("generated dashboard %s panel %d target %s labels: %w", source, panel.ID, target.RefID, err)
+					return fmt.Errorf(
+						"generated dashboard %s panel %d target %s labels: %w",
+						source,
+						panel.ID,
+						target.RefID,
+						err,
+					)
 				}
 			default:
-				return fmt.Errorf("generated dashboard %s panel %d target %s has unsupported datasource type %q", source, panel.ID, target.RefID, target.Datasource.Type)
+				return fmt.Errorf(
+					"generated dashboard %s panel %d target %s has unsupported datasource type %q",
+					source,
+					panel.ID,
+					target.RefID,
+					target.Datasource.Type,
+				)
 			}
 		}
 	}
@@ -593,10 +831,20 @@ func verifyGeneratedRuleLabels(root, pattern string, specGroups bool, streamCont
 	return nil
 }
 
-func validateGeneratedRuleLabelSafety(root, filePath string, rule rule, loki bool, streamContract *StreamContract) error {
+func validateGeneratedRuleLabelSafety(
+	root, filePath string,
+	rule rule,
+	loki bool,
+	streamContract *StreamContract,
+) error {
 	for label := range rule.Labels {
 		if stringSet(streamContract.ForbiddenLabels)[label] {
-			return fmt.Errorf("generated rule %s in %s uses forbidden label %q", generatedRuleName(rule), relPath(root, filePath), label)
+			return fmt.Errorf(
+				"generated rule %s in %s uses forbidden label %q",
+				generatedRuleName(rule),
+				relPath(root, filePath),
+				label,
+			)
 		}
 	}
 	if rule.Expr == "" {
@@ -604,12 +852,22 @@ func validateGeneratedRuleLabelSafety(root, filePath string, rule rule, loki boo
 	}
 	if loki {
 		if err := streamContract.ValidateLogExpression(rule.Expr); err != nil {
-			return fmt.Errorf("generated Loki rule %s in %s labels: %w", generatedRuleName(rule), relPath(root, filePath), err)
+			return fmt.Errorf(
+				"generated Loki rule %s in %s labels: %w",
+				generatedRuleName(rule),
+				relPath(root, filePath),
+				err,
+			)
 		}
 		return nil
 	}
 	if err := validatePromQLLabelSafety(rule.Expr, streamContract.ForbiddenLabels); err != nil {
-		return fmt.Errorf("generated Prometheus rule %s in %s labels: %w", generatedRuleName(rule), relPath(root, filePath), err)
+		return fmt.Errorf(
+			"generated Prometheus rule %s in %s labels: %w",
+			generatedRuleName(rule),
+			relPath(root, filePath),
+			err,
+		)
 	}
 	return nil
 }
@@ -661,13 +919,34 @@ func verifyPrefixVariants(root string, streamContract *StreamContract) error {
 			if err := verifySameFile(root, defaultPath, vaultPath); err != nil {
 				return err
 			}
-			if err := verifyRuleFileSourcePrefix(root, defaultPath, artifact.spec, artifact.loki, defaultSourcePrefix, streamContract); err != nil {
+			if err := verifyRuleFileSourcePrefix(
+				root,
+				defaultPath,
+				artifact.spec,
+				artifact.loki,
+				defaultSourcePrefix,
+				streamContract,
+			); err != nil {
 				return err
 			}
-			if err := verifyRuleFileSourcePrefix(root, vaultPath, artifact.spec, artifact.loki, defaultSourcePrefix, streamContract); err != nil {
+			if err := verifyRuleFileSourcePrefix(
+				root,
+				vaultPath,
+				artifact.spec,
+				artifact.loki,
+				defaultSourcePrefix,
+				streamContract,
+			); err != nil {
 				return err
 			}
-			if err := verifyRuleFileSourcePrefix(root, openbaoPath, artifact.spec, artifact.loki, "openbao", streamContract); err != nil {
+			if err := verifyRuleFileSourcePrefix(
+				root,
+				openbaoPath,
+				artifact.spec,
+				artifact.loki,
+				"openbao",
+				streamContract,
+			); err != nil {
 				return err
 			}
 		}
@@ -685,12 +964,21 @@ func verifySameFile(root, leftPath, rightPath string) error {
 		return fmt.Errorf("read generated artifact %s: %w", relPath(root, rightPath), err)
 	}
 	if !bytes.Equal(left, right) {
-		return fmt.Errorf("generated default artifact %s must match vault-prefix artifact %s", relPath(root, leftPath), relPath(root, rightPath))
+		return fmt.Errorf(
+			"generated default artifact %s must match vault-prefix artifact %s",
+			relPath(root, leftPath),
+			relPath(root, rightPath),
+		)
 	}
 	return nil
 }
 
-func verifyRuleFileSourcePrefix(root, filePath string, specGroups, loki bool, expectedPrefix string, streamContract *StreamContract) error {
+func verifyRuleFileSourcePrefix(
+	root, filePath string,
+	specGroups, loki bool,
+	expectedPrefix string,
+	streamContract *StreamContract,
+) error {
 	rules, err := loadRuleFile(filePath)
 	if err != nil {
 		return err
@@ -701,16 +989,30 @@ func verifyRuleFileSourcePrefix(root, filePath string, specGroups, loki bool, ex
 				continue
 			}
 			if got := rule.Labels["source_prefix"]; got != expectedPrefix {
-				return fmt.Errorf("generated rule %s in %s has source_prefix %q, want %q", generatedRuleName(rule), relPath(root, filePath), got, expectedPrefix)
+				return fmt.Errorf(
+					"generated rule %s in %s has source_prefix %q, want %q",
+					generatedRuleName(rule),
+					relPath(root, filePath),
+					got,
+					expectedPrefix,
+				)
 			}
 			if err := validateGeneratedRuleLabelSafety(root, filePath, rule, loki, streamContract); err != nil {
 				return err
 			}
 			if expectedPrefix == "openbao" && rawVaultMetricPattern.MatchString(rule.Expr) {
-				return fmt.Errorf("generated rule %s in %s uses vault_* metric under openbao-prefix profile", generatedRuleName(rule), relPath(root, filePath))
+				return fmt.Errorf(
+					"generated rule %s in %s uses vault_* metric under openbao-prefix profile",
+					generatedRuleName(rule),
+					relPath(root, filePath),
+				)
 			}
 			if expectedPrefix == defaultSourcePrefix && hasDisallowedRawOpenBAOMetric(rule.Expr) {
-				return fmt.Errorf("generated rule %s in %s uses openbao_* metric under vault-prefix profile", generatedRuleName(rule), relPath(root, filePath))
+				return fmt.Errorf(
+					"generated rule %s in %s uses openbao_* metric under vault-prefix profile",
+					generatedRuleName(rule),
+					relPath(root, filePath),
+				)
 			}
 		}
 	}
@@ -772,7 +1074,12 @@ func verifyRunbookIndex(root string, alertContractPaths []string) error {
 			seenRunbooks[cleaned] = true
 			link := "./" + strings.TrimPrefix(cleaned, "docs/")
 			if !strings.Contains(index, "]("+link+")") {
-				return fmt.Errorf("runbook %s referenced by alert %s is not linked from %s", cleaned, alert.ID, relPath(root, indexPath))
+				return fmt.Errorf(
+					"runbook %s referenced by alert %s is not linked from %s",
+					cleaned,
+					alert.ID,
+					relPath(root, indexPath),
+				)
 			}
 		}
 	}
@@ -867,7 +1174,12 @@ func loadGeneratedAlertNames(root, pattern string, loki bool) (map[string]string
 					continue
 				}
 				if previous, ok := alerts[rule.Alert]; ok {
-					return nil, fmt.Errorf("generated alert %s is defined in both %s and %s", rule.Alert, previous, relPath(root, filePath))
+					return nil, fmt.Errorf(
+						"generated alert %s is defined in both %s and %s",
+						rule.Alert,
+						previous,
+						relPath(root, filePath),
+					)
 				}
 				alerts[rule.Alert] = relPath(root, filePath)
 			}

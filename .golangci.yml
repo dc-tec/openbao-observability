@@ -17,6 +17,7 @@ linters:
     - gosec
     - govet
     - ineffassign
+    - lll
     - misspell
     - nakedret
     - prealloc
@@ -37,6 +38,9 @@ linters:
           msg: broad any is not allowed without a reviewed boundary adapter
         - pattern: 'interface\{\}'
           msg: broad interface{} is not allowed without a reviewed boundary adapter
+    lll:
+      line-length: 120
+      tab-width: 1
     revive:
       rules:
         - name: comment-spacings

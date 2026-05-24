@@ -162,7 +162,9 @@ alerts:
     severity: critical
     signal: loki
     for: 15m
-    expression: 'absent_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary" [15m])'
+    expression: >-
+      absent_over_time({log_stream="openbao.audit"} | json request_path="request.path" |
+      request_path="secret/data/observability/audit-canary" [15m])
     summary: OpenBao audit canary is missing
     description: Loki has not received the expected OpenBao audit canary request for the alert window.
     runbook: docs/runbooks/audit-canary-missing.md

@@ -214,7 +214,11 @@ func (c DashboardContract) validateShape(path string) error {
 				return fmt.Errorf("dashboard variable %s has no options", variable.Name)
 			}
 			if !stringSet(variable.Options)[variable.Default] {
-				return fmt.Errorf("dashboard variable %s default %q is not listed in options", variable.Name, variable.Default)
+				return fmt.Errorf(
+					"dashboard variable %s default %q is not listed in options",
+					variable.Name,
+					variable.Default,
+				)
 			}
 		}
 	}

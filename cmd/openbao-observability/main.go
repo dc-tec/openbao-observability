@@ -161,7 +161,12 @@ func runContractsVerify(args []string) error {
 	fs := flag.NewFlagSet("contracts verify", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	opts := contracts.VerifyOptions{}
-	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "metrics", "openbao-core.yaml"), "metric contract path")
+	fs.StringVar(
+		&opts.ContractPath,
+		"contract",
+		filepath.Join("contracts", "metrics", "openbao-core.yaml"),
+		"metric contract path",
+	)
 	fs.StringVar(&opts.FixtureDir, "fixtures", envString("FIXTURE_DIR", defaultFixtureDir), "fixture directory")
 
 	if err := fs.Parse(args); err != nil {
@@ -175,9 +180,24 @@ func runContractsVerifyAlerts(args []string) error {
 	fs := flag.NewFlagSet("contracts verify-alerts", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	opts := contracts.VerifyAlertOptions{}
-	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "alerts", "critical.yaml"), "alert contract path")
-	fs.StringVar(&opts.SourcePrefix, "source-prefix", "", "source metric prefix; defaults to sourcePrefix from contract")
-	fs.StringVar(&opts.RepositoryRoot, "repository-root", ".", "repository root used to resolve local runbook paths")
+	fs.StringVar(
+		&opts.ContractPath,
+		"contract",
+		filepath.Join("contracts", "alerts", "critical.yaml"),
+		"alert contract path",
+	)
+	fs.StringVar(
+		&opts.SourcePrefix,
+		"source-prefix",
+		"",
+		"source metric prefix; defaults to sourcePrefix from contract",
+	)
+	fs.StringVar(
+		&opts.RepositoryRoot,
+		"repository-root",
+		".",
+		"repository root used to resolve local runbook paths",
+	)
 	fs.StringVar(&opts.ExpectedSeverity, "severity", "", "optional expected severity for every alert in the contract")
 
 	if err := fs.Parse(args); err != nil {
@@ -191,7 +211,12 @@ func runContractsVerifyDashboards(args []string) error {
 	fs := flag.NewFlagSet("contracts verify-dashboards", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	opts := contracts.VerifyDashboardOptions{}
-	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "dashboards", "openbao-overview.yaml"), "dashboard contract path")
+	fs.StringVar(
+		&opts.ContractPath,
+		"contract",
+		filepath.Join("contracts", "dashboards", "openbao-overview.yaml"),
+		"dashboard contract path",
+	)
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -220,9 +245,24 @@ func runContractsVerifyStreams(args []string) error {
 	fs.SetOutput(os.Stderr)
 	opts := contracts.VerifyStreamOptions{}
 	var dashboardContracts string
-	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "streams", "log-streams.yaml"), "stream contract path")
-	fs.StringVar(&opts.AlertContractPath, "alert-contract", filepath.Join("contracts", "alerts", "critical.yaml"), "alert contract path")
-	fs.StringVar(&dashboardContracts, "dashboard-contracts", defaultDashboardContracts, "comma-separated dashboard contract paths")
+	fs.StringVar(
+		&opts.ContractPath,
+		"contract",
+		filepath.Join("contracts", "streams", "log-streams.yaml"),
+		"stream contract path",
+	)
+	fs.StringVar(
+		&opts.AlertContractPath,
+		"alert-contract",
+		filepath.Join("contracts", "alerts", "critical.yaml"),
+		"alert contract path",
+	)
+	fs.StringVar(
+		&dashboardContracts,
+		"dashboard-contracts",
+		defaultDashboardContracts,
+		"comma-separated dashboard contract paths",
+	)
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -242,7 +282,12 @@ func runFixturesCapture(ctx context.Context, args []string) error {
 	opts := fixtures.CaptureOptions{}
 	fs.StringVar(&opts.Version, "version", version, "OpenBao version to capture")
 	fs.StringVar(&opts.Image, "image", envString("OPENBAO_IMAGE", defaultImage), "OpenBao container image")
-	fs.StringVar(&opts.PostgresImage, "postgres-image", envString("POSTGRES_IMAGE", "postgres:17-alpine"), "PostgreSQL container image for dynamic secret fixtures")
+	fs.StringVar(
+		&opts.PostgresImage,
+		"postgres-image",
+		envString("POSTGRES_IMAGE", "postgres:17-alpine"),
+		"PostgreSQL container image for dynamic secret fixtures",
+	)
 	fs.StringVar(&opts.OutputDir, "output", envString("OUTPUT_DIR", defaultOutput), "fixture output directory")
 	fs.IntVar(&opts.PortBase, "port-base", envInt("OPENBAO_PORT_BASE", 18220), "first localhost port to use")
 	fs.StringVar(&opts.RootToken, "root-token", envString("OPENBAO_ROOT_TOKEN", "root"), "OpenBao dev root token")
@@ -256,7 +301,13 @@ func runFixturesCapture(ctx context.Context, args []string) error {
 
 func runFixturesScenario(ctx context.Context, args []string) error {
 	version := envString("OPENBAO_VERSION", defaultOpenBAOVersion)
-	defaultOutput := filepath.Join("fixtures", "captured", "openbao-"+version, "metadata", "openbao-"+version+"-compose-scenario.json")
+	defaultOutput := filepath.Join(
+		"fixtures",
+		"captured",
+		"openbao-"+version,
+		"metadata",
+		"openbao-"+version+"-compose-scenario.json",
+	)
 
 	fs := flag.NewFlagSet("fixtures scenario", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -265,7 +316,12 @@ func runFixturesScenario(ctx context.Context, args []string) error {
 	fs.StringVar(&opts.Token, "token", envString("BAO_TOKEN", ""), "optional OpenBao token; defaults to userpass login")
 	fs.StringVar(&opts.Username, "username", "demo-admin", "userpass username when --token is empty")
 	fs.StringVar(&opts.Password, "password", "openbao-observability", "userpass password when --token is empty")
-	fs.StringVar(&opts.PostgresHost, "postgres-host", envString("POSTGRES_HOST", "postgres"), "PostgreSQL host reachable from OpenBao for namespace database fixtures")
+	fs.StringVar(
+		&opts.PostgresHost,
+		"postgres-host",
+		envString("POSTGRES_HOST", "postgres"),
+		"PostgreSQL host reachable from OpenBao for namespace database fixtures",
+	)
 	fs.StringVar(&opts.OutputPath, "output", defaultOutput, "scenario report output path")
 
 	if err := fs.Parse(args); err != nil {
@@ -300,8 +356,18 @@ func runGeneratePrometheusRules(args []string) error {
 	fs := flag.NewFlagSet("generate prometheus-rules", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	opts := rules.GenerateOptions{}
-	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "metrics", "openbao-core.yaml"), "metric contract path")
-	fs.StringVar(&opts.OutputPath, "output", filepath.Join("generated", "prometheusrules", "openbao-recording-rules.yaml"), "output PrometheusRule path")
+	fs.StringVar(
+		&opts.ContractPath,
+		"contract",
+		filepath.Join("contracts", "metrics", "openbao-core.yaml"),
+		"metric contract path",
+	)
+	fs.StringVar(
+		&opts.OutputPath,
+		"output",
+		filepath.Join("generated", "prometheusrules", "openbao-recording-rules.yaml"),
+		"output PrometheusRule path",
+	)
 	fs.StringVar(&opts.RuleFilePath, "rule-output", "", "optional native Prometheus rule file path")
 	fs.StringVar(&opts.SourcePrefix, "source-prefix", "", "source metric prefix; defaults to metricPrefixes.default")
 
@@ -316,12 +382,42 @@ func runGenerateAlertRules(args []string) error {
 	fs := flag.NewFlagSet("generate alert-rules", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	opts := rules.GenerateAlertOptions{}
-	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "alerts", "critical.yaml"), "alert contract path")
-	fs.StringVar(&opts.PrometheusOutputPath, "prometheus-output", filepath.Join("generated", "prometheusrules", "openbao-alerts.yaml"), "output PrometheusRule path")
-	fs.StringVar(&opts.PrometheusRuleFilePath, "prometheus-rule-output", "", "optional native Prometheus alert rule file path")
-	fs.StringVar(&opts.LokiOutputPath, "loki-output", filepath.Join("generated", "loki", "openbao-alerts.yaml"), "output Loki alert path")
-	fs.StringVar(&opts.SourcePrefix, "source-prefix", "", "source metric prefix; defaults to sourcePrefix from contract")
-	fs.StringVar(&opts.PrometheusName, "prometheus-name", "openbao-alerts", "metadata name for generated Prometheus alert artifacts")
+	fs.StringVar(
+		&opts.ContractPath,
+		"contract",
+		filepath.Join("contracts", "alerts", "critical.yaml"),
+		"alert contract path",
+	)
+	fs.StringVar(
+		&opts.PrometheusOutputPath,
+		"prometheus-output",
+		filepath.Join("generated", "prometheusrules", "openbao-alerts.yaml"),
+		"output PrometheusRule path",
+	)
+	fs.StringVar(
+		&opts.PrometheusRuleFilePath,
+		"prometheus-rule-output",
+		"",
+		"optional native Prometheus alert rule file path",
+	)
+	fs.StringVar(
+		&opts.LokiOutputPath,
+		"loki-output",
+		filepath.Join("generated", "loki", "openbao-alerts.yaml"),
+		"output Loki alert path",
+	)
+	fs.StringVar(
+		&opts.SourcePrefix,
+		"source-prefix",
+		"",
+		"source metric prefix; defaults to sourcePrefix from contract",
+	)
+	fs.StringVar(
+		&opts.PrometheusName,
+		"prometheus-name",
+		"openbao-alerts",
+		"metadata name for generated Prometheus alert artifacts",
+	)
 	fs.StringVar(&opts.LokiName, "loki-name", "openbao-loki-alerts", "metadata name for generated Loki alert artifacts")
 
 	if err := fs.Parse(args); err != nil {
@@ -338,9 +434,19 @@ func runGenerateCompatibilityMatrix(args []string) error {
 	fs := flag.NewFlagSet("generate compatibility-matrix", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	opts := compatibility.MatrixOptions{}
-	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "metrics", "openbao-core.yaml"), "metric contract path")
+	fs.StringVar(
+		&opts.ContractPath,
+		"contract",
+		filepath.Join("contracts", "metrics", "openbao-core.yaml"),
+		"metric contract path",
+	)
 	fs.StringVar(&opts.FixtureDir, "fixtures", envString("FIXTURE_DIR", defaultFixtureDir), "fixture directory")
-	fs.StringVar(&opts.OutputPath, "output", filepath.Join("generated", "docs", "metric-compatibility-matrix.md"), "output compatibility matrix path")
+	fs.StringVar(
+		&opts.OutputPath,
+		"output",
+		filepath.Join("generated", "docs", "metric-compatibility-matrix.md"),
+		"output compatibility matrix path",
+	)
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -353,8 +459,18 @@ func runGenerateGrafanaDashboard(args []string) error {
 	fs := flag.NewFlagSet("generate grafana-dashboard", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	opts := dashboardgen.GenerateOptions{}
-	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "dashboards", "openbao-overview.yaml"), "dashboard contract path")
-	fs.StringVar(&opts.OutputPath, "output", filepath.Join("generated", "grafana", "openbao-overview.json"), "output Grafana dashboard JSON path")
+	fs.StringVar(
+		&opts.ContractPath,
+		"contract",
+		filepath.Join("contracts", "dashboards", "openbao-overview.yaml"),
+		"dashboard contract path",
+	)
+	fs.StringVar(
+		&opts.OutputPath,
+		"output",
+		filepath.Join("generated", "grafana", "openbao-overview.json"),
+		"output Grafana dashboard JSON path",
+	)
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -371,7 +487,12 @@ func runReleaseBundle(args []string) error {
 	fs.StringVar(&opts.RepositoryRoot, "repository-root", ".", "repository root")
 	fs.StringVar(&opts.Version, "version", envString("VERSION", "0.0.0-dev"), "release version without a leading v")
 	fs.StringVar(&opts.OutputPath, "output", "", "output tar.gz path")
-	fs.StringVar(&sourceDateEpoch, "source-date-epoch", envString("SOURCE_DATE_EPOCH", "0"), "deterministic source timestamp as Unix epoch seconds")
+	fs.StringVar(
+		&sourceDateEpoch,
+		"source-date-epoch",
+		envString("SOURCE_DATE_EPOCH", "0"),
+		"deterministic source timestamp as Unix epoch seconds",
+	)
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -427,8 +548,18 @@ func runValidateDashboardQueries(ctx context.Context, args []string) error {
 	var step string
 	var timeout string
 	fs.StringVar(&contractsCSV, "contracts", defaultDashboardContracts, "comma-separated dashboard contract paths")
-	fs.StringVar(&generatedCSV, "generated", defaultGeneratedDashboards, "comma-separated generated Grafana dashboard JSON paths")
-	fs.StringVar(&opts.PrometheusURL, "prometheus-url", envString("PROMETHEUS_URL", "http://127.0.0.1:19090"), "Prometheus base URL")
+	fs.StringVar(
+		&generatedCSV,
+		"generated",
+		defaultGeneratedDashboards,
+		"comma-separated generated Grafana dashboard JSON paths",
+	)
+	fs.StringVar(
+		&opts.PrometheusURL,
+		"prometheus-url",
+		envString("PROMETHEUS_URL", "http://127.0.0.1:19090"),
+		"Prometheus base URL",
+	)
 	fs.StringVar(&opts.LokiURL, "loki-url", envString("LOKI_URL", "http://127.0.0.1:13100"), "Loki base URL")
 	fs.StringVar(&queryRange, "range", "15m", "query range duration")
 	fs.StringVar(&step, "step", "30s", "query step duration")
@@ -476,7 +607,12 @@ func runValidateSiteLinks(args []string) error {
 	fs.SetOutput(os.Stderr)
 	opts := docverify.SiteLinkOptions{}
 	fs.StringVar(&opts.SiteRoot, "site-root", "public", "generated site root")
-	fs.StringVar(&opts.BaseURL, "base-url", envString("DOCS_BASE_URL", ""), "site base URL used to derive the base path")
+	fs.StringVar(
+		&opts.BaseURL,
+		"base-url",
+		envString("DOCS_BASE_URL", ""),
+		"site base URL used to derive the base path",
+	)
 	fs.StringVar(&opts.BasePath, "base-path", "", "optional site base path override")
 
 	if err := fs.Parse(args); err != nil {

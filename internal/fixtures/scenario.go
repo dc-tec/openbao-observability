@@ -23,6 +23,16 @@ const (
 	auditCanaryPath         = "secret/data/observability/audit-canary"
 	fixtureNamespace        = "team-a"
 	fixtureNestedNamespace  = fixtureNamespace + "/payments"
+	nsKVDesc                = "Namespace KV engine for observability reference captures."
+	nsUserpassDesc          = "Namespace userpass auth method for observability reference captures."
+	nsAppRoleDesc           = "Namespace AppRole auth method for observability reference captures."
+	nsDBDesc                = "Namespace PostgreSQL dynamic secrets engine for observability reference captures."
+	nsTransitDesc           = "Namespace Transit engine for observability reference captures."
+	nsPKIDesc               = "Namespace PKI engine for observability reference captures."
+	nestedKVDesc            = "Nested namespace KV engine for observability reference captures."
+	scenarioKVDesc          = "Scenario KV v1 engine for observability reference captures."
+	scenarioPKIDesc         = "Scenario PKI engine for observability reference captures."
+	scenarioTransitDesc     = "Scenario Transit engine for observability reference captures."
 )
 
 var (
@@ -113,7 +123,13 @@ func (o ScenarioOptions) withDefaults() ScenarioOptions {
 		o.PostgresHost = envString("POSTGRES_HOST", defaultPostgresHost)
 	}
 	if o.OutputPath == "" {
-		o.OutputPath = filepath.Join("fixtures", "captured", "openbao-2.5.4", "metadata", "openbao-2.5.4-compose-scenario.json")
+		o.OutputPath = filepath.Join(
+			"fixtures",
+			"captured",
+			"openbao-2.5.4",
+			"metadata",
+			"openbao-2.5.4-compose-scenario.json",
+		)
 	}
 	return o
 }
@@ -132,10 +148,15 @@ path "secret/metadata/apps/payments/*" {
 }
 `,
 		}},
-		{name: "write-userpass-scenario-user", path: "auth/userpass/users/scenario-user", operation: "write", data: map[string]any{
-			"password":       defaultScenarioPassword,
-			"token_policies": []string{"scenario-app"},
-		}},
+		{
+			name:      "write-userpass-scenario-user",
+			path:      "auth/userpass/users/scenario-user",
+			operation: "write",
+			data: map[string]any{
+				"password":       defaultScenarioPassword,
+				"token_policies": []string{"scenario-app"},
+			},
+		},
 		{name: "write-kv", path: "secret/data/apps/payments/scenario", operation: "write", data: map[string]any{
 			"data": map[string]any{
 				"owner":    "payments",
@@ -145,20 +166,30 @@ path "secret/metadata/apps/payments/*" {
 		}},
 		{name: "read-kv", path: "secret/data/apps/payments/scenario", operation: "read"},
 		{name: "list-kv-metadata", path: "secret/metadata/apps/payments", operation: "list"},
-		{name: "write-identity-entity", path: "identity/entity/name/scenario-service", operation: "write", data: map[string]any{
-			"metadata": map[string]any{
-				"environment": "local",
-				"team":        "payments",
+		{
+			name:      "write-identity-entity",
+			path:      "identity/entity/name/scenario-service",
+			operation: "write",
+			data: map[string]any{
+				"metadata": map[string]any{
+					"environment": "local",
+					"team":        "payments",
+				},
+				"policies": []string{"scenario-app"},
 			},
-			"policies": []string{"scenario-app"},
-		}},
-		{name: "write-identity-group", path: "identity/group/name/scenario-services", operation: "write", data: map[string]any{
-			"metadata": map[string]any{
-				"owner": "platform",
+		},
+		{
+			name:      "write-identity-group",
+			path:      "identity/group/name/scenario-services",
+			operation: "write",
+			data: map[string]any{
+				"metadata": map[string]any{
+					"owner": "platform",
+				},
+				"policies": []string{"identity-auditor"},
+				"type":     "internal",
 			},
-			"policies": []string{"identity-auditor"},
-			"type":     "internal",
-		}},
+		},
 	}
 
 	for _, step := range steps {
@@ -204,25 +235,41 @@ func (r *scenarioRunner) exerciseNamespace(ctx context.Context) error {
 	if err := r.ensureNamespace(ctx, fixtureNamespace); err != nil {
 		return err
 	}
-	if err := r.runOperation(ctx, scenarioOperation{name: "read-namespace-team-a", path: "sys/namespaces/" + fixtureNamespace, operation: "read"}); err != nil {
+	if err := r.runOperation(ctx, scenarioOperation{
+		name:      "read-namespace-team-a",
+		path:      "sys/namespaces/" + fixtureNamespace,
+		operation: "read",
+	}); err != nil {
 		return err
 	}
-	if err := r.runOperation(ctx, scenarioOperation{name: "list-namespaces", path: "sys/namespaces", operation: "list"}); err != nil {
+	if err := r.runOperation(ctx, scenarioOperation{
+		name:      "list-namespaces",
+		path:      "sys/namespaces",
+		operation: "list",
+	}); err != nil {
 		return err
 	}
 
 	namespaceClient := r.client.WithNamespace(fixtureNamespace)
 	return r.withClient(namespaceClient, func() error {
-		if err := r.ensureMount(ctx, "secret", "kv", "Namespace KV engine for observability reference captures.", map[string]any{
-			"version": "2",
-		}); err != nil {
+		if err := r.ensureMount(
+			ctx,
+			"secret",
+			"kv",
+			nsKVDesc,
+			map[string]any{"version": "2"},
+		); err != nil {
 			return err
 		}
 		r.renameLastStep("ensure-secret-mount", "ensure-namespace-secret-mount")
 
 		steps := []scenarioOperation{
-			{name: "write-namespace-policy", path: "sys/policies/acl/namespace-app", operation: "write", data: map[string]any{
-				"policy": `path "secret/data/apps/team-a/*" {
+			{
+				name:      "write-namespace-policy",
+				path:      "sys/policies/acl/namespace-app",
+				operation: "write",
+				data: map[string]any{
+					"policy": `path "secret/data/apps/team-a/*" {
   capabilities = ["create", "read", "update", "delete"]
 }
 
@@ -230,22 +277,39 @@ path "secret/metadata/apps/team-a/*" {
   capabilities = ["list", "read", "delete"]
 }
 `,
-			}},
-			{name: "write-namespace-user", path: "auth/userpass/users/namespace-user", operation: "write", data: map[string]any{
-				"password":       defaultScenarioPassword,
-				"token_policies": []string{"namespace-app"},
-			}},
-			{name: "write-namespace-kv", path: "secret/data/apps/team-a/scenario", operation: "write", data: map[string]any{
-				"data": map[string]any{
-					"owner":    "team-a",
-					"scenario": "namespace-fixture",
-					"tier":     "demo",
 				},
-			}},
+			},
+			{
+				name:      "write-namespace-user",
+				path:      "auth/userpass/users/namespace-user",
+				operation: "write",
+				data: map[string]any{
+					"password":       defaultScenarioPassword,
+					"token_policies": []string{"namespace-app"},
+				},
+			},
+			{
+				name:      "write-namespace-kv",
+				path:      "secret/data/apps/team-a/scenario",
+				operation: "write",
+				data: map[string]any{
+					"data": map[string]any{
+						"owner":    "team-a",
+						"scenario": "namespace-fixture",
+						"tier":     "demo",
+					},
+				},
+			},
 			{name: "read-namespace-kv", path: "secret/data/apps/team-a/scenario", operation: "read"},
 			{name: "list-namespace-kv-metadata", path: "secret/metadata/apps/team-a", operation: "list"},
 		}
-		if err := r.ensureAuth(ctx, "userpass", "userpass", "Namespace userpass auth method for observability reference captures.", "ensure-namespace-userpass-auth"); err != nil {
+		if err := r.ensureAuth(
+			ctx,
+			"userpass",
+			"userpass",
+			nsUserpassDesc,
+			"ensure-namespace-userpass-auth",
+		); err != nil {
 			return err
 		}
 		for _, step := range steps {
@@ -364,8 +428,18 @@ func (r *scenarioRunner) exerciseNamespaceToken(ctx context.Context) error {
 	}
 
 	steps := []scenarioOperation{
-		{name: "lookup-namespace-token", path: "auth/token/lookup", operation: "write", data: map[string]any{"token": token}},
-		{name: "revoke-namespace-token", path: "auth/token/revoke", operation: "write", data: map[string]any{"token": token}},
+		{
+			name:      "lookup-namespace-token",
+			path:      "auth/token/lookup",
+			operation: "write",
+			data:      map[string]any{"token": token},
+		},
+		{
+			name:      "revoke-namespace-token",
+			path:      "auth/token/revoke",
+			operation: "write",
+			data:      map[string]any{"token": token},
+		},
 	}
 	for _, step := range steps {
 		if err := r.runOperation(ctx, step); err != nil {
@@ -376,7 +450,13 @@ func (r *scenarioRunner) exerciseNamespaceToken(ctx context.Context) error {
 }
 
 func (r *scenarioRunner) exerciseNamespaceAppRole(ctx context.Context) error {
-	if err := r.ensureAuth(ctx, "approle", "approle", "Namespace AppRole auth method for observability reference captures.", "ensure-namespace-approle-auth"); err != nil {
+	if err := r.ensureAuth(
+		ctx,
+		"approle",
+		"approle",
+		nsAppRoleDesc,
+		"ensure-namespace-approle-auth",
+	); err != nil {
 		return err
 	}
 
@@ -404,7 +484,12 @@ func (r *scenarioRunner) exerciseNamespaceAppRole(ctx context.Context) error {
 
 	secretIDSecret, err := r.client.Logical().WriteWithContext(ctx, "auth/approle/role/namespace-app/secret-id", nil)
 	if err != nil {
-		r.addStep("write-namespace-approle-secret-id", "auth/approle/role/namespace-app/secret-id", "error", err.Error())
+		r.addStep(
+			"write-namespace-approle-secret-id",
+			"auth/approle/role/namespace-app/secret-id",
+			"error",
+			err.Error(),
+		)
 		return fmt.Errorf("create namespace AppRole secret ID: %w", err)
 	}
 	r.addStep("write-namespace-approle-secret-id", "auth/approle/role/namespace-app/secret-id", "success", "")
@@ -456,14 +541,21 @@ func (r *scenarioRunner) exerciseNamespaceAppRole(ctx context.Context) error {
 }
 
 func (r *scenarioRunner) exerciseNamespaceDatabaseLease(ctx context.Context) error {
-	if err := r.ensureMount(ctx, "database", "database", "Namespace PostgreSQL dynamic secrets engine for observability reference captures.", nil); err != nil {
+	if err := r.ensureMount(ctx, "database", "database", nsDBDesc, nil); err != nil {
 		return err
 	}
 	r.renameLastStep("ensure-database-mount", "ensure-namespace-database-mount")
 	if err := r.configurePostgresDatabase(ctx, "configure-namespace-postgres-database"); err != nil {
 		return err
 	}
-	if err := r.writeDatabaseRole(ctx, "write-namespace-database-readonly-role", "readonly", postgresCreationStatements, postgresRevocationStatements, nil); err != nil {
+	if err := r.writeDatabaseRole(
+		ctx,
+		"write-namespace-database-readonly-role",
+		"readonly",
+		postgresCreationStatements,
+		postgresRevocationStatements,
+		nil,
+	); err != nil {
 		return err
 	}
 	return r.exerciseDatabaseLeaseLifecycle(ctx, databaseLeaseLifecycle{
@@ -491,21 +583,30 @@ func (r *scenarioRunner) exerciseNestedNamespace(ctx context.Context) error {
 	nestedClient.SetNamespace(fixtureNestedNamespace)
 
 	return r.withClient(nestedClient, func() error {
-		if err := r.ensureMount(ctx, "secret", "kv", "Nested namespace KV engine for observability reference captures.", map[string]any{
-			"version": "2",
-		}); err != nil {
+		if err := r.ensureMount(
+			ctx,
+			"secret",
+			"kv",
+			nestedKVDesc,
+			map[string]any{"version": "2"},
+		); err != nil {
 			return err
 		}
 		r.renameLastStep("ensure-secret-mount", "ensure-nested-namespace-secret-mount")
 
 		steps := []scenarioOperation{
-			{name: "write-nested-namespace-kv", path: "secret/data/apps/payments/scenario", operation: "write", data: map[string]any{
-				"data": map[string]any{
-					"owner":     "payments",
-					"namespace": fixtureNestedNamespace,
-					"scenario":  "nested-namespace-fixture",
+			{
+				name:      "write-nested-namespace-kv",
+				path:      "secret/data/apps/payments/scenario",
+				operation: "write",
+				data: map[string]any{
+					"data": map[string]any{
+						"owner":     "payments",
+						"namespace": fixtureNestedNamespace,
+						"scenario":  "nested-namespace-fixture",
+					},
 				},
-			}},
+			},
 			{name: "read-nested-namespace-kv", path: "secret/data/apps/payments/scenario", operation: "read"},
 			{name: "list-nested-namespace-kv-metadata", path: "secret/metadata/apps/payments", operation: "list"},
 		}
@@ -519,7 +620,7 @@ func (r *scenarioRunner) exerciseNestedNamespace(ctx context.Context) error {
 }
 
 func (r *scenarioRunner) exerciseNamespaceTransit(ctx context.Context) error {
-	if err := r.ensureMount(ctx, "transit", "transit", "Namespace Transit engine for observability reference captures.", nil); err != nil {
+	if err := r.ensureMount(ctx, "transit", "transit", nsTransitDesc, nil); err != nil {
 		return err
 	}
 	r.renameLastStep("ensure-transit-mount", "ensure-namespace-transit-mount")
@@ -592,7 +693,7 @@ func (r *scenarioRunner) exerciseNamespaceTransit(ctx context.Context) error {
 }
 
 func (r *scenarioRunner) exerciseNamespacePKI(ctx context.Context) error {
-	if err := r.ensureMount(ctx, "pki", "pki", "Namespace PKI engine for observability reference captures.", nil); err != nil {
+	if err := r.ensureMount(ctx, "pki", "pki", nsPKIDesc, nil); err != nil {
 		return err
 	}
 	r.renameLastStep("ensure-pki-mount", "ensure-namespace-pki-mount")
@@ -663,12 +764,17 @@ func (r *scenarioRunner) exerciseNamespacePKI(ctx context.Context) error {
 
 func (r *scenarioRunner) ensureAuditCanary(ctx context.Context) error {
 	canarySteps := []scenarioOperation{
-		{name: "write-audit-canary-policy", path: "sys/policies/acl/audit-canary", operation: "write", data: map[string]any{
-			"policy": `path "secret/data/observability/audit-canary" {
+		{
+			name:      "write-audit-canary-policy",
+			path:      "sys/policies/acl/audit-canary",
+			operation: "write",
+			data: map[string]any{
+				"policy": `path "secret/data/observability/audit-canary" {
   capabilities = ["read"]
 }
 `,
-		}},
+			},
+		},
 		{name: "write-audit-canary-secret", path: auditCanaryPath, operation: "write", data: map[string]any{
 			"data": map[string]any{
 				"owner":   "observability",
@@ -776,7 +882,8 @@ func (r *scenarioRunner) loginAppRole(ctx context.Context) error {
 	}
 	r.addStep("read-approle-role-id", "auth/approle/role/observability-app/role-id", "success", "")
 
-	secretIDSecret, err := r.client.Logical().WriteWithContext(ctx, "auth/approle/role/observability-app/secret-id", nil)
+	secretIDSecret, err := r.client.Logical().
+		WriteWithContext(ctx, "auth/approle/role/observability-app/secret-id", nil)
 	if err != nil {
 		r.addStep("write-approle-secret-id", "auth/approle/role/observability-app/secret-id", "error", err.Error())
 		return fmt.Errorf("create AppRole secret ID: %w", err)
@@ -826,7 +933,12 @@ func (r *scenarioRunner) exerciseTokenLifecycle(ctx context.Context) error {
 
 	tokenSteps := []scenarioOperation{
 		{name: "lookup-token", path: "auth/token/lookup", operation: "write", data: map[string]any{"token": token}},
-		{name: "renew-token", path: "auth/token/renew", operation: "write", data: map[string]any{"token": token, "increment": "60s"}},
+		{
+			name:      "renew-token",
+			path:      "auth/token/renew",
+			operation: "write",
+			data:      map[string]any{"token": token, "increment": "60s"},
+		},
 		{name: "revoke-token", path: "auth/token/revoke", operation: "write", data: map[string]any{"token": token}},
 	}
 	for _, step := range tokenSteps {
@@ -894,7 +1006,7 @@ func (r *scenarioRunner) exerciseDatabaseLeaseLifecycle(ctx context.Context, lif
 }
 
 func (r *scenarioRunner) exerciseKVv1(ctx context.Context) error {
-	if err := r.ensureMount(ctx, "kv-v1", "kv", "Scenario KV v1 engine for observability reference captures.", map[string]any{
+	if err := r.ensureMount(ctx, "kv-v1", "kv", scenarioKVDesc, map[string]any{
 		"version": "1",
 	}); err != nil {
 		return err
@@ -988,7 +1100,7 @@ func (r *scenarioRunner) exerciseTransit(ctx context.Context) error {
 }
 
 func (r *scenarioRunner) exercisePKI(ctx context.Context) error {
-	if err := r.ensureMount(ctx, "pki", "pki", "Scenario PKI engine for observability reference captures.", nil); err != nil {
+	if err := r.ensureMount(ctx, "pki", "pki", scenarioPKIDesc, nil); err != nil {
 		return err
 	}
 	if err := r.ensurePKIRoot(ctx); err != nil {
@@ -1038,10 +1150,11 @@ func (r *scenarioRunner) exercisePKI(ctx context.Context) error {
 }
 
 func (r *scenarioRunner) exerciseFeatureExpectedFailures(ctx context.Context) error {
-	if err := r.expectWriteError(ctx, "failed-pki-issue-invalid-domain", "pki/issue/observability-dot-local", map[string]any{
-		"common_name": "payments.unapproved.example",
-		"ttl":         "30m",
-	}); err != nil {
+	if err := r.expectWriteError(ctx, "failed-pki-issue-invalid-domain",
+		"pki/issue/observability-dot-local", map[string]any{
+			"common_name": "payments.unapproved.example",
+			"ttl":         "30m",
+		}); err != nil {
 		return err
 	}
 	if err := r.expectWriteError(ctx, "failed-pki-revoke-invalid-serial", "pki/revoke", map[string]any{
@@ -1087,13 +1200,27 @@ func (r *scenarioRunner) exerciseDatabaseExpectedFailures(ctx context.Context) e
 	if err != nil {
 		return err
 	}
-	if err := r.writeDatabaseRole(ctx, "write-database-failure-renew-invalid-role", "failure-renew", postgresCreationStatements, postgresRevocationStatements, postgresInvalidStatement); err != nil {
+	if err := r.writeDatabaseRole(
+		ctx,
+		"write-database-failure-renew-invalid-role",
+		"failure-renew",
+		postgresCreationStatements,
+		postgresRevocationStatements,
+		postgresInvalidStatement,
+	); err != nil {
 		return err
 	}
 	if err := r.expectLeaseRenewError(ctx, "failed-database-update-user", renewLeaseID); err != nil {
 		return err
 	}
-	if err := r.writeDatabaseRole(ctx, "write-database-failure-renew-recovery-role", "failure-renew", postgresCreationStatements, postgresRevocationStatements, nil); err != nil {
+	if err := r.writeDatabaseRole(
+		ctx,
+		"write-database-failure-renew-recovery-role",
+		"failure-renew",
+		postgresCreationStatements,
+		postgresRevocationStatements,
+		nil,
+	); err != nil {
 		return err
 	}
 	if err := r.client.Sys().RevokeWithContext(ctx, renewLeaseID); err != nil {
@@ -1106,13 +1233,27 @@ func (r *scenarioRunner) exerciseDatabaseExpectedFailures(ctx context.Context) e
 	if err != nil {
 		return err
 	}
-	if err := r.writeDatabaseRole(ctx, "write-database-failure-revoke-invalid-role", "failure-revoke", postgresCreationStatements, postgresInvalidStatement, nil); err != nil {
+	if err := r.writeDatabaseRole(
+		ctx,
+		"write-database-failure-revoke-invalid-role",
+		"failure-revoke",
+		postgresCreationStatements,
+		postgresInvalidStatement,
+		nil,
+	); err != nil {
 		return err
 	}
 	if err := r.expectLeaseRevokeError(ctx, "failed-database-delete-user", revokeLeaseID); err != nil {
 		return err
 	}
-	if err := r.writeDatabaseRole(ctx, "write-database-failure-revoke-recovery-role", "failure-revoke", postgresCreationStatements, postgresRevocationStatements, nil); err != nil {
+	if err := r.writeDatabaseRole(
+		ctx,
+		"write-database-failure-revoke-recovery-role",
+		"failure-revoke",
+		postgresCreationStatements,
+		postgresRevocationStatements,
+		nil,
+	); err != nil {
 		return err
 	}
 	if err := r.client.Sys().RevokeWithContext(ctx, revokeLeaseID); err != nil {
@@ -1144,7 +1285,14 @@ func postgresConnectionURL(host string) string {
 }
 
 func (r *scenarioRunner) issueDatabaseLease(ctx context.Context, roleName, stepName string) (string, error) {
-	if err := r.writeDatabaseRole(ctx, "write-database-"+roleName+"-role", roleName, postgresCreationStatements, postgresRevocationStatements, nil); err != nil {
+	if err := r.writeDatabaseRole(
+		ctx,
+		"write-database-"+roleName+"-role",
+		roleName,
+		postgresCreationStatements,
+		postgresRevocationStatements,
+		nil,
+	); err != nil {
 		return "", err
 	}
 	secret, err := r.client.Logical().ReadWithContext(ctx, "database/creds/"+roleName)
@@ -1160,7 +1308,11 @@ func (r *scenarioRunner) issueDatabaseLease(ctx context.Context, roleName, stepN
 	return secret.LeaseID, nil
 }
 
-func (r *scenarioRunner) writeDatabaseRole(ctx context.Context, stepName, roleName string, creationStatements, revocationStatements, renewStatements []string) error {
+func (r *scenarioRunner) writeDatabaseRole(
+	ctx context.Context,
+	stepName, roleName string,
+	creationStatements, revocationStatements, renewStatements []string,
+) error {
 	data := map[string]any{
 		"db_name":             "postgres",
 		"default_ttl":         "5m",
@@ -1242,7 +1394,7 @@ func (r *scenarioRunner) ensurePKIRootNamed(ctx context.Context, stepName string
 }
 
 func (r *scenarioRunner) ensureTransitMount(ctx context.Context) error {
-	if err := r.ensureMount(ctx, "transit", "transit", "Scenario Transit engine for observability reference captures.", nil); err != nil {
+	if err := r.ensureMount(ctx, "transit", "transit", scenarioTransitDesc, nil); err != nil {
 		return err
 	}
 	return r.ensureTransitKey(ctx, "payments", "ensure-transit-key")
@@ -1273,7 +1425,11 @@ func (r *scenarioRunner) ensureTransitKey(ctx context.Context, keyName, stepName
 	return nil
 }
 
-func (r *scenarioRunner) ensureMount(ctx context.Context, mountPath, engineType, description string, options map[string]any) error {
+func (r *scenarioRunner) ensureMount(
+	ctx context.Context,
+	mountPath, engineType, description string,
+	options map[string]any,
+) error {
 	mounts, err := r.client.Logical().ReadWithContext(ctx, "sys/mounts")
 	if err != nil {
 		r.addStep("ensure-"+mountPath+"-mount", "sys/mounts", "error", err.Error())
@@ -1371,7 +1527,12 @@ func (r *scenarioRunner) exerciseExpectedFailures(ctx context.Context) error {
 		return fmt.Errorf("create reader client: %w", err)
 	}
 	readerRunner := &scenarioRunner{client: readerClient}
-	if err := readerRunner.loginUserpass(ctx, "demo-reader", defaultScenarioPassword, "login-userpass-reader"); err != nil {
+	if err := readerRunner.loginUserpass(
+		ctx,
+		"demo-reader",
+		defaultScenarioPassword,
+		"login-userpass-reader",
+	); err != nil {
 		return err
 	}
 	readerToken := readerClient.Token()

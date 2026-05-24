@@ -43,7 +43,8 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"record: openbao:core_handle_request:rate5m",
 		"expr: sum(rate(openbao_core_handle_request_count[5m]))",
 		"record: openbao:core_handle_login_request:avg5m",
-		"expr: sum(rate(openbao_core_handle_login_request_sum[5m])) / clamp_min(sum(rate(openbao_core_handle_login_request_count[5m])), 0.001)",
+		"expr: sum(rate(openbao_core_handle_login_request_sum[5m])) / " +
+			"clamp_min(sum(rate(openbao_core_handle_login_request_count[5m])), 0.001)",
 		"record: openbao:core_check_token:avg5m",
 		"expr: sum(rate(openbao_core_check_token_sum[5m])) / clamp_min(sum(rate(openbao_core_check_token_count[5m])), 0.001)",
 		"record: openbao:core_in_flight_requests:max",
@@ -55,7 +56,8 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"record: openbao:autopilot_node_healthy:min",
 		"expr: min by (node_id) (openbao_autopilot_node_healthy)",
 		"record: openbao:audit_log_request:avg5m",
-		"expr: sum(rate(openbao_audit_log_request_sum[5m])) / clamp_min(sum(rate(openbao_audit_log_request_count[5m])), 0.001)",
+		"expr: sum(rate(openbao_audit_log_request_sum[5m])) / " +
+			"clamp_min(sum(rate(openbao_audit_log_request_count[5m])), 0.001)",
 		"record: openbao:expire_num_irrevocable_leases:max",
 		"expr: max(openbao_expire_num_irrevocable_leases)",
 		"record: openbao:token_count:max30m",
@@ -69,7 +71,8 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"record: openbao:barrier_get:avg5m",
 		"expr: sum(rate(openbao_barrier_get_sum[5m])) / clamp_min(sum(rate(openbao_barrier_get_count[5m])), 0.001)",
 		"record: openbao:cache_hit_ratio:ratio5m",
-		"expr: sum(rate(openbao_cache_hit[5m])) / clamp_min(sum(rate(openbao_cache_hit[5m])) + sum(rate(openbao_cache_miss[5m])), 0.001)",
+		"expr: sum(rate(openbao_cache_hit[5m])) / " +
+			"clamp_min(sum(rate(openbao_cache_hit[5m])) + sum(rate(openbao_cache_miss[5m])), 0.001)",
 		"record: openbao:secret_lease_creation_by_engine:increase15m",
 		"expr: sum by (secret_engine) (increase(openbao_secret_lease_creation[15m]))",
 		"record: openbao:secret_lease_creation_by_engine_namespace:increase15m",
@@ -210,7 +213,8 @@ func TestGenerateAlertRules(t *testing.T) {
 	for _, fragment := range []string{
 		"kind: LokiAlertRules",
 		"alert: OpenBaoAuditCanaryMissing",
-		"expr: absent_over_time({log_stream=\"openbao.audit\"} | json request_path=\"request.path\" | request_path=\"secret/data/observability/audit-canary\" [15m])",
+		"expr: absent_over_time({log_stream=\"openbao.audit\"} | json request_path=\"request.path\" | " +
+			"request_path=\"secret/data/observability/audit-canary\" [15m])",
 	} {
 		if !strings.Contains(lokiText, fragment) {
 			t.Fatalf("Loki alerts missing %q:\n%s", fragment, lokiText)
@@ -279,7 +283,8 @@ alerts:
     for: 2m
     expression: openbao:raft_peers:max >= 3 and openbao:autopilot_failure_tolerance:max < 1
     summary: OpenBao Autopilot has no tolerated voter failure
-    description: OpenBao Autopilot reports that the Raft cluster cannot lose a voter while maintaining the configured HA baseline.
+    description: >-
+      OpenBao Autopilot reports that the Raft cluster cannot lose a voter while maintaining the configured HA baseline.
     runbook: docs/runbooks/raft-autopilot-health.md
     labels:
       component: raft
@@ -298,7 +303,9 @@ alerts:
     severity: critical
     signal: loki
     for: 15m
-    expression: 'absent_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary" [15m])'
+    expression: >-
+      absent_over_time({log_stream="openbao.audit"} | json request_path="request.path" |
+      request_path="secret/data/observability/audit-canary" [15m])
     summary: OpenBao audit canary is missing
     description: Loki has not received the expected OpenBao audit canary request for the alert window.
     runbook: docs/runbooks/audit-canary-missing.md

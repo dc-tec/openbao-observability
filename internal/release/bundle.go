@@ -146,7 +146,8 @@ func (o BundleOptions) withDefaults() (BundleOptions, error) {
 	}
 	for i, include := range o.Includes {
 		cleaned := filepath.Clean(include)
-		if cleaned == "." || filepath.IsAbs(cleaned) || strings.HasPrefix(cleaned, ".."+string(filepath.Separator)) || cleaned == ".." {
+		if cleaned == "." || filepath.IsAbs(cleaned) || strings.HasPrefix(cleaned, ".."+string(filepath.Separator)) ||
+			cleaned == ".." {
 			return o, fmt.Errorf("release include path %q must be relative to the repository root", include)
 		}
 		o.Includes[i] = cleaned
@@ -189,7 +190,10 @@ func collectBundleEntries(root string, includes []string) ([]bundleEntry, error)
 			return nil, fmt.Errorf("inspect release include %s: %w", include, err)
 		}
 		if info.Mode()&os.ModeSymlink != 0 {
-			return nil, fmt.Errorf("release include %s is a symlink; symlinks are not supported in release bundles", include)
+			return nil, fmt.Errorf(
+				"release include %s is a symlink; symlinks are not supported in release bundles",
+				include,
+			)
 		}
 		if !info.IsDir() {
 			entry, err := bundleEntryFor(root, includePath, info)
@@ -212,7 +216,10 @@ func collectBundleEntries(root string, includes []string) ([]bundleEntry, error)
 				if relErr != nil {
 					return relErr
 				}
-				return fmt.Errorf("release include %s is a symlink; symlinks are not supported in release bundles", filepath.ToSlash(rel))
+				return fmt.Errorf(
+					"release include %s is a symlink; symlinks are not supported in release bundles",
+					filepath.ToSlash(rel),
+				)
 			}
 			if d.IsDir() {
 				return nil

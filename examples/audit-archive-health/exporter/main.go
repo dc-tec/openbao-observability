@@ -87,8 +87,18 @@ func parseFlags(args []string) (options, error) {
 	fs := flag.NewFlagSet("audit-archive-health-exporter", flag.ContinueOnError)
 	fs.StringVar(&opts.ListenAddress, "listen-address", ":19110", "address for the HTTP server")
 	fs.StringVar(&opts.MetricsPath, "metrics-path", "/metrics", "HTTP path for Prometheus metrics")
-	fs.StringVar(&opts.StatusFile, "status-file", "archive-health.json", "JSON status file written by the archive pipeline")
-	fs.BoolVar(&opts.Enabled, "enabled", false, "mark archive delivery as required when the status file is missing or omits enabled")
+	fs.StringVar(
+		&opts.StatusFile,
+		"status-file",
+		"archive-health.json",
+		"JSON status file written by the archive pipeline",
+	)
+	fs.BoolVar(
+		&opts.Enabled,
+		"enabled",
+		false,
+		"mark archive delivery as required when the status file is missing or omits enabled",
+	)
 	fs.StringVar(&opts.Backend, "backend", "example", "stable backend label")
 	fs.StringVar(&opts.Pipeline, "pipeline", "openbao-audit-archive", "stable pipeline label")
 
@@ -169,12 +179,32 @@ func (c *archiveCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	ch <- prometheus.MustNewConstMetric(c.deliverySuccess, prometheus.GaugeValue, boolFloat(status.DeliverySuccess), labelValues...)
+	ch <- prometheus.MustNewConstMetric(
+		c.deliverySuccess,
+		prometheus.GaugeValue,
+		boolFloat(status.DeliverySuccess),
+		labelValues...,
+	)
 	if status.LastSuccessTimestampSeconds > 0 {
-		ch <- prometheus.MustNewConstMetric(c.lastSuccessTimestampSeconds, prometheus.GaugeValue, status.LastSuccessTimestampSeconds, labelValues...)
+		ch <- prometheus.MustNewConstMetric(
+			c.lastSuccessTimestampSeconds,
+			prometheus.GaugeValue,
+			status.LastSuccessTimestampSeconds,
+			labelValues...,
+		)
 	}
-	ch <- prometheus.MustNewConstMetric(c.deliveryFailuresTotal, prometheus.CounterValue, status.DeliveryFailuresTotal, labelValues...)
-	ch <- prometheus.MustNewConstMetric(c.deadLetterRecordsTotal, prometheus.CounterValue, status.DeadLetterRecordsTotal, labelValues...)
+	ch <- prometheus.MustNewConstMetric(
+		c.deliveryFailuresTotal,
+		prometheus.CounterValue,
+		status.DeliveryFailuresTotal,
+		labelValues...,
+	)
+	ch <- prometheus.MustNewConstMetric(
+		c.deadLetterRecordsTotal,
+		prometheus.CounterValue,
+		status.DeadLetterRecordsTotal,
+		labelValues...,
+	)
 }
 
 func loadStatus(opts options) (archiveStatus, error) {
