@@ -129,6 +129,8 @@ records, and platform events as the evidence behind the decision.
   how source signals become dashboards and alerts.
 - Use [High-cardinality and label safety](./high-cardinality-and-label-safety.md)
   before you promote any log or metric field into a label.
+- Use [OpenBao overview dashboard](../dashboards/overview-dashboard.md) to
+  see how metrics, logs, and audit logs appear in one triage view.
 - Use [Configure declarative audit devices](../audit/declarative-audit.md) to
   configure repeatable audit streams.
 - Use [Audit canary missing](../runbooks/audit-canary-missing.md) when the

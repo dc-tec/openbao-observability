@@ -20,6 +20,12 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [Metrics, logs, and audit logs](./concepts/metrics-vs-logs-vs-audit-logs.md)
 - [High-cardinality and label safety](./concepts/high-cardinality-and-label-safety.md)
 
+## Dashboards
+
+- [OpenBao overview dashboard](./dashboards/overview-dashboard.md)
+- [OpenBao audit overview dashboard](./dashboards/audit-overview.md)
+- [OpenBao audit investigation dashboard](./dashboards/audit-investigation.md)
+
 ## Reference
 
 - [Understand metric prefixes and recording rules](./contracts/metric-prefix.md)

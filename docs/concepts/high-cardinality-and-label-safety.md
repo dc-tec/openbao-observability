@@ -133,6 +133,8 @@ or store it in a restricted backend designed for investigation.
   where labels fit in the signal pipeline.
 - Use [Metrics, logs, and audit logs](./metrics-vs-logs-vs-audit-logs.md) to
   choose the right signal before you add labels.
+- Use [OpenBao audit investigation dashboard](../dashboards/audit-investigation.md)
+  to see the query-time filtering pattern for audit fields.
 - Use [Understand metric prefixes and recording rules](../contracts/metric-prefix.md)
   before you group raw OpenBao metrics.
 - Use [Configure declarative audit devices](../audit/declarative-audit.md) for
