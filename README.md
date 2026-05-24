@@ -39,25 +39,34 @@ logs and audit logs, Grafana Alloy for collection, and Grafana for dashboards.
 ```mermaid
 flowchart LR
   bao["OpenBao nodes"]
-  metrics["Metrics backend"]
-  oplogs["Operational log backend"]
-  auditlogs["Audit log backend"]
-  archive["Audit archive"]
-  rules["Recording and alert rules"]
-  dashboards["Dashboards"]
-  runbooks["Runbooks"]
 
-  bao -->|"metrics"| metrics
-  bao -->|"operational logs"| oplogs
-  bao -->|"audit logs"| auditlogs
-  auditlogs -->|"protected retention"| archive
-  metrics -->|"derived metrics"| rules
-  oplogs -->|"log detections"| rules
-  auditlogs -->|"security detections"| rules
-  metrics -->|"PromQL queries"| dashboards
-  oplogs -->|"LogQL queries"| dashboards
-  auditlogs -->|"LogQL queries"| dashboards
-  rules -->|"alerts"| runbooks
+  subgraph stores["Signal stores"]
+    metrics["Metrics"]
+    logs["Operational logs"]
+    audit["Audit logs"]
+    archive["Audit archive"]
+  end
+
+  subgraph outputs["Operator outputs"]
+    rules["Rules"]
+    dashboards["Dashboards"]
+    runbooks["Runbooks"]
+  end
+
+  bao --> metrics
+  bao --> logs
+  bao --> audit
+  audit --> archive
+
+  metrics --> rules
+  logs --> rules
+  audit --> rules
+
+  metrics --> dashboards
+  logs --> dashboards
+  audit --> dashboards
+
+  rules --> runbooks
 ```
 
 ## Start here
