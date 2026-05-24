@@ -1,6 +1,6 @@
 services:
   audit-archive-status-writer:
-    image: ${AUDIT_ARCHIVE_STATUS_WRITER_IMAGE:-alpine:3.22}
+    image: ${AUDIT_ARCHIVE_STATUS_WRITER_IMAGE:-alpine:3.23}
     profiles:
       - audit-archive
     command:
