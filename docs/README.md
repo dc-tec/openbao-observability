@@ -27,6 +27,7 @@ Use these runbooks when the generated alert rules fire:
 - [Multiple active OpenBao nodes](./runbooks/multiple-active-nodes.md)
 - [OpenBao Raft and Autopilot health](./runbooks/raft-autopilot-health.md)
 - [Audit request and response failures](./runbooks/audit-request-response-failures.md)
+- [Audit canary missing](./runbooks/audit-canary-missing.md)
 - [Audit log stream missing](./runbooks/audit-log-stream-missing.md)
 - [Operational log stream missing](./runbooks/operational-log-stream-missing.md)
 - [Debug logging enabled](./runbooks/debug-logging-enabled.md)

@@ -48,6 +48,7 @@ and Grafana. The stack is for local evaluation and contract validation.
    - `openbao-node0`
    - `openbao-node1`
    - `openbao-node2`
+   - `openbao-audit-canary`
    - `postgres`
    - `prometheus`
    - `loki`
@@ -93,11 +94,15 @@ an `initialize` block. The self-initialization creates:
 - a local `compose-admin` policy,
 - local `app-reader`, `app-writer`, and `identity-auditor` policies,
 - a local `openbao-metrics` policy,
+- a local `audit-canary` policy,
 - the `demo-admin`, `demo-reader`, and `demo-writer` users,
 - an `observability-app` AppRole and secret ID,
 - a PostgreSQL `readonly` dynamic credential role,
 - demo identity entities, entity aliases, and internal identity groups,
+- a sample `secret/data/observability/audit-canary` secret,
 - a sample `secret/data/apps/payments/api` secret, and
+- a deterministic local audit canary token named
+  `openbao-observability-audit-canary-token`,
 - a deterministic local metrics token named
   `openbao-observability-metrics-token`.
 
@@ -109,6 +114,10 @@ Prometheus scrapes all three OpenBao nodes. The local OpenBao listener enables
 `unauthenticated_metrics_access` so standby nodes expose metrics in this local
 profile. Use a private metrics-only listener or equivalent network controls for
 production all-node scraping.
+
+`openbao-audit-canary` reads `secret/data/observability/audit-canary` every 60
+seconds with a token that only has the `audit-canary` policy. This creates a
+known audited request for the `OpenBaoAuditCanaryMissing` alert.
 
 ## Verify the result
 
@@ -236,7 +245,17 @@ production all-node scraping.
    ["openbao.audit","openbao.operational"]
    ```
 
-12. Check Grafana health.
+12. Check the audit canary event.
+
+   ```shell
+   curl -fsS -G http://127.0.0.1:13100/loki/api/v1/query \
+     --data-urlencode 'query=count_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary" [5m])'
+   ```
+
+   Expected output includes at least one canary event after the
+   `openbao-audit-canary` service has completed a read.
+
+13. Check Grafana health.
 
    ```shell
    curl -fsS -u admin:admin http://127.0.0.1:13000/api/health
@@ -244,7 +263,7 @@ production all-node scraping.
 
    Expected output includes `"database": "ok"`.
 
-13. Validate dashboard queries against the local backends.
+14. Validate dashboard queries against the local backends.
 
     ```shell
     make validate-dashboard-queries
@@ -333,6 +352,12 @@ Use this query when you need secret engine and mount activity:
 
 ```logql
 {log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"(secret|database|transit|pki|sys/mounts)(/.*)?"
+```
+
+Use this query when you need the audit canary event:
+
+```logql
+{log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary"
 ```
 
 Use this query when you need an audit request ID drilldown:

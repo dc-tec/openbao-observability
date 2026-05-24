@@ -10,7 +10,7 @@ import (
 func TestLoadAlertContract(t *testing.T) {
 	root := writeAlertTestRepository(t, baseAlertContract(), []string{
 		"docs/runbooks/no-active-openbao-leader.md",
-		"docs/runbooks/audit-log-stream-missing.md",
+		"docs/runbooks/audit-canary-missing.md",
 	})
 	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
 
@@ -30,7 +30,7 @@ func TestLoadAlertContract(t *testing.T) {
 func TestVerifyAlertContract(t *testing.T) {
 	root := writeAlertTestRepository(t, baseAlertContract(), []string{
 		"docs/runbooks/no-active-openbao-leader.md",
-		"docs/runbooks/audit-log-stream-missing.md",
+		"docs/runbooks/audit-canary-missing.md",
 	})
 	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
 
@@ -48,7 +48,7 @@ func TestVerifyAlertContractRejectsInvalidPromQL(t *testing.T) {
 	contract := strings.Replace(baseAlertContract(), "sum(${p}_core_active) == 0", "sum(", 1)
 	root := writeAlertTestRepository(t, contract, []string{
 		"docs/runbooks/no-active-openbao-leader.md",
-		"docs/runbooks/audit-log-stream-missing.md",
+		"docs/runbooks/audit-canary-missing.md",
 	})
 	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
 
@@ -71,7 +71,7 @@ func TestVerifyAlertContractRejectsMissingRunbook(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected missing runbook to fail")
 	}
-	if !strings.Contains(err.Error(), "OpenBaoAuditStreamMissing") {
+	if !strings.Contains(err.Error(), "OpenBaoAuditCanaryMissing") {
 		t.Fatalf("error does not include alert id: %v", err)
 	}
 }
@@ -79,7 +79,7 @@ func TestVerifyAlertContractRejectsMissingRunbook(t *testing.T) {
 func TestVerifyAlertContractRejectsUnexpectedSeverity(t *testing.T) {
 	root := writeAlertTestRepository(t, baseAlertContract(), []string{
 		"docs/runbooks/no-active-openbao-leader.md",
-		"docs/runbooks/audit-log-stream-missing.md",
+		"docs/runbooks/audit-canary-missing.md",
 	})
 	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
 
@@ -157,14 +157,14 @@ alerts:
     summary: OpenBao has no active node
     description: No active OpenBao node is visible to Prometheus.
     runbook: docs/runbooks/no-active-openbao-leader.md
-  - id: OpenBaoAuditStreamMissing
+  - id: OpenBaoAuditCanaryMissing
     type: loki
     severity: critical
     signal: loki
-    for: 10m
-    expression: absent_over_time({log_stream="openbao.audit"}[10m])
-    summary: OpenBao audit log stream is missing
-    description: Loki has not received OpenBao audit logs for the alert window.
-    runbook: docs/runbooks/audit-log-stream-missing.md
+    for: 15m
+    expression: 'absent_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary" [15m])'
+    summary: OpenBao audit canary is missing
+    description: Loki has not received the expected OpenBao audit canary request for the alert window.
+    runbook: docs/runbooks/audit-canary-missing.md
 `
 }

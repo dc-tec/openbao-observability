@@ -189,8 +189,8 @@ func TestGenerateAlertRules(t *testing.T) {
 	lokiText := string(lokiContent)
 	for _, fragment := range []string{
 		"kind: LokiAlertRules",
-		"alert: OpenBaoAuditStreamMissing",
-		"expr: absent_over_time({log_stream=\"openbao.audit\"}[10m])",
+		"alert: OpenBaoAuditCanaryMissing",
+		"expr: absent_over_time({log_stream=\"openbao.audit\"} | json request_path=\"request.path\" | request_path=\"secret/data/observability/audit-canary\" [15m])",
 	} {
 		if !strings.Contains(lokiText, fragment) {
 			t.Fatalf("Loki alerts missing %q:\n%s", fragment, lokiText)
@@ -273,14 +273,14 @@ alerts:
     summary: OpenBao audit response logging failed
     description: OpenBao reported at least one audit response logging failure.
     runbook: docs/runbooks/audit-request-response-failures.md
-  - id: OpenBaoAuditStreamMissing
+  - id: OpenBaoAuditCanaryMissing
     type: loki
     severity: critical
     signal: loki
-    for: 10m
-    expression: absent_over_time({log_stream="openbao.audit"}[10m])
-    summary: OpenBao audit log stream is missing
-    description: Loki has not received OpenBao audit logs for the alert window.
-    runbook: docs/runbooks/audit-log-stream-missing.md
+    for: 15m
+    expression: 'absent_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary" [15m])'
+    summary: OpenBao audit canary is missing
+    description: Loki has not received the expected OpenBao audit canary request for the alert window.
+    runbook: docs/runbooks/audit-canary-missing.md
 `
 }

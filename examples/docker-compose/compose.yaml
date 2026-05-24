@@ -171,6 +171,24 @@ services:
       - openbao-node2-logs:/var/lib/openbao/node2/logs:ro
       - alloy-data:/var/lib/alloy/data
 
+  openbao-audit-canary:
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
+    depends_on:
+      openbao-node0:
+        condition: service_healthy
+    environment:
+      BAO_ADDR: http://openbao-node0:8200
+      BAO_TOKEN: openbao-observability-audit-canary-token
+      OPENBAO_AUDIT_CANARY_INTERVAL_SECONDS: ${OPENBAO_AUDIT_CANARY_INTERVAL_SECONDS:-60}
+    command:
+      - sh
+      - -ec
+      - |
+        while true; do
+          bao read -format=json secret/data/observability/audit-canary >/dev/null || true
+          sleep "$${OPENBAO_AUDIT_CANARY_INTERVAL_SECONDS}"
+        done
+
   grafana:
     image: ${GRAFANA_IMAGE:-grafana/grafana:13.0.1}
     depends_on:

@@ -110,7 +110,7 @@ func writeStreamTestRepository(t *testing.T, streamContract, alertContract, dash
 		"contracts/alerts/critical.yaml":             alertContract,
 		"contracts/dashboards/openbao-overview.yaml": dashboardContract,
 		"docs/runbooks/no-active-openbao-leader.md":  "# No active leader\n",
-		"docs/runbooks/audit-log-stream-missing.md":  "# Audit stream missing\n",
+		"docs/runbooks/audit-canary-missing.md":      "# Audit canary missing\n",
 	}
 
 	for path, content := range files {

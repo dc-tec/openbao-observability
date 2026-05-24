@@ -220,6 +220,19 @@ EOT
     }
   }
 
+  request "create-audit-canary-policy" {
+    operation = "update"
+    path      = "sys/policies/acl/audit-canary"
+
+    data = {
+      policy = <<EOT
+path "secret/data/observability/audit-canary" {
+  capabilities = ["read"]
+}
+EOT
+    }
+  }
+
   request "read-auth-methods" {
     operation = "read"
     path      = "sys/auth"
@@ -280,6 +293,18 @@ EOT
     data = {
       id       = "openbao-observability-metrics-token"
       policies = ["openbao-metrics"]
+    }
+  }
+
+  request "create-local-audit-canary-token" {
+    operation = "update"
+    path      = "auth/token/create-orphan"
+
+    data = {
+      id                = "openbao-observability-audit-canary-token"
+      display_name      = "audit-canary"
+      policies          = ["audit-canary"]
+      no_default_policy = true
     }
   }
 
@@ -453,6 +478,19 @@ EOT
         owner    = "payments"
         rotation = "30d"
         tier     = "demo"
+      }
+    }
+  }
+
+  request "write-audit-canary-secret" {
+    operation = "update"
+    path      = "secret/data/observability/audit-canary"
+
+    data = {
+      data = {
+        owner   = "observability"
+        purpose = "audit-canary"
+        status  = "ok"
       }
     }
   }

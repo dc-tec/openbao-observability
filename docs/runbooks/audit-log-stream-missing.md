@@ -1,9 +1,10 @@
 # Audit log stream missing
 
-Use this runbook when the `OpenBaoAuditStreamMissing` alert fires because Loki
-has not received the `openbao.audit` stream for the alert window. The steps
-help you determine whether OpenBao stopped writing audit logs, the collector
-stopped reading them, or labels changed before ingestion.
+Use this runbook when the `OpenBaoAuditStreamMissing` warning fires because
+Loki has not received the `openbao.audit` stream for the alert window. The
+steps help you determine whether OpenBao stopped writing audit logs, the
+collector stopped reading them, labels changed before ingestion, or the
+environment is quiet.
 
 ## Before you begin
 
@@ -116,6 +117,10 @@ stopped reading them, or labels changed before ingestion.
 4. Wait for the alert window to pass and confirm that
    `OpenBaoAuditStreamMissing` resolves.
 
+5. If `OpenBaoAuditCanaryMissing` is also firing, use
+   [Audit canary missing](./audit-canary-missing.md) to inspect the scheduled
+   canary request.
+
 ## Troubleshooting
 
 ### Audit logs exist on disk but not in Loki
@@ -138,6 +143,8 @@ Enable or restore audit devices through the approved security change process.
 
 - Use [Audit request and response failures](./audit-request-response-failures.md)
   if OpenBao reports audit write failures.
+- Use [Audit canary missing](./audit-canary-missing.md) when the scheduled
+  audit canary path is absent.
 - Use [Run the Docker Compose stack](../docker-compose.md) to inspect the local
   Alloy, Loki, and OpenBao audit stream wiring.
 

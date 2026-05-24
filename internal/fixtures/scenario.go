@@ -17,6 +17,8 @@ const (
 	defaultScenarioAddress  = "http://127.0.0.1:18200"
 	defaultScenarioUsername = "demo-admin"
 	defaultScenarioPassword = "openbao-observability"
+	auditCanaryToken        = "openbao-observability-audit-canary-token"
+	auditCanaryPath         = "secret/data/observability/audit-canary"
 )
 
 type ScenarioOptions struct {
@@ -144,6 +146,9 @@ path "secret/metadata/apps/payments/*" {
 		}
 	}
 
+	if err := r.ensureAuditCanary(ctx); err != nil {
+		return err
+	}
 	if err := r.loginAppRole(ctx); err != nil {
 		return err
 	}
@@ -159,6 +164,60 @@ path "secret/metadata/apps/payments/*" {
 	if err := r.exerciseExpectedFailures(ctx); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r *scenarioRunner) ensureAuditCanary(ctx context.Context) error {
+	canarySteps := []scenarioOperation{
+		{name: "write-audit-canary-policy", path: "sys/policies/acl/audit-canary", operation: "write", data: map[string]any{
+			"policy": `path "secret/data/observability/audit-canary" {
+  capabilities = ["read"]
+}
+`,
+		}},
+		{name: "write-audit-canary-secret", path: auditCanaryPath, operation: "write", data: map[string]any{
+			"data": map[string]any{
+				"owner":   "observability",
+				"purpose": "audit-canary",
+				"status":  "ok",
+			},
+		}},
+	}
+	for _, step := range canarySteps {
+		if err := r.runOperation(ctx, step); err != nil {
+			return err
+		}
+	}
+
+	if _, err := r.client.Logical().WriteWithContext(ctx, "auth/token/lookup", map[string]any{
+		"token": auditCanaryToken,
+	}); err != nil {
+		if _, createErr := r.client.Logical().WriteWithContext(ctx, "auth/token/create-orphan", map[string]any{
+			"id":                auditCanaryToken,
+			"display_name":      "audit-canary",
+			"policies":          []string{"audit-canary"},
+			"no_default_policy": true,
+		}); createErr != nil {
+			r.addStep("create-audit-canary-token", "auth/token/create-orphan", "error", createErr.Error())
+			return fmt.Errorf("create audit canary token: %w", createErr)
+		}
+		r.addStep("create-audit-canary-token", "auth/token/create-orphan", "success", "")
+	} else {
+		r.addStep("lookup-audit-canary-token", "auth/token/lookup", "success", "")
+	}
+
+	config := baoapi.DefaultConfig()
+	config.Address = r.client.Address()
+	canaryClient, err := baoapi.NewClient(config)
+	if err != nil {
+		return fmt.Errorf("create audit canary client: %w", err)
+	}
+	canaryClient.SetToken(auditCanaryToken)
+	if _, err := canaryClient.Logical().ReadWithContext(ctx, auditCanaryPath); err != nil {
+		r.addStep("read-audit-canary", auditCanaryPath, "error", err.Error())
+		return fmt.Errorf("read audit canary with canary token: %w", err)
+	}
+	r.addStep("read-audit-canary", auditCanaryPath, "success", "")
 	return nil
 }
 

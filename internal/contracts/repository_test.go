@@ -67,7 +67,7 @@ GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json
 		"contracts/alerts/critical.yaml":             baseAlertContract(),
 		"docs/README.md":                             docsIndex,
 		"docs/runbooks/no-active-openbao-leader.md":  "# No active leader\n",
-		"docs/runbooks/audit-log-stream-missing.md":  "# Audit stream missing\n",
+		"docs/runbooks/audit-canary-missing.md":      "# Audit canary missing\n",
 		"generated/prometheus/openbao-recording-rules.yaml": `groups:
   - name: openbao.recording
     rules:
@@ -84,8 +84,8 @@ GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json
   groups:
     - name: openbao.loki.alerts
       rules:
-        - alert: OpenBaoAuditStreamMissing
-          expr: absent_over_time({log_stream="openbao.audit"}[10m])
+        - alert: OpenBaoAuditCanaryMissing
+          expr: absent_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary" [15m])
 `,
 	}
 
@@ -152,6 +152,6 @@ func defaultRepositoryDocsIndex() string {
 ## Runbooks
 
 - [No active OpenBao leader](./runbooks/no-active-openbao-leader.md)
-- [Audit log stream missing](./runbooks/audit-log-stream-missing.md)
+- [Audit canary missing](./runbooks/audit-canary-missing.md)
 `
 }

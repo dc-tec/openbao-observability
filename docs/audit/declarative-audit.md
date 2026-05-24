@@ -120,6 +120,41 @@ The Docker Compose stack in this repository demonstrates this pattern by
 writing audit JSON lines to each OpenBao node and tailing them with Alloy under
 the `openbao.audit` log stream.
 
+## Configure an audit canary
+
+1. Create a non-sensitive canary secret.
+
+   ```shell
+   bao kv put secret/observability/audit-canary status=ok purpose=audit-canary
+   ```
+
+2. Create a canary policy that can read only the canary path.
+
+   ```hcl
+   path "secret/data/observability/audit-canary" {
+     capabilities = ["read"]
+   }
+   ```
+
+3. Create a token for the canary scheduler with only the canary policy.
+
+   ```shell
+   bao token create -policy=audit-canary -no-default-policy
+   ```
+
+4. Run the canary request on a schedule that is shorter than the alert window.
+
+   ```shell
+   BAO_TOKEN=<audit_canary_token> bao read secret/data/observability/audit-canary
+   ```
+
+5. Alert on the absence of that specific audited path instead of treating every
+   quiet audit stream as a critical incident.
+
+   ```logql
+   absent_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary" [15m])
+   ```
+
 ## Configure log rotation on hosts
 
 1. Rotate file audit logs with your host log-rotation tool.
