@@ -24,12 +24,13 @@ portable architecture, and generated artifacts implement one tested profile.
 - Install Docker with Docker Compose when you work on fixtures, the local
   stack, or live dashboard query validation.
 - Run commands from the repository root.
-- Put local-only planning notes under `workstreams/` with a `.local.md`
-  suffix. Git ignores those files.
+- Put local-only planning notes under `workstreams/`. Git ignores that
+  directory.
 
 ## Change documentation
 
-1. Follow the [documentation style guide](workstreams/docs-style-guide.md).
+1. Follow the existing documentation style, keep pages user-facing, and avoid
+   implementation planning notes in `docs/`.
 2. Keep each page focused on one type: how-to, runbook, reference, or
    explainer.
 3. Use relative links for repository files.
@@ -161,7 +162,7 @@ artifacts are draft by default until maintainers intentionally publish them.
       profile boundary.
 - [ ] Source contracts, generated artifacts, and docs agree.
 - [ ] Generated files were produced with `make generate`.
-- [ ] Documentation follows `workstreams/docs-style-guide.md`.
+- [ ] Documentation follows the existing user-facing documentation style.
 - [ ] No secrets, live audit payloads, real customer identifiers, or sensitive
       environment values are included.
 - [ ] Validation commands relevant to the change pass.
