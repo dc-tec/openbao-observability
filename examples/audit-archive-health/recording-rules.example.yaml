@@ -1,0 +1,30 @@
+# Example mapping from backend-specific archive delivery metrics to the
+# reference metrics consumed by OpenBaoAuditArchiveDegraded.
+groups:
+  - name: openbao.audit.archive.health.mapping
+    rules:
+      - record: openbao_audit_archive_enabled
+        expr: |
+          max by (cluster, environment, backend, pipeline) (
+            security_archive_pipeline_enabled{pipeline="openbao-audit-archive"}
+          )
+      - record: openbao_audit_archive_delivery_success
+        expr: |
+          min by (cluster, environment, backend, pipeline) (
+            security_archive_pipeline_delivery_healthy{pipeline="openbao-audit-archive"}
+          )
+      - record: openbao_audit_archive_last_success_timestamp_seconds
+        expr: |
+          max by (cluster, environment, backend, pipeline) (
+            security_archive_pipeline_last_success_timestamp_seconds{pipeline="openbao-audit-archive"}
+          )
+      - record: openbao_audit_archive_delivery_failures_total
+        expr: |
+          sum by (cluster, environment, backend, pipeline) (
+            security_archive_pipeline_delivery_failures_total{pipeline="openbao-audit-archive"}
+          )
+      - record: openbao_audit_archive_dead_letter_records_total
+        expr: |
+          sum by (cluster, environment, backend, pipeline) (
+            security_archive_pipeline_dead_letter_records_total{pipeline="openbao-audit-archive"}
+          )

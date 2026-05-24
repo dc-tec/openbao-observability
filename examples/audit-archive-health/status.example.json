@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "delivery_success": true,
+  "last_success_timestamp": "2026-05-24T12:00:00Z",
+  "delivery_failures_total": 0,
+  "dead_letter_records_total": 0,
+  "backend": "object-store",
+  "pipeline": "openbao-audit-archive"
+}

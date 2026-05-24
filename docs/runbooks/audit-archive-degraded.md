@@ -35,6 +35,8 @@ gateway, SIEM forwarder, object-store writer, or another controlled component.
 
 If your backend exposes different metric names, add recording rules that map
 them to these reference names before you enable this alert.
+The [audit archive health example](../../examples/audit-archive-health/) shows
+both a small exporter and a recording-rule mapping pattern.
 
 ## Confirm the degradation
 
@@ -210,6 +212,8 @@ local backlog capacity, replay plan, and evidence handling.
 
 - Use [Audit archive reference design](../audit/audit-archive-reference-design.md)
   to validate the archive pattern and failure modes.
+- Use the [audit archive health example](../../examples/audit-archive-health/)
+  to publish the reference metrics expected by this alert.
 - Use [Audit log stream missing](./audit-log-stream-missing.md) when the
   short-term audit exploration stream is missing.
 - Use [Audit request and response failures](./audit-request-response-failures.md)

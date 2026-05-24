@@ -128,6 +128,10 @@ Do not page on a backend-specific expression until you know what the signal
 means. A queue depth metric, SIEM acknowledgement metric, and object-store write
 metric each describe a different part of the archive path.
 
+Use the [audit archive health example](../../examples/audit-archive-health/)
+when you need a small exporter or a recording-rule mapping pattern for these
+metrics.
+
 ## Failure modes to test
 
 Test archive behavior before you declare the path production-ready.
@@ -213,6 +217,8 @@ Use this checklist before you rely on the archive path:
   canary-backed audit stream alert fires.
 - Use [Audit archive degraded](../runbooks/audit-archive-degraded.md) when
   archive delivery health fails.
+- Use the [audit archive health example](../../examples/audit-archive-health/)
+  to publish the reference metrics for the generated alert.
 
 Source: General log-management guidance in
 [NIST SP 800-92][nist-sp-800-92] supports separate log-management
