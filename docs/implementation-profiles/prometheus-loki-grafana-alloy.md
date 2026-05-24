@@ -90,7 +90,9 @@ your cluster.
 5. Configure Alloy or an equivalent collector to preserve OpenBao stream
    separation.
 6. Send audit logs to a restricted exploration backend and to your approved
-   audit archive path.
+   audit archive path. Use
+   [Audit archive reference design](../audit/audit-archive-reference-design.md)
+   before you choose that path.
 
 ## Production adaptation checklist
 

@@ -1073,7 +1073,7 @@ For HA/Raft fixtures, use a kind profile with three OpenBao pods and integrated 
 | Production Kubernetes profile  | NetworkPolicy, RBAC, metrics listener, audit PVC/archive.                  |
 | OpenBao Operator contract      | Resource, label, scrape, log, dashboard, and alert boundary contract.      |
 | OpenBao Operator examples      | Active scrape, all-node scrape, audit, and artifact adoption examples.     |
-| Audit archive reference design | SIEM/object store/WORM path examples.                                      |
+| Audit archive reference design | SIEM/object store/WORM path examples in `docs/audit/audit-archive-reference-design.md`. |
 | Stronger CI                    | Forbidden-label linter, prefix tests, dashboard schema.                    |
 
 ### v0.4

@@ -184,6 +184,8 @@ Parse them at query time in restricted dashboards instead.
   to choose the right log stream.
 - Use [Log retention and access control](../logging/retention-and-access-control.md)
   before you treat Loki as an audit archive.
+- Use [Audit archive reference design](../audit/audit-archive-reference-design.md)
+  before you choose the durable evidence path.
 - Use [OpenBao audit overview dashboard](../dashboards/audit-overview.md) to
   inspect audit health and volume.
 - Use [OpenBao audit investigation dashboard](../dashboards/audit-investigation.md)

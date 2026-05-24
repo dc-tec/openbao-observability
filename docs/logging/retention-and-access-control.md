@@ -59,6 +59,8 @@ object store, write-once storage, or another approved backend.
 Archive retention depends on security, compliance, legal, and business
 requirements. Record these decisions outside the dashboard repository when
 they include organization-specific policy, owner names, or exception details.
+Use the [Audit archive reference design](../audit/audit-archive-reference-design.md)
+to choose the archive pattern, delivery signals, and failure tests.
 
 ## Completed request log retention
 
@@ -111,6 +113,8 @@ If a dashboard mixes operational and audit data, use the audit access boundary.
   add labels or structured metadata.
 - Use [Audit logs as security records](../concepts/audit-logs-as-security-records.md)
   before you broaden audit-log access.
+- Use [Audit archive reference design](../audit/audit-archive-reference-design.md)
+  before you choose a SIEM, object store, or WORM archive path.
 - Use [Configure declarative audit devices](../audit/declarative-audit.md) to
   configure repeatable audit devices and collection paths.
 

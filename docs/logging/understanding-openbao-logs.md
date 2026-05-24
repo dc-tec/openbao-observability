@@ -71,6 +71,8 @@ SIEM, object store, immutable archive, or another approved backend.
 Do not treat Loki as the archive unless your organization has explicitly
 approved Loki for that purpose. Loki is useful for short-term exploration and
 correlation, but compliance retention needs separate design.
+Use [Audit archive reference design](../audit/audit-archive-reference-design.md)
+before you choose the production archive path.
 
 ## Collection pattern
 
@@ -111,6 +113,8 @@ and user names.
   change log labels.
 - Use [Log retention and access control](./retention-and-access-control.md) to
   separate operational, audit, and archive retention.
+- Use [Audit archive reference design](../audit/audit-archive-reference-design.md)
+  before you rely on a SIEM, object store, or WORM archive path.
 - Use [OpenBao operational logs dashboard](../dashboards/operational-logs.md)
   to read the generated operational log view.
 - Use [OpenBao audit investigation dashboard](../dashboards/audit-investigation.md)

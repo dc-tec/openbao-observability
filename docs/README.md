@@ -22,6 +22,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [Configure a secure metrics scrape](./metrics/secure-metrics-scrape.md)
 - [Configure an all-node metrics scrape](./metrics/all-node-metrics-scrape.md)
 - [Configure declarative audit devices](./audit/declarative-audit.md)
+- [Design an audit archive path](./audit/audit-archive-reference-design.md)
 
 ## Understand
 
@@ -45,6 +46,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [Understanding OpenBao logs](./logging/understanding-openbao-logs.md)
 - [Loki label strategy for OpenBao](./logging/loki-label-strategy.md)
 - [Log retention and access control](./logging/retention-and-access-control.md)
+- [Audit archive reference design](./audit/audit-archive-reference-design.md)
 
 ## Dashboards
 
