@@ -13,7 +13,7 @@ LOKI_URL ?= http://127.0.0.1:13100
 DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml,contracts/dashboards/openbao-operational-logs.yaml,contracts/dashboards/openbao-audit-investigation.yaml,contracts/dashboards/openbao-auth-identity.yaml,contracts/dashboards/openbao-token-lease-lifecycle.yaml
 GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json,generated/grafana/openbao-operational-logs.json,generated/grafana/openbao-audit-investigation.json,generated/grafana/openbao-auth-identity.json,generated/grafana/openbao-token-lease-lifecycle.json
 
-.PHONY: compose-config compose-down compose-reset compose-up contracts-verify fixtures-openbao generate test test-fixtures test-unit validate-dashboard-queries validate-generated
+.PHONY: compose-config compose-down compose-reset compose-up contracts-verify fixtures-openbao generate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
 
 compose-config:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" config
@@ -56,6 +56,7 @@ contracts-verify:
 		--contract "contracts/dashboards/openbao-auth-identity.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
 		--contract "contracts/dashboards/openbao-token-lease-lifecycle.yaml"
+	$(GO) run ./cmd/openbao-observability contracts verify-repository
 
 fixtures-openbao:
 	$(GO) run ./cmd/openbao-observability fixtures capture \
@@ -107,6 +108,11 @@ generate:
 		--output "generated/grafana/openbao-token-lease-lifecycle.json"
 
 test: test-fixtures contracts-verify validate-generated test-unit
+
+verify: generate test
+	git diff --exit-code -- generated
+
+verify-live: validate-dashboard-queries
 
 test-unit:
 	$(GO) test ./...

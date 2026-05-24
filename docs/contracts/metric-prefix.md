@@ -120,19 +120,18 @@ all-node scrape exposed Raft storage stats without `vault_raft_peers`.
 
 ## Validate generated artifacts
 
-Run the contract and generated rule checks after you change metric prefixes,
-recording rules, or dashboard contracts.
+Run the repository verification target after you change metric prefixes,
+recording rules, alert contracts, or dashboard contracts.
 
 ```shell
-make generate
-make contracts-verify
-make validate-generated
+make verify
 ```
 
-Run the full test target before you publish a change.
+When the Docker Compose stack is already running, validate dashboard queries
+against Prometheus and Loki.
 
 ```shell
-make test
+make verify-live
 ```
 
 ## Related files

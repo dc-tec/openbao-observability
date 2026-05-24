@@ -58,6 +58,8 @@ func runContracts(args []string) error {
 		return runContractsVerifyAlerts(args[1:])
 	case "verify-dashboards":
 		return runContractsVerifyDashboards(args[1:])
+	case "verify-repository":
+		return runContractsVerifyRepository(args[1:])
 	case "verify-streams":
 		return runContractsVerifyStreams(args[1:])
 	case "-h", "--help", "help":
@@ -162,6 +164,19 @@ func runContractsVerifyDashboards(args []string) error {
 	}
 
 	return contracts.VerifyDashboardContract(opts)
+}
+
+func runContractsVerifyRepository(args []string) error {
+	fs := flag.NewFlagSet("contracts verify-repository", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := contracts.VerifyRepositoryOptions{}
+	fs.StringVar(&opts.RepositoryRoot, "repository-root", ".", "repository root")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	return contracts.VerifyRepository(opts)
 }
 
 func runContractsVerifyStreams(args []string) error {
@@ -399,6 +414,8 @@ commands:
                       verify alert contracts
   contracts verify-dashboards
                       verify dashboard contracts
+  contracts verify-repository
+                      verify repository contract and generated artifact wiring
   contracts verify-streams
                       verify log stream contracts
   fixtures capture    capture OpenBao Docker fixtures
@@ -420,6 +437,7 @@ func contractsUsageText() string {
   openbao-observability contracts verify [flags]
   openbao-observability contracts verify-alerts [flags]
   openbao-observability contracts verify-dashboards [flags]
+  openbao-observability contracts verify-repository [flags]
   openbao-observability contracts verify-streams [flags]`
 }
 
