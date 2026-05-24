@@ -13,3 +13,50 @@
 <link rel="icon" type="image/svg+xml" href="{{ relURL (site.Params.faviconPath | default "brand/openbao-single-color-square.svg") }}">
 <link rel="canonical" href="{{ .Permalink }}">
 <link rel="stylesheet" href="{{ $style.RelPermalink }}" integrity="{{ $style.Data.Integrity }}">
+{{- if eq (.Params.error_code | default "") "404" }}
+  <script>
+    (function () {
+      var basePath = {{ relURL "" | jsonify | safeJS }};
+      var path = window.location.pathname;
+      var hash = window.location.hash || "";
+
+      if (basePath !== "/" && !basePath.endsWith("/")) {
+        basePath += "/";
+      }
+      if (basePath !== "/" && !path.startsWith(basePath)) {
+        return;
+      }
+
+      var relativePath = path.slice(basePath.length);
+      var targetPath = "";
+
+      if (relativePath === "docs" || relativePath === "docs/") {
+        targetPath = basePath;
+      } else if (relativePath === "docs/README.md") {
+        if (hash === "#dashboards") {
+          targetPath = basePath + "dashboards/";
+          hash = "";
+        } else if (hash === "#respond") {
+          targetPath = basePath + "runbooks/";
+          hash = "";
+        } else {
+          targetPath = basePath;
+        }
+      } else if (relativePath.startsWith("docs/")) {
+        var docPath = relativePath.slice("docs/".length);
+        if (docPath.endsWith("/README.md")) {
+          docPath = docPath.slice(0, -"/README.md".length) + "/";
+        } else if (docPath.endsWith(".md")) {
+          docPath = docPath.slice(0, -".md".length) + "/";
+        } else if (!docPath.endsWith("/")) {
+          docPath += "/";
+        }
+        targetPath = basePath + docPath;
+      }
+
+      if (targetPath && targetPath !== path) {
+        window.location.replace(targetPath + hash);
+      }
+    }());
+  </script>
+{{- end }}
