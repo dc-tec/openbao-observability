@@ -32,17 +32,17 @@
         {{- end -}}
       {{- end -}}
     {{- else if and (eq $resolved "README.md") (eq $fragment "respond") -}}
-      {{- $href = relURL "/runbooks/" -}}
+      {{- $href = relURL "runbooks/" -}}
     {{- else if and (eq $resolved "README.md") (eq $fragment "dashboards") -}}
-      {{- $href = relURL "/dashboards/" -}}
+      {{- $href = relURL "dashboards/" -}}
     {{- else if eq $resolved "README.md" -}}
-      {{- $href = relURL "/" -}}
+      {{- $href = relURL "" -}}
     {{- else if strings.HasSuffix $resolved "/README.md" -}}
-      {{- $href = relURL (printf "/%s/" (path.Dir $resolved)) -}}
+      {{- $href = relURL (printf "%s/" (path.Dir $resolved)) -}}
     {{- else if strings.HasSuffix $resolved "_index.md" -}}
-      {{- $href = relURL (printf "/%s/" (path.Dir $resolved)) -}}
+      {{- $href = relURL (printf "%s/" (path.Dir $resolved)) -}}
     {{- else -}}
-      {{- $href = relURL (printf "/%s/" (strings.TrimSuffix ".md" $resolved)) -}}
+      {{- $href = relURL (printf "%s/" (strings.TrimSuffix ".md" $resolved)) -}}
     {{- end -}}
     {{- if $fragment -}}
       {{- $href = printf "%s#%s" $href $fragment -}}

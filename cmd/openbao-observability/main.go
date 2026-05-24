@@ -141,6 +141,8 @@ func runValidate(ctx context.Context, args []string) error {
 		return runValidateDashboardQueries(ctx, args[1:])
 	case "docs":
 		return runValidateDocs(args[1:])
+	case "site-links":
+		return runValidateSiteLinks(args[1:])
 	case "-h", "--help", "help":
 		return validateUsage()
 	default:
@@ -465,6 +467,21 @@ func runValidateDocs(args []string) error {
 	return docverify.Verify(opts)
 }
 
+func runValidateSiteLinks(args []string) error {
+	fs := flag.NewFlagSet("validate site-links", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := docverify.SiteLinkOptions{}
+	fs.StringVar(&opts.SiteRoot, "site-root", "public", "generated site root")
+	fs.StringVar(&opts.BaseURL, "base-url", envString("DOCS_BASE_URL", ""), "site base URL used to derive the base path")
+	fs.StringVar(&opts.BasePath, "base-path", "", "optional site base path override")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	return docverify.VerifySiteLinks(opts)
+}
+
 func inferVersion(dir string) string {
 	base := filepath.Base(filepath.Clean(dir))
 	if version, ok := strings.CutPrefix(base, "openbao-"); ok {
@@ -564,7 +581,8 @@ commands:
   release checksums  write SHA256 checksums for release assets
   validate dashboard-queries
                       validate dashboard queries against Prometheus and Loki
-  validate docs       validate user-facing Markdown documentation`
+  validate docs       validate user-facing Markdown documentation
+  validate site-links validate generated documentation site links`
 }
 
 func contractsUsage() error {
@@ -616,5 +634,6 @@ func releaseUsageText() string {
 func validateUsageText() string {
 	return `usage:
   openbao-observability validate dashboard-queries [flags]
-  openbao-observability validate docs [flags]`
+  openbao-observability validate docs [flags]
+  openbao-observability validate site-links [flags]`
 }
