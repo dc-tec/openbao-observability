@@ -199,7 +199,7 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 	r.tempDirs = append(r.tempDirs, tempDir)
 
 	sealDir := filepath.Join(tempDir, "seal")
-	if err := os.MkdirAll(sealDir, 0o700); err != nil {
+	if err := os.MkdirAll(sealDir, 0o755); err != nil {
 		return fmt.Errorf("create static seal directory: %w", err)
 	}
 	sealKeyPath := filepath.Join(sealDir, "static-unseal.key")
@@ -318,7 +318,7 @@ func writeStaticSealKey(path string) error {
 	if _, err := rand.Read(key); err != nil {
 		return fmt.Errorf("generate static seal key: %w", err)
 	}
-	if err := os.WriteFile(path, key, 0o600); err != nil {
+	if err := os.WriteFile(path, key, 0o644); err != nil {
 		return fmt.Errorf("write static seal key %s: %w", path, err)
 	}
 	return nil
@@ -442,7 +442,7 @@ audit "file" "local-file" {
 }
 %s`, node.Container, node.Container, node.ID, nonVoterConfig, retryJoin.String(), prefix, raftInitializeBlock(initialize, databaseHost))
 
-	if err := os.WriteFile(path, []byte(config), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(config), 0o644); err != nil {
 		return fmt.Errorf("write OpenBao Raft config %s: %w", path, err)
 	}
 	return nil
@@ -706,7 +706,7 @@ audit "file" "local-file" {
 }
 `, prefix)
 
-	if err := os.WriteFile(path, []byte(config), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(config), 0o644); err != nil {
 		return fmt.Errorf("write OpenBao config %s: %w", path, err)
 	}
 	return nil
