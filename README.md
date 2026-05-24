@@ -182,15 +182,10 @@ examples, generated artifacts, or validation code.
 | `fixtures/` | Captured metrics and log fixtures used by tests. |
 | `generated/` | Generated artifacts produced from contracts. |
 | `internal/` | Go packages that implement fixture capture and validation. |
-| `scripts/` | Helper scripts for local validation and maintenance. |
-| `tests/` | Validation checks for fixtures, contracts, generated artifacts, and docs. |
 
 ## License
 
 This project is licensed under the [Apache License, Version 2.0](LICENSE).
-Apache-2.0 is a permissive open source license with an explicit patent grant,
-which fits a reusable reference architecture that teams can adapt to their own
-environments.
 
 Copyright 2026 OpenBao Observability contributors.
 
