@@ -70,6 +70,7 @@ Use these runbooks when the generated alert rules fire:
 - [Completed request logging enabled](./runbooks/completed-request-logging-enabled.md)
 - [Irrevocable leases present](./runbooks/irrevocable-leases.md)
 - [Runtime and storage warnings](./runbooks/runtime-storage-warnings.md)
+- [Secret engine feature warnings](./runbooks/secret-engine-feature-warnings.md)
 - [Security audit detections](./runbooks/security-audit-detections.md)
 
 Do not put implementation plans, work notes, or contributor-only design notes

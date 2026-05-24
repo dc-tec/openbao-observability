@@ -535,6 +535,16 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
+							Record: recordPrefix + ":pki_issue_failure:increase15m",
+							Expr:   "sum(increase(" + metricName(sourcePrefix, "pki_issue_failure") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":pki_revoke_failure:increase15m",
+							Expr:   "sum(increase(" + metricName(sourcePrefix, "pki_revoke_failure") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
 							Record: recordPrefix + ":database_initialize:rate5m",
 							Expr:   summaryRateExpression(sourcePrefix, "database_Initialize"),
 							Labels: ruleLabels(sourcePrefix),
@@ -572,6 +582,26 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						{
 							Record: recordPrefix + ":database_delete_user:avg5m",
 							Expr:   summaryAverageExpression(sourcePrefix, "database_DeleteUser"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_initialize_error:increase15m",
+							Expr:   "sum(increase(" + metricName(sourcePrefix, "database_Initialize_error") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_new_user_error:increase15m",
+							Expr:   "sum(increase(" + metricName(sourcePrefix, "database_NewUser_error") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_update_user_error:increase15m",
+							Expr:   "sum(increase(" + metricName(sourcePrefix, "database_UpdateUser_error") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_delete_user_error:increase15m",
+							Expr:   "sum(increase(" + metricName(sourcePrefix, "database_DeleteUser_error") + "[15m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 					},

@@ -74,8 +74,12 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"expr: sum by (secret_engine) (increase(openbao_secret_lease_creation[15m]))",
 		"record: openbao:pki_issue:avg5m",
 		"expr: sum(rate(openbao_pki_issue_sum[5m])) / clamp_min(sum(rate(openbao_pki_issue_count[5m])), 0.001)",
+		"record: openbao:pki_issue_failure:increase15m",
+		"expr: sum(increase(openbao_pki_issue_failure[15m]))",
 		"record: openbao:database_new_user:rate5m",
 		"expr: sum(rate(openbao_database_NewUser_count[5m]))",
+		"record: openbao:database_new_user_error:increase15m",
+		"expr: sum(increase(openbao_database_NewUser_error[15m]))",
 		"source_prefix: openbao",
 	}
 	for _, fragment := range required {

@@ -266,6 +266,14 @@ groups:
           expr: sum(rate(openbao_pki_revoke_sum[5m])) / clamp_min(sum(rate(openbao_pki_revoke_count[5m])), 0.001)
           labels:
             source_prefix: openbao
+        - record: openbao:pki_issue_failure:increase15m
+          expr: sum(increase(openbao_pki_issue_failure[15m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:pki_revoke_failure:increase15m
+          expr: sum(increase(openbao_pki_revoke_failure[15m]))
+          labels:
+            source_prefix: openbao
         - record: openbao:database_initialize:rate5m
           expr: sum(rate(openbao_database_Initialize_count[5m]))
           labels:
@@ -296,5 +304,21 @@ groups:
             source_prefix: openbao
         - record: openbao:database_delete_user:avg5m
           expr: sum(rate(openbao_database_DeleteUser_sum[5m])) / clamp_min(sum(rate(openbao_database_DeleteUser_count[5m])), 0.001)
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_initialize_error:increase15m
+          expr: sum(increase(openbao_database_Initialize_error[15m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_new_user_error:increase15m
+          expr: sum(increase(openbao_database_NewUser_error[15m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_update_user_error:increase15m
+          expr: sum(increase(openbao_database_UpdateUser_error[15m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_delete_user_error:increase15m
+          expr: sum(increase(openbao_database_DeleteUser_error[15m]))
           labels:
             source_prefix: openbao

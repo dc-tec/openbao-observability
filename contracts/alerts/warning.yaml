@@ -66,6 +66,68 @@ alerts:
     labels:
       component: core
       subsystem: mounts
+  - id: OpenBaoPKIOperationFailures
+    type: prometheus
+    severity: warning
+    signal: metrics
+    for: 5m
+    expression: (openbao:pki_issue_failure:increase15m > 0) or (openbao:pki_revoke_failure:increase15m > 0)
+    summary: OpenBao PKI operations are failing
+    description: OpenBao reports failed PKI issue or revoke operations over the alert window.
+    runbook: docs/runbooks/secret-engine-feature-warnings.md
+    labels:
+      component: secret-engines
+      subsystem: pki
+  - id: OpenBaoPKIOperationLatencyElevated
+    type: prometheus
+    severity: warning
+    signal: metrics
+    for: 15m
+    expression: >-
+      ((openbao:pki_issue:rate5m > 0)
+      and (openbao:pki_issue:avg5m > 3 * clamp_min(avg_over_time(openbao:pki_issue:avg5m[1h]), 0.001)))
+      or ((openbao:pki_revoke:rate5m > 0)
+      and (openbao:pki_revoke:avg5m > 3 * clamp_min(avg_over_time(openbao:pki_revoke:avg5m[1h]), 0.001)))
+    summary: OpenBao PKI operation latency is elevated
+    description: OpenBao PKI issue or revoke latency is more than three times its recent baseline while PKI operations are active.
+    runbook: docs/runbooks/secret-engine-feature-warnings.md
+    labels:
+      component: secret-engines
+      subsystem: pki
+  - id: OpenBaoDatabaseCredentialOperationFailures
+    type: prometheus
+    severity: warning
+    signal: metrics
+    for: 5m
+    expression: >-
+      (openbao:database_initialize_error:increase15m > 0)
+      or (openbao:database_new_user_error:increase15m > 0)
+      or (openbao:database_update_user_error:increase15m > 0)
+      or (openbao:database_delete_user_error:increase15m > 0)
+    summary: OpenBao database credential operations are failing
+    description: OpenBao reports failed database secrets engine initialize, create, renew, or revoke operations over the alert window.
+    runbook: docs/runbooks/secret-engine-feature-warnings.md
+    labels:
+      component: secret-engines
+      subsystem: database
+  - id: OpenBaoDatabaseCredentialOperationLatencyElevated
+    type: prometheus
+    severity: warning
+    signal: metrics
+    for: 15m
+    expression: >-
+      ((openbao:database_new_user:rate5m > 0)
+      and (openbao:database_new_user:avg5m > 3 * clamp_min(avg_over_time(openbao:database_new_user:avg5m[1h]), 0.001)))
+      or ((openbao:database_update_user:rate5m > 0)
+      and (openbao:database_update_user:avg5m > 3 * clamp_min(avg_over_time(openbao:database_update_user:avg5m[1h]), 0.001)))
+      or ((openbao:database_delete_user:rate5m > 0)
+      and (openbao:database_delete_user:avg5m > 3 * clamp_min(avg_over_time(openbao:database_delete_user:avg5m[1h]), 0.001)))
+    summary: OpenBao database credential operation latency is elevated
+    description: OpenBao database credential create, renew, or revoke latency is more than three times its recent baseline while database operations are active.
+    runbook: docs/runbooks/secret-engine-feature-warnings.md
+    labels:
+      component: secret-engines
+      subsystem: database
   - id: OpenBaoOperationalLogStreamMissing
     type: loki
     severity: warning

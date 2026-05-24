@@ -66,3 +66,55 @@ groups:
             description: OpenBao reports more than five additional mount table entries compared with one hour ago.
             runbook_url: docs/runbooks/runtime-storage-warnings.md
             summary: OpenBao mount table grew quickly
+        - alert: OpenBaoPKIOperationFailures
+          expr: (openbao:pki_issue_failure:increase15m > 0) or (openbao:pki_revoke_failure:increase15m > 0)
+          for: 5m
+          labels:
+            component: secret-engines
+            severity: warning
+            signal: metrics
+            source_prefix: vault
+            subsystem: pki
+          annotations:
+            description: OpenBao reports failed PKI issue or revoke operations over the alert window.
+            runbook_url: docs/runbooks/secret-engine-feature-warnings.md
+            summary: OpenBao PKI operations are failing
+        - alert: OpenBaoPKIOperationLatencyElevated
+          expr: ((openbao:pki_issue:rate5m > 0) and (openbao:pki_issue:avg5m > 3 * clamp_min(avg_over_time(openbao:pki_issue:avg5m[1h]), 0.001))) or ((openbao:pki_revoke:rate5m > 0) and (openbao:pki_revoke:avg5m > 3 * clamp_min(avg_over_time(openbao:pki_revoke:avg5m[1h]), 0.001)))
+          for: 15m
+          labels:
+            component: secret-engines
+            severity: warning
+            signal: metrics
+            source_prefix: vault
+            subsystem: pki
+          annotations:
+            description: OpenBao PKI issue or revoke latency is more than three times its recent baseline while PKI operations are active.
+            runbook_url: docs/runbooks/secret-engine-feature-warnings.md
+            summary: OpenBao PKI operation latency is elevated
+        - alert: OpenBaoDatabaseCredentialOperationFailures
+          expr: (openbao:database_initialize_error:increase15m > 0) or (openbao:database_new_user_error:increase15m > 0) or (openbao:database_update_user_error:increase15m > 0) or (openbao:database_delete_user_error:increase15m > 0)
+          for: 5m
+          labels:
+            component: secret-engines
+            severity: warning
+            signal: metrics
+            source_prefix: vault
+            subsystem: database
+          annotations:
+            description: OpenBao reports failed database secrets engine initialize, create, renew, or revoke operations over the alert window.
+            runbook_url: docs/runbooks/secret-engine-feature-warnings.md
+            summary: OpenBao database credential operations are failing
+        - alert: OpenBaoDatabaseCredentialOperationLatencyElevated
+          expr: ((openbao:database_new_user:rate5m > 0) and (openbao:database_new_user:avg5m > 3 * clamp_min(avg_over_time(openbao:database_new_user:avg5m[1h]), 0.001))) or ((openbao:database_update_user:rate5m > 0) and (openbao:database_update_user:avg5m > 3 * clamp_min(avg_over_time(openbao:database_update_user:avg5m[1h]), 0.001))) or ((openbao:database_delete_user:rate5m > 0) and (openbao:database_delete_user:avg5m > 3 * clamp_min(avg_over_time(openbao:database_delete_user:avg5m[1h]), 0.001)))
+          for: 15m
+          labels:
+            component: secret-engines
+            severity: warning
+            signal: metrics
+            source_prefix: vault
+            subsystem: database
+          annotations:
+            description: OpenBao database credential create, renew, or revoke latency is more than three times its recent baseline while database operations are active.
+            runbook_url: docs/runbooks/secret-engine-feature-warnings.md
+            summary: OpenBao database credential operation latency is elevated
