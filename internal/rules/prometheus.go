@@ -24,6 +24,8 @@ type GenerateAlertOptions struct {
 	PrometheusRuleFilePath string
 	LokiOutputPath         string
 	SourcePrefix           string
+	PrometheusName         string
+	LokiName               string
 }
 
 type prometheusRule struct {
@@ -128,7 +130,7 @@ func GenerateAlertRules(opts GenerateAlertOptions) error {
 		return err
 	}
 
-	prometheusDocument := buildAlertPrometheusRule(*contract, sourcePrefix)
+	prometheusDocument := buildAlertPrometheusRule(*contract, sourcePrefix, opts.PrometheusName)
 	if err := validatePromQL(prometheusDocument); err != nil {
 		return err
 	}
@@ -144,7 +146,7 @@ func GenerateAlertRules(opts GenerateAlertOptions) error {
 		fmt.Printf("generated Prometheus alert rule file at %s\n", opts.PrometheusRuleFilePath)
 	}
 
-	lokiDocument := buildLokiAlertDocument(*contract, sourcePrefix)
+	lokiDocument := buildLokiAlertDocument(*contract, sourcePrefix, opts.LokiName)
 	if err := writeYAML(opts.LokiOutputPath, lokiDocument); err != nil {
 		return err
 	}
@@ -172,6 +174,12 @@ func (o GenerateAlertOptions) withDefaults() GenerateAlertOptions {
 	}
 	if o.LokiOutputPath == "" {
 		o.LokiOutputPath = filepath.Join("generated", "loki", "openbao-alerts.yaml")
+	}
+	if o.PrometheusName == "" {
+		o.PrometheusName = "openbao-alerts"
+	}
+	if o.LokiName == "" {
+		o.LokiName = "openbao-loki-alerts"
 	}
 	return o
 }
@@ -273,7 +281,7 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 	}
 }
 
-func buildAlertPrometheusRule(contract contracts.AlertContract, sourcePrefix string) prometheusRule {
+func buildAlertPrometheusRule(contract contracts.AlertContract, sourcePrefix, name string) prometheusRule {
 	rules := []prometheusRuleItem{}
 	for _, alert := range contract.Alerts {
 		if alert.Type != "prometheus" {
@@ -292,7 +300,7 @@ func buildAlertPrometheusRule(contract contracts.AlertContract, sourcePrefix str
 		APIVersion: "monitoring.coreos.com/v1",
 		Kind:       "PrometheusRule",
 		Metadata: map[string]string{
-			"name": "openbao-alerts",
+			"name": name,
 		},
 		Spec: prometheusRuleSpec{
 			Groups: []prometheusRuleGroup{
@@ -305,7 +313,7 @@ func buildAlertPrometheusRule(contract contracts.AlertContract, sourcePrefix str
 	}
 }
 
-func buildLokiAlertDocument(contract contracts.AlertContract, sourcePrefix string) lokiAlertDocument {
+func buildLokiAlertDocument(contract contracts.AlertContract, sourcePrefix, name string) lokiAlertDocument {
 	rules := []lokiAlertRule{}
 	for _, alert := range contract.Alerts {
 		if alert.Type != "loki" {
@@ -324,7 +332,7 @@ func buildLokiAlertDocument(contract contracts.AlertContract, sourcePrefix strin
 		APIVersion: "openbao.observability/v1alpha1",
 		Kind:       "LokiAlertRules",
 		Metadata: map[string]string{
-			"name": "openbao-loki-alerts",
+			"name": name,
 		},
 		Spec: lokiAlertDocumentSpec{
 			Groups: []lokiAlertGroup{

@@ -34,9 +34,10 @@ type Alert struct {
 }
 
 type VerifyAlertOptions struct {
-	ContractPath   string
-	SourcePrefix   string
-	RepositoryRoot string
+	ContractPath     string
+	SourcePrefix     string
+	RepositoryRoot   string
+	ExpectedSeverity string
 }
 
 func LoadAlertContract(path string) (*AlertContract, error) {
@@ -75,6 +76,9 @@ func VerifyAlertContract(opts VerifyAlertOptions) error {
 	}
 
 	if err := contract.ValidateRunbooks(opts.RepositoryRoot); err != nil {
+		return err
+	}
+	if err := contract.ValidateSeverity(opts.ExpectedSeverity); err != nil {
 		return err
 	}
 
@@ -160,6 +164,18 @@ func (c AlertContract) ValidateRunbooks(repositoryRoot string) error {
 		}
 	}
 
+	return nil
+}
+
+func (c AlertContract) ValidateSeverity(expectedSeverity string) error {
+	if expectedSeverity == "" {
+		return nil
+	}
+	for _, alert := range c.Alerts {
+		if alert.Severity != expectedSeverity {
+			return fmt.Errorf("alert %s has severity %q, want %q", alert.ID, alert.Severity, expectedSeverity)
+		}
+	}
 	return nil
 }
 

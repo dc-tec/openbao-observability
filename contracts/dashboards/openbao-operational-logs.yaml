@@ -1,0 +1,127 @@
+version: v0.1
+status: draft
+uid: openbao-operational-logs
+title: OpenBao operational logs
+refresh: 30s
+tags:
+  - logs
+  - openbao
+  - operational
+  - reference
+  - generated
+timeRange:
+  from: now-1h
+  to: now
+datasources:
+  metrics:
+    type: prometheus
+    uid: prometheus
+  logs:
+    type: loki
+    uid: loki
+panels:
+  - id: operational-log-volume
+    title: Operational log volume
+    type: timeseries
+    signal: logs
+    datasource: logs
+    expression: sum by (node_id) (count_over_time({log_stream="openbao.operational"}[5m]))
+    legend: "{{node_id}}"
+    unit: short
+    description: Shows OpenBao operational log entries collected by Loki per node over 5 minutes.
+    grid:
+      x: 0
+      y: 0
+      w: 8
+      h: 8
+  - id: warning-error-volume
+    title: Warning and error logs
+    type: timeseries
+    signal: logs
+    datasource: logs
+    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.operational"} |~ "\"@level\":\"(warn|error)\"" [5m]))'
+    legend: "{{node_id}}"
+    unit: short
+    description: Shows OpenBao operational warning and error log entries by node over 5 minutes.
+    grid:
+      x: 8
+      y: 0
+      w: 8
+      h: 8
+  - id: debug-trace-volume
+    title: Debug or trace logs
+    type: timeseries
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m]))'
+    unit: short
+    description: Shows debug or trace operational log entries over 5 minutes.
+    grid:
+      x: 16
+      y: 0
+      w: 8
+      h: 8
+  - id: raft-storage-warning-errors
+    title: Raft/storage warning and error logs
+    type: timeseries
+    signal: logs
+    datasource: logs
+    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.operational"} |~ "(?i)(raft|storage|autopilot)" |~ "(?i)(warn|error|failed)" [5m]))'
+    legend: "{{node_id}}"
+    unit: short
+    description: Shows Raft, storage, and Autopilot warning or error log entries by node over 5 minutes.
+    grid:
+      x: 0
+      y: 8
+      w: 12
+      h: 8
+  - id: seal-unseal-events
+    title: Seal and unseal logs
+    type: timeseries
+    signal: logs
+    datasource: logs
+    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.operational"} |~ "(?i)seal|unseal" [5m]))'
+    legend: "{{node_id}}"
+    unit: short
+    description: Shows seal and unseal related operational log entries by node over 5 minutes.
+    grid:
+      x: 12
+      y: 8
+      w: 12
+      h: 8
+  - id: recent-warnings-errors
+    title: Recent warnings and errors
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.operational"} |~ "\"@level\":\"(warn|error)\""'
+    description: Shows recent OpenBao operational warning and error log entries.
+    grid:
+      x: 0
+      y: 16
+      w: 12
+      h: 9
+  - id: raft-storage-logs
+    title: Raft and storage logs
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.operational"} |~ "(?i)raft|storage|autopilot"'
+    description: Shows recent OpenBao operational logs related to Raft, storage, and Autopilot.
+    grid:
+      x: 12
+      y: 16
+      w: 12
+      h: 9
+  - id: operational-stream
+    title: Operational stream
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.operational"}'
+    description: Shows recent OpenBao operational log entries.
+    grid:
+      x: 0
+      y: 25
+      w: 24
+      h: 9

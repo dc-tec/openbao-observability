@@ -10,8 +10,8 @@ GO ?= go
 PROMTOOL ?= docker run --rm --entrypoint promtool -v "$(CURDIR):/workspace:ro" "$(PROMETHEUS_IMAGE)"
 PROMETHEUS_URL ?= http://127.0.0.1:19090
 LOKI_URL ?= http://127.0.0.1:13100
-DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml
-GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json
+DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml,contracts/dashboards/openbao-operational-logs.yaml
+GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json,generated/grafana/openbao-operational-logs.json
 
 .PHONY: compose-config compose-down compose-reset compose-up contracts-verify fixtures-openbao generate test test-fixtures test-unit validate-dashboard-queries validate-generated
 
@@ -32,15 +32,24 @@ contracts-verify:
 		--contract "contracts/metrics/openbao-core.yaml" \
 		--fixtures "$(FIXTURE_DIR)"
 	$(GO) run ./cmd/openbao-observability contracts verify-alerts \
-		--contract "contracts/alerts/critical.yaml"
+		--contract "contracts/alerts/critical.yaml" \
+		--severity "critical"
+	$(GO) run ./cmd/openbao-observability contracts verify-alerts \
+		--contract "contracts/alerts/warning.yaml" \
+		--severity "warning"
 	$(GO) run ./cmd/openbao-observability contracts verify-streams \
 		--contract "contracts/streams/log-streams.yaml"
+	$(GO) run ./cmd/openbao-observability contracts verify-streams \
+		--contract "contracts/streams/log-streams.yaml" \
+		--alert-contract "contracts/alerts/warning.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
 		--contract "contracts/dashboards/openbao-overview.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
 		--contract "contracts/dashboards/openbao-ha-raft.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
 		--contract "contracts/dashboards/openbao-audit-overview.yaml"
+	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
+		--contract "contracts/dashboards/openbao-operational-logs.yaml"
 
 fixtures-openbao:
 	$(GO) run ./cmd/openbao-observability fixtures capture \
@@ -57,9 +66,18 @@ generate:
 		--rule-output "generated/prometheus/openbao-recording-rules.yaml"
 	$(GO) run ./cmd/openbao-observability generate alert-rules \
 		--contract "contracts/alerts/critical.yaml" \
+		--prometheus-name "openbao-alerts" \
+		--loki-name "openbao-loki-alerts" \
 		--prometheus-output "generated/prometheusrules/openbao-alerts.yaml" \
 		--prometheus-rule-output "generated/prometheus/openbao-alerts.yaml" \
 		--loki-output "generated/loki/openbao-alerts.yaml"
+	$(GO) run ./cmd/openbao-observability generate alert-rules \
+		--contract "contracts/alerts/warning.yaml" \
+		--prometheus-name "openbao-warning-alerts" \
+		--loki-name "openbao-loki-warning-alerts" \
+		--prometheus-output "generated/prometheusrules/openbao-warning-alerts.yaml" \
+		--prometheus-rule-output "generated/prometheus/openbao-warning-alerts.yaml" \
+		--loki-output "generated/loki/openbao-warning-alerts.yaml"
 	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
 		--contract "contracts/dashboards/openbao-overview.yaml" \
 		--output "generated/grafana/openbao-overview.json"
@@ -69,6 +87,9 @@ generate:
 	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
 		--contract "contracts/dashboards/openbao-audit-overview.yaml" \
 		--output "generated/grafana/openbao-audit-overview.json"
+	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
+		--contract "contracts/dashboards/openbao-operational-logs.yaml" \
+		--output "generated/grafana/openbao-operational-logs.json"
 
 test: test-fixtures contracts-verify validate-generated test-unit
 
@@ -83,7 +104,8 @@ test-fixtures:
 validate-generated:
 	$(PROMTOOL) check rules \
 		/workspace/generated/prometheus/openbao-recording-rules.yaml \
-		/workspace/generated/prometheus/openbao-alerts.yaml
+		/workspace/generated/prometheus/openbao-alerts.yaml \
+		/workspace/generated/prometheus/openbao-warning-alerts.yaml
 
 validate-dashboard-queries:
 	$(GO) run ./cmd/openbao-observability validate dashboard-queries \

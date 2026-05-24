@@ -102,6 +102,7 @@ func (o QueryValidationOptions) withDefaults() QueryValidationOptions {
 			filepath.Join("contracts", "dashboards", "openbao-overview.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-ha-raft.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-audit-overview.yaml"),
+			filepath.Join("contracts", "dashboards", "openbao-operational-logs.yaml"),
 		}
 	}
 	if len(o.GeneratedPaths) == 0 {
@@ -109,6 +110,7 @@ func (o QueryValidationOptions) withDefaults() QueryValidationOptions {
 			filepath.Join("generated", "grafana", "openbao-overview.json"),
 			filepath.Join("generated", "grafana", "openbao-ha-raft.json"),
 			filepath.Join("generated", "grafana", "openbao-audit-overview.json"),
+			filepath.Join("generated", "grafana", "openbao-operational-logs.json"),
 		}
 	}
 	if o.PrometheusURL == "" {

@@ -76,6 +76,26 @@ func TestVerifyAlertContractRejectsMissingRunbook(t *testing.T) {
 	}
 }
 
+func TestVerifyAlertContractRejectsUnexpectedSeverity(t *testing.T) {
+	root := writeAlertTestRepository(t, baseAlertContract(), []string{
+		"docs/runbooks/no-active-openbao-leader.md",
+		"docs/runbooks/audit-log-stream-missing.md",
+	})
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
+
+	err := VerifyAlertContract(VerifyAlertOptions{
+		ContractPath:     path,
+		RepositoryRoot:   root,
+		ExpectedSeverity: "warning",
+	})
+	if err == nil {
+		t.Fatal("expected severity mismatch to fail")
+	}
+	if !strings.Contains(err.Error(), "OpenBaoNoActiveNode") {
+		t.Fatalf("error does not include alert id: %v", err)
+	}
+}
+
 func TestLoadAlertContractRejectsDuplicateIDs(t *testing.T) {
 	contract := baseAlertContract() + `
   - id: OpenBaoNoActiveNode

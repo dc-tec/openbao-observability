@@ -142,6 +142,7 @@ make test
 | `contracts/dashboards/openbao-overview.yaml` | Overview dashboard contract that consumes normalized rules. |
 | `contracts/dashboards/openbao-ha-raft.yaml` | HA/Raft dashboard contract that consumes normalized rules and validated Raft source metrics. |
 | `contracts/alerts/critical.yaml` | Alert contract that maps critical alerts to runbooks. |
+| `contracts/alerts/warning.yaml` | Alert contract that maps warning alerts to runbooks. |
 
 ## What's next
 

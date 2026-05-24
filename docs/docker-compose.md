@@ -68,8 +68,8 @@ The stack is for local evaluation and contract validation.
 Grafana uses `admin` / `admin` by default. Change the local password in
 `examples/docker-compose/.env` when you need a different local credential.
 The stack provisions the generated `OpenBao overview` dashboard in the
-`OpenBao` folder. It also provisions the generated `OpenBao HA/Raft` and
-`OpenBao audit overview` dashboards.
+`OpenBao` folder. It also provisions the generated `OpenBao HA/Raft`,
+`OpenBao audit overview`, and `OpenBao operational logs` dashboards.
 
 ## Understand the local OpenBao setup
 
@@ -210,7 +210,8 @@ production all-node scraping.
 ## Query the data
 
 In Grafana, open **Dashboards**, select the `OpenBao` folder, and open
-`OpenBao overview`, `OpenBao HA/Raft`, or `OpenBao audit overview`.
+`OpenBao overview`, `OpenBao HA/Raft`, `OpenBao audit overview`, or
+`OpenBao operational logs`.
 
 Use the provisioned `Prometheus` data source to run these PromQL queries:
 
@@ -230,6 +231,10 @@ Use the provisioned `Loki` data source to run these LogQL queries:
 
 ```logql
 {log_stream="openbao.operational"}
+```
+
+```logql
+{log_stream="openbao.operational"} |~ "\"@level\":\"(warn|error)\""
 ```
 
 ```logql
@@ -344,8 +349,7 @@ The stack mounts provisioning files from
 
 - Inspect generated rule files in `generated/prometheus/`.
 - Inspect Prometheus Operator rule artifacts in `generated/prometheusrules/`.
-- Use `contracts/alerts/critical.yaml` as the source of truth for local alert
-  changes.
+- Use `contracts/alerts/` as the source of truth for local alert changes.
 - Use [OpenBao Raft and Autopilot health](./runbooks/raft-autopilot-health.md)
   when a Raft or Autopilot alert fires.
 

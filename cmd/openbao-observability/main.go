@@ -142,6 +142,7 @@ func runContractsVerifyAlerts(args []string) error {
 	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "alerts", "critical.yaml"), "alert contract path")
 	fs.StringVar(&opts.SourcePrefix, "source-prefix", "", "source metric prefix; defaults to sourcePrefix from contract")
 	fs.StringVar(&opts.RepositoryRoot, "repository-root", ".", "repository root used to resolve local runbook paths")
+	fs.StringVar(&opts.ExpectedSeverity, "severity", "", "optional expected severity for every alert in the contract")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -249,6 +250,8 @@ func runGenerateAlertRules(args []string) error {
 	fs.StringVar(&opts.PrometheusRuleFilePath, "prometheus-rule-output", "", "optional native Prometheus alert rule file path")
 	fs.StringVar(&opts.LokiOutputPath, "loki-output", filepath.Join("generated", "loki", "openbao-alerts.yaml"), "output Loki alert path")
 	fs.StringVar(&opts.SourcePrefix, "source-prefix", "", "source metric prefix; defaults to sourcePrefix from contract")
+	fs.StringVar(&opts.PrometheusName, "prometheus-name", "openbao-alerts", "metadata name for generated Prometheus alert artifacts")
+	fs.StringVar(&opts.LokiName, "loki-name", "openbao-loki-alerts", "metadata name for generated Loki alert artifacts")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -277,6 +280,7 @@ func runValidateDashboardQueries(ctx context.Context, args []string) error {
 		filepath.Join("generated", "grafana", "openbao-overview.json"),
 		filepath.Join("generated", "grafana", "openbao-ha-raft.json"),
 		filepath.Join("generated", "grafana", "openbao-audit-overview.json"),
+		filepath.Join("generated", "grafana", "openbao-operational-logs.json"),
 	}, ",")
 
 	fs := flag.NewFlagSet("validate dashboard-queries", flag.ContinueOnError)
@@ -364,6 +368,7 @@ func defaultDashboardContractPaths() []string {
 		filepath.Join("contracts", "dashboards", "openbao-overview.yaml"),
 		filepath.Join("contracts", "dashboards", "openbao-ha-raft.yaml"),
 		filepath.Join("contracts", "dashboards", "openbao-audit-overview.yaml"),
+		filepath.Join("contracts", "dashboards", "openbao-operational-logs.yaml"),
 	}
 }
 
