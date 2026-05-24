@@ -15,6 +15,34 @@ spec:
               expr: sum(vault_core_unsealed{cluster!=""})
               labels:
                 source_prefix: vault
+            - record: openbao:core_handle_request:rate5m
+              expr: sum(rate(vault_core_handle_request_count[5m]))
+              labels:
+                source_prefix: vault
+            - record: openbao:core_handle_request:avg5m
+              expr: sum(rate(vault_core_handle_request_sum[5m])) / clamp_min(sum(rate(vault_core_handle_request_count[5m])), 0.001)
+              labels:
+                source_prefix: vault
+            - record: openbao:core_handle_login_request:rate5m
+              expr: sum(rate(vault_core_handle_login_request_count[5m]))
+              labels:
+                source_prefix: vault
+            - record: openbao:core_handle_login_request:avg5m
+              expr: sum(rate(vault_core_handle_login_request_sum[5m])) / clamp_min(sum(rate(vault_core_handle_login_request_count[5m])), 0.001)
+              labels:
+                source_prefix: vault
+            - record: openbao:core_check_token:rate5m
+              expr: sum(rate(vault_core_check_token_count[5m]))
+              labels:
+                source_prefix: vault
+            - record: openbao:core_check_token:avg5m
+              expr: sum(rate(vault_core_check_token_sum[5m])) / clamp_min(sum(rate(vault_core_check_token_count[5m])), 0.001)
+              labels:
+                source_prefix: vault
+            - record: openbao:core_in_flight_requests:max
+              expr: max(vault_core_in_flight_requests)
+              labels:
+                source_prefix: vault
             - record: openbao:raft_peers:max
               expr: max(vault_raft_peers) or count(count by (peer_id) (vault_raft_storage_stats_commit_index))
               labels:

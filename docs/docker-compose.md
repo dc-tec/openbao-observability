@@ -268,6 +268,26 @@ up{job="openbao"}
 ```
 
 ```promql
+openbao:core_in_flight_requests:max
+```
+
+```promql
+openbao:core_handle_request:rate5m
+```
+
+```promql
+openbao:core_handle_request:avg5m
+```
+
+```promql
+openbao:core_handle_login_request:avg5m
+```
+
+```promql
+openbao:core_check_token:avg5m
+```
+
+```promql
 openbao:raft_peers:max
 ```
 

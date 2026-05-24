@@ -215,6 +215,41 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
+							Record: recordPrefix + ":core_handle_request:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "core_handle_request"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":core_handle_request:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "core_handle_request"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":core_handle_login_request:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "core_handle_login_request"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":core_handle_login_request:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "core_handle_login_request"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":core_check_token:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "core_check_token"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":core_check_token:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "core_check_token"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":core_in_flight_requests:max",
+							Expr:   "max(" + metricName(sourcePrefix, "core_in_flight_requests") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
 							Record: recordPrefix + ":raft_peers:max",
 							Expr:   raftPeerCountExpression(sourcePrefix),
 							Labels: ruleLabels(sourcePrefix),

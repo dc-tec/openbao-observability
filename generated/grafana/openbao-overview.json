@@ -257,6 +257,311 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
+      "description": "Shows the maximum observed number of OpenBao requests currently being handled.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 4
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:core_in_flight_requests:max",
+          "format": "time_series",
+          "legendFormat": "In-flight requests",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "In-flight requests",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Shows regular OpenBao request handling throughput over 5 minutes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 4,
+        "y": 4
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:core_handle_request:rate5m",
+          "format": "time_series",
+          "legendFormat": "Request rate",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Request rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Shows average regular OpenBao request handling latency over 5 minutes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 9,
+        "y": 4
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:core_handle_request:avg5m",
+          "format": "time_series",
+          "legendFormat": "Request latency",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Request latency",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Shows average login request handling latency over 5 minutes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 14,
+        "y": 4
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:core_handle_login_request:avg5m",
+          "format": "time_series",
+          "legendFormat": "Login latency",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Login latency",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Shows average token check latency over 5 minutes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 19,
+        "y": 4
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:core_check_token:avg5m",
+          "format": "time_series",
+          "legendFormat": "Token check latency",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Token check latency",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "description": "Shows the maximum observed Raft peer count.",
       "fieldConfig": {
         "defaults": {
@@ -280,9 +585,9 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 4
+        "y": 8
       },
-      "id": 5,
+      "id": 10,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
@@ -341,9 +646,9 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 4
+        "y": 8
       },
-      "id": 6,
+      "id": 11,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
@@ -402,9 +707,9 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 4
+        "y": 8
       },
-      "id": 7,
+      "id": 12,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
@@ -463,9 +768,9 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 4
+        "y": 8
       },
-      "id": 8,
+      "id": 13,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
@@ -524,9 +829,9 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 8
+        "y": 12
       },
-      "id": 9,
+      "id": 14,
       "options": {
         "legend": {
           "calcs": [],
@@ -584,9 +889,9 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 8
+        "y": 12
       },
-      "id": 10,
+      "id": 15,
       "options": {
         "legend": {
           "calcs": [],
@@ -644,9 +949,9 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 8
+        "y": 12
       },
-      "id": 11,
+      "id": 16,
       "options": {
         "legend": {
           "calcs": [],
@@ -704,9 +1009,9 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 20
       },
-      "id": 12,
+      "id": 17,
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,
@@ -758,9 +1063,9 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 20
       },
-      "id": 13,
+      "id": 18,
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,

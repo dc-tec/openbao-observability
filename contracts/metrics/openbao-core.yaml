@@ -36,6 +36,33 @@ metrics:
     prometheusName: ${p}_core_handle_request
     required: true
     overview: true
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+      - Used for regular request rate and request handling latency.
+  - id: core_handle_login_request
+    docsName: vault.core.handle_login_request
+    prometheusName: ${p}_core_handle_login_request
+    required: true
+    overview: true
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+      - Used for login request latency.
+  - id: core_check_token
+    docsName: vault.core.check_token
+    prometheusName: ${p}_core_check_token
+    required: true
+    overview: true
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+      - Used for token check latency.
+  - id: core_in_flight_requests
+    docsName: vault.core.in_flight_requests
+    prometheusName: ${p}_core_in_flight_requests
+    required: true
+    overview: true
+    notes:
+      - Observed as a gauge in OpenBao 2.5.4 fixtures and HA/Raft captures.
+      - Used as a request pressure indicator.
   - id: raft_peers
     docsName: vault.raft.peers
     prometheusName: ${p}_raft_peers

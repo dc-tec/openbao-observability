@@ -69,6 +69,9 @@ func checkMetrics(opts VerifyOptions, prefix string) error {
 		prefix + "_core_active",
 		prefix + "_core_unsealed",
 		prefix + "_core_handle_request",
+		prefix + "_core_handle_login_request",
+		prefix + "_core_check_token",
+		prefix + "_core_in_flight_requests",
 		prefix + "_audit_log_request",
 		prefix + "_audit_log_request_failure",
 		prefix + "_audit_log_response",
@@ -159,6 +162,7 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 		for _, metric := range []string{
 			prefix + "_core_active",
 			prefix + "_core_unsealed",
+			prefix + "_core_in_flight_requests",
 			prefix + "_raft_get",
 			prefix + "_runtime_num_goroutines",
 		} {
