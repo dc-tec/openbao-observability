@@ -108,6 +108,7 @@ documentation set.
 - [Implementation profiles](docs/implementation-profiles/README.md)
 - [Prometheus, Loki, Grafana, and Alloy][prometheus-loki-grafana-alloy]
 - [OpenBao Operator companion profile](docs/implementation-profiles/openbao-operator.md)
+- [OpenBao Operator integration contract](docs/implementation-profiles/openbao-operator-integration-contract.md)
 - [OpenBao observability model](docs/concepts/openbao-observability-model.md)
 - [Metrics, logs, and audit logs](docs/concepts/metrics-vs-logs-vs-audit-logs.md)
 - [High-cardinality and label safety](docs/concepts/high-cardinality-and-label-safety.md)

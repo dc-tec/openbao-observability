@@ -14,6 +14,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [Implementation profiles](./implementation-profiles/README.md)
 - [Prometheus, Loki, Grafana, and Alloy](./implementation-profiles/prometheus-loki-grafana-alloy.md)
 - [OpenBao Operator companion profile](./implementation-profiles/openbao-operator.md)
+- [OpenBao Operator integration contract](./implementation-profiles/openbao-operator-integration-contract.md)
 
 ## Operate
 

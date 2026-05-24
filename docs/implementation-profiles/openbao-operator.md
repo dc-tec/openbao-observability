@@ -6,6 +6,10 @@ want to apply this observability reference architecture to those clusters. It
 is for operators who need to connect operator-managed lifecycle signals with
 OpenBao workload metrics, logs, audit logs, dashboards, alerts, and runbooks.
 
+Use [OpenBao Operator integration contract](./openbao-operator-integration-contract.md)
+when you need the concrete resource, label, scrape, dashboard, alert, and log
+contract between the operator and this repository.
+
 ## Companion boundary
 
 OpenBao Operator manages the Kubernetes lifecycle for OpenBao clusters. This
@@ -88,6 +92,10 @@ not expose a dedicated metrics-only listener, use the secure active-node scrape
 as the supported baseline and treat all-node scraping as a future operator
 integration item.
 
+Use the [OpenBao Operator integration contract](./openbao-operator-integration-contract.md)
+for the expected labels, Service shapes, scrape profile behavior, log stream
+boundaries, dashboard ownership, and alert ownership.
+
 ## Dashboard relationship
 
 Use two dashboard families:
@@ -162,6 +170,9 @@ For production operator-managed clusters:
   to map the architecture into your platform.
 - Use [Prometheus, Loki, Grafana, and Alloy](./prometheus-loki-grafana-alloy.md)
   when you want to deploy the generated artifacts directly.
+- Use [OpenBao Operator integration contract](./openbao-operator-integration-contract.md)
+  when you need the concrete resource and label contract for operator-managed
+  OpenBao clusters.
 - Use [OpenBao Operator observability](https://dc-tec.github.io/openbao-operator/docs/user-guide/openbaocluster/configuration/observability)
   for operator-side metrics and workload telemetry configuration.
 - Use [OpenBao Operator production checklist](https://dc-tec.github.io/openbao-operator/docs/operate/production-checklist)

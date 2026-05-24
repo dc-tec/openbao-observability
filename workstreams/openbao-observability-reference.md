@@ -1071,6 +1071,7 @@ For HA/Raft fixtures, use a kind profile with three OpenBao pods and integrated 
 | Database Secrets dashboard     | Database operation latency, failures, lease creation, and audit streams.    |
 | PKI/Transit dashboards         | Feature-specific contracts with restricted labels.                         |
 | Production Kubernetes profile  | NetworkPolicy, RBAC, metrics listener, audit PVC/archive.                  |
+| OpenBao Operator contract      | Resource, label, scrape, log, dashboard, and alert boundary contract.      |
 | Audit archive reference design | SIEM/object store/WORM path examples.                                      |
 | Stronger CI                    | Forbidden-label linter, prefix tests, dashboard schema.                    |
 
@@ -1081,7 +1082,7 @@ For HA/Raft fixtures, use a kind profile with three OpenBao pods and integrated 
 | SLO dashboards                | Availability, latency, burn alerts, synthetic probes.           |
 | Multi-cluster/fleet variables | Cluster/environment/region rollups.                             |
 | Compatibility matrix          | OpenBao version, metrics, labels, caveats.                      |
-| OpenBao Operator integration  | Operator-specific examples if available.                        |
+| OpenBao Operator examples     | Operator-managed Kubernetes examples after the contract settles. |
 | Advanced security profile     | mTLS metrics proxy, object-lock archive, stricter Grafana/RBAC. |
 
 ## 18. Resolved findings and validation backlog

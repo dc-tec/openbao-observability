@@ -28,6 +28,7 @@ tools and delivery mechanisms.
 | Kubernetes secure active-node scrape | Implemented example | Production-oriented authenticated metrics collection from the active OpenBao node. | [Secure metrics scrape](../metrics/secure-metrics-scrape.md) |
 | Kubernetes private all-node scrape | Implemented example | Per-node HA, Raft, standby, sealed-node, and runtime visibility. | [All-node metrics scrape](../metrics/all-node-metrics-scrape.md) |
 | OpenBao Operator companion | Companion profile | Applying this reference architecture to OpenBao clusters managed by `dc-tec/openbao-operator`. | [OpenBao Operator companion profile](./openbao-operator.md) |
+| OpenBao Operator integration contract | Reference | Resource, label, scrape, dashboard, alert, and log boundaries for operator-managed OpenBao clusters. | [OpenBao Operator integration contract](./openbao-operator-integration-contract.md) |
 | Bring your own backend | Adoption pattern | Mapping the same architecture to another metrics, logging, dashboard, alerting, or SIEM platform. | [Adopt the reference architecture](../reference-architecture/adoption.md) |
 
 ## Profile boundaries
@@ -61,6 +62,10 @@ Use the OpenBao Operator companion profile when the operator owns Kubernetes
 lifecycle, tenancy, TLS, unseal, backups, restores, upgrades, and read scaling,
 and this repository owns the OpenBao workload observability contract.
 
+Use the OpenBao Operator integration contract when you need the concrete labels,
+Services, scrape profiles, log streams, dashboard ownership, and alert ownership
+that connect the two repositories.
+
 Use the bring-your-own-backend pattern when your organization already has a
 standard observability platform. Port the architecture, not the local demo
 stack.
@@ -75,3 +80,6 @@ stack.
   to inspect the implemented profile.
 - Use [OpenBao Operator companion profile](./openbao-operator.md) when
   `dc-tec/openbao-operator` manages the OpenBao clusters.
+- Use [OpenBao Operator integration contract](./openbao-operator-integration-contract.md)
+  when you need to align operator-managed resources with this repository's
+  generated artifacts.
