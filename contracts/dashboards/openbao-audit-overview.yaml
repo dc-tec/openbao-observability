@@ -176,6 +176,71 @@ panels:
       y: 20
       w: 6
       h: 4
+  - id: audit-archive-enabled
+    title: Archive expected
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: max(openbao_audit_archive_enabled) or vector(0)
+    unit: none
+    description: Shows whether durable audit archive delivery is expected in this environment.
+    grid:
+      x: 0
+      y: 24
+      w: 4
+      h: 4
+  - id: audit-archive-delivery-success
+    title: Archive delivery
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: min(openbao_audit_archive_delivery_success) or vector(0)
+    unit: none
+    description: Shows whether the archive health exporter reports successful durable audit archive delivery.
+    grid:
+      x: 4
+      y: 24
+      w: 5
+      h: 4
+  - id: audit-archive-last-success-age
+    title: Archive success age
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: time() - max(openbao_audit_archive_last_success_timestamp_seconds)
+    unit: s
+    description: Shows the age of the most recent successful durable audit archive delivery.
+    grid:
+      x: 9
+      y: 24
+      w: 5
+      h: 4
+  - id: audit-archive-delivery-failures
+    title: Archive failures
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(increase(openbao_audit_archive_delivery_failures_total[15m])) or vector(0)
+    unit: short
+    description: Shows durable audit archive delivery failures over 15 minutes.
+    grid:
+      x: 14
+      y: 24
+      w: 5
+      h: 4
+  - id: audit-archive-dead-letters
+    title: Archive dead letters
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(increase(openbao_audit_archive_dead_letter_records_total[15m])) or vector(0)
+    unit: short
+    description: Shows audit records sent to a dead-letter path instead of the durable archive over 15 minutes.
+    grid:
+      x: 19
+      y: 24
+      w: 5
+      h: 4
   - id: audit-stream
     title: Audit stream
     type: logs
@@ -185,6 +250,6 @@ panels:
     description: Shows recent OpenBao audit log entries.
     grid:
       x: 0
-      y: 24
+      y: 28
       w: 24
       h: 9

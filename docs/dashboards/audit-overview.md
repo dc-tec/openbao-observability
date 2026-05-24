@@ -18,6 +18,7 @@ The dashboard answers these questions:
 - Does Loki receive audit entries by node?
 - Are request and response entries broadly balanced?
 - Are audited mutations touching high-risk system paths?
+- Is the durable audit archive expected, healthy, and current?
 - Did security detection summary panels change recently?
 
 ## What this dashboard is not for
@@ -53,6 +54,29 @@ audit-device failures can affect whether requests complete.
 Use the audit request rate, response rate, and audit latency panels as context.
 An increase in latency without failures can indicate that an audit sink is
 slow. A failure increase needs runbook response, not dashboard tuning.
+
+## How to read archive health
+
+Use the archive-health row when your environment has a durable audit archive,
+SIEM path, or object-store evidence path outside Loki.
+
+| Panel | What it means |
+| ----- | ------------- |
+| Archive expected | The archive health exporter reports that this environment expects durable audit archive delivery. |
+| Archive delivery | The archive health exporter reports whether the archive path is currently healthy. |
+| Archive success age | The age of the most recent successful archive delivery acknowledgement. |
+| Archive failures | Failed archive writes, rejected batches, or failed acknowledgements over 15 minutes. |
+| Archive dead letters | Records sent to a dead-letter path instead of the durable archive over 15 minutes. |
+
+Read these panels together. `Archive expected` is the guardrail. If it is `0`,
+the environment has not declared archive delivery as required through the
+reference exporter metrics. If it is `1`, then delivery health, success age,
+failures, and dead letters describe the durable evidence path.
+
+These panels do not come from OpenBao itself. They come from the archive
+pipeline or from the reference archive health exporter. Use
+[Audit archive reference design](../audit/audit-archive-reference-design.md)
+before you rely on these metrics for production evidence handling.
 
 ## How to read audit volume
 
@@ -112,12 +136,16 @@ have an owner, change record, or incident context.
 - Treating system mutation activity as malicious without checking the approved
   change window.
 - Ignoring completed request log entries after a troubleshooting window ends.
+- Treating absent archive-health metrics as proof that audit archiving is not
+  required.
 
 ## Known limitations
 
 - The dashboard assumes `log_stream="openbao.audit"`.
 - It summarizes audit events but does not replace restricted audit storage.
 - It does not prove compliance retention.
+- Archive-health panels depend on `openbao_audit_archive_*` metrics from an
+  archive pipeline or the reference archive health exporter.
 - It does not show every OpenBao system path because some paths bypass audit.
 - Request/response balance is directional and depends on the selected time
   window.
@@ -138,6 +166,8 @@ have an owner, change record, or incident context.
   when audit failure metrics increase.
 - Use [Audit canary missing](../runbooks/audit-canary-missing.md) when the
   canary-backed audit alert fires.
+- Use [Audit archive degraded](../runbooks/audit-archive-degraded.md) when the
+  durable archive path is expected but stale, failing, or dead-lettering.
 - Use [Security audit detections](../runbooks/security-audit-detections.md)
   when a security detection alert fires.
 
