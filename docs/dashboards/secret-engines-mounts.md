@@ -26,19 +26,21 @@ Do not use this dashboard as a mount inventory source of truth. It reads audit
 events that Loki collected. Use OpenBao APIs or configuration state when you
 need the current mount table.
 
-Do not use this dashboard as a replacement for secret-engine-specific health
-checks. Some engines need deeper checks, such as PKI issuer health, database
-connection checks, or Transit key policy review.
+Do not use this dashboard as a replacement for secret-engine-specific
+dashboards or health checks. Some engines need deeper checks, such as PKI
+issuer health, database connection checks, or Transit key policy review.
 
-## Required data source
+## Required data sources
 
-The generated dashboard expects a Loki data source with UID `loki`. The panels
-query audit logs collected with `log_stream="openbao.audit"` and a bounded
-`node_id` label.
+The generated dashboard expects these Grafana data sources:
 
-The dashboard does not need Prometheus for its current panels, even though the
-contract includes the standard metrics data-source definition for consistency
-with the dashboard generator.
+| Data source | UID | Used for |
+| ----------- | --- | -------- |
+| Prometheus | `prometheus` | Dynamic lease creation, PKI operation, and database operation metrics. |
+| Loki | `loki` | Secret engine and mount audit streams. |
+
+The log panels query audit logs collected with `log_stream="openbao.audit"` and
+a bounded `node_id` label.
 
 ## Investigation filters
 
@@ -78,8 +80,10 @@ Database panels filter configuration, role, credential, and root-rotation
 paths. These events can point to dynamic credential generation, role changes,
 connection configuration changes, or root credential rotation.
 
-Use the database engine's own operational checks when you need to prove
-connection health or credential revocation behavior.
+Use the [OpenBao database secrets dashboard](./database-secrets.md) for focused
+database operation latency, failure, lease, and audit investigation. Use the
+database engine's own operational checks when you need to prove connection
+health or credential revocation behavior.
 
 ## How to read Transit activity
 
@@ -140,6 +144,8 @@ cardinality and metadata exposure tradeoff.
 
 - Use [OpenBao audit investigation dashboard](./audit-investigation.md) for
   broader request ID, path, operation, and node drilldown.
+- Use [OpenBao database secrets dashboard](./database-secrets.md) for focused
+  database secrets engine investigation.
 - Use [High-cardinality and label safety](../concepts/high-cardinality-and-label-safety.md)
   before you add mount, engine, or path labels.
 - Use [Metrics, logs, and audit logs](../concepts/metrics-vs-logs-vs-audit-logs.md)

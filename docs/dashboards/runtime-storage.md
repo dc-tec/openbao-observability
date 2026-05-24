@@ -139,6 +139,8 @@ Operational logs are troubleshooting context. They are not audit records.
   latency correlates with Raft symptoms.
 - Use [OpenBao token and lease lifecycle dashboard](./token-lease-lifecycle.md)
   when token checks, leases, or revocation work change at the same time.
+- Use [OpenBao database secrets dashboard](./database-secrets.md) when storage
+  or runtime pressure correlates with database credential latency.
 - Use [OpenBao secret engines and mounts dashboard](./secret-engines-mounts.md)
   when mount table changes need audit-based context.
 - Use [Runtime and storage warnings](../runbooks/runtime-storage-warnings.md)

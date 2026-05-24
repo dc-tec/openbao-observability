@@ -74,8 +74,8 @@ The stack provisions the generated `OpenBao overview` dashboard in the
 `OpenBao` folder. It also provisions the generated `OpenBao HA/Raft`,
 `OpenBao audit overview`, `OpenBao operational logs`, and
 `OpenBao audit investigation`, `OpenBao auth and identity`, and
-`OpenBao token and lease lifecycle`, and `OpenBao secret engines and mounts`
-dashboards.
+`OpenBao token and lease lifecycle`, `OpenBao database secrets`, and
+`OpenBao secret engines and mounts` dashboards.
 
 ## Understand the local OpenBao setup
 
@@ -280,8 +280,8 @@ known audited request for the `OpenBaoAuditCanaryMissing` alert.
 In Grafana, open **Dashboards**, select the `OpenBao` folder, and open
 `OpenBao overview`, `OpenBao HA/Raft`, `OpenBao audit overview`,
 `OpenBao operational logs`, `OpenBao audit investigation`, or
-`OpenBao auth and identity`, `OpenBao token and lease lifecycle`, or
-`OpenBao secret engines and mounts`.
+`OpenBao auth and identity`, `OpenBao token and lease lifecycle`,
+`OpenBao database secrets`, or `OpenBao secret engines and mounts`.
 
 Use the provisioned `Prometheus` data source to run these PromQL queries:
 

@@ -413,6 +413,14 @@ metrics:
     notes:
       - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture when configuring the PostgreSQL database secrets engine.
       - Emitted by the database plugin metrics middleware as a generic database operation metric.
+  - id: database_close
+    docsName: vault.database.Close
+    prometheusName: ${p}_database_Close
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture when the PostgreSQL database secrets engine closed a connection.
+      - Emitted by the database plugin metrics middleware as a generic database operation metric.
   - id: database_new_user
     docsName: vault.database.NewUser
     prometheusName: ${p}_database_NewUser
@@ -446,6 +454,15 @@ metrics:
       - Observed in the OpenBao 2.5.4 HA/Raft fixture after an intentional invalid PostgreSQL connection configuration.
       - Source-backed by the database plugin metrics middleware.
       - Use this with database Initialize operation rate and operational logs to distinguish configuration issues from backend outages.
+  - id: database_close_error
+    docsName: vault.database.Close.error
+    prometheusName: ${p}_database_Close_error
+    required: false
+    overview: false
+    notes:
+      - Documented by OpenBao database telemetry but not observed in the current fixture because the close operation succeeded.
+      - Source-backed by the database plugin metrics middleware.
+      - Use this with operational logs when database connection cleanup fails.
   - id: database_new_user_error
     docsName: vault.database.NewUser.error
     prometheusName: ${p}_database_NewUser_error
@@ -481,6 +498,14 @@ metrics:
     notes:
       - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture with the PostgreSQL database plugin.
       - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
+  - id: database_pgx_close
+    docsName: vault.database.pgx.Close
+    prometheusName: ${p}_database_pgx_Close
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture with the PostgreSQL database plugin.
+      - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
   - id: database_pgx_new_user
     docsName: vault.database.pgx.NewUser
     prometheusName: ${p}_database_pgx_NewUser
@@ -504,6 +529,46 @@ metrics:
     overview: false
     notes:
       - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture with the PostgreSQL database plugin.
+      - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
+  - id: database_pgx_initialize_error
+    docsName: vault.database.pgx.Initialize.error
+    prometheusName: ${p}_database_pgx_Initialize_error
+    required: false
+    overview: false
+    notes:
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid connection configuration.
+      - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
+  - id: database_pgx_close_error
+    docsName: vault.database.pgx.Close.error
+    prometheusName: ${p}_database_pgx_Close_error
+    required: false
+    overview: false
+    notes:
+      - Documented by OpenBao database telemetry but not observed in the current fixture because the PostgreSQL plugin close operation succeeded.
+      - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
+  - id: database_pgx_new_user_error
+    docsName: vault.database.pgx.NewUser.error
+    prometheusName: ${p}_database_pgx_NewUser_error
+    required: false
+    overview: false
+    notes:
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid creation statement.
+      - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
+  - id: database_pgx_update_user_error
+    docsName: vault.database.pgx.UpdateUser.error
+    prometheusName: ${p}_database_pgx_UpdateUser_error
+    required: false
+    overview: false
+    notes:
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid renewal statement.
+      - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
+  - id: database_pgx_delete_user_error
+    docsName: vault.database.pgx.DeleteUser.error
+    prometheusName: ${p}_database_pgx_DeleteUser_error
+    required: false
+    overview: false
+    notes:
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid revocation statement.
       - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
   - id: route_create_kv_v1
     docsName: vault.route.create.kv-v1-

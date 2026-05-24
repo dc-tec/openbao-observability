@@ -555,6 +555,16 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
+							Record: recordPrefix + ":database_close:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "database_Close"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_close:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "database_Close"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
 							Record: recordPrefix + ":database_new_user:rate5m",
 							Expr:   summaryRateExpression(sourcePrefix, "database_NewUser"),
 							Labels: ruleLabels(sourcePrefix),
@@ -587,6 +597,11 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						{
 							Record: recordPrefix + ":database_initialize_error:increase15m",
 							Expr:   "sum(increase(" + metricName(sourcePrefix, "database_Initialize_error") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_close_error:increase15m",
+							Expr:   "sum(increase(" + metricName(sourcePrefix, "database_Close_error") + "[15m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{

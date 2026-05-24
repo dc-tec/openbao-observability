@@ -79,6 +79,7 @@ Examples:
 - Audit overview dashboard: security-restricted access.
 - Audit investigation dashboard: restricted incident-response access.
 - Auth and identity dashboard: restricted security and platform access.
+- Database secrets dashboard: restricted security and platform access.
 - Secret engines and mounts dashboard: restricted security and platform
   access.
 

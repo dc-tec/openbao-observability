@@ -30,6 +30,9 @@ external system behind the secret engine.
 
 2. Open the `OpenBao secret engines and mounts` dashboard.
 
+   Open the `OpenBao database secrets` dashboard when a database warning
+   fires.
+
 3. Check whether the warning correlates with request latency, storage latency,
    audit failures, or HA/Raft alerts.
 
@@ -93,6 +96,7 @@ external system behind the secret engine.
 
    ```promql
    openbao:database_initialize_error:increase15m
+   openbao:database_close_error:increase15m
    openbao:database_new_user_error:increase15m
    openbao:database_update_user_error:increase15m
    openbao:database_delete_user_error:increase15m
@@ -107,6 +111,7 @@ external system behind the secret engine.
    openbao:database_new_user:avg5m
    openbao:database_update_user:avg5m
    openbao:database_delete_user:avg5m
+   openbao:database_close:avg5m
    ```
 
 3. Check dynamic secret lease creation by engine.
@@ -118,7 +123,7 @@ external system behind the secret engine.
 4. Check audited database secrets engine requests.
 
    ```logql
-   {log_stream="openbao.audit"} | json request_path="request.path", audit_error="error" | request_path=~"database/(config|roles|creds|rotate-root).*"
+   {log_stream="openbao.audit"} | json request_path="request.path", audit_error="error" | request_path=~"database/(config|roles|creds|static-roles|static-creds|rotate-root|rotate-role).*"
    ```
 
 5. Inspect database secrets engine configuration and roles.
@@ -164,6 +169,7 @@ external system behind the secret engine.
    openbao:database_new_user_error:increase15m
    openbao:database_update_user_error:increase15m
    openbao:database_delete_user_error:increase15m
+   openbao:database_close_error:increase15m
    ```
 
 2. Confirm that operation latency returns toward baseline.
@@ -174,6 +180,7 @@ external system behind the secret engine.
    openbao:database_new_user:avg5m
    openbao:database_update_user:avg5m
    openbao:database_delete_user:avg5m
+   openbao:database_close:avg5m
    ```
 
 3. Confirm that operational logs no longer show correlated backend or plugin
@@ -207,6 +214,9 @@ and client workload changes before you change secret engine configuration.
 
 - Use [OpenBao secret engines and mounts dashboard](../dashboards/secret-engines-mounts.md)
   to inspect feature metrics and audit context together.
+- Use [OpenBao database secrets dashboard](../dashboards/database-secrets.md)
+  to inspect database operation rates, latency, failures, leases, and audit
+  streams together.
 - Use [Irrevocable leases present](./irrevocable-leases.md) when database
   credential revocation leaves leases behind.
 - Use [OpenBao Raft and Autopilot health](./raft-autopilot-health.md) when

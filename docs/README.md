@@ -54,6 +54,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [OpenBao operational logs dashboard](./dashboards/operational-logs.md)
 - [OpenBao auth and identity dashboard](./dashboards/auth-identity.md)
 - [OpenBao token and lease lifecycle dashboard](./dashboards/token-lease-lifecycle.md)
+- [OpenBao database secrets dashboard](./dashboards/database-secrets.md)
 - [OpenBao secret engines and mounts dashboard](./dashboards/secret-engines-mounts.md)
 - [OpenBao runtime and storage dashboard](./dashboards/runtime-storage.md)
 
