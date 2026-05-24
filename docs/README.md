@@ -7,6 +7,14 @@ explainer.
 Start with [Run the Docker Compose stack](./docker-compose.md) when you want a
 local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 
+## Reference architecture
+
+- [Reference architecture overview](./reference-architecture/overview.md)
+- [Adopt the reference architecture](./reference-architecture/adoption.md)
+- [Implementation profiles](./implementation-profiles/README.md)
+- [Prometheus, Loki, Grafana, and Alloy](./implementation-profiles/prometheus-loki-grafana-alloy.md)
+- [OpenBao Operator companion profile](./implementation-profiles/openbao-operator.md)
+
 ## Operate
 
 - [Run the Docker Compose stack](./docker-compose.md)
