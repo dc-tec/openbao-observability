@@ -3,6 +3,17 @@ status: draft
 metricPrefixVariable: ${p}
 sourcePrefix: vault
 alerts:
+  - id: OpenBaoIrrevocableLeasesPresent
+    type: prometheus
+    severity: warning
+    signal: metrics
+    for: 10m
+    expression: openbao:expire_num_irrevocable_leases:max > 0
+    summary: OpenBao reports irrevocable leases
+    description: OpenBao reports one or more leases that it cannot automatically revoke.
+    runbook: docs/runbooks/irrevocable-leases.md
+    labels:
+      component: leases
   - id: OpenBaoOperationalLogStreamMissing
     type: loki
     severity: warning
