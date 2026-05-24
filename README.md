@@ -3,17 +3,17 @@
 [![CI](https://github.com/dc-tec/openbao-observability/actions/workflows/ci.yml/badge.svg)](https://github.com/dc-tec/openbao-observability/actions/workflows/ci.yml)
 
 Use this repository as an OpenBao observability reference architecture for
-metrics, operational logs, audit logs, dashboards, alerts, runbooks, and
+metrics, operational logs, audit logs, dashboards, alerts, runbooks, and local
 validation fixtures. It defines portable observability intent first, then
-provides a tested Prometheus, Loki, Grafana, and Grafana Alloy implementation
-profile that you can adapt to your monitoring and logging platforms.
+provides a tested Prometheus, Loki, Grafana, and Grafana Alloy profile that you
+can adapt to your monitoring and logging platforms.
 
 The project starts from verified OpenBao behavior instead of copied Vault
 dashboard assumptions. Contracts under `contracts/` describe the source signal
 model; generated artifacts under `generated/` show one concrete implementation
 profile.
 
-## What you get
+## What this repository provides
 
 - Signal contracts for OpenBao metrics, log streams, alerts, and dashboards.
 - Generated Prometheus recording rules and alert rules.
@@ -23,8 +23,7 @@ profile.
   pipelines.
 - Runnable Docker Compose and Kubernetes examples.
 - Fixture capture and validation for verified OpenBao behavior.
-- Operator documentation for metrics, logs, audit logs, dashboards, alerts, and
-  runbooks.
+- Documentation for operating OpenBao observability safely.
 
 ## Architecture at a glance
 
@@ -32,20 +31,80 @@ Every implementation profile maps the same OpenBao signals to a local
 monitoring stack. The included profile uses Prometheus for metrics, Loki for
 logs and audit logs, Grafana Alloy for collection, and Grafana for dashboards.
 
-```text
-OpenBao nodes
-  | metrics
-  v
-Metrics backend -> alert rules -> runbooks
-  |
-  v
-Dashboards
+```mermaid
+flowchart LR
+  bao["OpenBao nodes"]
+  metrics["Metrics backend"]
+  oplogs["Operational log backend"]
+  auditlogs["Audit log backend"]
+  archive["Audit archive"]
+  rules["Recording and alert rules"]
+  dashboards["Dashboards"]
+  runbooks["Runbooks"]
 
-OpenBao operational logs -> collector -> log backend -> alerts
-OpenBao audit logs       -> collector -> log backend -> security runbooks
+  bao -->|"metrics"| metrics
+  bao -->|"operational logs"| oplogs
+  bao -->|"audit logs"| auditlogs
+  auditlogs -->|"protected retention"| archive
+  metrics -->|"derived metrics"| rules
+  oplogs -->|"log detections"| rules
+  auditlogs -->|"security detections"| rules
+  metrics -->|"PromQL queries"| dashboards
+  oplogs -->|"LogQL queries"| dashboards
+  auditlogs -->|"LogQL queries"| dashboards
+  rules -->|"alerts"| runbooks
 ```
 
-## Use this with your platforms
+## Start here
+
+| Goal | Start with |
+| ---- | ---------- |
+| Understand the architecture | [Reference architecture overview](docs/reference-architecture/overview.md) |
+| Learn the signal model | [OpenBao observability model](docs/concepts/openbao-observability-model.md) |
+| Run the local stack | [Run the Docker Compose stack](docs/docker-compose.md) |
+| Adopt the design in your platform | [Adopt the reference architecture](docs/reference-architecture/adoption.md) |
+| Use the included implementation profile | [Prometheus, Loki, Grafana, and Alloy profile][prometheus-loki-grafana-alloy] |
+| Configure metrics scraping | [Secure metrics scrape](docs/metrics/secure-metrics-scrape.md) and [all-node metrics scrape](docs/metrics/all-node-metrics-scrape.md) |
+| Read the dashboards | [Dashboard documentation](docs/README.md#dashboards) |
+| Respond to alerts | [Alert runbooks](docs/README.md#respond) |
+| Use this with the OpenBao Operator | [OpenBao Operator companion profile](docs/implementation-profiles/openbao-operator.md) |
+
+Use the [documentation index](docs/README.md) when you want the complete
+documentation set.
+
+## Run locally
+
+Run the local Docker Compose profile when you want to inspect the generated
+dashboards and alerts with a working OpenBao HA fixture.
+
+```shell
+make compose-up
+```
+
+Open Grafana at `http://127.0.0.1:13000` and sign in with `admin` / `admin`.
+See [Run the Docker Compose stack](docs/docker-compose.md) for endpoints,
+verification steps, and troubleshooting.
+
+Stop the local stack when you finish.
+
+```shell
+make compose-down
+```
+
+Regenerate fixtures and artifacts when you change contracts, generators, or
+fixture scenarios.
+
+```shell
+make fixtures-openbao
+make generate
+```
+
+> [!WARNING]
+> The Docker Compose stack is for local evaluation and contract validation. It
+> uses HTTP, deterministic local credentials, and local-only OpenBao setup. You
+> must not use it for production, shared environments, or sensitive data.
+
+## Use this with your platform
 
 Adopt the architecture by preserving the OpenBao signal semantics and mapping
 the storage, query, alerting, and dashboard layers to your environment.
@@ -59,7 +118,7 @@ the storage, query, alerting, and dashboard layers to your environment.
   in your visualization layer.
 - Keep runbooks close to the alerts that page your team.
 
-## Tested implementation profile
+## Tested profile
 
 The current implementation profile includes:
 
@@ -74,62 +133,11 @@ The current implementation profile includes:
 - Kubernetes examples for secure active-node and private all-node metrics
   scrape profiles.
 
-> [!WARNING]
-> The Docker Compose stack is for local evaluation and contract validation. It
-> uses HTTP, deterministic local credentials, and local-only OpenBao setup. You
-> must not use it for production, shared environments, or sensitive data.
+## Generated artifacts
 
-## Quick start
-
-Run these commands from the repository root.
-
-```shell
-make fixtures-openbao
-make generate
-make compose-up
-```
-
-Open Grafana at `http://127.0.0.1:13000` and sign in with `admin` / `admin`.
-See [Run the Docker Compose stack](docs/docker-compose.md) for the complete
-local setup, verification steps, and local endpoints.
-
-Stop the local stack when you finish.
-
-```shell
-make compose-down
-```
-
-## Documentation
-
-Start with the documentation index when you want the full operator-facing
-documentation set.
-
-- [Documentation index](docs/README.md)
-- [Reference architecture overview](docs/reference-architecture/overview.md)
-- [Adopt the reference architecture](docs/reference-architecture/adoption.md)
-- [Implementation profiles](docs/implementation-profiles/README.md)
-- [Prometheus, Loki, Grafana, and Alloy][prometheus-loki-grafana-alloy]
-- [OpenBao Operator companion profile](docs/implementation-profiles/openbao-operator.md)
-- [OpenBao Operator integration contract](docs/implementation-profiles/openbao-operator-integration-contract.md)
-- [OpenBao observability model](docs/concepts/openbao-observability-model.md)
-- [Metrics, logs, and audit logs](docs/concepts/metrics-vs-logs-vs-audit-logs.md)
-- [High-cardinality and label safety](docs/concepts/high-cardinality-and-label-safety.md)
-- [Audit logs as security records](docs/concepts/audit-logs-as-security-records.md)
-- [Run the Docker Compose stack](docs/docker-compose.md)
-- [Secure metrics scrape](docs/metrics/secure-metrics-scrape.md)
-- [All-node metrics scrape](docs/metrics/all-node-metrics-scrape.md)
-- [Dashboard documentation](docs/README.md#dashboards)
-- [Alert runbooks](docs/README.md#respond)
-
-## Contracts and generated artifacts
-
-Edit the source contracts under `contracts/`, then regenerate artifacts.
-
-```shell
-make generate
-```
-
-Generated artifacts live under `generated/` and are not edited by hand:
+The repository publishes generated artifacts from source contracts under
+`contracts/`. Use these artifacts directly, or port their intent into your own
+delivery pipeline:
 
 - `generated/prometheus/`: native Prometheus rule files.
 - `generated/prometheusrules/`: Prometheus Operator `PrometheusRule` manifests.
@@ -137,37 +145,47 @@ Generated artifacts live under `generated/` and are not edited by hand:
 - `generated/grafana/`: Grafana dashboard JSON files.
 - `generated/docs/`: generated reference documents.
 
-Use generated artifacts as versioned release assets or as inputs to your own
-platform delivery pipeline.
-
-## Validate changes
-
-Run focused validation while you work.
+Generated artifacts are outputs. Edit contracts first, then regenerate.
 
 ```shell
-make test-unit
-make test-fixtures
-make contracts-verify
-make docs-verify
-make validate-generated
+make generate
 ```
 
-Validate dashboard PromQL and LogQL against a running Compose stack.
+## Validate and contribute
 
-```shell
-make validate-dashboard-queries
-```
-
-Run the full generated-artifact verification before you publish changes.
+Run the full verification before you publish or propose changes.
 
 ```shell
 make verify
 ```
 
-## Contributing and license
+Validate dashboard PromQL and LogQL against a running Compose stack when
+dashboard queries change.
+
+```shell
+make validate-dashboard-queries
+```
 
 Use [Contributing](CONTRIBUTING.md) before you change docs, contracts,
 examples, generated artifacts, or validation code.
+
+## Repository layout
+
+| Path | Purpose |
+| ---- | ------- |
+| `.github/` | CI and release automation. |
+| `cmd/` | Go command-line entry points for project tooling. |
+| `contracts/` | Source contracts for metrics, log streams, alerts, and dashboards. |
+| `dashboards/` | Dashboard-specific source material. |
+| `docs/` | User-facing documentation. |
+| `examples/` | Runnable local and deployment examples, including Docker Compose. |
+| `fixtures/` | Captured metrics and log fixtures used by tests. |
+| `generated/` | Generated artifacts produced from contracts. |
+| `internal/` | Go packages that implement fixture capture and validation. |
+| `scripts/` | Helper scripts for local validation and maintenance. |
+| `tests/` | Validation checks for fixtures, contracts, generated artifacts, and docs. |
+
+## License
 
 This project is licensed under the [Apache License, Version 2.0](LICENSE).
 Apache-2.0 is a permissive open source license with an explicit patent grant,
@@ -175,25 +193,5 @@ which fits a reusable reference architecture that teams can adapt to their own
 environments.
 
 Copyright 2026 OpenBao Observability contributors.
-
-## Repository layout
-
-| Path | Purpose |
-| ---- | ------- |
-| `alerts/` | Generated and hand-reviewed alert artifacts. |
-| `alloy/` | Grafana Alloy examples for OpenBao collection pipelines. |
-| `cmd/` | Go command-line entry points for project tooling. |
-| `contracts/` | Source contracts for metrics, log streams, alerts, and dashboards. |
-| `dashboards/` | Dashboard documentation and dashboard-specific source material. |
-| `docs/` | User-facing documentation written with the project style guide. |
-| `examples/` | Runnable local and deployment examples, including Docker Compose. |
-| `fixtures/` | Captured metrics and log fixtures used by tests. |
-| `generated/` | Generated artifacts produced from contracts. |
-| `internal/` | Go packages that implement fixture capture and validation. |
-| `tests/` | Validation checks for fixtures, contracts, generated artifacts, and docs. |
-| `workstreams/` | Research input, style guides, and ignored local planning notes. |
-
-Implementation planning notes are local-only files under `workstreams/` with a
-`.local.md` suffix. Git ignores those files.
 
 [prometheus-loki-grafana-alloy]: docs/implementation-profiles/prometheus-loki-grafana-alloy.md

@@ -21,7 +21,7 @@ architecture boundary.
 | Layer | What you define | Repository starting point |
 | ----- | --------------- | ------------------------- |
 | Source signals | OpenBao metrics, operational logs, completed request logs, audit logs, and platform state. | [OpenBao observability model](../concepts/openbao-observability-model.md) |
-| Collection | Scrape targets, collectors, authentication, network controls, and log routing. | [Secure metrics scrape](../metrics/secure-metrics-scrape.md), [all-node metrics scrape](../metrics/all-node-metrics-scrape.md), and [Alloy examples](../../alloy/README.md) |
+| Collection | Scrape targets, collectors, authentication, network controls, and log routing. | [Secure metrics scrape](../metrics/secure-metrics-scrape.md), [all-node metrics scrape](../metrics/all-node-metrics-scrape.md), and the [Docker Compose Alloy config](../../examples/docker-compose/alloy/config.alloy) |
 | Storage and query | Metrics backend, log backend, audit archive, query language, retention, and access control. | [Metrics, logs, and audit logs](../concepts/metrics-vs-logs-vs-audit-logs.md), [Log retention and access control](../logging/retention-and-access-control.md), and [Audit archive reference design](../audit/audit-archive-reference-design.md) |
 | Derived signals | Recording rules, alert rules, dashboard queries, and log detections. | [Metric contracts](../../contracts/metrics/openbao-core.yaml), [alert contracts](../../contracts/alerts/critical.yaml), and [dashboard contracts](../../contracts/dashboards/openbao-overview.yaml) |
 | Response | Runbooks, escalation paths, ownership, and verification steps. | [Alert runbooks](../README.md#respond) |

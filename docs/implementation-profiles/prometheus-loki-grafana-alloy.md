@@ -13,7 +13,7 @@ This profile maps the reference architecture to one concrete open source stack.
 | ------------------ | ---------------------- | -------------------- |
 | Metrics collection | Prometheus scrapes OpenBao `/v1/sys/metrics` with `format=prometheus`. | [Docker Compose Prometheus config](../../examples/docker-compose/prometheus/prometheus.yml) and [Kubernetes scrape examples](../../examples/kubernetes/) |
 | Metrics rules | Generated Prometheus recording rules and alert rules. | [Generated Prometheus rules](../../generated/prometheus/) and [PrometheusRule manifests](../../generated/prometheusrules/) |
-| Log collection | Grafana Alloy collects OpenBao operational logs, audit logs, and platform logs. | [Alloy configuration examples](../../alloy/README.md) and [Docker Compose Alloy config](../../examples/docker-compose/alloy/config.alloy) |
+| Log collection | Grafana Alloy collects OpenBao operational logs, audit logs, and platform logs. | [Docker Compose Alloy config](../../examples/docker-compose/alloy/config.alloy) |
 | Log backend | Loki stores operational and audit exploration streams for dashboards and log alerts. | [Generated Loki alert artifacts](../../generated/loki/) |
 | Dashboards | Grafana loads generated dashboard JSON files. | [Generated Grafana dashboards](../../generated/grafana/) |
 | Response | Alerts link to runbooks under `docs/runbooks/`. | [Alert runbooks](../README.md#respond) |
