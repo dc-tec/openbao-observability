@@ -122,6 +122,9 @@ an audit-log replacement.
   when Loki stops receiving operational logs.
 - Use [Debug logging enabled](../runbooks/debug-logging-enabled.md) when debug
   or trace logs remain active.
+- Use [Completed request logging enabled](../runbooks/completed-request-logging-enabled.md)
+  when completed request logs appear outside an approved troubleshooting
+  window.
 
 Source: OpenBao documents completed request logging in the
 [OpenBao completed request logging documentation][openbao-log-requests]. This

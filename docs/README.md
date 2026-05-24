@@ -66,6 +66,7 @@ Use these runbooks when the generated alert rules fire:
 - [Audit log stream missing](./runbooks/audit-log-stream-missing.md)
 - [Operational log stream missing](./runbooks/operational-log-stream-missing.md)
 - [Debug logging enabled](./runbooks/debug-logging-enabled.md)
+- [Completed request logging enabled](./runbooks/completed-request-logging-enabled.md)
 - [Irrevocable leases present](./runbooks/irrevocable-leases.md)
 - [Runtime and storage warnings](./runbooks/runtime-storage-warnings.md)
 - [Security audit detections](./runbooks/security-audit-detections.md)

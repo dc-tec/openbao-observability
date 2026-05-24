@@ -89,5 +89,5 @@ spec:
                 source_prefix: vault
               annotations:
                 description: Loki has received completed request logs, which should only exist during an approved troubleshooting window.
-                runbook_url: docs/runbooks/security-audit-detections.md
+                runbook_url: docs/runbooks/completed-request-logging-enabled.md
                 summary: OpenBao completed request logging is active

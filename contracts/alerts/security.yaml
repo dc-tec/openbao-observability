@@ -76,7 +76,7 @@ alerts:
     expression: 'sum(count_over_time({log_stream="openbao.completed_requests"}[5m])) > 0'
     summary: OpenBao completed request logging is active
     description: Loki has received completed request logs, which should only exist during an approved troubleshooting window.
-    runbook: docs/runbooks/security-audit-detections.md
+    runbook: docs/runbooks/completed-request-logging-enabled.md
     labels:
       component: logging
       category: security-posture

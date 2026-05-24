@@ -10,7 +10,7 @@ change validation and security review, not automatic proof of compromise.
 - Get access to the OpenBao audit overview and audit investigation dashboards.
 - Get access to OpenBao change records and approved maintenance windows.
 - Get security approval before changing audit devices, policies, auth methods,
-  mounts, plugins, or completed request logging.
+  mounts, or plugins.
 
 ## Confirm the detection
 
@@ -107,27 +107,6 @@ change validation and security review, not automatic proof of compromise.
 4. If the burst targets privileged paths or follows a policy change, escalate
    to security review.
 
-## Investigate completed request logging
-
-1. Check whether completed request logs are present.
-
-   ```logql
-   sum(count_over_time({log_stream="openbao.completed_requests"}[5m]))
-   ```
-
-2. Confirm the OpenBao completed request logging setting.
-
-   ```shell
-   grep -n 'log_requests_level' <openbao_config_file>
-   ```
-
-   - `<openbao_config_file>`: OpenBao server configuration file.
-
-3. Check whether an approved troubleshooting window is active.
-
-4. If completed request logging is not approved, disable it through the
-   deployment process and reload or restart OpenBao as required.
-
 ## Restore the baseline
 
 1. Revert unauthorized policy, auth method, mount, plugin, or audit-device
@@ -136,12 +115,10 @@ change validation and security review, not automatic proof of compromise.
 2. Restore the approved audit device configuration before making broad
    application or dashboard changes.
 
-3. Disable completed request logging after the approved troubleshooting window.
-
-4. Review affected audit entries in the durable archive or SIEM when your
+3. Review affected audit entries in the durable archive or SIEM when your
    deployment has one.
 
-5. Keep Loki dashboard access restricted while the investigation is active.
+4. Keep Loki dashboard access restricted while the investigation is active.
 
 ## Verify the result
 
@@ -152,20 +129,13 @@ change validation and security review, not automatic proof of compromise.
    {log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"sys/(audit|policies|auth|mounts|raw|plugins|storage/raft|rotate).*"
    ```
 
-2. Confirm that completed request logs are no longer arriving unless an
-   approved troubleshooting window remains active.
-
-   ```logql
-   sum(count_over_time({log_stream="openbao.completed_requests"}[5m]))
-   ```
-
-3. Confirm that audit logs still arrive for the canary request.
+2. Confirm that audit logs still arrive for the canary request.
 
    ```logql
    {log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary"
    ```
 
-4. Wait for the alert window to pass and confirm that the security detection
+3. Wait for the alert window to pass and confirm that the security detection
    alert resolves.
 
 ## Troubleshooting
@@ -186,11 +156,6 @@ and response entries with operational logs and change records.
 Fix the application policy or request path if the denials are recurring. Use a
 silence only for an approved migration or test window.
 
-### Completed request logs keep arriving
-
-Check all OpenBao nodes. One node can keep the stream active if its
-configuration or runtime state differs from the rest of the cluster.
-
 ## What's next
 
 - Use [OpenBao audit overview dashboard](../dashboards/audit-overview.md) for
@@ -201,6 +166,8 @@ configuration or runtime state differs from the rest of the cluster.
   to understand audit-log sensitivity and limitations.
 - Use [High-cardinality and label safety](../concepts/high-cardinality-and-label-safety.md)
   before you add request, identity, token, or path fields to any label set.
+- Use [Completed request logging enabled](./completed-request-logging-enabled.md)
+  when the completed request logging posture alert fires.
 - Use [Debug logging enabled](./debug-logging-enabled.md) when debug or trace
   logging is active with completed request logging.
 
