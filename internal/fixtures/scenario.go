@@ -251,6 +251,15 @@ path "secret/metadata/apps/team-a/*" {
 		if err := r.exerciseNamespaceToken(ctx); err != nil {
 			return err
 		}
+		if err := r.exerciseNamespaceAppRole(ctx); err != nil {
+			return err
+		}
+		if err := r.exerciseNamespaceTransit(ctx); err != nil {
+			return err
+		}
+		if err := r.exerciseNamespacePKI(ctx); err != nil {
+			return err
+		}
 		return nil
 	})
 }
@@ -343,6 +352,229 @@ func (r *scenarioRunner) exerciseNamespaceToken(ctx context.Context) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (r *scenarioRunner) exerciseNamespaceAppRole(ctx context.Context) error {
+	if err := r.ensureAuth(ctx, "approle", "approle", "Namespace AppRole auth method for observability reference captures.", "ensure-namespace-approle-auth"); err != nil {
+		return err
+	}
+
+	if err := r.runOperation(ctx, scenarioOperation{
+		name:      "write-namespace-approle",
+		path:      "auth/approle/role/namespace-app",
+		operation: "write",
+		data: map[string]any{
+			"token_policies":     []string{"namespace-app"},
+			"token_ttl":          "15m",
+			"token_max_ttl":      "1h",
+			"secret_id_ttl":      "30m",
+			"secret_id_num_uses": 5,
+		},
+	}); err != nil {
+		return err
+	}
+
+	roleIDSecret, err := r.client.Logical().ReadWithContext(ctx, "auth/approle/role/namespace-app/role-id")
+	if err != nil {
+		r.addStep("read-namespace-approle-role-id", "auth/approle/role/namespace-app/role-id", "error", err.Error())
+		return fmt.Errorf("read namespace AppRole role ID: %w", err)
+	}
+	r.addStep("read-namespace-approle-role-id", "auth/approle/role/namespace-app/role-id", "success", "")
+
+	secretIDSecret, err := r.client.Logical().WriteWithContext(ctx, "auth/approle/role/namespace-app/secret-id", nil)
+	if err != nil {
+		r.addStep("write-namespace-approle-secret-id", "auth/approle/role/namespace-app/secret-id", "error", err.Error())
+		return fmt.Errorf("create namespace AppRole secret ID: %w", err)
+	}
+	r.addStep("write-namespace-approle-secret-id", "auth/approle/role/namespace-app/secret-id", "success", "")
+
+	roleID, ok := roleIDSecret.Data["role_id"].(string)
+	if !ok || roleID == "" {
+		return errors.New("namespace AppRole role-id response did not include data.role_id")
+	}
+	secretID, ok := secretIDSecret.Data["secret_id"].(string)
+	if !ok || secretID == "" {
+		return errors.New("namespace AppRole secret-id response did not include data.secret_id")
+	}
+
+	config := baoapi.DefaultConfig()
+	config.Address = r.client.Address()
+	appRoleClient, err := baoapi.NewClient(config)
+	if err != nil {
+		return fmt.Errorf("create namespace AppRole client: %w", err)
+	}
+	appRoleClient.SetNamespace(fixtureNamespace)
+
+	secret, err := appRoleClient.Logical().WriteWithContext(ctx, "auth/approle/login", map[string]any{
+		"role_id":   roleID,
+		"secret_id": secretID,
+	})
+	if err != nil {
+		r.addStep("login-namespace-approle", "auth/approle/login", "error", err.Error())
+		return fmt.Errorf("log in with namespace AppRole: %w", err)
+	}
+	token, err := secret.TokenID()
+	if err != nil {
+		r.addStep("login-namespace-approle", "auth/approle/login", "error", err.Error())
+		return fmt.Errorf("read namespace AppRole token: %w", err)
+	}
+	if token == "" {
+		err := errors.New("namespace AppRole login response did not include a client token")
+		r.addStep("login-namespace-approle", "auth/approle/login", "error", err.Error())
+		return err
+	}
+	r.addStep("login-namespace-approle", "auth/approle/login", "success", "")
+
+	appRoleClient.SetToken(token)
+	if _, err := appRoleClient.Logical().ReadWithContext(ctx, "secret/data/apps/team-a/scenario"); err != nil {
+		r.addStep("read-namespace-kv-as-approle", "secret/data/apps/team-a/scenario", "error", err.Error())
+		return fmt.Errorf("read namespace KV with namespace AppRole token: %w", err)
+	}
+	r.addStep("read-namespace-kv-as-approle", "secret/data/apps/team-a/scenario", "success", "")
+	return nil
+}
+
+func (r *scenarioRunner) exerciseNamespaceTransit(ctx context.Context) error {
+	if err := r.ensureMount(ctx, "transit", "transit", "Namespace Transit engine for observability reference captures.", nil); err != nil {
+		return err
+	}
+	r.renameLastStep("ensure-transit-mount", "ensure-namespace-transit-mount")
+	if err := r.ensureTransitKey(ctx, "team-a", "ensure-namespace-transit-key"); err != nil {
+		return err
+	}
+
+	key, err := r.client.Logical().ReadWithContext(ctx, "transit/keys/team-a")
+	if err != nil {
+		r.addStep("read-namespace-transit-key", "transit/keys/team-a", "error", err.Error())
+		return fmt.Errorf("read namespace transit key: %w", err)
+	}
+	if key == nil {
+		r.addStep("read-namespace-transit-key", "transit/keys/team-a", "error", "missing key")
+		return errors.New("namespace transit key team-a does not exist")
+	}
+	r.addStep("read-namespace-transit-key", "transit/keys/team-a", "success", "")
+
+	plaintext := "openbao-observability-namespace-transit-scenario"
+	encrypted, err := r.client.Logical().WriteWithContext(ctx, "transit/encrypt/team-a", map[string]any{
+		"plaintext": base64.StdEncoding.EncodeToString([]byte(plaintext)),
+	})
+	if err != nil {
+		r.addStep("encrypt-namespace-transit", "transit/encrypt/team-a", "error", err.Error())
+		return fmt.Errorf("encrypt namespace transit payload: %w", err)
+	}
+	if encrypted == nil || encrypted.Data == nil {
+		err := errors.New("namespace transit encrypt response did not include data")
+		r.addStep("encrypt-namespace-transit", "transit/encrypt/team-a", "error", err.Error())
+		return err
+	}
+	ciphertext, ok := encrypted.Data["ciphertext"].(string)
+	if !ok || ciphertext == "" {
+		err := errors.New("namespace transit encrypt response did not include data.ciphertext")
+		r.addStep("encrypt-namespace-transit", "transit/encrypt/team-a", "error", err.Error())
+		return err
+	}
+	r.addStep("encrypt-namespace-transit", "transit/encrypt/team-a", "success", "")
+
+	decrypted, err := r.client.Logical().WriteWithContext(ctx, "transit/decrypt/team-a", map[string]any{
+		"ciphertext": ciphertext,
+	})
+	if err != nil {
+		r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "error", err.Error())
+		return fmt.Errorf("decrypt namespace transit payload: %w", err)
+	}
+	if decrypted == nil || decrypted.Data == nil {
+		err := errors.New("namespace transit decrypt response did not include data")
+		r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "error", err.Error())
+		return err
+	}
+	encodedPlaintext, ok := decrypted.Data["plaintext"].(string)
+	if !ok || encodedPlaintext == "" {
+		err := errors.New("namespace transit decrypt response did not include data.plaintext")
+		r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "error", err.Error())
+		return err
+	}
+	decoded, err := base64.StdEncoding.DecodeString(encodedPlaintext)
+	if err != nil {
+		r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "error", err.Error())
+		return fmt.Errorf("decode namespace transit plaintext: %w", err)
+	}
+	if string(decoded) != plaintext {
+		err := errors.New("namespace transit decrypt plaintext did not match original payload")
+		r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "error", err.Error())
+		return err
+	}
+	r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "success", "")
+	return nil
+}
+
+func (r *scenarioRunner) exerciseNamespacePKI(ctx context.Context) error {
+	if err := r.ensureMount(ctx, "pki", "pki", "Namespace PKI engine for observability reference captures.", nil); err != nil {
+		return err
+	}
+	r.renameLastStep("ensure-pki-mount", "ensure-namespace-pki-mount")
+	if err := r.ensurePKIRootNamed(ctx, "ensure-namespace-pki-root"); err != nil {
+		return err
+	}
+
+	roleName := "team-a-dot-observability-dot-local"
+	rolePath := "pki/roles/" + roleName
+	if err := r.runOperation(ctx, scenarioOperation{
+		name:      "write-namespace-pki-role",
+		path:      rolePath,
+		operation: "write",
+		data: map[string]any{
+			"allowed_domains":    []string{"team-a.observability.local"},
+			"allow_bare_domains": true,
+			"allow_subdomains":   true,
+			"max_ttl":            "1h",
+		},
+	}); err != nil {
+		return err
+	}
+
+	issuePath := "pki/issue/" + roleName
+	issued, err := r.client.Logical().WriteWithContext(ctx, issuePath, map[string]any{
+		"common_name": "app.team-a.observability.local",
+		"ttl":         "30m",
+	})
+	if err != nil {
+		r.addStep("issue-namespace-pki-certificate", issuePath, "error", err.Error())
+		return fmt.Errorf("issue namespace PKI certificate: %w", err)
+	}
+	if issued == nil || issued.Data == nil {
+		err := errors.New("namespace PKI issue response did not include data")
+		r.addStep("issue-namespace-pki-certificate", issuePath, "error", err.Error())
+		return err
+	}
+	serial, ok := issued.Data["serial_number"].(string)
+	if !ok || serial == "" {
+		err := errors.New("namespace PKI issue response did not include data.serial_number")
+		r.addStep("issue-namespace-pki-certificate", issuePath, "error", err.Error())
+		return err
+	}
+	r.addStep("issue-namespace-pki-certificate", issuePath, "success", "serial_number_present")
+
+	if _, err := r.client.Logical().WriteWithContext(ctx, "pki/revoke", map[string]any{
+		"serial_number": serial,
+	}); err != nil {
+		r.addStep("revoke-namespace-pki-certificate", "pki/revoke", "error", err.Error())
+		return fmt.Errorf("revoke namespace PKI certificate: %w", err)
+	}
+	r.addStep("revoke-namespace-pki-certificate", "pki/revoke", "success", "")
+
+	if err := r.expectWriteError(ctx, "failed-namespace-pki-issue-invalid-domain", issuePath, map[string]any{
+		"common_name": "team-a.unapproved.example",
+		"ttl":         "30m",
+	}); err != nil {
+		return err
+	}
+	if err := r.expectWriteError(ctx, "failed-namespace-pki-revoke-invalid-serial", "pki/revoke", map[string]any{
+		"serial_number": "not-a-valid-serial",
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -862,9 +1094,13 @@ func (r *scenarioRunner) expectLeaseRevokeError(ctx context.Context, name, lease
 }
 
 func (r *scenarioRunner) ensurePKIRoot(ctx context.Context) error {
+	return r.ensurePKIRootNamed(ctx, "ensure-pki-root")
+}
+
+func (r *scenarioRunner) ensurePKIRootNamed(ctx context.Context, stepName string) error {
 	cert, err := r.client.Logical().ReadWithContext(ctx, "pki/cert/ca")
 	if err == nil && cert != nil {
-		r.addStep("ensure-pki-root", "pki/cert/ca", "success", "")
+		r.addStep(stepName, "pki/cert/ca", "success", "")
 		return nil
 	}
 
@@ -873,15 +1109,15 @@ func (r *scenarioRunner) ensurePKIRoot(ctx context.Context) error {
 		"ttl":         "24h",
 	})
 	if err != nil {
-		r.addStep("ensure-pki-root", "pki/root/generate/internal", "error", err.Error())
+		r.addStep(stepName, "pki/root/generate/internal", "error", err.Error())
 		return fmt.Errorf("generate PKI root: %w", err)
 	}
 	if generated == nil || generated.Data == nil {
 		err := errors.New("PKI root generation response did not include data")
-		r.addStep("ensure-pki-root", "pki/root/generate/internal", "error", err.Error())
+		r.addStep(stepName, "pki/root/generate/internal", "error", err.Error())
 		return err
 	}
-	r.addStep("ensure-pki-root", "pki/root/generate/internal", "success", "")
+	r.addStep(stepName, "pki/root/generate/internal", "success", "")
 	return nil
 }
 
@@ -889,27 +1125,31 @@ func (r *scenarioRunner) ensureTransitMount(ctx context.Context) error {
 	if err := r.ensureMount(ctx, "transit", "transit", "Scenario Transit engine for observability reference captures.", nil); err != nil {
 		return err
 	}
+	return r.ensureTransitKey(ctx, "payments", "ensure-transit-key")
+}
 
-	key, err := r.client.Logical().ReadWithContext(ctx, "transit/keys/payments")
+func (r *scenarioRunner) ensureTransitKey(ctx context.Context, keyName, stepName string) error {
+	path := "transit/keys/" + keyName
+	key, err := r.client.Logical().ReadWithContext(ctx, path)
 	if err != nil {
-		r.addStep("ensure-transit-key", "transit/keys/payments", "error", err.Error())
+		r.addStep(stepName, path, "error", err.Error())
 		return fmt.Errorf("read transit key before scenario: %w", err)
 	}
 	if key != nil {
-		r.addStep("ensure-transit-key", "transit/keys/payments", "success", "")
+		r.addStep(stepName, path, "success", "")
 		return nil
 	}
 
-	if _, err := r.client.Logical().WriteWithContext(ctx, "transit/keys/payments", map[string]any{
+	if _, err := r.client.Logical().WriteWithContext(ctx, path, map[string]any{
 		"type":                   "aes256-gcm96",
 		"derived":                false,
 		"exportable":             false,
 		"allow_plaintext_backup": false,
 	}); err != nil {
-		r.addStep("ensure-transit-key", "transit/keys/payments", "error", err.Error())
+		r.addStep(stepName, path, "error", err.Error())
 		return fmt.Errorf("create transit key: %w", err)
 	}
-	r.addStep("ensure-transit-key", "transit/keys/payments", "success", "")
+	r.addStep(stepName, path, "success", "")
 	return nil
 }
 

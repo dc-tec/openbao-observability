@@ -200,8 +200,16 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 	if !hasAnyGaugeValue(leaderMetrics, prefix+"_core_active", 1) {
 		return fmt.Errorf("missing active leader gauge value in Raft fixture")
 	}
-	if !hasMetricWithNonRootNamespace(leaderMetrics, prefix+"_token_creation") {
-		return fmt.Errorf("missing non-root namespace label on %s in Raft fixture", prefix+"_token_creation")
+	for _, metric := range []string{
+		prefix + "_token_creation",
+		prefix + "_team_a_pki_issue",
+		prefix + "_team_a_pki_revoke",
+		prefix + "_team_a_pki_issue_failure",
+		prefix + "_team_a_pki_revoke_failure",
+	} {
+		if !leaderMetrics.HasMetricWithLabel(metric, "namespace", fixtureNamespace) {
+			return fmt.Errorf("missing %s namespace label on %s in Raft fixture", fixtureNamespace, metric)
+		}
 	}
 	for index := 0; index < raftNodeCount; index++ {
 		nodeID := fmt.Sprintf("node%d", index)
@@ -211,21 +219,6 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 	}
 
 	return nil
-}
-
-func hasMetricWithNonRootNamespace(families promtext.Families, name string) bool {
-	family, ok := families[name]
-	if !ok {
-		return false
-	}
-	for _, metric := range family.GetMetric() {
-		for _, label := range metric.GetLabel() {
-			if label.GetName() == "namespace" && label.GetValue() != "" && label.GetValue() != "root" {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func hasAnyGaugeValue(families promtext.Families, name string, value float64) bool {
@@ -313,6 +306,9 @@ func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
 	}
 	if err := checkAuditRequestPaths(path, []string{
 		"auth/approle/login",
+		"auth/approle/role/namespace-app",
+		"auth/approle/role/namespace-app/role-id",
+		"auth/approle/role/namespace-app/secret-id",
 		"auth/token/create",
 		"auth/token/lookup",
 		"auth/token/renew",
@@ -335,9 +331,11 @@ func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
 		"kv-v1/apps/payments/config",
 		"pki/cert/ca",
 		"pki/issue/observability-dot-local",
+		"pki/issue/team-a-dot-observability-dot-local",
 		"pki/root/generate/internal",
 		"pki/revoke",
 		"pki/roles/observability-dot-local",
+		"pki/roles/team-a-dot-observability-dot-local",
 		"secret/data/apps/payments/denied",
 		"secret/data/apps/payments/scenario",
 		"secret/data/apps/team-a/scenario",
@@ -355,9 +353,12 @@ func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
 		"sys/leases/revoke",
 		"sys/policies/acl/namespace-app",
 		"sys/policies/acl/scenario-app",
+		"transit/decrypt/team-a",
 		"transit/decrypt/payments",
+		"transit/encrypt/team-a",
 		"transit/encrypt/payments",
 		"transit/keys/payments",
+		"transit/keys/team-a",
 	}); err != nil {
 		return err
 	}
@@ -379,18 +380,27 @@ func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
 	expected := map[string]string{
 		"create-token":                                "success",
 		"create-namespace-token":                      "success",
+		"decrypt-namespace-transit":                   "success",
 		"delete-kv-v1":                                "success",
 		"denied-reader-kv-write":                      "expected_error",
 		"decrypt-transit":                             "success",
+		"encrypt-namespace-transit":                   "success",
 		"encrypt-transit":                             "success",
 		"ensure-kv-v1-mount":                          "success",
+		"ensure-namespace-approle-auth":               "success",
+		"ensure-namespace-pki-mount":                  "success",
+		"ensure-namespace-pki-root":                   "success",
 		"ensure-pki-mount":                            "success",
 		"ensure-pki-root":                             "success",
 		"ensure-namespace-secret-mount":               "success",
 		"ensure-namespace-team-a":                     "success",
+		"ensure-namespace-transit-key":                "success",
+		"ensure-namespace-transit-mount":              "success",
 		"ensure-namespace-userpass-auth":              "success",
 		"ensure-transit-key":                          "success",
 		"ensure-transit-mount":                        "success",
+		"failed-namespace-pki-issue-invalid-domain":   "expected_error",
+		"failed-namespace-pki-revoke-invalid-serial":  "expected_error",
 		"failed-userpass-login":                       "expected_error",
 		"failed-database-delete-user":                 "expected_error",
 		"failed-database-initialize":                  "expected_error",
@@ -398,12 +408,14 @@ func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
 		"failed-database-update-user":                 "expected_error",
 		"failed-pki-issue-invalid-domain":             "expected_error",
 		"failed-pki-revoke-invalid-serial":            "expected_error",
+		"issue-namespace-pki-certificate":             "success",
 		"issue-pki-certificate":                       "success",
 		"list-kv-v1":                                  "success",
 		"list-kv-metadata":                            "success",
 		"list-namespace-kv-metadata":                  "success",
 		"list-namespaces":                             "success",
 		"login-approle":                               "success",
+		"login-namespace-approle":                     "success",
 		"login-namespace-userpass":                    "success",
 		"login-userpass-admin":                        "success",
 		"lookup-database-lease":                       "success",
@@ -412,12 +424,16 @@ func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
 		"read-database-credentials":                   "success",
 		"read-kv":                                     "success",
 		"read-kv-v1":                                  "success",
+		"read-namespace-approle-role-id":              "success",
 		"read-namespace-kv":                           "success",
+		"read-namespace-kv-as-approle":                "success",
 		"read-namespace-kv-as-user":                   "success",
 		"read-namespace-team-a":                       "success",
+		"read-namespace-transit-key":                  "success",
 		"read-transit-key":                            "success",
 		"renew-database-lease":                        "success",
 		"renew-token":                                 "success",
+		"revoke-namespace-pki-certificate":            "success",
 		"revoke-pki-certificate":                      "success",
 		"revoke-database-lease":                       "success",
 		"revoke-database-failure-renew-lease":         "success",
@@ -426,7 +442,10 @@ func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
 		"revoke-token":                                "success",
 		"read-database-failure-renew-credentials":     "success",
 		"read-database-failure-revoke-credentials":    "success",
+		"write-namespace-approle":                     "success",
+		"write-namespace-approle-secret-id":           "success",
 		"write-namespace-kv":                          "success",
+		"write-namespace-pki-role":                    "success",
 		"write-namespace-policy":                      "success",
 		"write-namespace-user":                        "success",
 		"write-identity-entity":                       "success",
