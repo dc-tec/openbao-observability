@@ -208,6 +208,8 @@ API clients, OpenBao peer traffic, and the metrics collector.
   to understand the active-node and all-node scrape tradeoff.
 - Use [Active-node and all-node observability](../concepts/active-node-vs-all-node-observability.md)
   to choose between secure active-node and private all-node scraping.
+- Use [OpenBao HA/Raft metrics](./ha-raft-metrics.md) to understand the
+  per-node Raft and Autopilot signals this profile enables.
 - Use [Configure a secure metrics scrape](./secure-metrics-scrape.md) when you
   need the authenticated active-node production baseline.
 - Use [High-cardinality and label safety](../concepts/high-cardinality-and-label-safety.md)

@@ -133,6 +133,11 @@ records, and platform events as the evidence behind the decision.
   understand audit-log access, retention, and canary design.
 - Use [Token and lease observability](./token-and-lease-observability.md) to
   separate inventory, rate, latency, and audit context.
+- Use [Understanding OpenBao metrics](../metrics/understanding-openbao-metrics.md)
+  when you need metric types, source prefixes, labels, and recording rules.
+- Use [Understanding OpenBao logs](../logging/understanding-openbao-logs.md)
+  when you need to choose between operational, request, audit, and archive
+  streams.
 - Use [OpenBao overview dashboard](../dashboards/overview-dashboard.md) to
   see how metrics, logs, and audit logs appear in one triage view.
 - Use [Configure declarative audit devices](../audit/declarative-audit.md) to

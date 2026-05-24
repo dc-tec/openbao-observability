@@ -131,6 +131,8 @@ the metrics exposure surface.
 
 - Use [Active-node and all-node observability](./active-node-vs-all-node-observability.md)
   to choose the right scrape profile.
+- Use [OpenBao HA/Raft metrics](../metrics/ha-raft-metrics.md) to connect HA
+  and Raft concepts to concrete Prometheus series.
 - Use [OpenBao HA/Raft dashboard](../dashboards/ha-raft.md) to inspect the
   generated HA/Raft view.
 - Use [OpenBao Raft and Autopilot health](../runbooks/raft-autopilot-health.md)

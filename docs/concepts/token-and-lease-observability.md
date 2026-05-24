@@ -139,6 +139,8 @@ credentials or resources that outlive the intended lifecycle.
 
 - Use [OpenBao token and lease lifecycle dashboard](../dashboards/token-lease-lifecycle.md)
   to inspect the generated token and lease view.
+- Use [OpenBao token and lease metrics](../metrics/token-and-lease-metrics.md)
+  to connect token and lease concepts to recording rules.
 - Use [OpenBao auth and identity dashboard](../dashboards/auth-identity.md)
   when token signals point to auth method behavior.
 - Use [Metrics, logs, and audit logs](./metrics-vs-logs-vs-audit-logs.md) to

@@ -135,6 +135,8 @@ or store it in a restricted backend designed for investigation.
   choose the right signal before you add labels.
 - Use [OpenBao audit investigation dashboard](../dashboards/audit-investigation.md)
   to see the query-time filtering pattern for audit fields.
+- Use [Loki label strategy for OpenBao](../logging/loki-label-strategy.md) to
+  apply the log-stream label contract.
 - Use [Understand metric prefixes and recording rules](../contracts/metric-prefix.md)
   before you group raw OpenBao metrics.
 - Use [Configure declarative audit devices](../audit/declarative-audit.md) for

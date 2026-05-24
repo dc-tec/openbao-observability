@@ -180,6 +180,10 @@ Parse them at query time in restricted dashboards instead.
 
 - Use [Configure declarative audit devices](../audit/declarative-audit.md) to
   configure repeatable audit devices.
+- Use [Understanding OpenBao logs](../logging/understanding-openbao-logs.md)
+  to choose the right log stream.
+- Use [Log retention and access control](../logging/retention-and-access-control.md)
+  before you treat Loki as an audit archive.
 - Use [OpenBao audit overview dashboard](../dashboards/audit-overview.md) to
   inspect audit health and volume.
 - Use [OpenBao audit investigation dashboard](../dashboards/audit-investigation.md)

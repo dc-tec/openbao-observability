@@ -176,6 +176,8 @@ make verify-live
 
 - Use [OpenBao observability model](../concepts/openbao-observability-model.md)
   to understand why the project separates source and derived signals.
+- Use [Understanding OpenBao metrics](../metrics/understanding-openbao-metrics.md)
+  to understand metric types, labels, scrape profiles, and validation.
 - Use [High-cardinality and label safety](../concepts/high-cardinality-and-label-safety.md)
   before you group source metrics by optional OpenBao labels.
 - Use [Configure a secure metrics scrape](../metrics/secure-metrics-scrape.md)

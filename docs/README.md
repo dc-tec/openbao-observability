@@ -24,6 +24,18 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [Audit logs as security records](./concepts/audit-logs-as-security-records.md)
 - [Token and lease observability](./concepts/token-and-lease-observability.md)
 
+## Metrics
+
+- [Understanding OpenBao metrics](./metrics/understanding-openbao-metrics.md)
+- [OpenBao HA/Raft metrics](./metrics/ha-raft-metrics.md)
+- [OpenBao token and lease metrics](./metrics/token-and-lease-metrics.md)
+
+## Logging
+
+- [Understanding OpenBao logs](./logging/understanding-openbao-logs.md)
+- [Loki label strategy for OpenBao](./logging/loki-label-strategy.md)
+- [Log retention and access control](./logging/retention-and-access-control.md)
+
 ## Dashboards
 
 - [OpenBao overview dashboard](./dashboards/overview-dashboard.md)

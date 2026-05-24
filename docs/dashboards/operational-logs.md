@@ -112,6 +112,10 @@ an audit-log replacement.
 
 - Use [Metrics, logs, and audit logs](../concepts/metrics-vs-logs-vs-audit-logs.md)
   to choose between operational logs and audit logs.
+- Use [Understanding OpenBao logs](../logging/understanding-openbao-logs.md)
+  to understand operational, completed request, audit, and archive streams.
+- Use [Log retention and access control](../logging/retention-and-access-control.md)
+  before you change retention or dashboard access.
 - Use [OpenBao HA/Raft dashboard](./ha-raft.md) when Raft or Autopilot log
   panels show activity.
 - Use [Operational log stream missing](../runbooks/operational-log-stream-missing.md)
