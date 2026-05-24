@@ -163,6 +163,12 @@ to tail after pod restarts. If the operator renders audit devices from
 `spec.audit[]`, the platform must still provision the volume, file permissions,
 collector mount, archive path, and access policy.
 
+Leave ordinary OpenBao operational logs on stderr/stdout for Kubernetes
+workloads unless you deliberately mount and manage a writable log volume. A
+configured operational log file without a compatible mount can prevent OpenBao
+from starting. This is separate from file audit devices, which need explicit
+storage and access controls because they contain security records.
+
 ## Dashboard contract
 
 Use dashboard families that keep control-plane and workload questions distinct.

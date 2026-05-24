@@ -14,6 +14,8 @@ KIND_OPERATOR_PROFILE_DIR ?= examples/kubernetes/kind/operator-managed
 KIND_OPERATOR_CLUSTER ?= openbao-observability
 KIND_OPERATOR_NAMESPACE ?= openbao
 KIND_OPERATOR_OPENBAO_CLUSTER ?= openbao-observability
+KIND_OPERATOR_TENANT_NAMESPACE ?= $(KIND_OPERATOR_NAMESPACE)
+KIND_OPERATOR_TENANT ?= openbao-observability
 KIND_OPERATOR_PROMETHEUS_RULE_NAMESPACE ?= monitoring
 KIND_OPERATOR_RULE_PROFILE ?= openbao-prefix
 KIND_OPERATOR_WAIT_TIMEOUT ?= 10m
@@ -24,7 +26,7 @@ LOKI_URL ?= http://127.0.0.1:13100
 DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml,contracts/dashboards/openbao-operational-logs.yaml,contracts/dashboards/openbao-audit-investigation.yaml,contracts/dashboards/openbao-auth-identity.yaml,contracts/dashboards/openbao-token-lease-lifecycle.yaml,contracts/dashboards/openbao-database-secrets.yaml,contracts/dashboards/openbao-transit.yaml,contracts/dashboards/openbao-pki.yaml,contracts/dashboards/openbao-secret-engines-mounts.yaml,contracts/dashboards/openbao-runtime-storage.yaml,contracts/dashboards/openbao-kubernetes-platform.yaml,contracts/dashboards/openbao-slo-availability.yaml
 GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json,generated/grafana/openbao-operational-logs.json,generated/grafana/openbao-audit-investigation.json,generated/grafana/openbao-auth-identity.json,generated/grafana/openbao-token-lease-lifecycle.json,generated/grafana/openbao-database-secrets.json,generated/grafana/openbao-transit.json,generated/grafana/openbao-pki.json,generated/grafana/openbao-secret-engines-mounts.json,generated/grafana/openbao-runtime-storage.json,generated/grafana/openbao-kubernetes-platform.json,generated/grafana/openbao-slo-availability.json
 
-.PHONY: compose-audit-archive-config compose-audit-archive-down compose-audit-archive-reset compose-audit-archive-up compose-config compose-down compose-reset compose-up contracts-verify docs-verify fixtures-openbao fixtures-scenarios generate kind-operator-apply kind-operator-apply-rules kind-operator-config kind-operator-down kind-operator-up kind-operator-validate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
+.PHONY: compose-audit-archive-config compose-audit-archive-down compose-audit-archive-reset compose-audit-archive-up compose-config compose-down compose-reset compose-up contracts-verify docs-verify fixtures-openbao fixtures-scenarios generate kind-operator-api-server-endpoints kind-operator-apply kind-operator-apply-rules kind-operator-apply-tenant kind-operator-config kind-operator-down kind-operator-patch-api-server-endpoints kind-operator-up kind-operator-validate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
 
 compose-config:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" config
@@ -61,6 +63,17 @@ kind-operator-up:
 kind-operator-apply:
 	$(KUBECTL) apply -k "$(KIND_OPERATOR_PROFILE_DIR)"
 
+kind-operator-apply-tenant:
+	$(KUBECTL) apply -f "$(KIND_OPERATOR_PROFILE_DIR)/tenant.yaml"
+
+kind-operator-api-server-endpoints:
+	@$(KUBECTL) get endpoints kubernetes -o jsonpath='{range .subsets[*].addresses[*]}{.ip}{"\n"}{end}'
+
+kind-operator-patch-api-server-endpoints:
+	@ips="$$( $(KUBECTL) get endpoints kubernetes -o jsonpath='{range .subsets[*].addresses[*]}{.ip}{"\n"}{end}' | awk 'NF { printf "%s\"%s\"", sep, $$1; sep="," }' )"; \
+	if [ -z "$$ips" ]; then echo "no Kubernetes API endpoint IPs found" >&2; exit 1; fi; \
+	$(KUBECTL) -n "$(KIND_OPERATOR_NAMESPACE)" patch openbaocluster "$(KIND_OPERATOR_OPENBAO_CLUSTER)" --type merge --patch "{\"spec\":{\"network\":{\"apiServerEndpointIPs\":[$$ips]}}}"
+
 kind-operator-apply-rules:
 	$(KUBECTL) -n "$(KIND_OPERATOR_PROMETHEUS_RULE_NAMESPACE)" apply -f "generated/prometheusrules/$(KIND_OPERATOR_RULE_PROFILE)/openbao-recording-rules.yaml"
 	$(KUBECTL) -n "$(KIND_OPERATOR_PROMETHEUS_RULE_NAMESPACE)" apply -f "generated/prometheusrules/$(KIND_OPERATOR_RULE_PROFILE)/openbao-alerts.yaml"
@@ -69,6 +82,8 @@ kind-operator-apply-rules:
 
 kind-operator-validate:
 	$(KUBECTL) get crd openbaoclusters.openbao.org
+	$(KUBECTL) -n "$(KIND_OPERATOR_TENANT_NAMESPACE)" get openbaotenant "$(KIND_OPERATOR_TENANT)"
+	$(KUBECTL) -n "$(KIND_OPERATOR_TENANT_NAMESPACE)" wait --for=jsonpath='{.status.provisioned}'=true "openbaotenant/$(KIND_OPERATOR_TENANT)" --timeout="$(KIND_OPERATOR_WAIT_TIMEOUT)"
 	$(KUBECTL) -n "$(KIND_OPERATOR_NAMESPACE)" get openbaocluster "$(KIND_OPERATOR_OPENBAO_CLUSTER)"
 	$(KUBECTL) -n "$(KIND_OPERATOR_NAMESPACE)" wait --for=condition=Available "openbaocluster/$(KIND_OPERATOR_OPENBAO_CLUSTER)" --timeout="$(KIND_OPERATOR_WAIT_TIMEOUT)"
 	$(KUBECTL) -n "$(KIND_OPERATOR_NAMESPACE)" get servicemonitor -l "openbao.org/cluster=$(KIND_OPERATOR_OPENBAO_CLUSTER)"

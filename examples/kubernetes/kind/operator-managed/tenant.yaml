@@ -1,0 +1,10 @@
+apiVersion: openbao.org/v1alpha1
+kind: OpenBaoTenant
+metadata:
+  name: openbao-observability
+  namespace: openbao
+  labels:
+    app.kubernetes.io/part-of: openbao-observability
+    openbao.observability.dc-tec.io/profile: operator-kind
+spec:
+  targetNamespace: openbao

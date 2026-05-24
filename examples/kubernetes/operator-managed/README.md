@@ -24,6 +24,9 @@ OpenBao workload. The examples show merge patches for existing
 - Create or rotate a scoped OpenBao token that can read `sys/metrics`.
 - Identify the OpenBao serving CA certificate used by the metrics endpoint.
 - Confirm the OpenBao metric prefix you want to use: `vault` or `openbao`.
+- Keep OpenBao operational logs on stderr/stdout unless you mount a writable
+  log volume into the OpenBao pods. Do not set
+  `spec.configuration.logging.file` as a general Kubernetes default.
 - Review the
   [OpenBao Operator integration contract](../../../docs/implementation-profiles/openbao-operator-integration-contract.md).
 
@@ -95,7 +98,8 @@ Use `declarative-audit-openbaocluster-patch.yaml` when the operator should
 configure audit devices as part of the workload baseline.
 
 Before you apply the patch, make sure the OpenBao pods have the volume mounts
-and permissions required for the configured file paths. The platform still owns
+and permissions required for the configured file paths. This requirement is for
+audit files, not ordinary OpenBao operational logs. The platform still owns
 collection, archive delivery, retention, and access control for audit logs.
 
 ```shell

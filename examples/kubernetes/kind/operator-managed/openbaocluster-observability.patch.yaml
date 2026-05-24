@@ -4,6 +4,15 @@
 # This patch enables the observability shape this repository needs to validate:
 # all-node metrics, an OpenBao metric prefix, and one read replica.
 #
+# This patch intentionally does not set spec.configuration.logging.file. For
+# Kubernetes validation, keep OpenBao operational logs on stderr/stdout unless
+# the OpenBaoCluster also mounts a writable log volume.
+#
+# Some kind CNI setups need spec.network.apiServerEndpointIPs so OpenBao pods
+# can reach the Kubernetes API through operator-managed NetworkPolicy. Patch
+# those IPs dynamically with:
+# make kind-operator-patch-api-server-endpoints
+#
 # Apply with:
 # kubectl -n openbao patch openbaocluster openbao-observability --type merge \
 #   --patch-file examples/kubernetes/kind/operator-managed/openbaocluster-observability.patch.yaml
