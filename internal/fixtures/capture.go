@@ -32,13 +32,16 @@ type captureRun struct {
 type raftNode struct {
 	Index     int
 	ID        string
+	NonVoter  bool
 	Container string
 	Port      int
 	Config    string
 }
 
 const (
-	raftNodeCount           = 3
+	raftVoterCount          = 3
+	raftReadReplicaCount    = 1
+	raftNodeCount           = raftVoterCount + raftReadReplicaCount
 	fixtureAdminToken       = "openbao-observability-fixture-token"
 	fixturePostgresDB       = "openbao_app"
 	fixturePostgresUser     = "openbao_admin"
@@ -205,8 +208,8 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 		return err
 	}
 
-	nodes := make([]raftNode, 0, raftNodeCount)
-	for index := 0; index < raftNodeCount; index++ {
+	voters := make([]raftNode, 0, raftVoterCount)
+	for index := 0; index < raftVoterCount; index++ {
 		node := raftNode{
 			Index:     index,
 			ID:        fmt.Sprintf("node%d", index),
@@ -214,47 +217,86 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 			Port:      portBase + index,
 			Config:    filepath.Join(tempDir, fmt.Sprintf("node%d.hcl", index)),
 		}
-		if err := writeRaftConfig(prefix, node, index == 0, nodes, postgresContainer, node.Config); err != nil {
+		if err := writeRaftConfig(prefix, node, index == 0, voters, postgresContainer, node.Config); err != nil {
 			return err
 		}
-		nodes = append(nodes, node)
+		voters = append(voters, node)
 	}
 
+	readReplicas := make([]raftNode, 0, raftReadReplicaCount)
+	for index := 0; index < raftReadReplicaCount; index++ {
+		nodeIndex := raftVoterCount + index
+		node := raftNode{
+			Index:     nodeIndex,
+			ID:        fmt.Sprintf("read-replica%d", index),
+			NonVoter:  true,
+			Container: fmt.Sprintf("openbao-observability-%s-raft-read-replica%d", versionID, index),
+			Port:      portBase + nodeIndex,
+			Config:    filepath.Join(tempDir, fmt.Sprintf("read-replica%d.hcl", index)),
+		}
+		if err := writeRaftConfig(prefix, node, false, voters, postgresContainer, node.Config); err != nil {
+			return err
+		}
+		readReplicas = append(readReplicas, node)
+	}
+
+	nodes := append(append([]raftNode{}, voters...), readReplicas...)
 	for _, node := range nodes {
 		_, _, _ = combined(ctx, "docker", "rm", "-f", node.Container)
 		r.containers = append(r.containers, node.Container)
 	}
 
-	if err := r.startRaftNode(ctx, nodes[0], network, sealDir); err != nil {
+	if err := r.startRaftNode(ctx, voters[0], network, sealDir); err != nil {
 		return err
 	}
-	if err := waitForInitializedUnsealed(ctx, nodes[0].Port, raftMetadataPath(opts, prefix, nodes[0].ID, "health.json")); err != nil {
+	if err := waitForInitializedUnsealed(ctx, voters[0].Port, raftMetadataPath(opts, prefix, voters[0].ID, "health.json")); err != nil {
 		return err
 	}
-	if err := r.captureVersion(ctx, nodes[0].Container, raftPrefix(prefix)); err != nil {
+	if err := r.captureVersion(ctx, voters[0].Container, raftPrefix(prefix)); err != nil {
 		return err
 	}
 
-	for _, node := range nodes[1:] {
+	for _, node := range voters[1:] {
 		if err := r.startRaftNode(ctx, node, network, sealDir); err != nil {
 			return err
 		}
 	}
-	for _, node := range nodes[1:] {
+	for _, node := range voters[1:] {
 		if err := waitForInitializedUnsealed(ctx, node.Port, raftMetadataPath(opts, prefix, node.ID, "health.json")); err != nil {
 			return err
 		}
 	}
-	if err := r.waitForRaftVoters(ctx, nodes[0], raftNodeCount); err != nil {
+	if err := r.waitForRaftTopology(ctx, voters[0], raftVoterCount, raftVoterCount); err != nil {
 		return err
 	}
-	if err := r.waitForAutopilotTolerance(ctx, nodes[0], raftNodeCount, 1); err != nil {
+	if err := r.waitForAutopilotTolerance(ctx, voters[0], raftVoterCount, 1); err != nil {
 		return err
 	}
-	if err := r.exerciseRaft(ctx, nodes[0], prefix); err != nil {
+	for _, node := range readReplicas {
+		if err := r.startRaftNode(ctx, node, network, sealDir); err != nil {
+			return err
+		}
+	}
+	for _, node := range readReplicas {
+		if err := waitForInitializedUnsealed(ctx, node.Port, raftMetadataPath(opts, prefix, node.ID, "health.json")); err != nil {
+			return err
+		}
+	}
+	if err := r.waitForRaftTopology(ctx, voters[0], raftNodeCount, raftVoterCount); err != nil {
 		return err
 	}
-	if err := r.runRaftScenario(ctx, nodes[0], prefix); err != nil {
+	if err := r.waitForAutopilotTolerance(ctx, voters[0], raftNodeCount, 1); err != nil {
+		return err
+	}
+	if err := r.exerciseRaft(ctx, voters[0], prefix); err != nil {
+		return err
+	}
+	for _, node := range readReplicas {
+		if err := r.exerciseRaftReadReplica(ctx, node, prefix); err != nil {
+			return err
+		}
+	}
+	if err := r.runRaftScenario(ctx, voters[0], prefix); err != nil {
 		return err
 	}
 	if err := r.captureRaftState(ctx, nodes, prefix); err != nil {
@@ -263,8 +305,10 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 	if err := r.captureRaftMetrics(ctx, nodes, prefix); err != nil {
 		return err
 	}
-	if err := r.captureRaftAuditLog(ctx, nodes[0], prefix); err != nil {
-		return err
+	for _, node := range nodes {
+		if err := r.captureRaftAuditLog(ctx, node, prefix); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -350,6 +394,10 @@ func writeRaftConfig(prefix string, node raftNode, initialize bool, existingNode
   }`, leader.Container)
 		}
 	}
+	nonVoterConfig := ""
+	if !initialize && node.NonVoter {
+		nonVoterConfig = "\n  retry_join_as_non_voter = true"
+	}
 
 	config := fmt.Sprintf(`ui = true
 cluster_name = "openbao-observability-fixture"
@@ -359,7 +407,7 @@ cluster_addr = "http://%s:8201"
 storage "raft" {
   path                   = "/bao/data"
   node_id                = "%s"
-  performance_multiplier = 1%s
+  performance_multiplier = 1%s%s
 }
 
 listener "tcp" {
@@ -393,7 +441,7 @@ audit "file" "local-file" {
     log_raw       = "false"
   }
 }
-%s`, node.Container, node.Container, node.ID, retryJoin.String(), prefix, raftInitializeBlock(initialize, databaseHost))
+%s`, node.Container, node.Container, node.ID, nonVoterConfig, retryJoin.String(), prefix, raftInitializeBlock(initialize, databaseHost))
 
 	if err := os.WriteFile(path, []byte(config), 0o600); err != nil {
 		return fmt.Errorf("write OpenBao Raft config %s: %w", path, err)
@@ -843,6 +891,32 @@ func (r *captureRun) exerciseRaft(ctx context.Context, node raftNode, prefix str
 	return writeFile(raftClusterMetadataPath(r.options, prefix, "exercise.txt"), output.Bytes())
 }
 
+func (r *captureRun) exerciseRaftReadReplica(ctx context.Context, node raftNode, prefix string) error {
+	var output bytes.Buffer
+	commands := [][]string{
+		{"bao", "status", "-format=json"},
+		{"bao", "kv", "get", "-format=json", "secret/observability"},
+		{"bao", "auth", "list", "-format=json"},
+		{"bao", "secrets", "list", "-format=json"},
+		{"bao", "operator", "raft", "list-peers", "-format=json"},
+		{"bao", "operator", "raft", "autopilot", "state", "-format=json"},
+	}
+
+	for _, command := range commands {
+		out, _, err := r.baoExec(ctx, node, command...)
+		output.Write(out)
+		if !bytes.HasSuffix(out, []byte("\n")) {
+			output.WriteByte('\n')
+		}
+		if err != nil {
+			_ = writeFile(raftClusterMetadataPath(r.options, prefix, node.ID+"-exercise.txt"), output.Bytes())
+			return fmt.Errorf("exercise OpenBao Raft read replica command %q on %s: %w", strings.Join(command, " "), node.ID, err)
+		}
+	}
+
+	return writeFile(raftClusterMetadataPath(r.options, prefix, node.ID+"-exercise.txt"), output.Bytes())
+}
+
 func (r *captureRun) runRaftScenario(ctx context.Context, node raftNode, prefix string) error {
 	return RunScenario(ctx, ScenarioOptions{
 		Address:    fmt.Sprintf("http://127.0.0.1:%d", node.Port),
@@ -874,7 +948,7 @@ func (r *captureRun) captureRaftCommand(ctx context.Context, node raftNode, outp
 	return writeFile(outputPath, out)
 }
 
-func (r *captureRun) waitForRaftVoters(ctx context.Context, leader raftNode, expected int) error {
+func (r *captureRun) waitForRaftTopology(ctx context.Context, leader raftNode, expectedPeers, expectedVoters int) error {
 	deadline := time.Now().Add(90 * time.Second)
 	var lastErr error
 	for time.Now().Before(deadline) {
@@ -883,10 +957,10 @@ func (r *captureRun) waitForRaftVoters(ctx context.Context, leader raftNode, exp
 			servers, parseErr := parseRaftServers(out)
 			if parseErr != nil {
 				lastErr = parseErr
-			} else if countVoters(servers) == expected {
+			} else if len(servers) == expectedPeers && countVoters(servers) == expectedVoters {
 				return nil
 			} else {
-				lastErr = fmt.Errorf("expected %d Raft voters, found %d across %d peers", expected, countVoters(servers), len(servers))
+				lastErr = fmt.Errorf("expected %d Raft peers with %d voters, found %d peers with %d voters", expectedPeers, expectedVoters, len(servers), countVoters(servers))
 			}
 		} else {
 			lastErr = err
@@ -899,7 +973,7 @@ func (r *captureRun) waitForRaftVoters(ctx context.Context, leader raftNode, exp
 		}
 	}
 
-	return fmt.Errorf("OpenBao Raft peers did not converge to %d voters: %w", expected, lastErr)
+	return fmt.Errorf("OpenBao Raft peers did not converge to %d peers with %d voters: %w", expectedPeers, expectedVoters, lastErr)
 }
 
 func (r *captureRun) waitForAutopilotTolerance(ctx context.Context, leader raftNode, expectedServers, minFailureTolerance int) error {

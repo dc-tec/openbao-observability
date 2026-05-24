@@ -78,15 +78,16 @@ This project currently validates a focused local topology:
 | OpenBao version | Captured with OpenBao 2.5.4 fixtures. |
 | Namespace scope | Root namespace and one child namespace named `team-a`. |
 | Namespace activity | Userpass, AppRole, token create/lookup/revoke, KV v2, transit, PKI issue/revoke/failure, policy writes, and audit request namespace fields. |
-| Raft topology | Three voter nodes in the HA/Raft fixture. |
+| Raft topology | Three voter nodes plus one non-voter read replica in the HA/Raft fixture. |
 | Source prefixes | `vault` and `openbao` metric prefixes. |
-| Read replicas | Documented as supported OpenBao behavior, not fixture-tested here. |
+| Read replicas | Basic read behavior, audit entries, Raft peer state, and Autopilot node health are fixture-tested. |
 | Nested namespaces | Documented as supported OpenBao behavior, not fixture-tested here. |
 
 Use the generated dashboards and alerts as validated for the current fixture
 scope. Treat namespace-heavy panels, namespace alert routing, database lease
-behavior inside namespaces, read-replica health, and non-voter failure alerts
-as extensions until you capture fixtures for those shapes.
+behavior inside namespaces, nested namespace behavior, production read-replica
+capacity thresholds, and non-voter failure alerts as extensions until you
+capture fixtures for those shapes.
 
 ## Design recommendations
 
@@ -97,7 +98,7 @@ Use these rules when you extend the reference architecture:
   `namespace`.
 - Add feature-specific namespace fixtures before you rely on namespace grouping
   for that feature.
-- Add a non-voter fixture before you alert on read-replica or non-voter health.
+- Keep read-replica alerts separate from voter quorum alerts.
 - Keep `namespace`, `mount_point`, and `policy` out of default alert labels.
 - Use all-node scraping for HA/Raft and read-replica diagnostics.
 - Separate voter quorum alerts from read-capacity or replica-coverage alerts.
@@ -123,9 +124,9 @@ leaving a path for deeper production profiles.
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed OpenBao docs behavior | OpenBao documents namespace commands, namespace limits, namespace-related lease metrics, Raft non-voters, and Autopilot states. |
-| Observed fixture behavior | The local OpenBao 2.5.4 fixtures validate root namespace, the `team-a` child namespace across several auth and secrets-engine paths, and three-voter HA/Raft behavior. |
-| Design decision | This project treats namespace and non-voter coverage as explicit topology extensions, not default assumptions. |
-| To validate | Nested namespace behavior, database lease behavior inside namespaces, non-voter metric labels, read-replica request behavior, and production alert thresholds. |
+| Observed fixture behavior | The local OpenBao 2.5.4 fixtures validate root namespace, the `team-a` child namespace across several auth and secrets-engine paths, and HA/Raft behavior with three voters plus one non-voter read replica. |
+| Design decision | This project treats namespace and read-replica coverage as explicit topology extensions, not default assumptions. |
+| To validate | Nested namespace behavior, database lease behavior inside namespaces, operator-managed read-replica behavior, and production alert thresholds. |
 
 ## What's next
 

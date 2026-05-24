@@ -225,9 +225,11 @@ OpenBao deployments commonly emit `vault_*` metrics unless you configure an
 `openbao` metrics prefix. This repository generates artifacts for both source
 prefixes.
 
-Read replicas and Raft non-voters need explicit fixture validation before you
-page on role-specific health. Use all-node scraping for diagnosis, then keep
-quorum alerts separate from read-capacity alerts.
+The local OpenBao fixture validates basic Raft non-voter behavior with one
+read replica. Operator-managed read replicas still need live Kubernetes
+validation before you page on operator-specific role labels. Use all-node
+scraping for diagnosis, then keep quorum alerts separate from read-capacity
+alerts.
 
 ## What's next
 

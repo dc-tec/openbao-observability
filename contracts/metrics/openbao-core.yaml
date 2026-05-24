@@ -11,8 +11,8 @@ normalization:
   notes:
     - Raw OpenBao metrics do not expose a consistent cluster label across all families.
     - Recording rules should add or normalize cluster, namespace, pod, job, and instance labels from scrape metadata.
-    - Current fixtures validate root-namespace behavior, the team-a child namespace across several auth and secrets-engine paths, and a three-voter Raft topology.
-    - Raft non-voter/read-replica behavior, database lease behavior inside namespaces, and feature-specific namespace behavior outside the captured scenario must be fixture-tested before dashboards or alerts depend on those dimensions.
+    - Current fixtures validate root-namespace behavior, the team-a child namespace across several auth and secrets-engine paths, and a Raft topology with three voters plus one non-voter read replica.
+    - Database lease behavior inside namespaces, nested namespace behavior, and feature-specific namespace behavior outside the captured scenario must be fixture-tested before dashboards or alerts depend on those dimensions.
 fixtures:
   required:
     - fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-vault-prefix.prom
@@ -89,9 +89,10 @@ metrics:
     overview: false
     notes:
       - Observed in the OpenBao 2.5.4 HA/Raft fixture on the active node.
+      - The current fixture observes value 4 for a topology with three voters plus one non-voter read replica.
       - Not always present in current live all-node scrapes.
       - Recording rules fall back to counting raft_storage_stats_commit_index by peer_id.
-      - Current fixture coverage is three voters only; non-voter/read-replica peer accounting is to validate.
+      - This is a peer count signal, not quorum margin.
   - id: raft_storage_stats_commit_index
     docsName: vault.raft_storage.stats.commit_index
     prometheusName: ${p}_raft_storage_stats_commit_index
@@ -100,7 +101,7 @@ metrics:
     notes:
       - Observed in the OpenBao 2.5.4 HA/Raft fixture and live Compose HA stack.
       - Used as the fallback source for normalized Raft peer count.
-      - Current fixture coverage is three voters only; non-voter/read-replica label shape is to validate.
+      - The HA/Raft fixture observes peer_id labels for voters and the read-replica peer_id read-replica0.
   - id: autopilot_healthy
     docsName: vault.autopilot.healthy
     prometheusName: ${p}_autopilot_healthy
@@ -108,7 +109,7 @@ metrics:
     overview: false
     notes:
       - Observed on the active node in the OpenBao 2.5.4 HA/Raft fixture.
-      - Current fixture coverage is three voters only; read-replica and non-voter Autopilot behavior is to validate.
+      - Current fixture coverage includes three voters and one non-voter read replica.
   - id: autopilot_failure_tolerance
     docsName: vault.autopilot.failure_tolerance
     prometheusName: ${p}_autopilot_failure_tolerance
@@ -116,6 +117,7 @@ metrics:
     overview: false
     notes:
       - Observed on the active node in the OpenBao 2.5.4 HA/Raft fixture.
+      - Failure tolerance remains 1 in the fixture with three voters plus one non-voter read replica.
       - Failure tolerance is voter-oriented; do not treat read replicas or non-voters as added quorum margin.
   - id: autopilot_node_healthy
     docsName: vault.autopilot.node_healthy
@@ -124,7 +126,7 @@ metrics:
     overview: false
     notes:
       - Observed with a node_id label in the OpenBao 2.5.4 HA/Raft fixture.
-      - Current fixture coverage is three voters only; node role labels for non-voters are to validate.
+      - Current fixture coverage includes voter node_id values node0, node1, node2 and non-voter node_id read-replica0.
   - id: audit_log_request_failure
     docsName: vault.audit.log_request_failure
     prometheusName: ${p}_audit_log_request_failure

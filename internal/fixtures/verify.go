@@ -151,8 +151,7 @@ func checkAuditJSON(opts VerifyOptions, prefix string) error {
 
 func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 	var leaderMetrics promtext.Families
-	for index := 0; index < raftNodeCount; index++ {
-		nodeID := fmt.Sprintf("node%d", index)
+	for _, nodeID := range raftAllNodeIDs() {
 		path := filepath.Join(opts.FixtureDir, "metrics", fmt.Sprintf("openbao-%s-raft-%s-%s.prom", opts.Version, prefix, nodeID))
 		families, err := promtext.LoadFamilies(path)
 		if err != nil {
@@ -171,7 +170,7 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 			}
 		}
 
-		if index == 0 {
+		if nodeID == "node0" {
 			leaderMetrics = families
 		}
 	}
@@ -180,6 +179,7 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 		prefix + "_autopilot_failure_tolerance",
 		prefix + "_autopilot_healthy",
 		prefix + "_autopilot_node_healthy",
+		prefix + "_raft_peers",
 		prefix + "_database_Initialize_error",
 		prefix + "_database_NewUser_error",
 		prefix + "_database_UpdateUser_error",
@@ -200,6 +200,9 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 	if !hasAnyGaugeValue(leaderMetrics, prefix+"_core_active", 1) {
 		return fmt.Errorf("missing active leader gauge value in Raft fixture")
 	}
+	if !hasAnyGaugeValue(leaderMetrics, prefix+"_raft_peers", float64(raftNodeCount)) {
+		return fmt.Errorf("missing Raft peer count of %d in Raft fixture", raftNodeCount)
+	}
 	namespaceMetricPrefix := prefix + "_" + sanitizedMetricPathFragment(fixtureNamespace) + "_pki"
 	for _, metric := range []string{
 		prefix + "_token_creation",
@@ -212,8 +215,7 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 			return fmt.Errorf("missing %s namespace label on %s in Raft fixture", fixtureNamespace, metric)
 		}
 	}
-	for index := 0; index < raftNodeCount; index++ {
-		nodeID := fmt.Sprintf("node%d", index)
+	for _, nodeID := range raftAllNodeIDs() {
 		if !leaderMetrics.HasMetricWithLabel(prefix+"_autopilot_node_healthy", "node_id", nodeID) {
 			return fmt.Errorf("missing Autopilot healthy node series for %s", nodeID)
 		}
@@ -253,23 +255,33 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 	if len(servers) != raftNodeCount {
 		return fmt.Errorf("expected %d Raft peers in %s, found %d", raftNodeCount, peersPath, len(servers))
 	}
+	if countVoters(servers) != raftVoterCount {
+		return fmt.Errorf("expected %d Raft voters in %s, found %d", raftVoterCount, peersPath, countVoters(servers))
+	}
+	if countNonVoters(servers) != raftReadReplicaCount {
+		return fmt.Errorf("expected %d Raft non-voters in %s, found %d", raftReadReplicaCount, peersPath, countNonVoters(servers))
+	}
 
 	var leaders int
 	seen := map[string]bool{}
+	voters := fixtureStringSet(raftVoterIDs())
+	readReplicas := fixtureStringSet(raftReadReplicaIDs())
 	for _, server := range servers {
 		if server.Leader {
 			leaders++
 		}
-		if !server.Voter {
+		if voters[server.NodeID] && !server.Voter {
 			return fmt.Errorf("Raft peer %s is not a voter in %s", server.NodeID, peersPath)
+		}
+		if readReplicas[server.NodeID] && server.Voter {
+			return fmt.Errorf("Raft read replica peer %s is a voter in %s", server.NodeID, peersPath)
 		}
 		seen[server.NodeID] = true
 	}
 	if leaders != 1 {
 		return fmt.Errorf("expected exactly one Raft leader in %s, found %d", peersPath, leaders)
 	}
-	for index := 0; index < raftNodeCount; index++ {
-		nodeID := fmt.Sprintf("node%d", index)
+	for _, nodeID := range raftAllNodeIDs() {
 		if !seen[nodeID] {
 			return fmt.Errorf("missing Raft peer %s in %s", nodeID, peersPath)
 		}
@@ -293,13 +305,26 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 	if len(state.Servers) != raftNodeCount {
 		return fmt.Errorf("expected %d Autopilot servers in %s, found %d", raftNodeCount, autopilotPath, len(state.Servers))
 	}
+	autopilotVoters := 0
+	autopilotNonVoters := 0
 	for id, server := range state.Servers {
 		if !server.Healthy {
 			return fmt.Errorf("Autopilot server %s is unhealthy in %s", id, autopilotPath)
 		}
-		if server.NodeType != "voter" {
+		switch server.NodeType {
+		case "voter":
+			autopilotVoters++
+		case "non-voter":
+			autopilotNonVoters++
+		default:
 			return fmt.Errorf("Autopilot server %s has node type %q in %s", id, server.NodeType, autopilotPath)
 		}
+	}
+	if autopilotVoters != raftVoterCount {
+		return fmt.Errorf("expected %d Autopilot voters in %s, found %d", raftVoterCount, autopilotPath, autopilotVoters)
+	}
+	if autopilotNonVoters != raftReadReplicaCount {
+		return fmt.Errorf("expected %d Autopilot non-voters in %s, found %d", raftReadReplicaCount, autopilotPath, autopilotNonVoters)
 	}
 
 	return nil
@@ -368,7 +393,47 @@ func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
 	}); err != nil {
 		return err
 	}
-	return checkAuditNonRootNamespace(path)
+	if err := checkAuditNonRootNamespace(path); err != nil {
+		return err
+	}
+	return checkReadReplicaAuditJSON(opts, prefix)
+}
+
+func checkReadReplicaAuditJSON(opts VerifyOptions, prefix string) error {
+	for _, nodeID := range raftReadReplicaIDs() {
+		path := filepath.Join(opts.FixtureDir, "logs", "audit", fmt.Sprintf("openbao-%s-raft-%s-%s.jsonl", opts.Version, prefix, nodeID))
+		if err := checkAuditJSONFile(path); err != nil {
+			return err
+		}
+		if err := checkAuditRequestPaths(path, []string{
+			"secret/data/observability",
+			"sys/auth",
+			"sys/mounts",
+			"sys/storage/raft/autopilot/state",
+			"sys/storage/raft/configuration",
+		}); err != nil {
+			return err
+		}
+		if err := checkReadReplicaExercise(opts, prefix, nodeID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func checkReadReplicaExercise(opts VerifyOptions, prefix, nodeID string) error {
+	path := filepath.Join(opts.FixtureDir, "metadata", fmt.Sprintf("openbao-%s-raft-%s-%s-exercise.txt", opts.Version, prefix, nodeID))
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read read-replica exercise fixture %s: %w", path, err)
+	}
+	text := strings.Join(strings.Fields(string(content)), "")
+	for _, expected := range []string{`"sample":"raft"`, `"voter":false`, `"NodeType":"non-voter"`} {
+		if !strings.Contains(text, expected) {
+			return fmt.Errorf("read-replica exercise fixture %s is missing %s", path, expected)
+		}
+	}
+	return nil
 }
 
 func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {

@@ -52,9 +52,10 @@ The normalized peer rule falls back to counting
 not present. This keeps the dashboard useful across the OpenBao 2.5.4 fixture
 and live all-node scrape behavior observed in this repository.
 
-The current fixture validates a three-voter topology. Read-replica or
-non-voter topologies need additional fixture coverage before this project adds
-role-specific alerts.
+The current fixture validates a topology with three voters plus one non-voter
+read replica. It observes `${p}_raft_peers` as `4`, Autopilot failure tolerance
+as `1`, and `autopilot_node_healthy` with a `node_id` value for the read
+replica.
 
 ## Raw Raft internals
 
@@ -87,9 +88,14 @@ Read non-voter health with all-node scraping and Autopilot or peer-state
 signals. Keep quorum alerts voter-aware, and keep read-capacity alerts separate
 from voter quorum alerts.
 
-This project does not yet fixture-test a non-voter node. Treat non-voter labels,
-read-replica request metrics, and peer-state shape as to-validate data until
-you capture a topology-specific fixture.
+The OpenBao 2.5.4 HA/Raft fixture starts one non-voter with
+`retry_join_as_non_voter = true`. The fixture verifies that the node can read a
+sample KV value, list mounts and auth methods, emit read-replica audit entries,
+and appear in Raft peer and Autopilot state as a non-voter.
+
+Treat role-specific production thresholds as environment-specific. The fixture
+validates the label shape and basic read behavior, not your production traffic
+split or read-capacity target.
 
 ## How to interpret the signals
 
@@ -124,8 +130,7 @@ depends on unauthenticated metrics access.
   deployment without adaptation.
 - Reading active-node scrape output as complete follower visibility.
 - Counting all unsealed nodes as Raft voters.
-- Alerting on read-replica or non-voter behavior before fixture-testing the
-  label shape.
+- Treating read-replica capacity alerts as voter quorum alerts.
 - Alerting on raw peer IDs without reviewing label cardinality and metadata
   exposure.
 

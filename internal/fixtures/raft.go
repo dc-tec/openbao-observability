@@ -17,9 +17,10 @@ type raftListPeers struct {
 }
 
 type raftServer struct {
-	NodeID string `json:"node_id"`
-	Leader bool   `json:"leader"`
-	Voter  bool   `json:"voter"`
+	NodeID   string `json:"node_id"`
+	Leader   bool   `json:"leader"`
+	Voter    bool   `json:"voter"`
+	NonVoter bool   `json:"non_voter"`
 }
 
 func parseRaftServers(content []byte) ([]raftServer, error) {
@@ -41,6 +42,46 @@ func countVoters(servers []raftServer) int {
 		}
 	}
 	return count
+}
+
+func countNonVoters(servers []raftServer) int {
+	var count int
+	for _, server := range servers {
+		if !server.Voter || server.NonVoter {
+			count++
+		}
+	}
+	return count
+}
+
+func raftVoterIDs() []string {
+	ids := make([]string, 0, raftVoterCount)
+	for index := 0; index < raftVoterCount; index++ {
+		ids = append(ids, fmt.Sprintf("node%d", index))
+	}
+	return ids
+}
+
+func raftReadReplicaIDs() []string {
+	ids := make([]string, 0, raftReadReplicaCount)
+	for index := 0; index < raftReadReplicaCount; index++ {
+		ids = append(ids, fmt.Sprintf("read-replica%d", index))
+	}
+	return ids
+}
+
+func raftAllNodeIDs() []string {
+	ids := append([]string{}, raftVoterIDs()...)
+	ids = append(ids, raftReadReplicaIDs()...)
+	return ids
+}
+
+func fixtureStringSet(values []string) map[string]bool {
+	set := make(map[string]bool, len(values))
+	for _, value := range values {
+		set[value] = true
+	}
+	return set
 }
 
 type autopilotState struct {

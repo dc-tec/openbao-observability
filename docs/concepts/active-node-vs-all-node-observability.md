@@ -157,9 +157,9 @@ the secure active-node baseline.
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed OpenBao docs behavior | OpenBao documents active-node-only Prometheus metrics access by default and standby access through unauthenticated metrics access. |
-| Observed fixture behavior | The local OpenBao 2.5.4 HA fixture uses all-node scraping to validate per-node, three-voter Raft, and `team-a` namespace behavior for several auth and secrets-engine paths. |
+| Observed fixture behavior | The local OpenBao 2.5.4 HA fixture uses all-node scraping to validate per-node metrics, three Raft voters, one non-voter read replica, and `team-a` namespace behavior for several auth and secrets-engine paths. |
 | Design decision | This project treats active-node scraping as the secure baseline and all-node scraping as an elevated HA/Raft diagnostics profile. |
-| To validate | Kubernetes service labels, scrape identities, listener isolation, namespace label policy for your feature set, non-voter metrics, and read-replica behavior in your production environment. |
+| To validate | Kubernetes service labels, scrape identities, listener isolation, namespace label policy for your feature set, operator-managed read replicas, and production read-capacity thresholds. |
 
 ## What's next
 
