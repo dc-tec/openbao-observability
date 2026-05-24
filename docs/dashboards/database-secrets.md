@@ -130,8 +130,10 @@ paths can reveal application architecture.
   deployment.
 - Plugin-specific metric families are contract data, but the dashboard prefers
   generic database metrics.
-- The current fixture validates root-namespace database behavior. Database
-  lease behavior inside non-root namespaces is still to validate.
+- The current fixture validates root-namespace database behavior and database
+  lease lookup, renew, and revoke behavior inside the `team-a` namespace. Other
+  namespace layouts still need local validation before you depend on namespace
+  grouping.
 - The dashboard depends on Loki retention for `log_stream="openbao.audit"`.
 
 ## What's next

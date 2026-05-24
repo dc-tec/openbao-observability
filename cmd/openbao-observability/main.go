@@ -239,6 +239,7 @@ func runFixturesScenario(ctx context.Context, args []string) error {
 	fs.StringVar(&opts.Token, "token", envString("BAO_TOKEN", ""), "optional OpenBao token; defaults to userpass login")
 	fs.StringVar(&opts.Username, "username", "demo-admin", "userpass username when --token is empty")
 	fs.StringVar(&opts.Password, "password", "openbao-observability", "userpass password when --token is empty")
+	fs.StringVar(&opts.PostgresHost, "postgres-host", envString("POSTGRES_HOST", "postgres"), "PostgreSQL host reachable from OpenBao for namespace database fixtures")
 	fs.StringVar(&opts.OutputPath, "output", defaultOutput, "scenario report output path")
 
 	if err := fs.Parse(args); err != nil {

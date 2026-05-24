@@ -229,9 +229,9 @@ every 30 seconds. The exporter exposes the reference
 
    The scenario performs userpass and AppRole logins, KV v1 and KV v2
    activity, identity activity, token create/lookup/renew/revoke operations,
-   database credential lease lookup/renew/revoke operations, Transit
-   encrypt/decrypt operations, PKI certificate issue/revoke operations, and
-   expected denied requests.
+   root and namespace database credential lease lookup/renew/revoke operations,
+   Transit encrypt/decrypt operations, PKI certificate issue/revoke operations,
+   minimal nested namespace KV activity, and expected denied requests.
 
 6. Check Raft peers.
 

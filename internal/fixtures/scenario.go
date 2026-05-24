@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	baoapi "github.com/openbao/openbao/api/v2"
@@ -17,9 +18,11 @@ const (
 	defaultScenarioAddress  = "http://127.0.0.1:18200"
 	defaultScenarioUsername = "demo-admin"
 	defaultScenarioPassword = "openbao-observability"
+	defaultPostgresHost     = "postgres"
 	auditCanaryToken        = "openbao-observability-audit-canary-token"
 	auditCanaryPath         = "secret/data/observability/audit-canary"
 	fixtureNamespace        = "team-a"
+	fixtureNestedNamespace  = fixtureNamespace + "/payments"
 )
 
 var (
@@ -34,11 +37,12 @@ var (
 )
 
 type ScenarioOptions struct {
-	Address    string
-	Token      string
-	Username   string
-	Password   string
-	OutputPath string
+	Address      string
+	Token        string
+	Username     string
+	Password     string
+	PostgresHost string
+	OutputPath   string
 }
 
 type ScenarioReport struct {
@@ -54,8 +58,9 @@ type ScenarioStep struct {
 }
 
 type scenarioRunner struct {
-	client *baoapi.Client
-	report ScenarioReport
+	client       *baoapi.Client
+	postgresHost string
+	report       ScenarioReport
 }
 
 func RunScenario(ctx context.Context, opts ScenarioOptions) error {
@@ -69,8 +74,9 @@ func RunScenario(ctx context.Context, opts ScenarioOptions) error {
 	}
 
 	runner := &scenarioRunner{
-		client: client,
-		report: ScenarioReport{Address: opts.Address},
+		client:       client,
+		postgresHost: opts.PostgresHost,
+		report:       ScenarioReport{Address: opts.Address},
 	}
 
 	if opts.Token != "" {
@@ -102,6 +108,9 @@ func (o ScenarioOptions) withDefaults() ScenarioOptions {
 	}
 	if o.Password == "" {
 		o.Password = defaultScenarioPassword
+	}
+	if o.PostgresHost == "" {
+		o.PostgresHost = envString("POSTGRES_HOST", defaultPostgresHost)
 	}
 	if o.OutputPath == "" {
 		o.OutputPath = filepath.Join("fixtures", "captured", "openbao-2.5.4", "metadata", "openbao-2.5.4-compose-scenario.json")
@@ -260,14 +269,21 @@ path "secret/metadata/apps/team-a/*" {
 		if err := r.exerciseNamespacePKI(ctx); err != nil {
 			return err
 		}
+		if err := r.exerciseNamespaceDatabaseLease(ctx); err != nil {
+			return err
+		}
+		if err := r.exerciseNestedNamespace(ctx); err != nil {
+			return err
+		}
 		return nil
 	})
 }
 
 func (r *scenarioRunner) ensureNamespace(ctx context.Context, namespacePath string) error {
 	path := "sys/namespaces/" + namespacePath
+	stepName := "ensure-namespace-" + namespaceStepSuffix(namespacePath)
 	if existing, err := r.client.Logical().ReadWithContext(ctx, path); err == nil && existing != nil {
-		r.addStep("ensure-namespace-"+namespacePath, path, "success", "")
+		r.addStep(stepName, path, "success", "")
 		return nil
 	}
 
@@ -278,11 +294,15 @@ func (r *scenarioRunner) ensureNamespace(ctx context.Context, namespacePath stri
 		},
 	})
 	if err != nil {
-		r.addStep("ensure-namespace-"+namespacePath, path, "error", err.Error())
+		r.addStep(stepName, path, "error", err.Error())
 		return fmt.Errorf("create namespace %s: %w", namespacePath, err)
 	}
-	r.addStep("ensure-namespace-"+namespacePath, path, "success", "")
+	r.addStep(stepName, path, "success", "")
 	return nil
+}
+
+func namespaceStepSuffix(namespacePath string) string {
+	return strings.ReplaceAll(strings.Trim(namespacePath, "/"), "/", "-")
 }
 
 func (r *scenarioRunner) exerciseNamespaceUserpass(ctx context.Context) error {
@@ -433,6 +453,69 @@ func (r *scenarioRunner) exerciseNamespaceAppRole(ctx context.Context) error {
 	}
 	r.addStep("read-namespace-kv-as-approle", "secret/data/apps/team-a/scenario", "success", "")
 	return nil
+}
+
+func (r *scenarioRunner) exerciseNamespaceDatabaseLease(ctx context.Context) error {
+	if err := r.ensureMount(ctx, "database", "database", "Namespace PostgreSQL dynamic secrets engine for observability reference captures.", nil); err != nil {
+		return err
+	}
+	r.renameLastStep("ensure-database-mount", "ensure-namespace-database-mount")
+	if err := r.configurePostgresDatabase(ctx, "configure-namespace-postgres-database"); err != nil {
+		return err
+	}
+	if err := r.writeDatabaseRole(ctx, "write-namespace-database-readonly-role", "readonly", postgresCreationStatements, postgresRevocationStatements, nil); err != nil {
+		return err
+	}
+	return r.exerciseDatabaseLeaseLifecycle(ctx, databaseLeaseLifecycle{
+		credentialsPath: "database/creds/readonly",
+		readStep:        "read-namespace-database-credentials",
+		lookupStep:      "lookup-namespace-database-lease",
+		renewStep:       "renew-namespace-database-lease",
+		revokeStep:      "revoke-namespace-database-lease",
+	})
+}
+
+func (r *scenarioRunner) exerciseNestedNamespace(ctx context.Context) error {
+	if err := r.ensureNamespace(ctx, "payments"); err != nil {
+		return err
+	}
+	r.renameLastStep("ensure-namespace-payments", "ensure-nested-namespace-payments")
+
+	config := baoapi.DefaultConfig()
+	config.Address = r.client.Address()
+	nestedClient, err := baoapi.NewClient(config)
+	if err != nil {
+		return fmt.Errorf("create nested namespace client: %w", err)
+	}
+	nestedClient.SetToken(r.client.Token())
+	nestedClient.SetNamespace(fixtureNestedNamespace)
+
+	return r.withClient(nestedClient, func() error {
+		if err := r.ensureMount(ctx, "secret", "kv", "Nested namespace KV engine for observability reference captures.", map[string]any{
+			"version": "2",
+		}); err != nil {
+			return err
+		}
+		r.renameLastStep("ensure-secret-mount", "ensure-nested-namespace-secret-mount")
+
+		steps := []scenarioOperation{
+			{name: "write-nested-namespace-kv", path: "secret/data/apps/payments/scenario", operation: "write", data: map[string]any{
+				"data": map[string]any{
+					"owner":     "payments",
+					"namespace": fixtureNestedNamespace,
+					"scenario":  "nested-namespace-fixture",
+				},
+			}},
+			{name: "read-nested-namespace-kv", path: "secret/data/apps/payments/scenario", operation: "read"},
+			{name: "list-nested-namespace-kv-metadata", path: "secret/metadata/apps/payments", operation: "list"},
+		}
+		for _, step := range steps {
+			if err := r.runOperation(ctx, step); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (r *scenarioRunner) exerciseNamespaceTransit(ctx context.Context) error {
@@ -755,30 +838,48 @@ func (r *scenarioRunner) exerciseTokenLifecycle(ctx context.Context) error {
 }
 
 func (r *scenarioRunner) exerciseDatabaseLease(ctx context.Context) error {
-	secret, err := r.client.Logical().ReadWithContext(ctx, "database/creds/readonly")
+	return r.exerciseDatabaseLeaseLifecycle(ctx, databaseLeaseLifecycle{
+		credentialsPath: "database/creds/readonly",
+		readStep:        "read-database-credentials",
+		lookupStep:      "lookup-database-lease",
+		renewStep:       "renew-database-lease",
+		revokeStep:      "revoke-database-lease",
+	})
+}
+
+type databaseLeaseLifecycle struct {
+	credentialsPath string
+	readStep        string
+	lookupStep      string
+	renewStep       string
+	revokeStep      string
+}
+
+func (r *scenarioRunner) exerciseDatabaseLeaseLifecycle(ctx context.Context, lifecycle databaseLeaseLifecycle) error {
+	secret, err := r.client.Logical().ReadWithContext(ctx, lifecycle.credentialsPath)
 	if err != nil {
-		r.addStep("read-database-credentials", "database/creds/readonly", "error", err.Error())
+		r.addStep(lifecycle.readStep, lifecycle.credentialsPath, "error", err.Error())
 		return fmt.Errorf("read dynamic database credentials: %w", err)
 	}
 	if secret == nil || secret.LeaseID == "" {
-		r.addStep("read-database-credentials", "database/creds/readonly", "error", "missing lease_id")
+		r.addStep(lifecycle.readStep, lifecycle.credentialsPath, "error", "missing lease_id")
 		return errors.New("database credentials response did not include a lease_id")
 	}
-	r.addStep("read-database-credentials", "database/creds/readonly", "success", "lease_id_present")
+	r.addStep(lifecycle.readStep, lifecycle.credentialsPath, "success", "lease_id_present")
 
 	leaseSteps := []struct {
 		name string
 		run  func(context.Context, string) error
 	}{
-		{name: "lookup-database-lease", run: func(ctx context.Context, leaseID string) error {
+		{name: lifecycle.lookupStep, run: func(ctx context.Context, leaseID string) error {
 			_, err := r.client.Sys().LookupWithContext(ctx, leaseID)
 			return err
 		}},
-		{name: "renew-database-lease", run: func(ctx context.Context, leaseID string) error {
+		{name: lifecycle.renewStep, run: func(ctx context.Context, leaseID string) error {
 			_, err := r.client.Sys().RenewWithContext(ctx, leaseID, int((2 * time.Minute).Seconds()))
 			return err
 		}},
-		{name: "revoke-database-lease", run: func(ctx context.Context, leaseID string) error {
+		{name: lifecycle.revokeStep, run: func(ctx context.Context, leaseID string) error {
 			return r.client.Sys().RevokeWithContext(ctx, leaseID)
 		}},
 	}
@@ -1021,6 +1122,25 @@ func (r *scenarioRunner) exerciseDatabaseExpectedFailures(ctx context.Context) e
 	r.addStep("revoke-database-failure-revoke-lease", "sys/leases/revoke", "success", "")
 
 	return nil
+}
+
+func (r *scenarioRunner) configurePostgresDatabase(ctx context.Context, stepName string) error {
+	return r.runOperation(ctx, scenarioOperation{
+		name:      stepName,
+		path:      "database/config/postgres",
+		operation: "write",
+		data: map[string]any{
+			"plugin_name":    "postgresql-database-plugin",
+			"allowed_roles":  []string{"readonly", "failure-*"},
+			"connection_url": postgresConnectionURL(r.postgresHost),
+			"username":       fixturePostgresUser,
+			"password":       fixturePostgresPassword,
+		},
+	})
+}
+
+func postgresConnectionURL(host string) string {
+	return fmt.Sprintf("postgresql://{{username}}:{{password}}@%s:5432/%s?sslmode=disable", host, fixturePostgresDB)
 }
 
 func (r *scenarioRunner) issueDatabaseLease(ctx context.Context, roleName, stepName string) (string, error) {

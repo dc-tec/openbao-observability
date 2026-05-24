@@ -296,7 +296,7 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 			return err
 		}
 	}
-	if err := r.runRaftScenario(ctx, voters[0], prefix); err != nil {
+	if err := r.runRaftScenario(ctx, voters[0], prefix, postgresContainer); err != nil {
 		return err
 	}
 	if err := r.captureRaftState(ctx, nodes, prefix); err != nil {
@@ -917,10 +917,11 @@ func (r *captureRun) exerciseRaftReadReplica(ctx context.Context, node raftNode,
 	return writeFile(raftClusterMetadataPath(r.options, prefix, node.ID+"-exercise.txt"), output.Bytes())
 }
 
-func (r *captureRun) runRaftScenario(ctx context.Context, node raftNode, prefix string) error {
+func (r *captureRun) runRaftScenario(ctx context.Context, node raftNode, prefix, postgresHost string) error {
 	return RunScenario(ctx, ScenarioOptions{
-		Address:    fmt.Sprintf("http://127.0.0.1:%d", node.Port),
-		OutputPath: raftClusterMetadataPath(r.options, prefix, "scenario.json"),
+		Address:      fmt.Sprintf("http://127.0.0.1:%d", node.Port),
+		PostgresHost: postgresHost,
+		OutputPath:   raftClusterMetadataPath(r.options, prefix, "scenario.json"),
 	})
 }
 

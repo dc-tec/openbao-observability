@@ -76,18 +76,18 @@ This project currently validates a focused local topology:
 | Area | Current status |
 | ---- | -------------- |
 | OpenBao version | Captured with OpenBao 2.5.4 fixtures. |
-| Namespace scope | Root namespace and one child namespace named `team-a`. |
-| Namespace activity | Userpass, AppRole, token create/lookup/revoke, KV v2, transit, PKI issue/revoke/failure, policy writes, and audit request namespace fields. |
+| Namespace scope | Root namespace, one child namespace named `team-a`, and a minimal nested namespace path named `team-a/payments`. |
+| Namespace activity | Userpass, AppRole, token create/lookup/revoke, KV v2, transit, PKI issue/revoke/failure, database lease lookup/renew/revoke, policy writes, and audit request namespace fields. |
 | Raft topology | Three voter nodes plus one non-voter read replica in the HA/Raft fixture. |
 | Source prefixes | `vault` and `openbao` metric prefixes. |
 | Read replicas | Basic read behavior, audit entries, Raft peer state, and Autopilot node health are fixture-tested. |
-| Nested namespaces | Documented as supported OpenBao behavior, not fixture-tested here. |
+| Nested namespaces | Minimal KV activity is fixture-tested for `team-a/payments`; broader nested feature behavior is still an extension. |
 
 Use the generated dashboards and alerts as validated for the current fixture
 scope. Treat namespace-heavy panels, namespace alert routing, database lease
-behavior inside namespaces, nested namespace behavior, production read-replica
-capacity thresholds, and non-voter failure alerts as extensions until you
-capture fixtures for those shapes.
+behavior outside the fixture shape, broader nested namespace behavior,
+production read-replica capacity thresholds, and non-voter failure alerts as
+extensions until you capture fixtures for those shapes.
 
 ## Design recommendations
 
@@ -113,8 +113,8 @@ leaving a path for deeper production profiles.
 - Treating a non-voter failure as the same condition as voter quorum loss.
 - Grouping overview panels by namespace before reviewing cardinality and access
   control.
-- Treating the `team-a` child namespace fixture as proof of nested namespace or
-  all feature-specific behavior.
+- Treating the `team-a` and `team-a/payments` fixtures as proof of all nested
+  namespace or feature-specific behavior.
 - Adding replication alerts without separating quorum health, read capacity,
   and scrape target health.
 - Using namespace names or paths as Loki labels without an access review.
@@ -124,9 +124,9 @@ leaving a path for deeper production profiles.
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed OpenBao docs behavior | OpenBao documents namespace commands, namespace limits, namespace-related lease metrics, Raft non-voters, and Autopilot states. |
-| Observed fixture behavior | The local OpenBao 2.5.4 fixtures validate root namespace, the `team-a` child namespace across several auth and secrets-engine paths, and HA/Raft behavior with three voters plus one non-voter read replica. |
+| Observed fixture behavior | The local OpenBao 2.5.4 fixtures validate root namespace, the `team-a` child namespace across several auth and secrets-engine paths, minimal `team-a/payments` nested KV behavior, namespaced database leases, and HA/Raft behavior with three voters plus one non-voter read replica. |
 | Design decision | This project treats namespace and read-replica coverage as explicit topology extensions, not default assumptions. |
-| To validate | Nested namespace behavior, database lease behavior inside namespaces, operator-managed read-replica behavior, and production alert thresholds. |
+| To validate | Broader nested namespace feature behavior, operator-managed read-replica behavior, and production alert thresholds. |
 
 ## What's next
 
