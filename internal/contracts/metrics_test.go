@@ -50,8 +50,8 @@ func TestLoadMetricContractRejectsDuplicateMetricIDs(t *testing.T) {
 func TestVerifyMetricContract(t *testing.T) {
 	dir := t.TempDir()
 	fixtureDir := filepath.Join(dir, "fixtures")
-	writeMetricFixture(t, fixtureDir, "2.5.4", "vault")
-	writeMetricFixture(t, fixtureDir, "2.5.4", "openbao")
+	writeMetricFixture(t, fixtureDir, "vault")
+	writeMetricFixture(t, fixtureDir, "openbao")
 
 	required := []string{
 		filepath.Join(fixtureDir, "metrics", "openbao-2.5.4-vault-prefix.prom"),
@@ -71,8 +71,8 @@ func TestVerifyMetricContract(t *testing.T) {
 func TestVerifyMetricContractFailsWhenMetricMissing(t *testing.T) {
 	dir := t.TempDir()
 	fixtureDir := filepath.Join(dir, "fixtures")
-	writeMetricFixture(t, fixtureDir, "2.5.4", "vault")
-	writeMetricFixture(t, fixtureDir, "2.5.4", "openbao")
+	writeMetricFixture(t, fixtureDir, "vault")
+	writeMetricFixture(t, fixtureDir, "openbao")
 
 	openbaoFixture := filepath.Join(fixtureDir, "metrics", "openbao-2.5.4-openbao-prefix.prom")
 	content, err := os.ReadFile(openbaoFixture)
@@ -149,10 +149,10 @@ fixtures:
 `
 }
 
-func writeMetricFixture(t *testing.T, root, version, prefix string) {
+func writeMetricFixture(t *testing.T, root, prefix string) {
 	t.Helper()
 
-	path := filepath.Join(root, "metrics", "openbao-"+version+"-"+prefix+"-prefix.prom")
+	path := filepath.Join(root, "metrics", "openbao-2.5.4-"+prefix+"-prefix.prom")
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatalf("create fixture directory: %v", err)
 	}

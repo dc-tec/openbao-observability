@@ -126,12 +126,10 @@ func (r *captureRun) capturePrefix(ctx context.Context, prefix string, port int)
 		return err
 	}
 
-	_, _, _ = combined(ctx, "docker", "rm", "-f", name)
+	_, _, _ = dockerCombined(ctx, "rm", "-f", name)
 	r.containers = append(r.containers, name)
 
-	_, _, err = combined(ctx,
-		"docker",
-		"run",
+	_, _, err = dockerCombined(ctx, "run",
 		"--detach",
 		"--name", name,
 		"--publish", fmt.Sprintf("127.0.0.1:%d:8200", port),
@@ -177,13 +175,13 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 	network := fmt.Sprintf("openbao-observability-%s-raft", versionID)
 	postgresContainer := fmt.Sprintf("openbao-observability-%s-postgres", versionID)
 
-	_, _, _ = combined(ctx, "docker", "network", "rm", network)
-	if _, _, err := combined(ctx, "docker", "network", "create", network); err != nil {
+	_, _, _ = dockerCombined(ctx, "network", "rm", network)
+	if _, _, err := dockerCombined(ctx, "network", "create", network); err != nil {
 		return fmt.Errorf("create Docker network for Raft fixture: %w", err)
 	}
 	r.networks = append(r.networks, network)
 
-	_, _, _ = combined(ctx, "docker", "rm", "-f", postgresContainer)
+	_, _, _ = dockerCombined(ctx, "rm", "-f", postgresContainer)
 	r.containers = append(r.containers, postgresContainer)
 	if err := r.startPostgres(ctx, postgresContainer, network); err != nil {
 		return err
@@ -241,7 +239,7 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 
 	nodes := append(append([]raftNode{}, voters...), readReplicas...)
 	for _, node := range nodes {
-		_, _, _ = combined(ctx, "docker", "rm", "-f", node.Container)
+		_, _, _ = dockerCombined(ctx, "rm", "-f", node.Container)
 		r.containers = append(r.containers, node.Container)
 	}
 
@@ -325,9 +323,7 @@ func writeStaticSealKey(path string) error {
 }
 
 func (r *captureRun) startRaftNode(ctx context.Context, node raftNode, network, sealDir string) error {
-	_, _, err := combined(ctx,
-		"docker",
-		"run",
+	_, _, err := dockerCombined(ctx, "run",
 		"--detach",
 		"--name", node.Container,
 		"--network", network,
@@ -346,9 +342,7 @@ func (r *captureRun) startRaftNode(ctx context.Context, node raftNode, network, 
 }
 
 func (r *captureRun) startPostgres(ctx context.Context, name, network string) error {
-	_, _, err := combined(ctx,
-		"docker",
-		"run",
+	_, _, err := dockerCombined(ctx, "run",
 		"--detach",
 		"--name", name,
 		"--network", network,
@@ -367,7 +361,7 @@ func waitForPostgres(ctx context.Context, container string) error {
 	deadline := time.Now().Add(60 * time.Second)
 	var lastErr error
 	for time.Now().Before(deadline) {
-		_, _, err := combined(ctx, "docker", "exec", container, "pg_isready", "-U", fixturePostgresUser, "-d", fixturePostgresDB)
+		_, _, err := dockerCombined(ctx, "exec", container, "pg_isready", "-U", fixturePostgresUser, "-d", fixturePostgresDB)
 		if err == nil {
 			return nil
 		}
@@ -756,8 +750,8 @@ func dockerDiagnostics(ctx context.Context, container string) string {
 		return ""
 	}
 
-	inspect, _, _ := combined(ctx, "docker", "inspect", "--format", "state={{.State.Status}} exit={{.State.ExitCode}} error={{.State.Error}}", container)
-	logs, _, _ := combined(ctx, "docker", "logs", "--tail", "120", container)
+	inspect, _, _ := dockerCombined(ctx, "inspect", "--format", "state={{.State.Status}} exit={{.State.ExitCode}} error={{.State.Error}}", container)
+	logs, _, _ := dockerCombined(ctx, "logs", "--tail", "120", container)
 
 	var builder strings.Builder
 	builder.WriteString("\nDocker diagnostics for ")
@@ -821,7 +815,7 @@ func waitForInitializedUnsealed(ctx context.Context, port int, outputPath string
 }
 
 func (r *captureRun) captureVersion(ctx context.Context, container, prefix string) error {
-	out, _, err := combined(ctx, "docker", "exec", container, "bao", "version")
+	out, _, err := dockerCombined(ctx, "exec", container, "bao", "version")
 	if err != nil {
 		return fmt.Errorf("capture OpenBao version for %s: %w", prefix, err)
 	}
@@ -829,9 +823,7 @@ func (r *captureRun) captureVersion(ctx context.Context, container, prefix strin
 }
 
 func (r *captureRun) captureAPIAuditRejection(ctx context.Context, container, prefix string) error {
-	out, code, err := combined(ctx,
-		"docker",
-		"exec",
+	out, code, err := dockerCombined(ctx, "exec",
 		"-e", "BAO_ADDR=http://127.0.0.1:8200",
 		"-e", "BAO_TOKEN="+r.options.RootToken,
 		container,
@@ -873,7 +865,7 @@ func (r *captureRun) exerciseOpenBao(ctx context.Context, container, prefix stri
 		}
 		args = append(args, command...)
 
-		out, _, err := combined(ctx, "docker", args...)
+		out, _, err := dockerCombined(ctx, args...)
 		output.Write(out)
 		if !bytes.HasSuffix(out, []byte("\n")) {
 			output.WriteByte('\n')
@@ -1028,14 +1020,15 @@ func (r *captureRun) waitForAutopilotTolerance(ctx context.Context, leader raftN
 }
 
 func (r *captureRun) baoExec(ctx context.Context, node raftNode, command ...string) ([]byte, int, error) {
-	args := []string{
+	args := make([]string, 0, 6+len(command))
+	args = append(args,
 		"exec",
 		"-e", "BAO_ADDR=http://127.0.0.1:8200",
-		"-e", "BAO_TOKEN=" + fixtureAdminToken,
+		"-e", "BAO_TOKEN="+fixtureAdminToken,
 		node.Container,
-	}
+	)
 	args = append(args, command...)
-	return combined(ctx, "docker", args...)
+	return dockerCombined(ctx, args...)
 }
 
 func (r *captureRun) captureMetrics(ctx context.Context, prefix string, port int) error {
@@ -1080,7 +1073,7 @@ func captureMetricsFromPort(ctx context.Context, label string, port int, token, 
 }
 
 func (r *captureRun) captureAuditLog(ctx context.Context, container, prefix string) error {
-	out, _, err := combined(ctx, "docker", "exec", container, "sh", "-c", "cat /tmp/openbao-audit.jsonl")
+	out, _, err := dockerCombined(ctx, "exec", container, "sh", "-c", "cat /tmp/openbao-audit.jsonl")
 	if err != nil {
 		return fmt.Errorf("capture audit log for %s: %w", prefix, err)
 	}
@@ -1088,7 +1081,7 @@ func (r *captureRun) captureAuditLog(ctx context.Context, container, prefix stri
 }
 
 func (r *captureRun) captureRaftAuditLog(ctx context.Context, node raftNode, prefix string) error {
-	out, _, err := combined(ctx, "docker", "exec", node.Container, "sh", "-c", "cat /tmp/openbao-audit.jsonl")
+	out, _, err := dockerCombined(ctx, "exec", node.Container, "sh", "-c", "cat /tmp/openbao-audit.jsonl")
 	if err != nil {
 		return fmt.Errorf("capture Raft audit log for %s: %w", prefix, err)
 	}
@@ -1097,10 +1090,10 @@ func (r *captureRun) captureRaftAuditLog(ctx context.Context, node raftNode, pre
 
 func (r *captureRun) cleanup(ctx context.Context) {
 	for _, container := range r.containers {
-		_, _, _ = combined(ctx, "docker", "rm", "-f", container)
+		_, _, _ = dockerCombined(ctx, "rm", "-f", container)
 	}
 	for _, network := range r.networks {
-		_, _, _ = combined(ctx, "docker", "network", "rm", network)
+		_, _, _ = dockerCombined(ctx, "network", "rm", network)
 	}
 	for _, dir := range r.tempDirs {
 		_ = os.RemoveAll(dir)

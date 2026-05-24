@@ -15,9 +15,9 @@ import (
 
 func TestBundleIsDeterministic(t *testing.T) {
 	root := t.TempDir()
-	mustWriteFile(t, filepath.Join(root, "README.md"), "OpenBao observability\n", 0o644)
-	mustWriteFile(t, filepath.Join(root, "contracts", "metrics.yaml"), "metrics: []\n", 0o644)
-	mustWriteFile(t, filepath.Join(root, "generated", "grafana", "overview.json"), "{}\n", 0o644)
+	mustWriteFile(t, filepath.Join(root, "README.md"), "OpenBao observability\n")
+	mustWriteFile(t, filepath.Join(root, "contracts", "metrics.yaml"), "metrics: []\n")
+	mustWriteFile(t, filepath.Join(root, "generated", "grafana", "overview.json"), "{}\n")
 
 	oldTime := time.Unix(42, 0)
 	if err := os.Chtimes(filepath.Join(root, "README.md"), oldTime, oldTime); err != nil {
@@ -81,8 +81,8 @@ func TestBundleRejectsUnsafeVersion(t *testing.T) {
 
 func TestChecksumsWritesSortedSHA256File(t *testing.T) {
 	dir := t.TempDir()
-	mustWriteFile(t, filepath.Join(dir, "z.txt"), "z\n", 0o644)
-	mustWriteFile(t, filepath.Join(dir, "a.txt"), "a\n", 0o644)
+	mustWriteFile(t, filepath.Join(dir, "z.txt"), "z\n")
+	mustWriteFile(t, filepath.Join(dir, "a.txt"), "a\n")
 
 	output := filepath.Join(dir, "checksums.txt")
 	if err := Checksums(ChecksumOptions{Directory: dir, OutputPath: output}); err != nil {
@@ -105,12 +105,12 @@ func TestChecksumsWritesSortedSHA256File(t *testing.T) {
 	}
 }
 
-func mustWriteFile(t *testing.T, path, content string, mode os.FileMode) {
+func mustWriteFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatalf("create parent directory: %v", err)
 	}
-	if err := os.WriteFile(path, []byte(content), mode); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("write file %s: %v", path, err)
 	}
 }

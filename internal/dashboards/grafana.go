@@ -216,7 +216,7 @@ func buildGrafanaVariables(variables []contracts.DashboardVariable) []grafanaVar
 			Type:        variable.Type,
 		}
 
-		if variable.Type == "custom" {
+		if variable.Type == dashboardVariableCustom {
 			grafanaVariable.Query = strings.Join(variable.Options, ",")
 			grafanaVariable.Options = make([]grafanaVariableOption, 0, len(variable.Options))
 			for _, option := range variable.Options {
@@ -270,7 +270,7 @@ func (d grafanaDashboard) variableDefaults() map[string]string {
 }
 
 func datasourceRef(contract contracts.DashboardContract, name string) grafanaDatasourceRef {
-	if name == "logs" {
+	if name == dashboardSignalLogs {
 		return grafanaDatasourceRef{
 			Type: contract.Datasources.Logs.Type,
 			UID:  contract.Datasources.Logs.UID,
@@ -305,7 +305,7 @@ func fieldConfig(unit string) grafanaFieldConfig {
 
 func panelOptions(panelType string) map[string]any {
 	switch panelType {
-	case "logs":
+	case dashboardSignalLogs:
 		return map[string]any{
 			"dedupStrategy":      "none",
 			"enableLogDetails":   true,
@@ -351,7 +351,7 @@ func target(panel contracts.DashboardPanel, datasource grafanaDatasourceRef, ref
 		Expr:       panel.Expression,
 		RefID:      refID,
 	}
-	if panel.Signal == "metrics" {
+	if panel.Signal == dashboardSignalMetrics {
 		result.Format = "time_series"
 		result.LegendFormat = panel.Title
 		if panel.Legend != "" {

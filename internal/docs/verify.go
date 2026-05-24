@@ -42,7 +42,7 @@ func Verify(opts VerifyOptions) error {
 		return err
 	}
 
-	var issues issueList
+	issues := make(issueList, 0, 4)
 	for _, path := range entries {
 		fileIssues, err := verifyFile(opts.RepositoryRoot, opts.DocsRoot, path)
 		if err != nil {
@@ -116,7 +116,7 @@ func verifyFile(repoRoot, docsRoot, path string) (issueList, error) {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
 
-	var issues issueList
+	issues := make(issueList, 0, 4)
 	issues = append(issues, verifyFilename(repoRoot, path)...)
 	issues = append(issues, verifyStructure(rel, path, lines)...)
 	issues = append(issues, verifyStyle(rel, lines)...)

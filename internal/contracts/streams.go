@@ -70,7 +70,7 @@ func VerifyStreamContract(opts VerifyStreamOptions) error {
 			return err
 		}
 		for _, alert := range alertContract.Alerts {
-			if alert.Type != "loki" {
+			if alert.Type != alertTypeLoki {
 				continue
 			}
 			if err := contract.ValidateLogExpression(alert.Expression); err != nil {
@@ -85,7 +85,7 @@ func VerifyStreamContract(opts VerifyStreamOptions) error {
 			return err
 		}
 		for _, panel := range dashboardContract.Panels {
-			if panel.Signal != "logs" {
+			if panel.Signal != dashboardSignalLogs {
 				continue
 			}
 			if err := contract.ValidateLogExpression(panel.Expression); err != nil {

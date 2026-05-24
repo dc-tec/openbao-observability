@@ -18,8 +18,8 @@ func requireCommand(name string) error {
 	return nil
 }
 
-func combined(ctx context.Context, name string, args ...string) ([]byte, int, error) {
-	cmd := exec.CommandContext(ctx, name, args...)
+func dockerCombined(ctx context.Context, args ...string) ([]byte, int, error) {
+	cmd := exec.CommandContext(ctx, "docker", args...)
 	out, err := cmd.CombinedOutput()
 	if err == nil {
 		return out, 0, nil

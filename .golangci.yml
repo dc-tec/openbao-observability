@@ -10,15 +10,20 @@ linters:
   enable:
     - bodyclose
     - copyloopvar
+    - dupl
     - errcheck
     - forbidigo
+    - goconst
     - gosec
     - govet
     - ineffassign
     - misspell
+    - nakedret
+    - prealloc
     - revive
     - staticcheck
     - unconvert
+    - unparam
     - unused
 
   settings:

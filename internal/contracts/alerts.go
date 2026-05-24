@@ -100,7 +100,7 @@ func (c AlertContract) DefaultSourcePrefix() string {
 	if c.SourcePrefix != "" {
 		return c.SourcePrefix
 	}
-	return "vault"
+	return defaultSourcePrefix
 }
 
 func (c AlertContract) ValidateExpressions(sourcePrefix string) error {
@@ -108,11 +108,11 @@ func (c AlertContract) ValidateExpressions(sourcePrefix string) error {
 	for _, alert := range c.Alerts {
 		expr := c.RenderExpression(alert.Expression, sourcePrefix)
 		switch alert.Type {
-		case "prometheus":
+		case alertTypePrometheus:
 			if _, err := promQLParser.ParseExpr(expr); err != nil {
 				return fmt.Errorf("parse PromQL for alert %s: %w", alert.ID, err)
 			}
-		case "loki":
+		case alertTypeLoki:
 			if !strings.Contains(expr, "{") || !strings.Contains(expr, "}") {
 				return fmt.Errorf("loki alert %s expression must include a label selector", alert.ID)
 			}

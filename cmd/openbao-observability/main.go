@@ -19,7 +19,11 @@ import (
 	"github.com/dc-tec/openbao-observability/internal/rules"
 )
 
-const defaultOpenBAOVersion = "2.5.4"
+const (
+	defaultOpenBAOVersion = "2.5.4"
+	helpFlag              = "--help"
+	helpCommand           = "help"
+)
 
 func main() {
 	if err := run(context.Background(), os.Args[1:]); err != nil {
@@ -44,7 +48,7 @@ func run(ctx context.Context, args []string) error {
 		return runRelease(args[1:])
 	case "validate":
 		return runValidate(ctx, args[1:])
-	case "-h", "--help", "help":
+	case "-h", helpFlag, helpCommand:
 		return usage()
 	default:
 		return fmt.Errorf("unknown command %q\n\n%s", args[0], usageText())
@@ -67,7 +71,7 @@ func runContracts(args []string) error {
 		return runContractsVerifyRepository(args[1:])
 	case "verify-streams":
 		return runContractsVerifyStreams(args[1:])
-	case "-h", "--help", "help":
+	case "-h", helpFlag, helpCommand:
 		return contractsUsage()
 	default:
 		return fmt.Errorf("unknown contracts command %q\n\n%s", args[0], contractsUsageText())
@@ -86,7 +90,7 @@ func runFixtures(ctx context.Context, args []string) error {
 		return runFixturesScenario(ctx, args[1:])
 	case "verify":
 		return runFixturesVerify(args[1:])
-	case "-h", "--help", "help":
+	case "-h", helpFlag, helpCommand:
 		return fixturesUsage()
 	default:
 		return fmt.Errorf("unknown fixtures command %q\n\n%s", args[0], fixturesUsageText())
@@ -107,7 +111,7 @@ func runGenerate(args []string) error {
 		return runGenerateGrafanaDashboard(args[1:])
 	case "prometheus-rules":
 		return runGeneratePrometheusRules(args[1:])
-	case "-h", "--help", "help":
+	case "-h", helpFlag, helpCommand:
 		return generateUsage()
 	default:
 		return fmt.Errorf("unknown generate command %q\n\n%s", args[0], generateUsageText())
@@ -124,7 +128,7 @@ func runRelease(args []string) error {
 		return runReleaseBundle(args[1:])
 	case "checksums":
 		return runReleaseChecksums(args[1:])
-	case "-h", "--help", "help":
+	case "-h", helpFlag, helpCommand:
 		return releaseUsage()
 	default:
 		return fmt.Errorf("unknown release command %q\n\n%s", args[0], releaseUsageText())
@@ -143,7 +147,7 @@ func runValidate(ctx context.Context, args []string) error {
 		return runValidateDocs(args[1:])
 	case "site-links":
 		return runValidateSiteLinks(args[1:])
-	case "-h", "--help", "help":
+	case "-h", helpFlag, helpCommand:
 		return validateUsage()
 	default:
 		return fmt.Errorf("unknown validate command %q\n\n%s", args[0], validateUsageText())

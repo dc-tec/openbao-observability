@@ -264,17 +264,17 @@ func verifyGeneratedDashboard(root, contractPath string, contract *DashboardCont
 				return fmt.Errorf("generated dashboard %s panel %s target datasource %s/%s does not match contract %s/%s", relPath(root, generatedPath), panel.ID, target.Datasource.Type, target.Datasource.UID, expectedDatasource.Type, expectedDatasource.UID)
 			}
 			switch panel.Signal {
-			case "metrics":
+			case dashboardSignalMetrics:
 				if err := validatePromQLLabelSafety(contract.ExpressionWithDefaultVariables(target.Expr), streamContract.ForbiddenLabels); err != nil {
 					return fmt.Errorf("generated dashboard %s panel %s target labels: %w", relPath(root, generatedPath), panel.ID, err)
 				}
-			case "logs":
+			case dashboardSignalLogs:
 				if err := streamContract.ValidateLogExpression(target.Expr); err != nil {
 					return fmt.Errorf("generated dashboard %s panel %s target labels: %w", relPath(root, generatedPath), panel.ID, err)
 				}
 			}
 		}
-		if panel.Signal == "metrics" {
+		if panel.Signal == dashboardSignalMetrics {
 			for _, ruleName := range recordingRuleReferences(panel.Expression) {
 				if !recordingRules[ruleName] {
 					return fmt.Errorf("dashboard contract %s panel %s references recording rule %s, but it is not generated", relPath(root, contractPath), panel.ID, ruleName)
@@ -307,9 +307,9 @@ func verifyGeneratedDashboardVariables(root, contractPath string, contract *Dash
 
 func contractDatasource(contract *DashboardContract, name string) (DashboardDatasource, error) {
 	switch name {
-	case "metrics":
+	case dashboardSignalMetrics:
 		return contract.Datasources.Metrics, nil
-	case "logs":
+	case dashboardSignalLogs:
 		return contract.Datasources.Logs, nil
 	default:
 		return DashboardDatasource{}, fmt.Errorf("unsupported datasource %q", name)
@@ -337,12 +337,12 @@ func verifyGeneratedAlerts(root string, alertContractPaths []string, streamContr
 		}
 		for _, alert := range contract.Alerts {
 			switch alert.Type {
-			case "prometheus":
+			case alertTypePrometheus:
 				if previous, ok := expectedPrometheusAlerts[alert.ID]; ok {
 					return fmt.Errorf("prometheus alert %s is defined in both %s and %s", alert.ID, previous, relPath(root, contractPath))
 				}
 				expectedPrometheusAlerts[alert.ID] = relPath(root, contractPath)
-			case "loki":
+			case alertTypeLoki:
 				if previous, ok := expectedLokiAlerts[alert.ID]; ok {
 					return fmt.Errorf("loki alert %s is defined in both %s and %s", alert.ID, previous, relPath(root, contractPath))
 				}
@@ -381,9 +381,9 @@ func validateAlertContractLabelSafety(source string, contract *AlertContract, al
 		}
 	}
 	switch alert.Type {
-	case "prometheus":
+	case alertTypePrometheus:
 		return validatePromQLLabelSafety(contract.RenderExpression(alert.Expression, contract.DefaultSourcePrefix()), streamContract.ForbiddenLabels)
-	case "loki":
+	case alertTypeLoki:
 		return streamContract.ValidateLogExpression(alert.Expression)
 	default:
 		return nil
@@ -392,7 +392,7 @@ func validateAlertContractLabelSafety(source string, contract *AlertContract, al
 
 func validateDashboardContractLabelSafety(source string, contract *DashboardContract, forbiddenLabels []string) error {
 	for _, panel := range contract.Panels {
-		if panel.Signal != "metrics" {
+		if panel.Signal != dashboardSignalMetrics {
 			continue
 		}
 		if err := validatePromQLLabelSafety(contract.ExpressionWithDefaultVariables(panel.Expression), forbiddenLabels); err != nil {
@@ -470,7 +470,7 @@ func validateGeneratedDashboardSchema(root, generatedPath string, dashboard *gen
 		if variable.Current.Value == "" && variable.Current.Text == "" {
 			return fmt.Errorf("generated dashboard %s variable %s is missing current value", source, variable.Name)
 		}
-		if variable.Type == "custom" && len(variable.Options) == 0 {
+		if variable.Type == dashboardVariableTypeList && len(variable.Options) == 0 {
 			return fmt.Errorf("generated dashboard %s custom variable %s has no options", source, variable.Name)
 		}
 	}
@@ -515,15 +515,15 @@ func validateGeneratedDashboardSchema(root, generatedPath string, dashboard *gen
 				return err
 			}
 			expression := target.Expr
-			if target.Datasource.Type == "prometheus" {
+			if target.Datasource.Type == alertTypePrometheus {
 				expression = InterpolateDashboardVariables(target.Expr, generatedDashboardVariableDefaults(dashboard))
 			}
 			switch target.Datasource.Type {
-			case "prometheus":
+			case alertTypePrometheus:
 				if err := validatePromQLLabelSafety(expression, streamContract.ForbiddenLabels); err != nil {
 					return fmt.Errorf("generated dashboard %s panel %d target %s labels: %w", source, panel.ID, target.RefID, err)
 				}
-			case "loki":
+			case alertTypeLoki:
 				if err := streamContract.ValidateLogExpression(target.Expr); err != nil {
 					return fmt.Errorf("generated dashboard %s panel %d target %s labels: %w", source, panel.ID, target.RefID, err)
 				}
@@ -661,10 +661,10 @@ func verifyPrefixVariants(root string, streamContract *StreamContract) error {
 			if err := verifySameFile(root, defaultPath, vaultPath); err != nil {
 				return err
 			}
-			if err := verifyRuleFileSourcePrefix(root, defaultPath, artifact.spec, artifact.loki, "vault", streamContract); err != nil {
+			if err := verifyRuleFileSourcePrefix(root, defaultPath, artifact.spec, artifact.loki, defaultSourcePrefix, streamContract); err != nil {
 				return err
 			}
-			if err := verifyRuleFileSourcePrefix(root, vaultPath, artifact.spec, artifact.loki, "vault", streamContract); err != nil {
+			if err := verifyRuleFileSourcePrefix(root, vaultPath, artifact.spec, artifact.loki, defaultSourcePrefix, streamContract); err != nil {
 				return err
 			}
 			if err := verifyRuleFileSourcePrefix(root, openbaoPath, artifact.spec, artifact.loki, "openbao", streamContract); err != nil {
@@ -709,7 +709,7 @@ func verifyRuleFileSourcePrefix(root, filePath string, specGroups, loki bool, ex
 			if expectedPrefix == "openbao" && rawVaultMetricPattern.MatchString(rule.Expr) {
 				return fmt.Errorf("generated rule %s in %s uses vault_* metric under openbao-prefix profile", generatedRuleName(rule), relPath(root, filePath))
 			}
-			if expectedPrefix == "vault" && hasDisallowedRawOpenBAOMetric(rule.Expr) {
+			if expectedPrefix == defaultSourcePrefix && hasDisallowedRawOpenBAOMetric(rule.Expr) {
 				return fmt.Errorf("generated rule %s in %s uses openbao_* metric under vault-prefix profile", generatedRuleName(rule), relPath(root, filePath))
 			}
 		}

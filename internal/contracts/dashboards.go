@@ -120,11 +120,11 @@ func (c DashboardContract) ValidateExpressions() error {
 	for _, panel := range c.Panels {
 		expression := c.ExpressionWithDefaultVariables(panel.Expression)
 		switch panel.Signal {
-		case "metrics":
+		case dashboardSignalMetrics:
 			if _, err := promQLParser.ParseExpr(expression); err != nil {
 				return fmt.Errorf("parse PromQL for dashboard panel %s: %w", panel.ID, err)
 			}
-		case "logs":
+		case dashboardSignalLogs:
 			if !strings.Contains(expression, "{") || !strings.Contains(expression, "}") {
 				return fmt.Errorf("log panel %s expression must include a label selector", panel.ID)
 			}
@@ -202,14 +202,14 @@ func (c DashboardContract) validateShape(path string) error {
 			return fmt.Errorf("dashboard variable %s is missing type", variable.Name)
 		}
 		switch variable.Type {
-		case "custom", "textbox":
+		case dashboardVariableTypeList, dashboardVariableTypeText:
 		default:
 			return fmt.Errorf("dashboard variable %s has unsupported type %q", variable.Name, variable.Type)
 		}
 		if variable.Default == "" {
 			return fmt.Errorf("dashboard variable %s is missing default", variable.Name)
 		}
-		if variable.Type == "custom" {
+		if variable.Type == dashboardVariableTypeList {
 			if len(variable.Options) == 0 {
 				return fmt.Errorf("dashboard variable %s has no options", variable.Name)
 			}
@@ -235,17 +235,17 @@ func (c DashboardContract) validateShape(path string) error {
 			return fmt.Errorf("dashboard panel %s is missing type", panel.ID)
 		}
 		switch panel.Type {
-		case "logs", "stat", "timeseries":
+		case dashboardSignalLogs, dashboardPanelTypeStat, dashboardPanelTypeSeries:
 		default:
 			return fmt.Errorf("dashboard panel %s has unsupported type %q", panel.ID, panel.Type)
 		}
-		if panel.Datasource != "metrics" && panel.Datasource != "logs" {
+		if panel.Datasource != dashboardSignalMetrics && panel.Datasource != dashboardSignalLogs {
 			return fmt.Errorf("dashboard panel %s has unsupported datasource %q", panel.ID, panel.Datasource)
 		}
-		if panel.Signal == "metrics" && panel.Datasource != "metrics" {
+		if panel.Signal == dashboardSignalMetrics && panel.Datasource != dashboardSignalMetrics {
 			return fmt.Errorf("dashboard panel %s uses metrics signal with datasource %q", panel.ID, panel.Datasource)
 		}
-		if panel.Signal == "logs" && panel.Datasource != "logs" {
+		if panel.Signal == dashboardSignalLogs && panel.Datasource != dashboardSignalLogs {
 			return fmt.Errorf("dashboard panel %s uses logs signal with datasource %q", panel.ID, panel.Datasource)
 		}
 		if panel.Expression == "" {

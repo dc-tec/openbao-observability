@@ -77,12 +77,12 @@ func ValidateDashboardQueries(ctx context.Context, opts QueryValidationOptions) 
 		seen[key] = true
 
 		switch query.Signal {
-		case "metrics":
+		case dashboardSignalMetrics:
 			metricQueries++
 			if err := validatePrometheusQuery(ctx, prometheusAPI, query, window, opts.Timeout); err != nil {
 				return err
 			}
-		case "logs":
+		case dashboardSignalLogs:
 			logQueries++
 			if err := validateLokiQuery(ctx, client, opts.LokiURL, query, opts.Range, opts.Step); err != nil {
 				return err
@@ -230,10 +230,10 @@ func loadGeneratedDashboard(path string) (*grafanaDashboard, error) {
 
 func signalFromDatasource(datasourceType string) string {
 	switch datasourceType {
-	case "prometheus":
-		return "metrics"
-	case "loki":
-		return "logs"
+	case datasourceTypePrometheus:
+		return dashboardSignalMetrics
+	case datasourceTypeLoki:
+		return dashboardSignalLogs
 	default:
 		return ""
 	}
