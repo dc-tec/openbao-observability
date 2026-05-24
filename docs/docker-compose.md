@@ -89,8 +89,10 @@ an `initialize` block. The self-initialization creates:
 - the `userpass` auth method,
 - the `approle` auth method,
 - a KV v2 `secret/` mount,
+- a KV v1 `kv-v1/` mount,
 - a database secrets `database/` mount backed by the local PostgreSQL service,
 - a Transit `transit/` mount and local `payments` key,
+- a PKI `pki/` mount, local root CA, and `observability-dot-local` role,
 - a local `compose-admin` policy,
 - local `app-reader`, `app-writer`, and `identity-auditor` policies,
 - a local `openbao-metrics` policy,
@@ -102,7 +104,7 @@ an `initialize` block. The self-initialization creates:
 - a sample `secret/data/observability/audit-canary` secret,
 - a sample `secret/data/apps/payments/api` secret, and
 - a deterministic local audit canary token named
-  `openbao-observability-audit-canary-token`,
+  `openbao-observability-audit-canary-token`, and
 - a deterministic local metrics token named
   `openbao-observability-metrics-token`.
 
@@ -177,10 +179,11 @@ known audited request for the `OpenBaoAuditCanaryMissing` alert.
    make fixtures-scenarios
    ```
 
-   The scenario performs userpass and AppRole logins, KV activity, identity
-   activity, token create/lookup/renew/revoke operations, database credential
-   lease lookup/renew/revoke operations, Transit encrypt/decrypt operations,
-   and expected denied requests.
+   The scenario performs userpass and AppRole logins, KV v1 and KV v2
+   activity, identity activity, token create/lookup/renew/revoke operations,
+   database credential lease lookup/renew/revoke operations, Transit
+   encrypt/decrypt operations, PKI certificate issue/revoke operations, and
+   expected denied requests.
 
 6. Check Raft peers.
 
@@ -351,7 +354,7 @@ Use this query when you need token and lease lifecycle audit events:
 Use this query when you need secret engine and mount activity:
 
 ```logql
-{log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"(secret|database|transit|pki|sys/mounts)(/.*)?"
+{log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"(secret|kv-v1|database|transit|pki|sys/mounts)(/.*)?"
 ```
 
 Use this query when you need the audit canary event:

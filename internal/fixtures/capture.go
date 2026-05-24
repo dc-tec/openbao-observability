@@ -442,6 +442,20 @@ initialize "fixture-foundation" {
     }
   }
 
+  request "enable-kv-v1-secrets" {
+    operation = "update"
+    path      = "sys/mounts/kv-v1"
+
+    data = {
+      type        = "kv"
+      description = "Fixture KV v1 engine for observability reference captures."
+
+      options = {
+        version = "1"
+      }
+    }
+  }
+
   request "enable-database-secrets" {
     operation = "update"
     path      = "sys/mounts/database"
@@ -459,6 +473,38 @@ initialize "fixture-foundation" {
     data = {
       type        = "transit"
       description = "Fixture Transit engine for observability reference captures."
+    }
+  }
+
+  request "enable-pki-secrets" {
+    operation = "update"
+    path      = "sys/mounts/pki"
+
+    data = {
+      type        = "pki"
+      description = "Fixture PKI engine for observability reference captures."
+    }
+  }
+
+  request "generate-pki-root" {
+    operation = "update"
+    path      = "pki/root/generate/internal"
+
+    data = {
+      common_name = "OpenBao Observability Fixture Root CA"
+      ttl         = "24h"
+    }
+  }
+
+  request "create-pki-observability-role" {
+    operation = "update"
+    path      = "pki/roles/observability-dot-local"
+
+    data = {
+      allowed_domains    = ["observability.local"]
+      allow_bare_domains = true
+      allow_subdomains   = true
+      max_ttl            = "1h"
     }
   }
 

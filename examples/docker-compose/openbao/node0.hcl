@@ -82,6 +82,20 @@ initialize "compose-foundation" {
     }
   }
 
+  request "enable-kv-v1-secrets" {
+    operation = "update"
+    path      = "sys/mounts/kv-v1"
+
+    data = {
+      type        = "kv"
+      description = "Local Compose KV v1 engine for observability testing."
+
+      options = {
+        version = "1"
+      }
+    }
+  }
+
   request "enable-database-secrets" {
     operation = "update"
     path      = "sys/mounts/database"
@@ -99,6 +113,38 @@ initialize "compose-foundation" {
     data = {
       type        = "transit"
       description = "Local Compose Transit engine for observability testing."
+    }
+  }
+
+  request "enable-pki-secrets" {
+    operation = "update"
+    path      = "sys/mounts/pki"
+
+    data = {
+      type        = "pki"
+      description = "Local Compose PKI engine for observability testing."
+    }
+  }
+
+  request "generate-pki-root" {
+    operation = "update"
+    path      = "pki/root/generate/internal"
+
+    data = {
+      common_name = "OpenBao Observability Compose Root CA"
+      ttl         = "24h"
+    }
+  }
+
+  request "create-pki-observability-role" {
+    operation = "update"
+    path      = "pki/roles/observability-dot-local"
+
+    data = {
+      allowed_domains    = ["observability.local"]
+      allow_bare_domains = true
+      allow_subdomains   = true
+      max_ttl            = "1h"
     }
   }
 

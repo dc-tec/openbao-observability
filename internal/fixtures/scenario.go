@@ -158,7 +158,13 @@ path "secret/metadata/apps/payments/*" {
 	if err := r.exerciseDatabaseLease(ctx); err != nil {
 		return err
 	}
+	if err := r.exerciseKVv1(ctx); err != nil {
+		return err
+	}
 	if err := r.exerciseTransit(ctx); err != nil {
+		return err
+	}
+	if err := r.exercisePKI(ctx); err != nil {
 		return err
 	}
 	if err := r.exerciseExpectedFailures(ctx); err != nil {
@@ -237,6 +243,8 @@ func (r *scenarioRunner) runOperation(ctx context.Context, step scenarioOperatio
 		_, err = r.client.Logical().WriteWithContext(ctx, step.path, step.data)
 	case "list":
 		_, err = r.client.Logical().ListWithContext(ctx, step.path)
+	case "delete":
+		_, err = r.client.Logical().DeleteWithContext(ctx, step.path)
 	default:
 		return fmt.Errorf("unsupported scenario operation %q for %s", step.operation, step.name)
 	}
@@ -379,6 +387,31 @@ func (r *scenarioRunner) exerciseDatabaseLease(ctx context.Context) error {
 	return nil
 }
 
+func (r *scenarioRunner) exerciseKVv1(ctx context.Context) error {
+	if err := r.ensureMount(ctx, "kv-v1", "kv", "Scenario KV v1 engine for observability reference captures.", map[string]any{
+		"version": "1",
+	}); err != nil {
+		return err
+	}
+
+	steps := []scenarioOperation{
+		{name: "write-kv-v1", path: "kv-v1/apps/payments/config", operation: "write", data: map[string]any{
+			"owner":    "payments",
+			"scenario": "kv-v1-fixture",
+			"tier":     "demo",
+		}},
+		{name: "read-kv-v1", path: "kv-v1/apps/payments/config", operation: "read"},
+		{name: "list-kv-v1", path: "kv-v1/apps/payments", operation: "list"},
+		{name: "delete-kv-v1", path: "kv-v1/apps/payments/config", operation: "delete"},
+	}
+	for _, step := range steps {
+		if err := r.runOperation(ctx, step); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *scenarioRunner) exerciseTransit(ctx context.Context) error {
 	if err := r.ensureTransitMount(ctx); err != nil {
 		return err
@@ -448,29 +481,83 @@ func (r *scenarioRunner) exerciseTransit(ctx context.Context) error {
 	return nil
 }
 
-func (r *scenarioRunner) ensureTransitMount(ctx context.Context) error {
-	mounts, err := r.client.Logical().ReadWithContext(ctx, "sys/mounts")
-	if err != nil {
-		r.addStep("ensure-transit-mount", "sys/mounts", "error", err.Error())
-		return fmt.Errorf("read mounts before transit scenario: %w", err)
+func (r *scenarioRunner) exercisePKI(ctx context.Context) error {
+	if err := r.ensureMount(ctx, "pki", "pki", "Scenario PKI engine for observability reference captures.", nil); err != nil {
+		return err
 	}
-	if mounts == nil || mounts.Data == nil {
-		err := errors.New("sys/mounts response did not include data")
-		r.addStep("ensure-transit-mount", "sys/mounts", "error", err.Error())
+	if err := r.ensurePKIRoot(ctx); err != nil {
 		return err
 	}
 
-	if _, ok := mounts.Data["transit/"]; !ok {
-		if _, err := r.client.Logical().WriteWithContext(ctx, "sys/mounts/transit", map[string]any{
-			"type":        "transit",
-			"description": "Scenario Transit engine for observability reference captures.",
-		}); err != nil {
-			r.addStep("ensure-transit-mount", "sys/mounts/transit", "error", err.Error())
-			return fmt.Errorf("enable transit mount: %w", err)
-		}
-		r.addStep("ensure-transit-mount", "sys/mounts/transit", "success", "")
-	} else {
-		r.addStep("ensure-transit-mount", "sys/mounts", "success", "")
+	if _, err := r.client.Logical().WriteWithContext(ctx, "pki/roles/observability-dot-local", map[string]any{
+		"allowed_domains":    []string{"observability.local"},
+		"allow_bare_domains": true,
+		"allow_subdomains":   true,
+		"max_ttl":            "1h",
+	}); err != nil {
+		r.addStep("write-pki-role", "pki/roles/observability-dot-local", "error", err.Error())
+		return fmt.Errorf("write PKI role: %w", err)
+	}
+	r.addStep("write-pki-role", "pki/roles/observability-dot-local", "success", "")
+
+	issued, err := r.client.Logical().WriteWithContext(ctx, "pki/issue/observability-dot-local", map[string]any{
+		"common_name": "payments.observability.local",
+		"ttl":         "30m",
+	})
+	if err != nil {
+		r.addStep("issue-pki-certificate", "pki/issue/observability-dot-local", "error", err.Error())
+		return fmt.Errorf("issue PKI certificate: %w", err)
+	}
+	if issued == nil || issued.Data == nil {
+		err := errors.New("PKI issue response did not include data")
+		r.addStep("issue-pki-certificate", "pki/issue/observability-dot-local", "error", err.Error())
+		return err
+	}
+	serial, ok := issued.Data["serial_number"].(string)
+	if !ok || serial == "" {
+		err := errors.New("PKI issue response did not include data.serial_number")
+		r.addStep("issue-pki-certificate", "pki/issue/observability-dot-local", "error", err.Error())
+		return err
+	}
+	r.addStep("issue-pki-certificate", "pki/issue/observability-dot-local", "success", "serial_number_present")
+
+	if _, err := r.client.Logical().WriteWithContext(ctx, "pki/revoke", map[string]any{
+		"serial_number": serial,
+	}); err != nil {
+		r.addStep("revoke-pki-certificate", "pki/revoke", "error", err.Error())
+		return fmt.Errorf("revoke PKI certificate: %w", err)
+	}
+	r.addStep("revoke-pki-certificate", "pki/revoke", "success", "")
+	return nil
+}
+
+func (r *scenarioRunner) ensurePKIRoot(ctx context.Context) error {
+	cert, err := r.client.Logical().ReadWithContext(ctx, "pki/cert/ca")
+	if err == nil && cert != nil {
+		r.addStep("ensure-pki-root", "pki/cert/ca", "success", "")
+		return nil
+	}
+
+	generated, err := r.client.Logical().WriteWithContext(ctx, "pki/root/generate/internal", map[string]any{
+		"common_name": "OpenBao Observability Fixture Root CA",
+		"ttl":         "24h",
+	})
+	if err != nil {
+		r.addStep("ensure-pki-root", "pki/root/generate/internal", "error", err.Error())
+		return fmt.Errorf("generate PKI root: %w", err)
+	}
+	if generated == nil || generated.Data == nil {
+		err := errors.New("PKI root generation response did not include data")
+		r.addStep("ensure-pki-root", "pki/root/generate/internal", "error", err.Error())
+		return err
+	}
+	r.addStep("ensure-pki-root", "pki/root/generate/internal", "success", "")
+	return nil
+}
+
+func (r *scenarioRunner) ensureTransitMount(ctx context.Context) error {
+	if err := r.ensureMount(ctx, "transit", "transit", "Scenario Transit engine for observability reference captures.", nil); err != nil {
+		return err
 	}
 
 	key, err := r.client.Logical().ReadWithContext(ctx, "transit/keys/payments")
@@ -493,6 +580,40 @@ func (r *scenarioRunner) ensureTransitMount(ctx context.Context) error {
 		return fmt.Errorf("create transit key: %w", err)
 	}
 	r.addStep("ensure-transit-key", "transit/keys/payments", "success", "")
+	return nil
+}
+
+func (r *scenarioRunner) ensureMount(ctx context.Context, mountPath, engineType, description string, options map[string]any) error {
+	mounts, err := r.client.Logical().ReadWithContext(ctx, "sys/mounts")
+	if err != nil {
+		r.addStep("ensure-"+mountPath+"-mount", "sys/mounts", "error", err.Error())
+		return fmt.Errorf("read mounts before %s scenario: %w", mountPath, err)
+	}
+	if mounts == nil || mounts.Data == nil {
+		err := errors.New("sys/mounts response did not include data")
+		r.addStep("ensure-"+mountPath+"-mount", "sys/mounts", "error", err.Error())
+		return err
+	}
+
+	stepName := "ensure-" + mountPath + "-mount"
+	if _, ok := mounts.Data[mountPath+"/"]; ok {
+		r.addStep(stepName, "sys/mounts", "success", "")
+		return nil
+	}
+
+	data := map[string]any{
+		"type":        engineType,
+		"description": description,
+	}
+	if len(options) > 0 {
+		data["options"] = options
+	}
+	path := "sys/mounts/" + mountPath
+	if _, err := r.client.Logical().WriteWithContext(ctx, path, data); err != nil {
+		r.addStep(stepName, path, "error", err.Error())
+		return fmt.Errorf("enable %s mount: %w", mountPath, err)
+	}
+	r.addStep(stepName, path, "success", "")
 	return nil
 }
 

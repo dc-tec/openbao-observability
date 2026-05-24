@@ -14,7 +14,7 @@ The dashboard answers these questions:
 
 - Which secret engine events match the current filters?
 - Did mount table reads or mount lifecycle changes occur?
-- Did KV v2 data or metadata activity change?
+- Did KV v1 or KV v2 data and metadata activity change?
 - Did database credential, role, config, or root-rotation paths appear?
 - Did Transit cryptographic operation paths appear?
 - Did PKI role, issue, issuer, root, certificate, tidy, or revoke paths appear?
@@ -66,8 +66,8 @@ application access.
 
 ## How to read KV activity
 
-KV panels filter `secret/data/.*` and `secret/metadata/.*` paths, which match
-the reference stack's KV v2 mount path.
+KV panels filter `secret/data/.*`, `secret/metadata/.*`, and `kv-v1/.*` paths,
+which match the reference stack's KV v2 and KV v1 mount paths.
 
 KV path names can reveal business context. Keep request paths out of Loki
 labels and restrict dashboard access.
@@ -129,8 +129,8 @@ cardinality and metadata exposure tradeoff.
 
 ## Known limitations
 
-- The dashboard assumes default reference paths such as `secret`, `database`,
-  `transit`, and `pki`.
+- The dashboard assumes default reference paths such as `secret`, `kv-v1`,
+  `database`, `transit`, and `pki`.
 - Custom mount paths need filter updates or matching regular expressions.
 - The dashboard depends on Loki retention for `log_stream="openbao.audit"`.
 - It cannot show paths that bypass the audit system.
