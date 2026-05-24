@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dc-tec/openbao-observability/internal/compatibility"
 	"github.com/dc-tec/openbao-observability/internal/contracts"
 	dashboardgen "github.com/dc-tec/openbao-observability/internal/dashboards"
 	docverify "github.com/dc-tec/openbao-observability/internal/docs"
@@ -97,6 +98,8 @@ func runGenerate(args []string) error {
 	switch args[0] {
 	case "alert-rules":
 		return runGenerateAlertRules(args[1:])
+	case "compatibility-matrix":
+		return runGenerateCompatibilityMatrix(args[1:])
 	case "grafana-dashboard":
 		return runGenerateGrafanaDashboard(args[1:])
 	case "prometheus-rules":
@@ -301,6 +304,24 @@ func runGenerateAlertRules(args []string) error {
 	return rules.GenerateAlertRules(opts)
 }
 
+func runGenerateCompatibilityMatrix(args []string) error {
+	version := envString("OPENBAO_VERSION", defaultOpenBAOVersion)
+	defaultFixtureDir := filepath.Join("fixtures", "captured", "openbao-"+version)
+
+	fs := flag.NewFlagSet("generate compatibility-matrix", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := compatibility.MatrixOptions{}
+	fs.StringVar(&opts.ContractPath, "contract", filepath.Join("contracts", "metrics", "openbao-core.yaml"), "metric contract path")
+	fs.StringVar(&opts.FixtureDir, "fixtures", envString("FIXTURE_DIR", defaultFixtureDir), "fixture directory")
+	fs.StringVar(&opts.OutputPath, "output", filepath.Join("generated", "docs", "metric-compatibility-matrix.md"), "output compatibility matrix path")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	return compatibility.GenerateMatrix(opts)
+}
+
 func runGenerateGrafanaDashboard(args []string) error {
 	fs := flag.NewFlagSet("generate grafana-dashboard", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -465,6 +486,8 @@ commands:
   fixtures capture    capture OpenBao Docker fixtures
   fixtures scenario   run production-like fixture activity against OpenBao
   fixtures verify     verify captured OpenBao fixtures
+  generate compatibility-matrix
+                      generate metric fixture compatibility Markdown
   generate grafana-dashboard
                       generate Grafana dashboard JSON
   generate prometheus-rules
@@ -505,6 +528,7 @@ func validateUsage() error {
 func generateUsageText() string {
 	return `usage:
   openbao-observability generate alert-rules [flags]
+  openbao-observability generate compatibility-matrix [flags]
   openbao-observability generate grafana-dashboard [flags]
   openbao-observability generate prometheus-rules [flags]`
 }

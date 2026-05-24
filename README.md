@@ -19,8 +19,8 @@ directory.
 - Run `make contracts-verify` to validate metric contracts against fixtures.
 - Run `make docs-verify` to validate user-facing documentation style and
   internal links.
-- Run `make generate` to generate Prometheus rules, alert artifacts, and
-  Grafana dashboards.
+- Run `make generate` to generate Prometheus rules, alert artifacts, the
+  compatibility matrix, and Grafana dashboards.
 - Run `make validate-generated` to validate generated Prometheus rule files
   with `promtool`.
 - Run `make validate-dashboard-queries` against a running Compose stack to

@@ -97,6 +97,10 @@ generate:
 		--source-prefix "openbao" \
 		--output "generated/prometheusrules/openbao-prefix/openbao-recording-rules.yaml" \
 		--rule-output "generated/prometheus/openbao-prefix/openbao-recording-rules.yaml"
+	$(GO) run ./cmd/openbao-observability generate compatibility-matrix \
+		--contract "contracts/metrics/openbao-core.yaml" \
+		--fixtures "$(FIXTURE_DIR)" \
+		--output "generated/docs/metric-compatibility-matrix.md"
 	$(GO) run ./cmd/openbao-observability generate alert-rules \
 		--contract "contracts/alerts/critical.yaml" \
 		--prometheus-name "openbao-alerts" \
