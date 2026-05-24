@@ -33,6 +33,12 @@ openbao_runtime_num_goroutines 42
 	if !families.HasMetricWithLabel("openbao_core_unsealed", "cluster", "vault-cluster-test") {
 		t.Fatal("expected real cluster label series")
 	}
+	if !families.HasMetricWithLabelName("openbao_core_unsealed", "cluster") {
+		t.Fatal("expected cluster label name")
+	}
+	if families.HasMetricWithLabelName("openbao_runtime_num_goroutines", "cluster") {
+		t.Fatal("did not expect cluster label name on runtime metric")
+	}
 
 	expectedNames := []string{"openbao_core_unsealed", "openbao_runtime_num_goroutines"}
 	if got := families.Names(); !reflect.DeepEqual(got, expectedNames) {

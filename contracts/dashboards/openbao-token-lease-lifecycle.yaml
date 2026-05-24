@@ -1,0 +1,273 @@
+version: v0.1
+status: draft
+uid: openbao-token-lease-lifecycle
+title: OpenBao token and lease lifecycle
+refresh: 30s
+tags:
+  - generated
+  - leases
+  - openbao
+  - reference
+  - tokens
+timeRange:
+  from: now-1h
+  to: now
+datasources:
+  metrics:
+    type: prometheus
+    uid: prometheus
+  logs:
+    type: loki
+    uid: loki
+variables:
+  - name: auth_method
+    label: Auth method
+    type: textbox
+    default: .*
+  - name: request_id
+    label: Request ID
+    type: textbox
+    default: .*
+  - name: request_path
+    label: Request path
+    type: textbox
+    default: .*
+  - name: operation
+    label: Operation
+    type: custom
+    default: .*
+    options:
+      - .*
+      - read
+      - list
+      - create
+      - update
+      - delete
+  - name: node_id
+    label: Node
+    type: textbox
+    default: .*
+panels:
+  - id: token-count
+    title: Token count
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:token_count:max30m
+    unit: short
+    description: Shows the maximum token count observed over 30 minutes when OpenBao exposes the slow usage gauge.
+    grid:
+      x: 0
+      y: 0
+      w: 6
+      h: 4
+  - id: lease-count
+    title: Lease count
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:expire_num_leases:max
+    unit: short
+    description: Shows the maximum observed lease count.
+    grid:
+      x: 6
+      y: 0
+      w: 6
+      h: 4
+  - id: irrevocable-leases
+    title: Irrevocable leases
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:expire_num_irrevocable_leases:max
+    unit: short
+    description: Shows leases OpenBao reports it cannot automatically revoke.
+    grid:
+      x: 12
+      y: 0
+      w: 6
+      h: 4
+  - id: token-creations
+    title: Token creations
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:token_creation:increase15m
+    unit: short
+    description: Shows token creation events over 15 minutes.
+    grid:
+      x: 18
+      y: 0
+      w: 6
+      h: 4
+  - id: token-create-rate
+    title: Token create rate
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:token_create:rate5m
+    unit: ops
+    description: Shows token create operations per second over 5 minutes.
+    grid:
+      x: 0
+      y: 4
+      w: 6
+      h: 4
+  - id: token-lookup-rate
+    title: Token lookup rate
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:token_lookup:rate5m
+    unit: ops
+    description: Shows token lookup operations per second over 5 minutes.
+    grid:
+      x: 6
+      y: 4
+      w: 6
+      h: 4
+  - id: token-store-rate
+    title: Token store rate
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:token_store:rate5m
+    unit: ops
+    description: Shows token store operations per second over 5 minutes.
+    grid:
+      x: 12
+      y: 4
+      w: 6
+      h: 4
+  - id: token-revoke-tree-rate
+    title: Token revoke-tree rate
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:token_revoke_tree:rate5m
+    unit: ops
+    description: Shows token revoke-tree operations per second over 5 minutes.
+    grid:
+      x: 18
+      y: 4
+      w: 6
+      h: 4
+  - id: token-lease-inventory
+    title: Token and lease inventory
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: label_replace(openbao:token_count:max30m, "lifecycle_signal", "token count", "source_prefix", ".*") or label_replace(openbao:expire_num_leases:max, "lifecycle_signal", "lease count", "source_prefix", ".*") or label_replace(openbao:expire_num_irrevocable_leases:max, "lifecycle_signal", "irrevocable leases", "source_prefix", ".*")
+    legend: "{{lifecycle_signal}}"
+    unit: short
+    description: Shows token count, lease count, and irrevocable lease gauges.
+    grid:
+      x: 0
+      y: 8
+      w: 12
+      h: 8
+  - id: token-operation-rates
+    title: Token operation rates
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: label_replace(openbao:token_create:rate5m, "token_operation", "create", "source_prefix", ".*") or label_replace(openbao:token_lookup:rate5m, "token_operation", "lookup", "source_prefix", ".*") or label_replace(openbao:token_store:rate5m, "token_operation", "store", "source_prefix", ".*") or label_replace(openbao:token_revoke_tree:rate5m, "token_operation", "revoke tree", "source_prefix", ".*")
+    legend: "{{token_operation}}"
+    unit: ops
+    description: Shows token create, lookup, store, and revoke-tree operation rates.
+    grid:
+      x: 12
+      y: 8
+      w: 12
+      h: 8
+  - id: token-operation-latency
+    title: Token operation latency
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: label_replace(openbao:token_create:avg5m, "token_operation", "create", "source_prefix", ".*") or label_replace(openbao:token_lookup:avg5m, "token_operation", "lookup", "source_prefix", ".*") or label_replace(openbao:token_store:avg5m, "token_operation", "store", "source_prefix", ".*") or label_replace(openbao:token_revoke_tree:avg5m, "token_operation", "revoke tree", "source_prefix", ".*")
+    legend: "{{token_operation}}"
+    unit: ms
+    description: Shows average token create, lookup, store, and revoke-tree latency over 5 minutes.
+    grid:
+      x: 0
+      y: 16
+      w: 12
+      h: 8
+  - id: lease-operation-latency
+    title: Lease operation latency
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: label_replace(openbao:expire_revoke:avg5m, "lease_operation", "revoke", "source_prefix", ".*") or label_replace(openbao:expire_register_auth:avg5m, "lease_operation", "register auth", "source_prefix", ".*")
+    legend: "{{lease_operation}}"
+    unit: ms
+    description: Shows average lease revoke and auth lease registration latency over 5 minutes.
+    grid:
+      x: 12
+      y: 16
+      w: 12
+      h: 8
+  - id: token-creation-by-auth-method
+    title: Token creation by auth method
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: topk(10, openbao:token_creation_by_auth:increase15m{auth_method=~"${auth_method:raw}"})
+    legend: "{{auth_method}}"
+    unit: short
+    description: Shows token creation events by auth method over 15 minutes without grouping by mount point, policy, token accessor, or client identity.
+    grid:
+      x: 0
+      y: 24
+      w: 12
+      h: 8
+  - id: lease-revoke-rate
+    title: Lease revoke rate
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:expire_revoke:rate5m
+    unit: ops
+    description: Shows lease revoke operations per second over 5 minutes.
+    grid:
+      x: 12
+      y: 24
+      w: 12
+      h: 8
+  - id: token-lifecycle-audit-events
+    title: Token lifecycle audit events
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"auth/token/.*" | request_path=~"${request_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    description: Shows audited token lifecycle requests after applying the selected filters.
+    grid:
+      x: 0
+      y: 32
+      w: 12
+      h: 9
+  - id: lease-management-audit-events
+    title: Lease management audit events
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"sys/leases/.*" | request_path=~"${request_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    description: Shows audited lease lookup, revoke, and tidy requests after applying the selected filters.
+    grid:
+      x: 12
+      y: 32
+      w: 12
+      h: 9
+  - id: filtered-token-lease-stream
+    title: Filtered token and lease stream
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/token/.*|sys/leases/.*)" | request_path=~"${request_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    description: Shows the full token and lease audit stream after applying the selected filters.
+    grid:
+      x: 0
+      y: 41
+      w: 24
+      h: 9

@@ -54,7 +54,10 @@ stable across deployments.
 | Unsealed node count | `vault_core_unsealed` | `openbao_core_unsealed` | `openbao:core_unsealed:sum` |
 | Audit request failures | `vault_audit_log_request_failure` | `openbao_audit_log_request_failure` | `openbao:audit_log_request_failure:increase5m` |
 | Audit response failures | `vault_audit_log_response_failure` | `openbao_audit_log_response_failure` | `openbao:audit_log_response_failure:increase5m` |
+| Token count | `vault_token_count` | `openbao_token_count` | `openbao:token_count:max30m` |
+| Token creation | `vault_token_creation` | `openbao_token_creation` | `openbao:token_creation:increase15m` |
 | Lease count | `vault_expire_num_leases` | `openbao_expire_num_leases` | `openbao:expire_num_leases:max` |
+| Irrevocable leases | `vault_expire_num_irrevocable_leases` | `openbao_expire_num_irrevocable_leases` | `openbao:expire_num_irrevocable_leases:max` |
 | Goroutines | `vault_runtime_num_goroutines` | `openbao_runtime_num_goroutines` | `openbao:runtime_num_goroutines:max` |
 | Raft peer count | `vault_raft_peers` | `openbao_raft_peers` | `openbao:raft_peers:max` |
 | Autopilot health | `vault_autopilot_healthy` | `openbao_autopilot_healthy` | `openbao:autopilot_healthy:max` |
@@ -143,6 +146,7 @@ make test
 | `contracts/dashboards/openbao-ha-raft.yaml` | HA/Raft dashboard contract that consumes normalized rules and validated Raft source metrics. |
 | `contracts/dashboards/openbao-audit-investigation.yaml` | Audit investigation dashboard contract that uses query-time audit fields without turning them into Loki labels. |
 | `contracts/dashboards/openbao-auth-identity.yaml` | Auth and identity dashboard contract that filters audit request paths at query time without turning them into Loki labels. |
+| `contracts/dashboards/openbao-token-lease-lifecycle.yaml` | Token and lease lifecycle dashboard contract that consumes normalized token and lease rules plus query-time audit fields. |
 | `contracts/alerts/critical.yaml` | Alert contract that maps critical alerts to runbooks. |
 | `contracts/alerts/warning.yaml` | Alert contract that maps warning alerts to runbooks. |
 

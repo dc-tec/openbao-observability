@@ -46,6 +46,14 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"expr: min by (node_id) (openbao_autopilot_node_healthy)",
 		"record: openbao:audit_log_request:avg5m",
 		"expr: sum(rate(openbao_audit_log_request_sum[5m])) / clamp_min(sum(rate(openbao_audit_log_request_count[5m])), 0.001)",
+		"record: openbao:expire_num_irrevocable_leases:max",
+		"expr: max(openbao_expire_num_irrevocable_leases)",
+		"record: openbao:token_count:max30m",
+		"expr: max(max_over_time(openbao_token_count[30m]))",
+		"record: openbao:token_creation_by_auth:increase15m",
+		"expr: sum by (auth_method) (increase(openbao_token_creation[15m]))",
+		"record: openbao:token_lookup:avg5m",
+		"expr: sum(rate(openbao_token_lookup_sum[5m])) / clamp_min(sum(rate(openbao_token_lookup_count[5m])), 0.001)",
 		"source_prefix: openbao",
 	}
 	for _, fragment := range required {

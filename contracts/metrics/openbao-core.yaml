@@ -113,6 +113,73 @@ metrics:
     overview: true
     notes:
       - Observed without a cluster label in OpenBao 2.5.4 dev mode.
+  - id: expire_num_irrevocable_leases
+    docsName: vault.expire.num_irrevocable_leases
+    prometheusName: ${p}_expire_num_irrevocable_leases
+    required: true
+    overview: false
+    notes:
+      - Observed without a cluster label in OpenBao 2.5.4 fixtures.
+  - id: expire_revoke
+    docsName: vault.expire.revoke
+    prometheusName: ${p}_expire_revoke
+    required: true
+    overview: false
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+  - id: expire_register_auth
+    docsName: vault.expire.register_auth
+    prometheusName: ${p}_expire_register_auth
+    required: true
+    overview: false
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+  - id: token_count
+    docsName: vault.token.count
+    prometheusName: ${p}_token_count
+    required: false
+    overview: true
+    notes:
+      - Token count is a slow usage gauge.
+      - Observed in the live OpenBao 2.5.4 Docker Compose HA stack with a namespace label.
+      - Not required in short-lived fixtures because usage gauges can update later than the fixture capture window.
+  - id: token_creation
+    docsName: vault.token.creation
+    prometheusName: ${p}_token_creation
+    required: true
+    overview: false
+    notes:
+      - Observed as a counter in OpenBao 2.5.4 fixtures.
+      - Labels include auth_method, creation_ttl, mount_point, namespace, and token_type.
+      - Generated dashboards must not group by mount_point or policy.
+  - id: token_create
+    docsName: vault.token.create
+    prometheusName: ${p}_token_create
+    required: true
+    overview: false
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+  - id: token_lookup
+    docsName: vault.token.lookup
+    prometheusName: ${p}_token_lookup
+    required: true
+    overview: false
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+  - id: token_store
+    docsName: vault.token.store
+    prometheusName: ${p}_token_store
+    required: true
+    overview: false
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+  - id: token_revoke_tree
+    docsName: vault.token.revoke_tree
+    prometheusName: ${p}_token_revoke_tree
+    required: true
+    overview: false
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
   - id: runtime_num_goroutines
     docsName: vault.runtime.num_goroutines
     prometheusName: ${p}_runtime_num_goroutines

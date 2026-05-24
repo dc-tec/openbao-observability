@@ -246,27 +246,107 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":audit_log_request:rate5m",
-							Expr:   "sum(rate(" + metricName(sourcePrefix, "audit_log_request_count") + "[5m]))",
+							Expr:   summaryRateExpression(sourcePrefix, "audit_log_request"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":audit_log_response:rate5m",
-							Expr:   "sum(rate(" + metricName(sourcePrefix, "audit_log_response_count") + "[5m]))",
+							Expr:   summaryRateExpression(sourcePrefix, "audit_log_response"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":audit_log_request:avg5m",
-							Expr:   "sum(rate(" + metricName(sourcePrefix, "audit_log_request_sum") + "[5m])) / clamp_min(sum(rate(" + metricName(sourcePrefix, "audit_log_request_count") + "[5m])), 0.001)",
+							Expr:   summaryAverageExpression(sourcePrefix, "audit_log_request"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":audit_log_response:avg5m",
-							Expr:   "sum(rate(" + metricName(sourcePrefix, "audit_log_response_sum") + "[5m])) / clamp_min(sum(rate(" + metricName(sourcePrefix, "audit_log_response_count") + "[5m])), 0.001)",
+							Expr:   summaryAverageExpression(sourcePrefix, "audit_log_response"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":expire_num_leases:max",
 							Expr:   "max(" + metricName(sourcePrefix, "expire_num_leases") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":expire_num_irrevocable_leases:max",
+							Expr:   "max(" + metricName(sourcePrefix, "expire_num_irrevocable_leases") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":expire_revoke:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "expire_revoke"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":expire_revoke:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "expire_revoke"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":expire_register_auth:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "expire_register_auth"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":expire_register_auth:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "expire_register_auth"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_count:max30m",
+							Expr:   "max(max_over_time(" + metricName(sourcePrefix, "token_count") + "[30m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_creation:increase15m",
+							Expr:   "sum(increase(" + metricName(sourcePrefix, "token_creation") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_creation_by_auth:increase15m",
+							Expr:   "sum by (auth_method) (increase(" + metricName(sourcePrefix, "token_creation") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_create:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "token_create"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_create:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "token_create"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_lookup:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "token_lookup"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_lookup:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "token_lookup"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_store:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "token_store"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_store:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "token_store"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_revoke_tree:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "token_revoke_tree"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_revoke_tree:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "token_revoke_tree"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -354,6 +434,14 @@ func raftPeerCountExpression(sourcePrefix string) string {
 	storageStatsMetric := metricName(sourcePrefix, "raft_storage_stats_commit_index")
 	storageStatsPeerCount := "count(count by (peer_id) (" + storageStatsMetric + "))"
 	return rawPeerCount + " or " + storageStatsPeerCount
+}
+
+func summaryRateExpression(sourcePrefix, id string) string {
+	return "sum(rate(" + metricName(sourcePrefix, id+"_count") + "[5m]))"
+}
+
+func summaryAverageExpression(sourcePrefix, id string) string {
+	return "sum(rate(" + metricName(sourcePrefix, id+"_sum") + "[5m])) / clamp_min(sum(rate(" + metricName(sourcePrefix, id+"_count") + "[5m])), 0.001)"
 }
 
 func validatePromQL(document prometheusRule) error {

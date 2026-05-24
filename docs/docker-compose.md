@@ -70,7 +70,8 @@ Grafana uses `admin` / `admin` by default. Change the local password in
 The stack provisions the generated `OpenBao overview` dashboard in the
 `OpenBao` folder. It also provisions the generated `OpenBao HA/Raft`,
 `OpenBao audit overview`, `OpenBao operational logs`, and
-`OpenBao audit investigation`, and `OpenBao auth and identity` dashboards.
+`OpenBao audit investigation`, `OpenBao auth and identity`, and
+`OpenBao token and lease lifecycle` dashboards.
 
 ## Understand the local OpenBao setup
 
@@ -231,7 +232,7 @@ production all-node scraping.
 In Grafana, open **Dashboards**, select the `OpenBao` folder, and open
 `OpenBao overview`, `OpenBao HA/Raft`, `OpenBao audit overview`,
 `OpenBao operational logs`, `OpenBao audit investigation`, or
-`OpenBao auth and identity`.
+`OpenBao auth and identity`, or `OpenBao token and lease lifecycle`.
 
 Use the provisioned `Prometheus` data source to run these PromQL queries:
 
@@ -245,6 +246,14 @@ openbao:raft_peers:max
 
 ```promql
 openbao:autopilot_node_healthy:min
+```
+
+```promql
+openbao:token_count:max30m
+```
+
+```promql
+openbao:expire_num_irrevocable_leases:max
 ```
 
 Use the provisioned `Loki` data source to run these LogQL queries:
@@ -265,6 +274,12 @@ Use this query when you need auth and identity audit events:
 
 ```logql
 {log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"(auth/.*|sys/auth/.*|identity/.*)"
+```
+
+Use this query when you need token and lease lifecycle audit events:
+
+```logql
+{log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"(auth/token/.*|sys/leases/.*)"
 ```
 
 Use this query when you need an audit request ID drilldown:

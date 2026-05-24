@@ -48,6 +48,23 @@ func (f Families) HasMetricWithLabel(name, labelName, labelValue string) bool {
 	return false
 }
 
+func (f Families) HasMetricWithLabelName(name, labelName string) bool {
+	family, ok := f[name]
+	if !ok {
+		return false
+	}
+
+	for _, metric := range family.GetMetric() {
+		for _, label := range metric.GetLabel() {
+			if label.GetName() == labelName {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 func (f Families) Names() []string {
 	names := make([]string, 0, len(f))
 	for name := range f {

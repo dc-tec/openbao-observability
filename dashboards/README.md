@@ -14,3 +14,4 @@ Current generated dashboards:
 - `OpenBao operational logs`
 - `OpenBao audit investigation`
 - `OpenBao auth and identity`
+- `OpenBao token and lease lifecycle`

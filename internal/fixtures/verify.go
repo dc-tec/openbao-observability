@@ -72,6 +72,14 @@ func checkMetrics(opts VerifyOptions, prefix string) error {
 		prefix + "_audit_log_response_failure",
 		prefix + "_audit_local_file__log_request",
 		prefix + "_expire_num_leases",
+		prefix + "_expire_num_irrevocable_leases",
+		prefix + "_expire_register_auth",
+		prefix + "_expire_revoke",
+		prefix + "_token_creation",
+		prefix + "_token_create",
+		prefix + "_token_lookup",
+		prefix + "_token_store",
+		prefix + "_token_revoke_tree",
 		prefix + "_runtime_num_goroutines",
 	}
 
@@ -87,6 +95,12 @@ func checkMetrics(opts VerifyOptions, prefix string) error {
 	}
 	if !hasClusterWithPrefix(families, coreUnsealed, "vault-cluster-") {
 		return fmt.Errorf("missing real cluster label series in %s: %s", path, coreUnsealed)
+	}
+	tokenCreation := prefix + "_token_creation"
+	for _, label := range []string{"auth_method", "creation_ttl", "mount_point", "namespace", "token_type"} {
+		if !families.HasMetricWithLabelName(tokenCreation, label) {
+			return fmt.Errorf("missing %s label on %s in %s", label, tokenCreation, path)
+		}
 	}
 
 	return nil

@@ -54,6 +54,70 @@ groups:
           expr: max(vault_expire_num_leases)
           labels:
             source_prefix: vault
+        - record: openbao:expire_num_irrevocable_leases:max
+          expr: max(vault_expire_num_irrevocable_leases)
+          labels:
+            source_prefix: vault
+        - record: openbao:expire_revoke:rate5m
+          expr: sum(rate(vault_expire_revoke_count[5m]))
+          labels:
+            source_prefix: vault
+        - record: openbao:expire_revoke:avg5m
+          expr: sum(rate(vault_expire_revoke_sum[5m])) / clamp_min(sum(rate(vault_expire_revoke_count[5m])), 0.001)
+          labels:
+            source_prefix: vault
+        - record: openbao:expire_register_auth:rate5m
+          expr: sum(rate(vault_expire_register_auth_count[5m]))
+          labels:
+            source_prefix: vault
+        - record: openbao:expire_register_auth:avg5m
+          expr: sum(rate(vault_expire_register_auth_sum[5m])) / clamp_min(sum(rate(vault_expire_register_auth_count[5m])), 0.001)
+          labels:
+            source_prefix: vault
+        - record: openbao:token_count:max30m
+          expr: max(max_over_time(vault_token_count[30m]))
+          labels:
+            source_prefix: vault
+        - record: openbao:token_creation:increase15m
+          expr: sum(increase(vault_token_creation[15m]))
+          labels:
+            source_prefix: vault
+        - record: openbao:token_creation_by_auth:increase15m
+          expr: sum by (auth_method) (increase(vault_token_creation[15m]))
+          labels:
+            source_prefix: vault
+        - record: openbao:token_create:rate5m
+          expr: sum(rate(vault_token_create_count[5m]))
+          labels:
+            source_prefix: vault
+        - record: openbao:token_create:avg5m
+          expr: sum(rate(vault_token_create_sum[5m])) / clamp_min(sum(rate(vault_token_create_count[5m])), 0.001)
+          labels:
+            source_prefix: vault
+        - record: openbao:token_lookup:rate5m
+          expr: sum(rate(vault_token_lookup_count[5m]))
+          labels:
+            source_prefix: vault
+        - record: openbao:token_lookup:avg5m
+          expr: sum(rate(vault_token_lookup_sum[5m])) / clamp_min(sum(rate(vault_token_lookup_count[5m])), 0.001)
+          labels:
+            source_prefix: vault
+        - record: openbao:token_store:rate5m
+          expr: sum(rate(vault_token_store_count[5m]))
+          labels:
+            source_prefix: vault
+        - record: openbao:token_store:avg5m
+          expr: sum(rate(vault_token_store_sum[5m])) / clamp_min(sum(rate(vault_token_store_count[5m])), 0.001)
+          labels:
+            source_prefix: vault
+        - record: openbao:token_revoke_tree:rate5m
+          expr: sum(rate(vault_token_revoke_tree_count[5m]))
+          labels:
+            source_prefix: vault
+        - record: openbao:token_revoke_tree:avg5m
+          expr: sum(rate(vault_token_revoke_tree_sum[5m])) / clamp_min(sum(rate(vault_token_revoke_tree_count[5m])), 0.001)
+          labels:
+            source_prefix: vault
         - record: openbao:runtime_num_goroutines:max
           expr: max(vault_runtime_num_goroutines)
           labels:

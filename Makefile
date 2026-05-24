@@ -10,8 +10,8 @@ GO ?= go
 PROMTOOL ?= docker run --rm --entrypoint promtool -v "$(CURDIR):/workspace:ro" "$(PROMETHEUS_IMAGE)"
 PROMETHEUS_URL ?= http://127.0.0.1:19090
 LOKI_URL ?= http://127.0.0.1:13100
-DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml,contracts/dashboards/openbao-operational-logs.yaml,contracts/dashboards/openbao-audit-investigation.yaml,contracts/dashboards/openbao-auth-identity.yaml
-GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json,generated/grafana/openbao-operational-logs.json,generated/grafana/openbao-audit-investigation.json,generated/grafana/openbao-auth-identity.json
+DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml,contracts/dashboards/openbao-operational-logs.yaml,contracts/dashboards/openbao-audit-investigation.yaml,contracts/dashboards/openbao-auth-identity.yaml,contracts/dashboards/openbao-token-lease-lifecycle.yaml
+GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json,generated/grafana/openbao-operational-logs.json,generated/grafana/openbao-audit-investigation.json,generated/grafana/openbao-auth-identity.json,generated/grafana/openbao-token-lease-lifecycle.json
 
 .PHONY: compose-config compose-down compose-reset compose-up contracts-verify fixtures-openbao generate test test-fixtures test-unit validate-dashboard-queries validate-generated
 
@@ -54,6 +54,8 @@ contracts-verify:
 		--contract "contracts/dashboards/openbao-audit-investigation.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
 		--contract "contracts/dashboards/openbao-auth-identity.yaml"
+	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
+		--contract "contracts/dashboards/openbao-token-lease-lifecycle.yaml"
 
 fixtures-openbao:
 	$(GO) run ./cmd/openbao-observability fixtures capture \
@@ -100,6 +102,9 @@ generate:
 	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
 		--contract "contracts/dashboards/openbao-auth-identity.yaml" \
 		--output "generated/grafana/openbao-auth-identity.json"
+	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
+		--contract "contracts/dashboards/openbao-token-lease-lifecycle.yaml" \
+		--output "generated/grafana/openbao-token-lease-lifecycle.json"
 
 test: test-fixtures contracts-verify validate-generated test-unit
 
