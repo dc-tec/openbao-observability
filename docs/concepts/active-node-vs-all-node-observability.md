@@ -25,6 +25,7 @@ Use the scrape profile to match the operational question.
 | Are all nodes unsealed? | All-node scrape. |
 | Is a standby node unhealthy? | All-node scrape. |
 | Are Raft followers behind? | All-node scrape. |
+| Are Raft non-voters or read replicas healthy? | All-node scrape. |
 | Is request latency rising on the active node? | Active-node scrape. |
 | Does every node expose expected runtime metrics? | All-node scrape. |
 
@@ -71,6 +72,7 @@ Use it when you need:
 
 - HA and Raft diagnostics.
 - Standby and follower visibility.
+- Read-replica or non-voter visibility.
 - Per-node unseal status.
 - Node-local runtime trends.
 - Autopilot and peer-health dashboards with stronger context.
@@ -116,6 +118,19 @@ The same dashboard can mean different things under each profile.
 Document the scrape profile beside your dashboards. Empty or missing panels
 can mean a dashboard assumption mismatch rather than an OpenBao incident.
 
+## Namespace and scale impact
+
+Namespaces and read-replica topologies make scrape-profile documentation more
+important. A namespace label can be useful for tenant-level analysis, but it can
+also expose organizational structure and increase cardinality. A non-voter can
+be a healthy unsealed OpenBao node without increasing Raft quorum failure
+tolerance.
+
+Use all-node scraping for read-replica and non-voter diagnostics. Keep quorum
+alerts based on voter-aware signals such as Autopilot health, failure
+tolerance, and peer state. Do not infer voter count from the number of scraped
+or unsealed nodes.
+
 ## Design recommendations
 
 Use authenticated active-node scraping as the default production baseline.
@@ -142,9 +157,9 @@ the secure active-node baseline.
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed OpenBao docs behavior | OpenBao documents active-node-only Prometheus metrics access by default and standby access through unauthenticated metrics access. |
-| Observed fixture behavior | The local OpenBao 2.5.4 HA fixture uses all-node scraping to validate per-node and Raft dashboard behavior. |
+| Observed fixture behavior | The local OpenBao 2.5.4 HA fixture uses all-node scraping to validate per-node and three-voter Raft dashboard behavior. |
 | Design decision | This project treats active-node scraping as the secure baseline and all-node scraping as an elevated HA/Raft diagnostics profile. |
-| To validate | Kubernetes service labels, scrape identities, listener isolation, and label policy in your production environment. |
+| To validate | Kubernetes service labels, scrape identities, listener isolation, namespace label policy, non-voter metrics, and read-replica behavior in your production environment. |
 
 ## What's next
 
@@ -154,6 +169,8 @@ the secure active-node baseline.
   for the private all-node profile.
 - Use [OpenBao HA/Raft observability](./openbao-ha-raft-observability.md) to
   understand why HA/Raft troubleshooting benefits from all-node visibility.
+- Use [Namespaces and scale observability](./namespaces-and-scale-observability.md)
+  before you add namespace or read-replica panels.
 - Use [High-cardinality and label safety](./high-cardinality-and-label-safety.md)
   before you expose or group additional metric labels.
 - Use [OpenBao overview dashboard](../dashboards/overview-dashboard.md) to

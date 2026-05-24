@@ -278,6 +278,8 @@ Observed OpenBao v2.5.2 and v2.5.4 behavior: `metrics_prefix = "openbao"` produc
 
 OpenBao usage and lifecycle metrics can include labels such as namespace, auth method, mount point, policy, TTL, token type, secret engine, and cluster. Token count by policy, secret count by mount, and lease creation by mount/TTL can be operationally useful but should not be promoted into fleet-wide overview panels without cardinality limits and access control. OpenBao documents token count by policy, token creation labels, secret KV count by mount point, and secret lease creation labels. ([openbao.org][12])
 
+Current project validation scope: captured fixtures cover root-namespace behavior and a three-voter Raft HA topology. OpenBao documents namespace commands, namespace limits, namespace-related lease metric labeling, Raft non-voters, and non-voter/read-scalability behavior, but this project should mark non-root namespace labels and non-voter/read-replica metric behavior **to validate** until dedicated fixtures exist. ([openbao.org][1], [openbao.org][35], [openbao.org][36], [openbao.org][37], [openbao.org][38])
+
 Recommended contract defaults:
 
 | Metric family                       | Overview? | Detailed dashboard? | Label handling                                                          |
@@ -377,7 +379,7 @@ OpenBao metrics in groups A through G are based on the current OpenBao all-metri
 | ------------- | ---------- | ------- | ---------------- | ---------------------- | ------ | ------------- | --------------- | ------- |
 | A. Cluster status | Scrape health | Is OpenBao reachable by Prometheus? | N/A | `up` | `min by (cluster) (up{job=~"$job",cluster=~"$cluster"})` | `1` for expected targets | Yes | Active-only profile only proves active endpoint reachability. |
 | A | Active node count | Is there exactly one active node? | `vault.core.active` | `${p}_core_active` | `sum by (cluster) (max by(cluster,instance) (${p}_core_active{cluster=~"$cluster"}))` | `1` | Yes | All-node profile preferred. Active-only scrape can hide split-brain/stale target issues. |
-| A | Unsealed node count | How many scraped nodes are unsealed? | `vault.core.unsealed` | `${p}_core_unsealed` | `sum by (cluster) (${p}_core_unsealed{cluster=~"$cluster",cluster!=""})` | Equals expected node count in all-node profile; `1` active-only | Yes | Observed v2.5.2 and v2.5.4 emitted an extra `cluster=""` series with value `0`; generated rules must exclude or normalize it. |
+| A | Unsealed node count | How many scraped nodes are unsealed? | `vault.core.unsealed` | `${p}_core_unsealed` | `sum by (cluster) (${p}_core_unsealed{cluster=~"$cluster",cluster!=""})` | Equals expected node count in all-node profile; `1` active-only | Yes | Observed v2.5.2 and v2.5.4 emitted an extra `cluster=""` series with value `0`; generated rules must exclude or normalize it. This is node count, not voter count. |
 | A | Leadership setup failures | Detect failure to become leader | `vault.core.leadership_setup_failed` | `${p}_core_leadership_setup_failed_count` | `sum by(cluster) (increase(${p}_core_leadership_setup_failed_count{cluster=~"$cluster"}[15m]))` | `0` | Yes | Summary `_count` counts observed failure timing samples; verify exact suffix in fixtures. |
 | A | Leadership lost / churn | Detect leadership instability | `vault.core.leadership_lost`, `vault.raft.state.leader` | `${p}_core_leadership_lost_count`, `${p}_raft_state_leader` | `sum by(cluster) (increase(${p}_core_leadership_lost_count{cluster=~"$cluster"}[30m]))` | No unexpected increases | Yes | Combine with Raft transition counters for context. |
 | B. Request health | In-flight requests | Is request concurrency rising? | `vault.core.in_flight_requests` | `${p}_core_in_flight_requests` | `sum by(cluster) (${p}_core_in_flight_requests{cluster=~"$cluster"})` | Stable baseline | Yes | Threshold must be workload-specific. |
@@ -392,7 +394,7 @@ OpenBao metrics in groups A through G are based on the current OpenBao all-metri
 | C | Per-device audit latency | Identify slow audit device | `vault.audit.{DEVICE}.log_request`, `vault.audit.{DEVICE}.log_response` | `${p}_audit_<device>__log_request`, `${p}_audit_<device>__log_response` | `{__name__=~"^${p}_audit_.+__log_(request\|response)$"}` | Stable, low | No by default | Observed `local-file` path exported as `vault_audit_local_file__log_request` / `openbao_audit_local_file__log_request`; aggregate failure metrics exist, but device-specific failure counters were not observed. |
 | D. HA/Raft quick view | Autopilot healthy | Is Raft Autopilot healthy? | `vault.autopilot.healthy` | `${p}_autopilot_healthy` | `min by(cluster) (${p}_autopilot_healthy{cluster=~"$cluster"})` | `1` | Critical | Autopilot metrics run on active node. |
 | D | Failure tolerance | Healthy nodes above quorum | `vault.autopilot.failure_tolerance` | `${p}_autopilot_failure_tolerance` | `min by(cluster) (${p}_autopilot_failure_tolerance{cluster=~"$cluster"})` | `>= 1` for HA clusters | Critical | Single-node/dev clusters are expected `0`. |
-| D | Raft peers | Configured Raft peer count | `vault.raft.peers` | `${p}_raft_peers` | `max by(cluster) (${p}_raft_peers{cluster=~"$cluster"})` | Expected peer count | Warning | Not a quorum-health metric alone. |
+| D | Raft peers | Configured Raft peer count | `vault.raft.peers` | `${p}_raft_peers` | `max by(cluster) (${p}_raft_peers{cluster=~"$cluster"})` | Expected peer count | Warning | Not a quorum-health metric alone. Non-voter/read-replica peer accounting is **to validate**. |
 | D | Leader last contact | Follower contact health | `vault.raft.leader.lastContact` | `${p}_raft_leader_lastContact` | `p99(${p}_raft_leader_lastContact)` | Stable, low | Warning | **To validate** Prometheus name case. |
 | D | Candidate transitions | Election churn | `vault.raft.state.candidate` | `${p}_raft_state_candidate` | `sum by(cluster) (increase(${p}_raft_state_candidate{cluster=~"$cluster"}[30m]))` | `0` outside failover | Warning | Expected during planned restart. |
 | D | Leader transitions | Leadership churn | `vault.raft.state.leader` | `${p}_raft_state_leader` | `sum by(cluster) (increase(${p}_raft_state_leader{cluster=~"$cluster"}[30m]))` | Stable | Warning | Use with maintenance windows. |
@@ -1146,3 +1148,7 @@ For HA/Raft fixtures, use a kind profile with three OpenBao pods and integrated 
 [32]: https://github.com/openbao/openbao-helm/blob/main/charts/openbao/values.yaml "openbao-helm values.yaml"
 [33]: https://github.com/openbao/openbao/releases/tag/v2.5.4 "OpenBao v2.5.4 release"
 [34]: https://github.com/openbao/openbao-helm/releases/tag/openbao-0.28.3 "openbao-helm 0.28.3 release"
+[35]: https://openbao.org/docs/commands/namespace/ "namespace command"
+[36]: https://openbao.org/docs/internals/limits/ "OpenBao limits"
+[37]: https://openbao.org/docs/configuration/storage/raft/ "Raft storage configuration"
+[38]: https://openbao.org/docs/commands/operator/raft/ "Raft operator command"

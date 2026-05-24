@@ -34,6 +34,10 @@ The HA/Raft dashboard uses three metric groups:
 `${p}` is the source prefix. Use `vault` for the OpenBao default or `openbao`
 when you configure `metrics_prefix = "openbao"`.
 
+Do not use unsealed node count as voter count. The value counts scraped
+OpenBao nodes that report unsealed state, which can include voters,
+non-voters, and nodes that are catching up.
+
 ## Autopilot and peer health
 
 | Source metric | Recording rule | Interpretation |
@@ -47,6 +51,10 @@ The normalized peer rule falls back to counting
 `${p}_raft_storage_stats_commit_index` by `peer_id` when `${p}_raft_peers` is
 not present. This keeps the dashboard useful across the OpenBao 2.5.4 fixture
 and live all-node scrape behavior observed in this repository.
+
+The current fixture validates a three-voter topology. Read-replica or
+non-voter topologies need additional fixture coverage before this project adds
+role-specific alerts.
 
 ## Raw Raft internals
 
@@ -68,6 +76,20 @@ metric contract does not normalize every Raft detail series.
 
 If your deployment emits `openbao_*` source metrics, update these raw panels or
 add additional normalized recording rules before you rely on them.
+
+## Read replicas and non-voters
+
+OpenBao documents Raft non-voters as nodes that receive the data replication
+stream without participating in quorum. They can add read scalability, but they
+do not increase voter failure tolerance.
+
+Read non-voter health with all-node scraping and Autopilot or peer-state
+signals. Keep quorum alerts voter-aware, and keep read-capacity alerts separate
+from voter quorum alerts.
+
+This project does not yet fixture-test a non-voter node. Treat non-voter labels,
+read-replica request metrics, and peer-state shape as to-validate data until
+you capture a topology-specific fixture.
 
 ## How to interpret the signals
 
@@ -101,6 +123,9 @@ depends on unauthenticated metrics access.
 - Expecting raw `vault_raft_*` panels to work on an `openbao_*` source-prefix
   deployment without adaptation.
 - Reading active-node scrape output as complete follower visibility.
+- Counting all unsealed nodes as Raft voters.
+- Alerting on read-replica or non-voter behavior before fixture-testing the
+  label shape.
 - Alerting on raw peer IDs without reviewing label cardinality and metadata
   exposure.
 
@@ -108,6 +133,8 @@ depends on unauthenticated metrics access.
 
 - Use [OpenBao HA/Raft observability](../concepts/openbao-ha-raft-observability.md)
   for the operational mental model.
+- Use [Namespaces and scale observability](../concepts/namespaces-and-scale-observability.md)
+  before you add read-replica or namespace-aware HA/Raft panels.
 - Use [OpenBao HA/Raft dashboard](../dashboards/ha-raft.md) to read the
   generated dashboard.
 - Use [Configure an all-node metrics scrape](./all-node-metrics-scrape.md) for

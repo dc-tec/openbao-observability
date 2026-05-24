@@ -11,6 +11,8 @@ normalization:
   notes:
     - Raw OpenBao metrics do not expose a consistent cluster label across all families.
     - Recording rules should add or normalize cluster, namespace, pod, job, and instance labels from scrape metadata.
+    - Current fixtures validate root-namespace behavior and a three-voter Raft topology.
+    - Non-root namespace and Raft non-voter/read-replica behavior must be fixture-tested before dashboards or alerts depend on those dimensions.
 fixtures:
   required:
     - fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-vault-prefix.prom
@@ -31,6 +33,7 @@ metrics:
     notes:
       - Observed with both cluster="" and a real cluster label in OpenBao 2.5.4 dev mode.
       - Generated rules must exclude or normalize the empty cluster series.
+      - Unsealed node count is not voter count; non-voters and read replicas can also be unsealed.
   - id: core_handle_request
     docsName: vault.core.handle_request
     prometheusName: ${p}_core_handle_request
@@ -88,6 +91,7 @@ metrics:
       - Observed in the OpenBao 2.5.4 HA/Raft fixture on the active node.
       - Not always present in current live all-node scrapes.
       - Recording rules fall back to counting raft_storage_stats_commit_index by peer_id.
+      - Current fixture coverage is three voters only; non-voter/read-replica peer accounting is to validate.
   - id: raft_storage_stats_commit_index
     docsName: vault.raft_storage.stats.commit_index
     prometheusName: ${p}_raft_storage_stats_commit_index
@@ -96,6 +100,7 @@ metrics:
     notes:
       - Observed in the OpenBao 2.5.4 HA/Raft fixture and live Compose HA stack.
       - Used as the fallback source for normalized Raft peer count.
+      - Current fixture coverage is three voters only; non-voter/read-replica label shape is to validate.
   - id: autopilot_healthy
     docsName: vault.autopilot.healthy
     prometheusName: ${p}_autopilot_healthy
@@ -103,6 +108,7 @@ metrics:
     overview: false
     notes:
       - Observed on the active node in the OpenBao 2.5.4 HA/Raft fixture.
+      - Current fixture coverage is three voters only; read-replica and non-voter Autopilot behavior is to validate.
   - id: autopilot_failure_tolerance
     docsName: vault.autopilot.failure_tolerance
     prometheusName: ${p}_autopilot_failure_tolerance
@@ -110,6 +116,7 @@ metrics:
     overview: false
     notes:
       - Observed on the active node in the OpenBao 2.5.4 HA/Raft fixture.
+      - Failure tolerance is voter-oriented; do not treat read replicas or non-voters as added quorum margin.
   - id: autopilot_node_healthy
     docsName: vault.autopilot.node_healthy
     prometheusName: ${p}_autopilot_node_healthy
@@ -117,6 +124,7 @@ metrics:
     overview: false
     notes:
       - Observed with a node_id label in the OpenBao 2.5.4 HA/Raft fixture.
+      - Current fixture coverage is three voters only; node role labels for non-voters are to validate.
   - id: audit_log_request_failure
     docsName: vault.audit.log_request_failure
     prometheusName: ${p}_audit_log_request_failure
@@ -186,6 +194,7 @@ metrics:
       - Token count is a slow usage gauge.
       - Observed in the live OpenBao 2.5.4 Docker Compose HA stack with a namespace label.
       - Not required in short-lived fixtures because usage gauges can update later than the fixture capture window.
+      - Current fixtures only validate root-namespace behavior; non-root namespace grouping is to validate.
   - id: token_creation
     docsName: vault.token.creation
     prometheusName: ${p}_token_creation
@@ -195,6 +204,7 @@ metrics:
       - Observed as a counter in OpenBao 2.5.4 fixtures.
       - Labels include auth_method, creation_ttl, mount_point, namespace, and token_type.
       - Generated dashboards must not group by mount_point or policy.
+      - Current fixtures only validate root-namespace behavior; non-root namespace grouping is to validate.
   - id: token_create
     docsName: vault.token.create
     prometheusName: ${p}_token_create
@@ -348,6 +358,7 @@ metrics:
       - Observed as a counter in the OpenBao 2.5.4 HA/Raft fixture after issuing database dynamic credentials.
       - Labels include namespace, secret_engine, mount_point, creation_ttl, and cluster.
       - Treat mount_point and creation_ttl as advanced labels; dashboards should aggregate by secret_engine unless a drilldown needs more detail.
+      - Current fixtures only validate root-namespace behavior; non-root namespace grouping is to validate.
   - id: pki_issue
     docsName: vault.pki.issue
     prometheusName: ${p}_pki_issue
@@ -357,6 +368,7 @@ metrics:
       - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture after issuing a certificate from the default pki/ mount.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace and role; role is bounded by PKI role inventory but should still be treated as drilldown data.
+      - Current fixtures only validate root-namespace behavior; non-root namespace grouping is to validate.
   - id: pki_revoke
     docsName: vault.pki.revoke
     prometheusName: ${p}_pki_revoke
@@ -366,6 +378,7 @@ metrics:
       - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture after revoking a certificate from the default pki/ mount.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace.
+      - Current fixtures only validate root-namespace behavior; non-root namespace grouping is to validate.
   - id: pki_issue_failure
     docsName: vault.pki.issue.failure
     prometheusName: ${p}_pki_issue_failure
@@ -376,6 +389,7 @@ metrics:
       - Source-backed by the OpenBao PKI metrics wrapper.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace and role when emitted.
+      - Current fixtures only validate root-namespace behavior; non-root namespace grouping is to validate.
   - id: pki_revoke_failure
     docsName: vault.pki.revoke.failure
     prometheusName: ${p}_pki_revoke_failure
@@ -386,6 +400,7 @@ metrics:
       - Source-backed by the OpenBao PKI metrics wrapper.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace when emitted.
+      - Current fixtures only validate root-namespace behavior; non-root namespace grouping is to validate.
   - id: database_initialize
     docsName: vault.database.Initialize
     prometheusName: ${p}_database_Initialize
