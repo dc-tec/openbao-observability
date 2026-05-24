@@ -13,6 +13,11 @@ dashboard assumptions. Contracts under `contracts/` describe the source signal
 model; generated artifacts under `generated/` show one concrete implementation
 profile.
 
+![Grafana dashboard collage showing OpenBao overview, HA/Raft, audit, and feature-specific observability panels](docs/assets/grafana-dashboards.png)
+
+*Figure 1: Generated Grafana dashboards from the local OpenBao observability
+profile.*
+
 ## What this repository provides
 
 - Signal contracts for OpenBao metrics, log streams, alerts, and dashboards.
