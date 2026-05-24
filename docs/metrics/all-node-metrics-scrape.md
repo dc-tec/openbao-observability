@@ -204,8 +204,12 @@ API clients, OpenBao peer traffic, and the metrics collector.
 
 ## What's next
 
+- Use [OpenBao observability model](../concepts/openbao-observability-model.md)
+  to understand the active-node and all-node scrape tradeoff.
 - Use [Configure a secure metrics scrape](./secure-metrics-scrape.md) when you
   need the authenticated active-node production baseline.
+- Use [High-cardinality and label safety](../concepts/high-cardinality-and-label-safety.md)
+  before you group all-node metrics by optional labels.
 - Use [Run the Docker Compose stack](../docker-compose.md) when you need a
   local all-node HA scrape for dashboard validation.
 - Use [No active OpenBao leader](../runbooks/no-active-openbao-leader.md) when

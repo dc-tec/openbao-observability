@@ -174,6 +174,10 @@ make verify-live
 
 ## What's next
 
+- Use [OpenBao observability model](../concepts/openbao-observability-model.md)
+  to understand why the project separates source and derived signals.
+- Use [High-cardinality and label safety](../concepts/high-cardinality-and-label-safety.md)
+  before you group source metrics by optional OpenBao labels.
 - Use [Configure a secure metrics scrape](../metrics/secure-metrics-scrape.md)
   to configure the authenticated active-node profile.
 - Use [Configure an all-node metrics scrape](../metrics/all-node-metrics-scrape.md)

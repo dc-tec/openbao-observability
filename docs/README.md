@@ -7,17 +7,24 @@ explainer.
 Start with [Run the Docker Compose stack](./docker-compose.md) when you want a
 local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 
-## How-tos
+## Operate
 
+- [Run the Docker Compose stack](./docker-compose.md)
 - [Configure a secure metrics scrape](./metrics/secure-metrics-scrape.md)
 - [Configure an all-node metrics scrape](./metrics/all-node-metrics-scrape.md)
 - [Configure declarative audit devices](./audit/declarative-audit.md)
 
-## References
+## Understand
+
+- [OpenBao observability model](./concepts/openbao-observability-model.md)
+- [Metrics, logs, and audit logs](./concepts/metrics-vs-logs-vs-audit-logs.md)
+- [High-cardinality and label safety](./concepts/high-cardinality-and-label-safety.md)
+
+## Reference
 
 - [Understand metric prefixes and recording rules](./contracts/metric-prefix.md)
 
-## Runbooks
+## Respond
 
 Use these runbooks when the generated alert rules fire:
 

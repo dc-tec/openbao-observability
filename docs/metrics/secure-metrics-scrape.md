@@ -222,6 +222,8 @@ update, and patch its pod.
 
 ## What's next
 
+- Use [OpenBao observability model](../concepts/openbao-observability-model.md)
+  to understand how metrics fit with logs, audit logs, and platform signals.
 - Use [Configure an all-node metrics scrape](./all-node-metrics-scrape.md) when
   you need standby, sealed-node, or per-pod Raft visibility.
 - Use [Run the Docker Compose stack](../docker-compose.md) when you need a
