@@ -173,6 +173,9 @@ For production operator-managed clusters:
 - Use [OpenBao Operator integration contract](./openbao-operator-integration-contract.md)
   when you need the concrete resource and label contract for operator-managed
   OpenBao clusters.
+- Use [Operator-managed OpenBao examples](../../examples/kubernetes/operator-managed/)
+  when you need patch-based examples for active scraping, all-node scraping,
+  audit devices, and generated artifact adoption.
 - Use [OpenBao Operator observability](https://dc-tec.github.io/openbao-operator/docs/user-guide/openbaocluster/configuration/observability)
   for operator-side metrics and workload telemetry configuration.
 - Use [OpenBao Operator production checklist](https://dc-tec.github.io/openbao-operator/docs/operate/production-checklist)

@@ -1,0 +1,30 @@
+# Merge patch for an existing OpenBaoCluster managed by dc-tec/openbao-operator.
+#
+# The platform must mount these paths into the OpenBao pods and configure log
+# collection, archive delivery, retention, and access control separately.
+#
+# Apply with:
+# kubectl -n openbao patch openbaocluster prod-openbao --type merge \
+#   --patch-file examples/kubernetes/operator-managed/declarative-audit-openbaocluster-patch.yaml
+spec:
+  audit:
+    - type: file
+      path: file
+      description: Primary file audit device for restricted investigation.
+      fileOptions:
+        filePath: /var/log/openbao/audit.log
+        mode: "0600"
+      options:
+        format: json
+        hmac_accessor: "true"
+        log_raw: "false"
+    - type: file
+      path: archive-file
+      description: Secondary file audit device for archive collection.
+      fileOptions:
+        filePath: /var/log/openbao/audit-archive.log
+        mode: "0600"
+      options:
+        format: json
+        hmac_accessor: "true"
+        log_raw: "false"

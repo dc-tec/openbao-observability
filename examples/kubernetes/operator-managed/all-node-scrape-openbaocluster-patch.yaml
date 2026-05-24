@@ -1,0 +1,33 @@
+# Merge patch for an existing OpenBaoCluster managed by dc-tec/openbao-operator.
+#
+# This profile requires a private metrics-only listener. Restrict the listener
+# to Prometheus or an approved collector path before using it in production.
+#
+# Apply with:
+# kubectl -n openbao patch openbaocluster prod-openbao --type merge \
+#   --patch-file examples/kubernetes/operator-managed/all-node-scrape-openbaocluster-patch.yaml
+spec:
+  telemetry:
+    metricsPrefix: openbao
+    prometheusRetentionTime: 30s
+    disableHostname: true
+  observability:
+    metrics:
+      enabled: true
+      scrapeProfile: AllNodes
+      metricsOnlyListener:
+        enabled: true
+        port: 8202
+        unauthenticatedMetricsAccess: true
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        scrapeTimeout: 10s
+        jobLabel: app.kubernetes.io/name
+        labels:
+          release: kube-prometheus-stack
+        tlsConfig:
+          serverName: prod-openbao-metrics.openbao.svc
+          caConfigMap:
+            name: openbao-metrics-ca
+            key: ca.crt

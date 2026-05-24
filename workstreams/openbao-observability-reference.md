@@ -1072,6 +1072,7 @@ For HA/Raft fixtures, use a kind profile with three OpenBao pods and integrated 
 | PKI/Transit dashboards         | Feature-specific contracts with restricted labels.                         |
 | Production Kubernetes profile  | NetworkPolicy, RBAC, metrics listener, audit PVC/archive.                  |
 | OpenBao Operator contract      | Resource, label, scrape, log, dashboard, and alert boundary contract.      |
+| OpenBao Operator examples      | Active scrape, all-node scrape, audit, and artifact adoption examples.     |
 | Audit archive reference design | SIEM/object store/WORM path examples.                                      |
 | Stronger CI                    | Forbidden-label linter, prefix tests, dashboard schema.                    |
 
@@ -1082,7 +1083,7 @@ For HA/Raft fixtures, use a kind profile with three OpenBao pods and integrated 
 | SLO dashboards                | Availability, latency, burn alerts, synthetic probes.           |
 | Multi-cluster/fleet variables | Cluster/environment/region rollups.                             |
 | Compatibility matrix          | OpenBao version, metrics, labels, caveats.                      |
-| OpenBao Operator examples     | Operator-managed Kubernetes examples after the contract settles. |
+| OpenBao Operator validation   | Live operator-managed staging validation and read-replica fixtures. |
 | Advanced security profile     | mTLS metrics proxy, object-lock archive, stricter Grafana/RBAC. |
 
 ## 18. Resolved findings and validation backlog

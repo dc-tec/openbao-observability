@@ -1,0 +1,17 @@
+# Placeholder CA ConfigMap for an authenticated operator-managed OpenBao
+# metrics scrape.
+#
+# Replace the namespace and CA certificate before applying this file.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openbao-metrics-ca
+  namespace: openbao
+  labels:
+    app.kubernetes.io/name: openbao
+    app.kubernetes.io/component: metrics
+data:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    replace-with-openbao-serving-ca
+    -----END CERTIFICATE-----

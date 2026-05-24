@@ -66,6 +66,10 @@ Use the OpenBao Operator integration contract when you need the concrete labels,
 Services, scrape profiles, log streams, dashboard ownership, and alert ownership
 that connect the two repositories.
 
+Use the operator-managed examples when you need patch-based `OpenBaoCluster`
+examples for active scraping, all-node scraping, declarative audit devices, and
+generated artifact adoption.
+
 Use the bring-your-own-backend pattern when your organization already has a
 standard observability platform. Port the architecture, not the local demo
 stack.
@@ -83,3 +87,5 @@ stack.
 - Use [OpenBao Operator integration contract](./openbao-operator-integration-contract.md)
   when you need to align operator-managed resources with this repository's
   generated artifacts.
+- Use [Operator-managed OpenBao examples](../../examples/kubernetes/operator-managed/)
+  when you want to adapt the contract to an existing operator-managed cluster.

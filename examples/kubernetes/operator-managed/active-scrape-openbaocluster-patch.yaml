@@ -1,0 +1,30 @@
+# Merge patch for an existing OpenBaoCluster managed by dc-tec/openbao-operator.
+#
+# Apply with:
+# kubectl -n openbao patch openbaocluster prod-openbao --type merge \
+#   --patch-file examples/kubernetes/operator-managed/active-scrape-openbaocluster-patch.yaml
+spec:
+  telemetry:
+    metricsPrefix: openbao
+    prometheusRetentionTime: 30s
+    disableHostname: true
+  observability:
+    metrics:
+      enabled: true
+      scrapeProfile: Active
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        scrapeTimeout: 10s
+        jobLabel: app.kubernetes.io/name
+        labels:
+          release: kube-prometheus-stack
+        authorization:
+          credentialsSecret:
+            name: openbao-metrics-token
+            key: token
+        tlsConfig:
+          serverName: prod-openbao-metrics.openbao.svc
+          caConfigMap:
+            name: openbao-metrics-ca
+            key: ca.crt

@@ -233,6 +233,9 @@ quorum alerts separate from read-capacity alerts.
 
 - Use [OpenBao Operator companion profile](./openbao-operator.md) to understand
   the high-level companion model.
+- Use [Operator-managed OpenBao examples](../../examples/kubernetes/operator-managed/)
+  when you need patch-based examples for active scraping, all-node scraping,
+  declarative audit devices, and generated artifact adoption.
 - Use [Configure a secure metrics scrape](../metrics/secure-metrics-scrape.md)
   for the active scrape baseline.
 - Use [Configure an all-node metrics scrape](../metrics/all-node-metrics-scrape.md)
