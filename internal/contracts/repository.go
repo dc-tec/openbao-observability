@@ -166,24 +166,49 @@ func verifyGeneratedDashboards(
 	recordingRules map[string]bool,
 	streamContract *StreamContract,
 ) error {
+	contractsByUID, err := loadDashboardContractFiles(root, contractPaths, streamContract)
+	if err != nil {
+		return err
+	}
+	generatedByUID, err := loadGeneratedDashboardFiles(root, generatedPaths, streamContract)
+	if err != nil {
+		return err
+	}
+	if err := verifyGeneratedDashboardPairs(
+		root,
+		contractsByUID,
+		generatedByUID,
+		recordingRules,
+		streamContract,
+	); err != nil {
+		return err
+	}
+	return verifyGeneratedDashboardOrphans(root, contractsByUID, generatedByUID)
+}
+
+func loadDashboardContractFiles(
+	root string,
+	contractPaths []string,
+	streamContract *StreamContract,
+) (map[string]dashboardContractFile, error) {
 	contractsByUID := map[string]dashboardContractFile{}
 	for _, contractPath := range contractPaths {
 		contract, err := LoadDashboardContract(contractPath)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if err := contract.ValidateExpressions(); err != nil {
-			return fmt.Errorf("validate dashboard expressions in %s: %w", relPath(root, contractPath), err)
+			return nil, fmt.Errorf("validate dashboard expressions in %s: %w", relPath(root, contractPath), err)
 		}
 		if err := validateDashboardContractLabelSafety(
 			relPath(root, contractPath),
 			contract,
 			streamContract.ForbiddenLabels,
 		); err != nil {
-			return err
+			return nil, err
 		}
 		if previous, ok := contractsByUID[contract.UID]; ok {
-			return fmt.Errorf(
+			return nil, fmt.Errorf(
 				"dashboard uid %q is used by both %s and %s",
 				contract.UID,
 				relPath(root, previous.Path),
@@ -192,18 +217,25 @@ func verifyGeneratedDashboards(
 		}
 		contractsByUID[contract.UID] = dashboardContractFile{Path: contractPath, Contract: contract}
 	}
+	return contractsByUID, nil
+}
 
+func loadGeneratedDashboardFiles(
+	root string,
+	generatedPaths []string,
+	streamContract *StreamContract,
+) (map[string]string, error) {
 	generatedByUID := map[string]string{}
 	for _, generatedPath := range generatedPaths {
 		dashboard, err := loadGeneratedDashboard(generatedPath)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if err := validateGeneratedDashboardSchema(root, generatedPath, dashboard, streamContract); err != nil {
-			return err
+			return nil, err
 		}
 		if previous, ok := generatedByUID[dashboard.UID]; ok {
-			return fmt.Errorf(
+			return nil, fmt.Errorf(
 				"generated dashboard uid %q is used by both %s and %s",
 				dashboard.UID,
 				relPath(root, previous),
@@ -211,7 +243,7 @@ func verifyGeneratedDashboards(
 			)
 		}
 		if filepath.Base(generatedPath) != dashboard.UID+".json" {
-			return fmt.Errorf(
+			return nil, fmt.Errorf(
 				"generated dashboard %s filename must match uid %q",
 				relPath(root, generatedPath),
 				dashboard.UID,
@@ -219,7 +251,16 @@ func verifyGeneratedDashboards(
 		}
 		generatedByUID[dashboard.UID] = generatedPath
 	}
+	return generatedByUID, nil
+}
 
+func verifyGeneratedDashboardPairs(
+	root string,
+	contractsByUID map[string]dashboardContractFile,
+	generatedByUID map[string]string,
+	recordingRules map[string]bool,
+	streamContract *StreamContract,
+) error {
 	for uid, contractFile := range contractsByUID {
 		generatedPath, ok := generatedByUID[uid]
 		if !ok {
@@ -245,7 +286,14 @@ func verifyGeneratedDashboards(
 			return err
 		}
 	}
+	return nil
+}
 
+func verifyGeneratedDashboardOrphans(
+	root string,
+	contractsByUID map[string]dashboardContractFile,
+	generatedByUID map[string]string,
+) error {
 	for uid, generatedPath := range generatedByUID {
 		if _, ok := contractsByUID[uid]; !ok {
 			return fmt.Errorf(
@@ -255,7 +303,6 @@ func verifyGeneratedDashboards(
 			)
 		}
 	}
-
 	return nil
 }
 
@@ -271,6 +318,29 @@ func verifyGeneratedDashboard(
 	dashboard *generatedDashboard,
 	recordingRules map[string]bool,
 	streamContract *StreamContract,
+) error {
+	if err := verifyGeneratedDashboardHeader(root, contractPath, contract, generatedPath, dashboard); err != nil {
+		return err
+	}
+	if err := verifyGeneratedDashboardVariables(root, contractPath, contract, generatedPath, dashboard); err != nil {
+		return err
+	}
+	return verifyGeneratedDashboardPanels(
+		root,
+		contractPath,
+		contract,
+		generatedPath,
+		dashboard,
+		recordingRules,
+		streamContract,
+	)
+}
+
+func verifyGeneratedDashboardHeader(
+	root, contractPath string,
+	contract *DashboardContract,
+	generatedPath string,
+	dashboard *generatedDashboard,
 ) error {
 	if dashboard.Title != contract.Title {
 		return fmt.Errorf(
@@ -301,9 +371,17 @@ func verifyGeneratedDashboard(
 			contract.TimeRange.To,
 		)
 	}
-	if err := verifyGeneratedDashboardVariables(root, contractPath, contract, generatedPath, dashboard); err != nil {
-		return err
-	}
+	return nil
+}
+
+func verifyGeneratedDashboardPanels(
+	root, contractPath string,
+	contract *DashboardContract,
+	generatedPath string,
+	dashboard *generatedDashboard,
+	recordingRules map[string]bool,
+	streamContract *StreamContract,
+) error {
 	if len(dashboard.Panels) != len(contract.Panels) {
 		return fmt.Errorf(
 			"generated dashboard %s has %d panels, want %d from %s",
@@ -315,108 +393,193 @@ func verifyGeneratedDashboard(
 	}
 
 	for i, panel := range contract.Panels {
-		generatedPanel := dashboard.Panels[i]
-		if generatedPanel.Title != panel.Title {
-			return fmt.Errorf(
-				"generated dashboard %s panel %d title %q does not match contract panel %s title %q",
-				relPath(root, generatedPath),
-				i+1,
-				generatedPanel.Title,
-				panel.ID,
-				panel.Title,
-			)
-		}
-		if generatedPanel.Type != panel.Type {
-			return fmt.Errorf(
-				"generated dashboard %s panel %s type %q does not match contract type %q",
-				relPath(root, generatedPath),
-				panel.ID,
-				generatedPanel.Type,
-				panel.Type,
-			)
-		}
-		if generatedPanel.GridPos != panel.Grid {
-			return fmt.Errorf(
-				"generated dashboard %s panel %s grid does not match contract",
-				relPath(root, generatedPath),
-				panel.ID,
-			)
-		}
-
-		expectedDatasource, err := contractDatasource(contract, panel.Datasource)
-		if err != nil {
-			return fmt.Errorf("dashboard contract %s panel %s: %w", relPath(root, contractPath), panel.ID, err)
-		}
-		if generatedPanel.Datasource.Type != expectedDatasource.Type ||
-			generatedPanel.Datasource.UID != expectedDatasource.UID {
-			return fmt.Errorf(
-				"generated dashboard %s panel %s datasource %s/%s does not match contract %s/%s",
-				relPath(root, generatedPath),
-				panel.ID,
-				generatedPanel.Datasource.Type,
-				generatedPanel.Datasource.UID,
-				expectedDatasource.Type,
-				expectedDatasource.UID,
-			)
-		}
-		if len(generatedPanel.Targets) == 0 {
-			return fmt.Errorf("generated dashboard %s panel %s has no targets", relPath(root, generatedPath), panel.ID)
-		}
-		for _, target := range generatedPanel.Targets {
-			if target.Expr != panel.Expression {
-				return fmt.Errorf(
-					"generated dashboard %s panel %s target expression does not match contract",
-					relPath(root, generatedPath),
-					panel.ID,
-				)
-			}
-			if target.Datasource.Type != expectedDatasource.Type || target.Datasource.UID != expectedDatasource.UID {
-				return fmt.Errorf(
-					"generated dashboard %s panel %s target datasource %s/%s does not match contract %s/%s",
-					relPath(root, generatedPath),
-					panel.ID,
-					target.Datasource.Type,
-					target.Datasource.UID,
-					expectedDatasource.Type,
-					expectedDatasource.UID,
-				)
-			}
-			switch panel.Signal {
-			case dashboardSignalMetrics:
-				expression := contract.ExpressionWithDefaultVariables(target.Expr)
-				if err := validatePromQLLabelSafety(expression, streamContract.ForbiddenLabels); err != nil {
-					return fmt.Errorf(
-						"generated dashboard %s panel %s target labels: %w",
-						relPath(root, generatedPath),
-						panel.ID,
-						err,
-					)
-				}
-			case dashboardSignalLogs:
-				if err := streamContract.ValidateLogExpression(target.Expr); err != nil {
-					return fmt.Errorf(
-						"generated dashboard %s panel %s target labels: %w",
-						relPath(root, generatedPath),
-						panel.ID,
-						err,
-					)
-				}
-			}
-		}
-		if panel.Signal == dashboardSignalMetrics {
-			for _, ruleName := range recordingRuleReferences(panel.Expression) {
-				if !recordingRules[ruleName] {
-					return fmt.Errorf(
-						"dashboard contract %s panel %s references recording rule %s, but it is not generated",
-						relPath(root, contractPath),
-						panel.ID,
-						ruleName,
-					)
-				}
-			}
+		if err := verifyGeneratedDashboardPanel(
+			root,
+			contractPath,
+			contract,
+			generatedPath,
+			panel,
+			dashboard.Panels[i],
+			i,
+			recordingRules,
+			streamContract,
+		); err != nil {
+			return err
 		}
 	}
 
+	return nil
+}
+
+func verifyGeneratedDashboardPanel(
+	root, contractPath string,
+	contract *DashboardContract,
+	generatedPath string,
+	panel DashboardPanel,
+	generatedPanel generatedDashboardPanel,
+	index int,
+	recordingRules map[string]bool,
+	streamContract *StreamContract,
+) error {
+	if err := verifyGeneratedDashboardPanelShape(root, generatedPath, panel, generatedPanel, index); err != nil {
+		return err
+	}
+	expectedDatasource, err := contractDatasource(contract, panel.Datasource)
+	if err != nil {
+		return fmt.Errorf("dashboard contract %s panel %s: %w", relPath(root, contractPath), panel.ID, err)
+	}
+	if err := verifyGeneratedPanelDatasource(
+		root,
+		generatedPath,
+		panel.ID,
+		generatedPanel.Datasource,
+		expectedDatasource,
+	); err != nil {
+		return err
+	}
+	if len(generatedPanel.Targets) == 0 {
+		return fmt.Errorf("generated dashboard %s panel %s has no targets", relPath(root, generatedPath), panel.ID)
+	}
+	for _, target := range generatedPanel.Targets {
+		if err := verifyGeneratedDashboardTarget(
+			root,
+			contract,
+			generatedPath,
+			panel,
+			target,
+			expectedDatasource,
+			streamContract,
+		); err != nil {
+			return err
+		}
+	}
+	return verifyGeneratedPanelRecordingRules(root, contractPath, panel, recordingRules)
+}
+
+func verifyGeneratedDashboardPanelShape(
+	root, generatedPath string,
+	panel DashboardPanel,
+	generatedPanel generatedDashboardPanel,
+	index int,
+) error {
+	if generatedPanel.Title != panel.Title {
+		return fmt.Errorf(
+			"generated dashboard %s panel %d title %q does not match contract panel %s title %q",
+			relPath(root, generatedPath),
+			index+1,
+			generatedPanel.Title,
+			panel.ID,
+			panel.Title,
+		)
+	}
+	if generatedPanel.Type != panel.Type {
+		return fmt.Errorf(
+			"generated dashboard %s panel %s type %q does not match contract type %q",
+			relPath(root, generatedPath),
+			panel.ID,
+			generatedPanel.Type,
+			panel.Type,
+		)
+	}
+	if generatedPanel.GridPos != panel.Grid {
+		return fmt.Errorf(
+			"generated dashboard %s panel %s grid does not match contract",
+			relPath(root, generatedPath),
+			panel.ID,
+		)
+	}
+	return nil
+}
+
+func verifyGeneratedPanelDatasource(
+	root, generatedPath, panelID string,
+	datasource generatedDatasource,
+	expected DashboardDatasource,
+) error {
+	if datasource.Type == expected.Type && datasource.UID == expected.UID {
+		return nil
+	}
+	return fmt.Errorf(
+		"generated dashboard %s panel %s datasource %s/%s does not match contract %s/%s",
+		relPath(root, generatedPath),
+		panelID,
+		datasource.Type,
+		datasource.UID,
+		expected.Type,
+		expected.UID,
+	)
+}
+
+func verifyGeneratedDashboardTarget(
+	root string,
+	contract *DashboardContract,
+	generatedPath string,
+	panel DashboardPanel,
+	target generatedTarget,
+	expectedDatasource DashboardDatasource,
+	streamContract *StreamContract,
+) error {
+	if target.Expr != panel.Expression {
+		return fmt.Errorf(
+			"generated dashboard %s panel %s target expression does not match contract",
+			relPath(root, generatedPath),
+			panel.ID,
+		)
+	}
+	if target.Datasource.Type != expectedDatasource.Type || target.Datasource.UID != expectedDatasource.UID {
+		return fmt.Errorf(
+			"generated dashboard %s panel %s target datasource %s/%s does not match contract %s/%s",
+			relPath(root, generatedPath),
+			panel.ID,
+			target.Datasource.Type,
+			target.Datasource.UID,
+			expectedDatasource.Type,
+			expectedDatasource.UID,
+		)
+	}
+	return verifyGeneratedDashboardTargetLabels(root, contract, generatedPath, panel, target, streamContract)
+}
+
+func verifyGeneratedDashboardTargetLabels(
+	root string,
+	contract *DashboardContract,
+	generatedPath string,
+	panel DashboardPanel,
+	target generatedTarget,
+	streamContract *StreamContract,
+) error {
+	switch panel.Signal {
+	case dashboardSignalMetrics:
+		expression := contract.ExpressionWithDefaultVariables(target.Expr)
+		if err := validatePromQLLabelSafety(expression, streamContract.ForbiddenLabels); err != nil {
+			return fmt.Errorf("generated dashboard %s panel %s target labels: %w", relPath(root, generatedPath), panel.ID, err)
+		}
+	case dashboardSignalLogs:
+		if err := streamContract.ValidateLogExpression(target.Expr); err != nil {
+			return fmt.Errorf("generated dashboard %s panel %s target labels: %w", relPath(root, generatedPath), panel.ID, err)
+		}
+	}
+	return nil
+}
+
+func verifyGeneratedPanelRecordingRules(
+	root, contractPath string,
+	panel DashboardPanel,
+	recordingRules map[string]bool,
+) error {
+	if panel.Signal != dashboardSignalMetrics {
+		return nil
+	}
+	for _, ruleName := range recordingRuleReferences(panel.Expression) {
+		if !recordingRules[ruleName] {
+			return fmt.Errorf(
+				"dashboard contract %s panel %s references recording rule %s, but it is not generated",
+				relPath(root, contractPath),
+				panel.ID,
+				ruleName,
+			)
+		}
+	}
 	return nil
 }
 
@@ -480,18 +643,34 @@ func contractDatasource(contract *DashboardContract, name string) (DashboardData
 }
 
 func verifyGeneratedAlerts(root string, alertContractPaths []string, streamContract *StreamContract) error {
+	expectedPrometheusAlerts, expectedLokiAlerts, err := loadExpectedGeneratedAlerts(
+		root,
+		alertContractPaths,
+		streamContract,
+	)
+	if err != nil {
+		return err
+	}
+	return compareGeneratedAlertFiles(root, expectedPrometheusAlerts, expectedLokiAlerts, streamContract)
+}
+
+func loadExpectedGeneratedAlerts(
+	root string,
+	alertContractPaths []string,
+	streamContract *StreamContract,
+) (map[string]string, map[string]string, error) {
 	expectedPrometheusAlerts := map[string]string{}
 	expectedLokiAlerts := map[string]string{}
 	for _, contractPath := range alertContractPaths {
 		contract, err := LoadAlertContract(contractPath)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		if err := contract.ValidateExpressions(contract.DefaultSourcePrefix()); err != nil {
-			return fmt.Errorf("validate alert expressions in %s: %w", relPath(root, contractPath), err)
+			return nil, nil, fmt.Errorf("validate alert expressions in %s: %w", relPath(root, contractPath), err)
 		}
 		if err := contract.ValidateRunbooks(root); err != nil {
-			return err
+			return nil, nil, err
 		}
 		for _, alert := range contract.Alerts {
 			if err := validateAlertContractLabelSafety(
@@ -500,35 +679,50 @@ func verifyGeneratedAlerts(root string, alertContractPaths []string, streamContr
 				alert,
 				streamContract,
 			); err != nil {
-				return err
+				return nil, nil, err
 			}
 		}
 		for _, alert := range contract.Alerts {
-			switch alert.Type {
-			case alertTypePrometheus:
-				if previous, ok := expectedPrometheusAlerts[alert.ID]; ok {
-					return fmt.Errorf(
-						"prometheus alert %s is defined in both %s and %s",
-						alert.ID,
-						previous,
-						relPath(root, contractPath),
-					)
-				}
-				expectedPrometheusAlerts[alert.ID] = relPath(root, contractPath)
-			case alertTypeLoki:
-				if previous, ok := expectedLokiAlerts[alert.ID]; ok {
-					return fmt.Errorf(
-						"loki alert %s is defined in both %s and %s",
-						alert.ID,
-						previous,
-						relPath(root, contractPath),
-					)
-				}
-				expectedLokiAlerts[alert.ID] = relPath(root, contractPath)
+			if err := registerExpectedGeneratedAlert(
+				relPath(root, contractPath),
+				alert,
+				expectedPrometheusAlerts,
+				expectedLokiAlerts,
+			); err != nil {
+				return nil, nil, err
 			}
 		}
 	}
+	return expectedPrometheusAlerts, expectedLokiAlerts, nil
+}
 
+func registerExpectedGeneratedAlert(
+	contractPath string,
+	alert Alert,
+	expectedPrometheusAlerts map[string]string,
+	expectedLokiAlerts map[string]string,
+) error {
+	switch alert.Type {
+	case alertTypePrometheus:
+		if previous, ok := expectedPrometheusAlerts[alert.ID]; ok {
+			return fmt.Errorf("prometheus alert %s is defined in both %s and %s", alert.ID, previous, contractPath)
+		}
+		expectedPrometheusAlerts[alert.ID] = contractPath
+	case alertTypeLoki:
+		if previous, ok := expectedLokiAlerts[alert.ID]; ok {
+			return fmt.Errorf("loki alert %s is defined in both %s and %s", alert.ID, previous, contractPath)
+		}
+		expectedLokiAlerts[alert.ID] = contractPath
+	}
+	return nil
+}
+
+func compareGeneratedAlertFiles(
+	root string,
+	expectedPrometheusAlerts map[string]string,
+	expectedLokiAlerts map[string]string,
+	streamContract *StreamContract,
+) error {
 	generatedPrometheusAlerts, err := loadGeneratedAlertNames(
 		root,
 		filepath.Join("generated", "prometheus", "*.yaml"),
@@ -645,130 +839,186 @@ func validateGeneratedDashboardSchema(
 	streamContract *StreamContract,
 ) error {
 	source := relPath(root, generatedPath)
-	if dashboard.UID == "" {
-		return fmt.Errorf("generated dashboard %s is missing uid", source)
+	if err := validateGeneratedDashboardHeader(source, dashboard); err != nil {
+		return err
 	}
-	if dashboard.Title == "" {
-		return fmt.Errorf("generated dashboard %s is missing title", source)
+	if err := validateGeneratedDashboardVariableSchema(source, dashboard); err != nil {
+		return err
 	}
-	if dashboard.SchemaVersion <= 0 {
-		return fmt.Errorf("generated dashboard %s is missing schemaVersion", source)
-	}
-	if dashboard.Refresh == "" {
-		return fmt.Errorf("generated dashboard %s is missing refresh", source)
-	}
-	if dashboard.Time.From == "" || dashboard.Time.To == "" {
-		return fmt.Errorf("generated dashboard %s is missing time.from or time.to", source)
-	}
-	if len(dashboard.Panels) == 0 {
-		return fmt.Errorf("generated dashboard %s has no panels", source)
-	}
+	return validateGeneratedDashboardPanelSchema(source, dashboard, streamContract)
+}
 
+func validateGeneratedDashboardHeader(source string, dashboard *generatedDashboard) error {
+	switch {
+	case dashboard.UID == "":
+		return fmt.Errorf("generated dashboard %s is missing uid", source)
+	case dashboard.Title == "":
+		return fmt.Errorf("generated dashboard %s is missing title", source)
+	case dashboard.SchemaVersion <= 0:
+		return fmt.Errorf("generated dashboard %s is missing schemaVersion", source)
+	case dashboard.Refresh == "":
+		return fmt.Errorf("generated dashboard %s is missing refresh", source)
+	case dashboard.Time.From == "" || dashboard.Time.To == "":
+		return fmt.Errorf("generated dashboard %s is missing time.from or time.to", source)
+	case len(dashboard.Panels) == 0:
+		return fmt.Errorf("generated dashboard %s has no panels", source)
+	default:
+		return nil
+	}
+}
+
+func validateGeneratedDashboardVariableSchema(source string, dashboard *generatedDashboard) error {
 	seenVariables := map[string]bool{}
 	for _, variable := range dashboard.Templating.List {
-		if variable.Name == "" {
-			return fmt.Errorf("generated dashboard %s has a variable without a name", source)
-		}
-		if seenVariables[variable.Name] {
-			return fmt.Errorf("generated dashboard %s has duplicate variable %q", source, variable.Name)
-		}
-		seenVariables[variable.Name] = true
-		if variable.Type == "" {
-			return fmt.Errorf("generated dashboard %s variable %s is missing type", source, variable.Name)
-		}
-		if variable.Current.Value == "" && variable.Current.Text == "" {
-			return fmt.Errorf("generated dashboard %s variable %s is missing current value", source, variable.Name)
-		}
-		if variable.Type == dashboardVariableTypeList && len(variable.Options) == 0 {
-			return fmt.Errorf("generated dashboard %s custom variable %s has no options", source, variable.Name)
+		if err := validateGeneratedDashboardVariable(source, variable, seenVariables); err != nil {
+			return err
 		}
 	}
+	return nil
+}
 
+func validateGeneratedDashboardVariable(
+	source string,
+	variable generatedDashboardVariable,
+	seen map[string]bool,
+) error {
+	if variable.Name == "" {
+		return fmt.Errorf("generated dashboard %s has a variable without a name", source)
+	}
+	if seen[variable.Name] {
+		return fmt.Errorf("generated dashboard %s has duplicate variable %q", source, variable.Name)
+	}
+	seen[variable.Name] = true
+	if variable.Type == "" {
+		return fmt.Errorf("generated dashboard %s variable %s is missing type", source, variable.Name)
+	}
+	if variable.Current.Value == "" && variable.Current.Text == "" {
+		return fmt.Errorf("generated dashboard %s variable %s is missing current value", source, variable.Name)
+	}
+	if variable.Type == dashboardVariableTypeList && len(variable.Options) == 0 {
+		return fmt.Errorf("generated dashboard %s custom variable %s has no options", source, variable.Name)
+	}
+	return nil
+}
+
+func validateGeneratedDashboardPanelSchema(
+	source string,
+	dashboard *generatedDashboard,
+	streamContract *StreamContract,
+) error {
 	seenPanels := map[int]bool{}
 	for _, panel := range dashboard.Panels {
-		if panel.ID <= 0 {
-			return fmt.Errorf("generated dashboard %s has panel with invalid id %d", source, panel.ID)
-		}
-		if seenPanels[panel.ID] {
-			return fmt.Errorf("generated dashboard %s has duplicate panel id %d", source, panel.ID)
-		}
-		seenPanels[panel.ID] = true
-		if panel.Title == "" {
-			return fmt.Errorf("generated dashboard %s panel %d is missing title", source, panel.ID)
-		}
-		if panel.Type == "" {
-			return fmt.Errorf("generated dashboard %s panel %d is missing type", source, panel.ID)
-		}
-		if err := validateGeneratedDatasource(source, fmt.Sprintf("panel %d", panel.ID), panel.Datasource); err != nil {
+		if err := validateGeneratedDashboardPanel(source, dashboard, panel, seenPanels, streamContract); err != nil {
 			return err
 		}
-		if err := validateGeneratedGrid(source, panel.ID, panel.GridPos); err != nil {
+	}
+	return nil
+}
+
+func validateGeneratedDashboardPanel(
+	source string,
+	dashboard *generatedDashboard,
+	panel generatedDashboardPanel,
+	seenPanels map[int]bool,
+	streamContract *StreamContract,
+) error {
+	if panel.ID <= 0 {
+		return fmt.Errorf("generated dashboard %s has panel with invalid id %d", source, panel.ID)
+	}
+	if seenPanels[panel.ID] {
+		return fmt.Errorf("generated dashboard %s has duplicate panel id %d", source, panel.ID)
+	}
+	seenPanels[panel.ID] = true
+	if panel.Title == "" {
+		return fmt.Errorf("generated dashboard %s panel %d is missing title", source, panel.ID)
+	}
+	if panel.Type == "" {
+		return fmt.Errorf("generated dashboard %s panel %d is missing type", source, panel.ID)
+	}
+	if err := validateGeneratedDatasource(source, fmt.Sprintf("panel %d", panel.ID), panel.Datasource); err != nil {
+		return err
+	}
+	if err := validateGeneratedGrid(source, panel.ID, panel.GridPos); err != nil {
+		return err
+	}
+	if len(panel.Targets) == 0 {
+		return fmt.Errorf("generated dashboard %s panel %d has no targets", source, panel.ID)
+	}
+	return validateGeneratedDashboardTargets(source, dashboard, panel, streamContract)
+}
+
+func validateGeneratedDashboardTargets(
+	source string,
+	dashboard *generatedDashboard,
+	panel generatedDashboardPanel,
+	streamContract *StreamContract,
+) error {
+	seenTargets := map[string]bool{}
+	for _, target := range panel.Targets {
+		if err := validateGeneratedDashboardTarget(
+			source,
+			dashboard,
+			panel.ID,
+			target,
+			seenTargets,
+			streamContract,
+		); err != nil {
 			return err
 		}
-		if len(panel.Targets) == 0 {
-			return fmt.Errorf("generated dashboard %s panel %d has no targets", source, panel.ID)
+	}
+	return nil
+}
+
+func validateGeneratedDashboardTarget(
+	source string,
+	dashboard *generatedDashboard,
+	panelID int,
+	target generatedTarget,
+	seenTargets map[string]bool,
+	streamContract *StreamContract,
+) error {
+	if target.RefID == "" {
+		return fmt.Errorf("generated dashboard %s panel %d has target without refId", source, panelID)
+	}
+	if seenTargets[target.RefID] {
+		return fmt.Errorf("generated dashboard %s panel %d has duplicate target refId %q", source, panelID, target.RefID)
+	}
+	seenTargets[target.RefID] = true
+	if target.Expr == "" {
+		return fmt.Errorf("generated dashboard %s panel %d target %s is missing expr", source, panelID, target.RefID)
+	}
+	field := fmt.Sprintf("panel %d target %s", panelID, target.RefID)
+	if err := validateGeneratedDatasource(source, field, target.Datasource); err != nil {
+		return err
+	}
+	return validateGeneratedTargetExpression(source, dashboard, panelID, target, streamContract)
+}
+
+func validateGeneratedTargetExpression(
+	source string,
+	dashboard *generatedDashboard,
+	panelID int,
+	target generatedTarget,
+	streamContract *StreamContract,
+) error {
+	switch target.Datasource.Type {
+	case alertTypePrometheus:
+		expression := InterpolateDashboardVariables(target.Expr, generatedDashboardVariableDefaults(dashboard))
+		if err := validatePromQLLabelSafety(expression, streamContract.ForbiddenLabels); err != nil {
+			return fmt.Errorf("generated dashboard %s panel %d target %s labels: %w", source, panelID, target.RefID, err)
 		}
-		seenTargets := map[string]bool{}
-		for _, target := range panel.Targets {
-			if target.RefID == "" {
-				return fmt.Errorf("generated dashboard %s panel %d has target without refId", source, panel.ID)
-			}
-			if seenTargets[target.RefID] {
-				return fmt.Errorf(
-					"generated dashboard %s panel %d has duplicate target refId %q",
-					source,
-					panel.ID,
-					target.RefID,
-				)
-			}
-			seenTargets[target.RefID] = true
-			if target.Expr == "" {
-				return fmt.Errorf(
-					"generated dashboard %s panel %d target %s is missing expr",
-					source,
-					panel.ID,
-					target.RefID,
-				)
-			}
-			field := fmt.Sprintf("panel %d target %s", panel.ID, target.RefID)
-			if err := validateGeneratedDatasource(source, field, target.Datasource); err != nil {
-				return err
-			}
-			expression := target.Expr
-			if target.Datasource.Type == alertTypePrometheus {
-				expression = InterpolateDashboardVariables(target.Expr, generatedDashboardVariableDefaults(dashboard))
-			}
-			switch target.Datasource.Type {
-			case alertTypePrometheus:
-				if err := validatePromQLLabelSafety(expression, streamContract.ForbiddenLabels); err != nil {
-					return fmt.Errorf(
-						"generated dashboard %s panel %d target %s labels: %w",
-						source,
-						panel.ID,
-						target.RefID,
-						err,
-					)
-				}
-			case alertTypeLoki:
-				if err := streamContract.ValidateLogExpression(target.Expr); err != nil {
-					return fmt.Errorf(
-						"generated dashboard %s panel %d target %s labels: %w",
-						source,
-						panel.ID,
-						target.RefID,
-						err,
-					)
-				}
-			default:
-				return fmt.Errorf(
-					"generated dashboard %s panel %d target %s has unsupported datasource type %q",
-					source,
-					panel.ID,
-					target.RefID,
-					target.Datasource.Type,
-				)
-			}
+	case alertTypeLoki:
+		if err := streamContract.ValidateLogExpression(target.Expr); err != nil {
+			return fmt.Errorf("generated dashboard %s panel %d target %s labels: %w", source, panelID, target.RefID, err)
 		}
+	default:
+		return fmt.Errorf(
+			"generated dashboard %s panel %d target %s has unsupported datasource type %q",
+			source,
+			panelID,
+			target.RefID,
+			target.Datasource.Type,
+		)
 	}
 	return nil
 }

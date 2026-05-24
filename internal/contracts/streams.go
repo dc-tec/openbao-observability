@@ -157,42 +157,65 @@ func (c StreamContract) ValidateLogExpression(expression string) error {
 }
 
 func (c StreamContract) validateShape(path string) error {
-	if len(c.Streams) == 0 {
-		return fmt.Errorf("stream contract %s has no streams", path)
+	if err := c.validateStreamContractHeader(path); err != nil {
+		return err
 	}
-	if len(c.AllowedLabels) == 0 {
-		return fmt.Errorf("stream contract %s has no allowedLabels", path)
+	if err := c.validateStreams(path); err != nil {
+		return err
 	}
-	if len(c.ForbiddenLabels) == 0 {
-		return fmt.Errorf("stream contract %s has no forbiddenLabels", path)
-	}
+	return c.validateLabels(path)
+}
 
+func (c StreamContract) validateStreamContractHeader(path string) error {
+	switch {
+	case len(c.Streams) == 0:
+		return fmt.Errorf("stream contract %s has no streams", path)
+	case len(c.AllowedLabels) == 0:
+		return fmt.Errorf("stream contract %s has no allowedLabels", path)
+	case len(c.ForbiddenLabels) == 0:
+		return fmt.Errorf("stream contract %s has no forbiddenLabels", path)
+	default:
+		return nil
+	}
+}
+
+func (c StreamContract) validateStreams(path string) error {
 	seenStreams := map[string]bool{}
 	for _, stream := range c.Streams {
-		if stream.ID == "" {
-			return fmt.Errorf("stream contract %s has a stream without an id", path)
-		}
-		if seenStreams[stream.ID] {
-			return fmt.Errorf("stream contract %s has duplicate stream id %q", path, stream.ID)
-		}
-		seenStreams[stream.ID] = true
-		if stream.Default == "" {
-			return fmt.Errorf("stream %s is missing default", stream.ID)
-		}
-		if stream.Source == "" {
-			return fmt.Errorf("stream %s is missing source", stream.ID)
-		}
-		if stream.Format == "" {
-			return fmt.Errorf("stream %s is missing format", stream.ID)
-		}
-		if stream.Access == "" {
-			return fmt.Errorf("stream %s is missing access", stream.ID)
-		}
-		if stream.Retention == "" {
-			return fmt.Errorf("stream %s is missing retention", stream.ID)
+		if err := validateStream(path, stream, seenStreams); err != nil {
+			return err
 		}
 	}
+	return nil
+}
 
+func validateStream(path string, stream Stream, seen map[string]bool) error {
+	if stream.ID == "" {
+		return fmt.Errorf("stream contract %s has a stream without an id", path)
+	}
+	if seen[stream.ID] {
+		return fmt.Errorf("stream contract %s has duplicate stream id %q", path, stream.ID)
+	}
+	seen[stream.ID] = true
+	if stream.Default == "" {
+		return fmt.Errorf("stream %s is missing default", stream.ID)
+	}
+	if stream.Source == "" {
+		return fmt.Errorf("stream %s is missing source", stream.ID)
+	}
+	if stream.Format == "" {
+		return fmt.Errorf("stream %s is missing format", stream.ID)
+	}
+	if stream.Access == "" {
+		return fmt.Errorf("stream %s is missing access", stream.ID)
+	}
+	if stream.Retention == "" {
+		return fmt.Errorf("stream %s is missing retention", stream.ID)
+	}
+	return nil
+}
+
+func (c StreamContract) validateLabels(path string) error {
 	allowed := stringSet(c.AllowedLabels)
 	if !allowed["log_stream"] {
 		return fmt.Errorf("stream contract %s must allow the log_stream routing label", path)

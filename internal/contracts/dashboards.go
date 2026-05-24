@@ -167,98 +167,136 @@ func (c DashboardContract) variableDefaults() map[string]string {
 }
 
 func (c DashboardContract) validateShape(path string) error {
-	if c.UID == "" {
-		return fmt.Errorf("dashboard contract %s is missing uid", path)
+	if err := c.validateMetadata(path); err != nil {
+		return err
 	}
-	if c.Title == "" {
-		return fmt.Errorf("dashboard contract %s is missing title", path)
+	if err := c.validateVariables(path); err != nil {
+		return err
 	}
-	if c.TimeRange.From == "" || c.TimeRange.To == "" {
-		return fmt.Errorf("dashboard contract %s is missing timeRange.from or timeRange.to", path)
-	}
-	if c.Datasources.Metrics.UID == "" || c.Datasources.Metrics.Type == "" {
-		return fmt.Errorf("dashboard contract %s is missing metrics datasource", path)
-	}
-	if c.Datasources.Logs.UID == "" || c.Datasources.Logs.Type == "" {
-		return fmt.Errorf("dashboard contract %s is missing logs datasource", path)
-	}
-	if len(c.Panels) == 0 {
-		return fmt.Errorf("dashboard contract %s has no panels", path)
-	}
+	return c.validatePanels(path)
+}
 
+func (c DashboardContract) validateMetadata(path string) error {
+	switch {
+	case c.UID == "":
+		return fmt.Errorf("dashboard contract %s is missing uid", path)
+	case c.Title == "":
+		return fmt.Errorf("dashboard contract %s is missing title", path)
+	case c.TimeRange.From == "" || c.TimeRange.To == "":
+		return fmt.Errorf("dashboard contract %s is missing timeRange.from or timeRange.to", path)
+	case c.Datasources.Metrics.UID == "" || c.Datasources.Metrics.Type == "":
+		return fmt.Errorf("dashboard contract %s is missing metrics datasource", path)
+	case c.Datasources.Logs.UID == "" || c.Datasources.Logs.Type == "":
+		return fmt.Errorf("dashboard contract %s is missing logs datasource", path)
+	case len(c.Panels) == 0:
+		return fmt.Errorf("dashboard contract %s has no panels", path)
+	default:
+		return nil
+	}
+}
+
+func (c DashboardContract) validateVariables(path string) error {
 	seenVariables := map[string]bool{}
 	for _, variable := range c.Variables {
-		if variable.Name == "" {
-			return fmt.Errorf("dashboard contract %s has a variable without a name", path)
-		}
-		if !dashboardVariableNamePattern.MatchString(variable.Name) {
-			return fmt.Errorf("dashboard contract %s has invalid variable name %q", path, variable.Name)
-		}
-		if seenVariables[variable.Name] {
-			return fmt.Errorf("dashboard contract %s has duplicate variable %q", path, variable.Name)
-		}
-		seenVariables[variable.Name] = true
-		if variable.Type == "" {
-			return fmt.Errorf("dashboard variable %s is missing type", variable.Name)
-		}
-		switch variable.Type {
-		case dashboardVariableTypeList, dashboardVariableTypeText:
-		default:
-			return fmt.Errorf("dashboard variable %s has unsupported type %q", variable.Name, variable.Type)
-		}
-		if variable.Default == "" {
-			return fmt.Errorf("dashboard variable %s is missing default", variable.Name)
-		}
-		if variable.Type == dashboardVariableTypeList {
-			if len(variable.Options) == 0 {
-				return fmt.Errorf("dashboard variable %s has no options", variable.Name)
-			}
-			if !stringSet(variable.Options)[variable.Default] {
-				return fmt.Errorf(
-					"dashboard variable %s default %q is not listed in options",
-					variable.Name,
-					variable.Default,
-				)
-			}
+		if err := validateDashboardVariable(path, variable, seenVariables); err != nil {
+			return err
 		}
 	}
+	return nil
+}
 
+func validateDashboardVariable(path string, variable DashboardVariable, seen map[string]bool) error {
+	if variable.Name == "" {
+		return fmt.Errorf("dashboard contract %s has a variable without a name", path)
+	}
+	if !dashboardVariableNamePattern.MatchString(variable.Name) {
+		return fmt.Errorf("dashboard contract %s has invalid variable name %q", path, variable.Name)
+	}
+	if seen[variable.Name] {
+		return fmt.Errorf("dashboard contract %s has duplicate variable %q", path, variable.Name)
+	}
+	seen[variable.Name] = true
+	if variable.Type == "" {
+		return fmt.Errorf("dashboard variable %s is missing type", variable.Name)
+	}
+	switch variable.Type {
+	case dashboardVariableTypeList, dashboardVariableTypeText:
+	default:
+		return fmt.Errorf("dashboard variable %s has unsupported type %q", variable.Name, variable.Type)
+	}
+	if variable.Default == "" {
+		return fmt.Errorf("dashboard variable %s is missing default", variable.Name)
+	}
+	if variable.Type != dashboardVariableTypeList {
+		return nil
+	}
+	if len(variable.Options) == 0 {
+		return fmt.Errorf("dashboard variable %s has no options", variable.Name)
+	}
+	if !stringSet(variable.Options)[variable.Default] {
+		return fmt.Errorf(
+			"dashboard variable %s default %q is not listed in options",
+			variable.Name,
+			variable.Default,
+		)
+	}
+	return nil
+}
+
+func (c DashboardContract) validatePanels(path string) error {
 	seen := map[string]bool{}
 	for _, panel := range c.Panels {
-		if panel.ID == "" {
-			return fmt.Errorf("dashboard contract %s has a panel without an id", path)
-		}
-		if seen[panel.ID] {
-			return fmt.Errorf("dashboard contract %s has duplicate panel id %q", path, panel.ID)
-		}
-		seen[panel.ID] = true
-		if panel.Title == "" {
-			return fmt.Errorf("dashboard panel %s is missing title", panel.ID)
-		}
-		if panel.Type == "" {
-			return fmt.Errorf("dashboard panel %s is missing type", panel.ID)
-		}
-		switch panel.Type {
-		case dashboardSignalLogs, dashboardPanelTypeStat, dashboardPanelTypeSeries:
-		default:
-			return fmt.Errorf("dashboard panel %s has unsupported type %q", panel.ID, panel.Type)
-		}
-		if panel.Datasource != dashboardSignalMetrics && panel.Datasource != dashboardSignalLogs {
-			return fmt.Errorf("dashboard panel %s has unsupported datasource %q", panel.ID, panel.Datasource)
-		}
-		if panel.Signal == dashboardSignalMetrics && panel.Datasource != dashboardSignalMetrics {
-			return fmt.Errorf("dashboard panel %s uses metrics signal with datasource %q", panel.ID, panel.Datasource)
-		}
-		if panel.Signal == dashboardSignalLogs && panel.Datasource != dashboardSignalLogs {
-			return fmt.Errorf("dashboard panel %s uses logs signal with datasource %q", panel.ID, panel.Datasource)
-		}
-		if panel.Expression == "" {
-			return fmt.Errorf("dashboard panel %s is missing expression", panel.ID)
-		}
-		if panel.Grid.W <= 0 || panel.Grid.H <= 0 {
-			return fmt.Errorf("dashboard panel %s has invalid grid size", panel.ID)
+		if err := validateDashboardPanel(path, panel, seen); err != nil {
+			return err
 		}
 	}
+	return nil
+}
 
+func validateDashboardPanel(path string, panel DashboardPanel, seen map[string]bool) error {
+	if panel.ID == "" {
+		return fmt.Errorf("dashboard contract %s has a panel without an id", path)
+	}
+	if seen[panel.ID] {
+		return fmt.Errorf("dashboard contract %s has duplicate panel id %q", path, panel.ID)
+	}
+	seen[panel.ID] = true
+	if err := validateDashboardPanelBasics(panel); err != nil {
+		return err
+	}
+	return validateDashboardPanelSignal(panel)
+}
+
+func validateDashboardPanelBasics(panel DashboardPanel) error {
+	if panel.Title == "" {
+		return fmt.Errorf("dashboard panel %s is missing title", panel.ID)
+	}
+	if panel.Type == "" {
+		return fmt.Errorf("dashboard panel %s is missing type", panel.ID)
+	}
+	switch panel.Type {
+	case dashboardSignalLogs, dashboardPanelTypeStat, dashboardPanelTypeSeries:
+	default:
+		return fmt.Errorf("dashboard panel %s has unsupported type %q", panel.ID, panel.Type)
+	}
+	if panel.Expression == "" {
+		return fmt.Errorf("dashboard panel %s is missing expression", panel.ID)
+	}
+	if panel.Grid.W <= 0 || panel.Grid.H <= 0 {
+		return fmt.Errorf("dashboard panel %s has invalid grid size", panel.ID)
+	}
+	return nil
+}
+
+func validateDashboardPanelSignal(panel DashboardPanel) error {
+	if panel.Datasource != dashboardSignalMetrics && panel.Datasource != dashboardSignalLogs {
+		return fmt.Errorf("dashboard panel %s has unsupported datasource %q", panel.ID, panel.Datasource)
+	}
+	if panel.Signal == dashboardSignalMetrics && panel.Datasource != dashboardSignalMetrics {
+		return fmt.Errorf("dashboard panel %s uses metrics signal with datasource %q", panel.ID, panel.Datasource)
+	}
+	if panel.Signal == dashboardSignalLogs && panel.Datasource != dashboardSignalLogs {
+		return fmt.Errorf("dashboard panel %s uses logs signal with datasource %q", panel.ID, panel.Datasource)
+	}
 	return nil
 }

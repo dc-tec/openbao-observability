@@ -628,68 +628,127 @@ func (r *scenarioRunner) exerciseNamespaceTransit(ctx context.Context) error {
 		return err
 	}
 
-	key, err := r.client.Logical().ReadWithContext(ctx, "transit/keys/team-a")
+	return r.runTransitRoundTrip(ctx, transitRoundTripSpec{
+		keyName:                  "team-a",
+		plaintext:                "openbao-observability-namespace-transit-scenario",
+		readStep:                 "read-namespace-transit-key",
+		encryptStep:              "encrypt-namespace-transit",
+		decryptStep:              "decrypt-namespace-transit",
+		readError:                "read namespace transit key",
+		encryptError:             "encrypt namespace transit payload",
+		decryptError:             "decrypt namespace transit payload",
+		decodeError:              "decode namespace transit plaintext",
+		missingKeyError:          "namespace transit key team-a does not exist",
+		encryptMissingData:       "namespace transit encrypt response did not include data",
+		encryptMissingCiphertext: "namespace transit encrypt response did not include data.ciphertext",
+		decryptMissingData:       "namespace transit decrypt response did not include data",
+		decryptMissingPlaintext:  "namespace transit decrypt response did not include data.plaintext",
+		plaintextMismatch:        "namespace transit decrypt plaintext did not match original payload",
+	})
+}
+
+type transitRoundTripSpec struct {
+	keyName                  string
+	plaintext                string
+	readStep                 string
+	encryptStep              string
+	decryptStep              string
+	readError                string
+	encryptError             string
+	decryptError             string
+	decodeError              string
+	missingKeyError          string
+	encryptMissingData       string
+	encryptMissingCiphertext string
+	decryptMissingData       string
+	decryptMissingPlaintext  string
+	plaintextMismatch        string
+}
+
+func (r *scenarioRunner) runTransitRoundTrip(ctx context.Context, spec transitRoundTripSpec) error {
+	if err := r.readTransitKey(ctx, spec); err != nil {
+		return err
+	}
+	ciphertext, err := r.encryptTransitPayload(ctx, spec)
 	if err != nil {
-		r.addStep("read-namespace-transit-key", "transit/keys/team-a", "error", err.Error())
-		return fmt.Errorf("read namespace transit key: %w", err)
+		return err
+	}
+	return r.decryptTransitPayload(ctx, spec, ciphertext)
+}
+
+func (r *scenarioRunner) readTransitKey(ctx context.Context, spec transitRoundTripSpec) error {
+	path := "transit/keys/" + spec.keyName
+	key, err := r.client.Logical().ReadWithContext(ctx, path)
+	if err != nil {
+		r.addStep(spec.readStep, path, "error", err.Error())
+		return fmt.Errorf("%s: %w", spec.readError, err)
 	}
 	if key == nil {
-		r.addStep("read-namespace-transit-key", "transit/keys/team-a", "error", "missing key")
-		return errors.New("namespace transit key team-a does not exist")
+		r.addStep(spec.readStep, path, "error", "missing key")
+		return errors.New(spec.missingKeyError)
 	}
-	r.addStep("read-namespace-transit-key", "transit/keys/team-a", "success", "")
+	r.addStep(spec.readStep, path, "success", "")
+	return nil
+}
 
-	plaintext := "openbao-observability-namespace-transit-scenario"
-	encrypted, err := r.client.Logical().WriteWithContext(ctx, "transit/encrypt/team-a", map[string]any{
-		"plaintext": base64.StdEncoding.EncodeToString([]byte(plaintext)),
+func (r *scenarioRunner) encryptTransitPayload(ctx context.Context, spec transitRoundTripSpec) (string, error) {
+	path := "transit/encrypt/" + spec.keyName
+	encrypted, err := r.client.Logical().WriteWithContext(ctx, path, map[string]any{
+		"plaintext": base64.StdEncoding.EncodeToString([]byte(spec.plaintext)),
 	})
 	if err != nil {
-		r.addStep("encrypt-namespace-transit", "transit/encrypt/team-a", "error", err.Error())
-		return fmt.Errorf("encrypt namespace transit payload: %w", err)
+		r.addStep(spec.encryptStep, path, "error", err.Error())
+		return "", fmt.Errorf("%s: %w", spec.encryptError, err)
 	}
 	if encrypted == nil || encrypted.Data == nil {
-		err := errors.New("namespace transit encrypt response did not include data")
-		r.addStep("encrypt-namespace-transit", "transit/encrypt/team-a", "error", err.Error())
-		return err
+		return "", r.transitStepError(spec.encryptStep, path, spec.encryptMissingData)
 	}
 	ciphertext, ok := encrypted.Data["ciphertext"].(string)
 	if !ok || ciphertext == "" {
-		err := errors.New("namespace transit encrypt response did not include data.ciphertext")
-		r.addStep("encrypt-namespace-transit", "transit/encrypt/team-a", "error", err.Error())
-		return err
+		return "", r.transitStepError(spec.encryptStep, path, spec.encryptMissingCiphertext)
 	}
-	r.addStep("encrypt-namespace-transit", "transit/encrypt/team-a", "success", "")
+	r.addStep(spec.encryptStep, path, "success", "")
+	return ciphertext, nil
+}
 
-	decrypted, err := r.client.Logical().WriteWithContext(ctx, "transit/decrypt/team-a", map[string]any{
-		"ciphertext": ciphertext,
-	})
+func (r *scenarioRunner) decryptTransitPayload(
+	ctx context.Context,
+	spec transitRoundTripSpec,
+	ciphertext string,
+) error {
+	path := "transit/decrypt/" + spec.keyName
+	decrypted, err := r.client.Logical().WriteWithContext(ctx, path, map[string]any{"ciphertext": ciphertext})
 	if err != nil {
-		r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "error", err.Error())
-		return fmt.Errorf("decrypt namespace transit payload: %w", err)
+		r.addStep(spec.decryptStep, path, "error", err.Error())
+		return fmt.Errorf("%s: %w", spec.decryptError, err)
 	}
 	if decrypted == nil || decrypted.Data == nil {
-		err := errors.New("namespace transit decrypt response did not include data")
-		r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "error", err.Error())
-		return err
+		return r.transitStepError(spec.decryptStep, path, spec.decryptMissingData)
 	}
 	encodedPlaintext, ok := decrypted.Data["plaintext"].(string)
 	if !ok || encodedPlaintext == "" {
-		err := errors.New("namespace transit decrypt response did not include data.plaintext")
-		r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "error", err.Error())
-		return err
+		return r.transitStepError(spec.decryptStep, path, spec.decryptMissingPlaintext)
 	}
+	return r.verifyTransitPlaintext(spec, path, encodedPlaintext)
+}
+
+func (r *scenarioRunner) verifyTransitPlaintext(spec transitRoundTripSpec, path, encodedPlaintext string) error {
 	decoded, err := base64.StdEncoding.DecodeString(encodedPlaintext)
 	if err != nil {
-		r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "error", err.Error())
-		return fmt.Errorf("decode namespace transit plaintext: %w", err)
+		r.addStep(spec.decryptStep, path, "error", err.Error())
+		return fmt.Errorf("%s: %w", spec.decodeError, err)
 	}
-	if string(decoded) != plaintext {
-		err := errors.New("namespace transit decrypt plaintext did not match original payload")
-		r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "error", err.Error())
-		return err
+	if string(decoded) != spec.plaintext {
+		return r.transitStepError(spec.decryptStep, path, spec.plaintextMismatch)
 	}
-	r.addStep("decrypt-namespace-transit", "transit/decrypt/team-a", "success", "")
+	r.addStep(spec.decryptStep, path, "success", "")
 	return nil
+}
+
+func (r *scenarioRunner) transitStepError(step, path, message string) error {
+	err := errors.New(message)
+	r.addStep(step, path, "error", err.Error())
+	return err
 }
 
 func (r *scenarioRunner) exerciseNamespacePKI(ctx context.Context) error {
@@ -1035,68 +1094,23 @@ func (r *scenarioRunner) exerciseTransit(ctx context.Context) error {
 		return err
 	}
 
-	key, err := r.client.Logical().ReadWithContext(ctx, "transit/keys/payments")
-	if err != nil {
-		r.addStep("read-transit-key", "transit/keys/payments", "error", err.Error())
-		return fmt.Errorf("read transit key: %w", err)
-	}
-	if key == nil {
-		r.addStep("read-transit-key", "transit/keys/payments", "error", "missing key")
-		return errors.New("transit key payments does not exist")
-	}
-	r.addStep("read-transit-key", "transit/keys/payments", "success", "")
-
-	plaintext := "openbao-observability-secret-engine-scenario"
-	encrypted, err := r.client.Logical().WriteWithContext(ctx, "transit/encrypt/payments", map[string]any{
-		"plaintext": base64.StdEncoding.EncodeToString([]byte(plaintext)),
+	return r.runTransitRoundTrip(ctx, transitRoundTripSpec{
+		keyName:                  "payments",
+		plaintext:                "openbao-observability-secret-engine-scenario",
+		readStep:                 "read-transit-key",
+		encryptStep:              "encrypt-transit",
+		decryptStep:              "decrypt-transit",
+		readError:                "read transit key",
+		encryptError:             "encrypt transit payload",
+		decryptError:             "decrypt transit payload",
+		decodeError:              "decode transit plaintext",
+		missingKeyError:          "transit key payments does not exist",
+		encryptMissingData:       "transit encrypt response did not include data",
+		encryptMissingCiphertext: "transit encrypt response did not include data.ciphertext",
+		decryptMissingData:       "transit decrypt response did not include data",
+		decryptMissingPlaintext:  "transit decrypt response did not include data.plaintext",
+		plaintextMismatch:        "transit decrypt plaintext did not match original payload",
 	})
-	if err != nil {
-		r.addStep("encrypt-transit", "transit/encrypt/payments", "error", err.Error())
-		return fmt.Errorf("encrypt transit payload: %w", err)
-	}
-	if encrypted == nil || encrypted.Data == nil {
-		err := errors.New("transit encrypt response did not include data")
-		r.addStep("encrypt-transit", "transit/encrypt/payments", "error", err.Error())
-		return err
-	}
-	ciphertext, ok := encrypted.Data["ciphertext"].(string)
-	if !ok || ciphertext == "" {
-		err := errors.New("transit encrypt response did not include data.ciphertext")
-		r.addStep("encrypt-transit", "transit/encrypt/payments", "error", err.Error())
-		return err
-	}
-	r.addStep("encrypt-transit", "transit/encrypt/payments", "success", "")
-
-	decrypted, err := r.client.Logical().WriteWithContext(ctx, "transit/decrypt/payments", map[string]any{
-		"ciphertext": ciphertext,
-	})
-	if err != nil {
-		r.addStep("decrypt-transit", "transit/decrypt/payments", "error", err.Error())
-		return fmt.Errorf("decrypt transit payload: %w", err)
-	}
-	if decrypted == nil || decrypted.Data == nil {
-		err := errors.New("transit decrypt response did not include data")
-		r.addStep("decrypt-transit", "transit/decrypt/payments", "error", err.Error())
-		return err
-	}
-	encodedPlaintext, ok := decrypted.Data["plaintext"].(string)
-	if !ok || encodedPlaintext == "" {
-		err := errors.New("transit decrypt response did not include data.plaintext")
-		r.addStep("decrypt-transit", "transit/decrypt/payments", "error", err.Error())
-		return err
-	}
-	decoded, err := base64.StdEncoding.DecodeString(encodedPlaintext)
-	if err != nil {
-		r.addStep("decrypt-transit", "transit/decrypt/payments", "error", err.Error())
-		return fmt.Errorf("decode transit plaintext: %w", err)
-	}
-	if string(decoded) != plaintext {
-		err := errors.New("transit decrypt plaintext did not match original payload")
-		r.addStep("decrypt-transit", "transit/decrypt/payments", "error", err.Error())
-		return err
-	}
-	r.addStep("decrypt-transit", "transit/decrypt/payments", "success", "")
-	return nil
 }
 
 func (r *scenarioRunner) exercisePKI(ctx context.Context) error {

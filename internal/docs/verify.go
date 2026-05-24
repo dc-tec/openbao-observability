@@ -142,115 +142,161 @@ func verifyFilename(repoRoot, path string) issueList {
 }
 
 func verifyStructure(rel, path string, lines []string) issueList {
-	var issues issueList
-	firstContentLine := 0
-	for i, line := range lines {
-		if strings.TrimSpace(line) != "" {
-			firstContentLine = i + 1
-			if !strings.HasPrefix(line, "# ") {
-				issues = append(
-					issues,
-					issue{Path: rel, Line: i + 1, Message: "first non-empty line must be the H1 title"},
-				)
-			}
-			break
+	verifier := structureVerifier{
+		rel:      rel,
+		path:     path,
+		lines:    lines,
+		headings: map[string]int{},
+	}
+	return verifier.verify()
+}
+
+type structureVerifier struct {
+	rel                string
+	path               string
+	lines              []string
+	issues             issueList
+	headings           map[string]int
+	h1Count            int
+	lastHeadingLevel   int
+	hasBeforeYouBegin  bool
+	hasVerifyResult    bool
+	hasSummary         bool
+	seenH1             bool
+	inFence            bool
+	firstNonEmptyFound bool
+}
+
+func (v *structureVerifier) verify() issueList {
+	v.checkFirstContentLine()
+	if !v.firstNonEmptyFound {
+		return issueList{{Path: v.rel, Message: "Markdown file is empty"}}
+	}
+	v.scanLines()
+	v.checkRequiredSections()
+	return v.issues
+}
+
+func (v *structureVerifier) checkFirstContentLine() {
+	for i, line := range v.lines {
+		if strings.TrimSpace(line) == "" {
+			continue
 		}
+		v.firstNonEmptyFound = true
+		if !strings.HasPrefix(line, "# ") {
+			v.issues = append(
+				v.issues,
+				issue{Path: v.rel, Line: i + 1, Message: "first non-empty line must be the H1 title"},
+			)
+		}
+		return
 	}
-	if firstContentLine == 0 {
-		return issueList{{Path: rel, Message: "Markdown file is empty"}}
-	}
+}
 
-	h1Count := 0
-	lastHeadingLevel := 0
-	headings := map[string]int{}
-	hasBeforeYouBegin := false
-	hasVerifyResult := false
-	hasSummary := false
-	seenH1 := false
-	inFence := false
-
-	for i, line := range lines {
+func (v *structureVerifier) scanLines() {
+	for i, line := range v.lines {
 		lineNo := i + 1
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "```") {
-			inFence = !inFence
+			v.inFence = !v.inFence
 			continue
 		}
-		if inFence {
+		if v.inFence {
 			continue
 		}
-
 		match := headingPattern.FindStringSubmatch(line)
 		if match == nil {
-			if seenH1 && !hasSummary && trimmed != "" {
-				if !strings.HasPrefix(trimmed, "#") && !strings.HasPrefix(trimmed, ">") {
-					hasSummary = true
-				}
-			}
+			v.checkSummaryParagraph(trimmed)
 			continue
 		}
+		v.checkHeading(lineNo, len(match[1]), strings.TrimSpace(match[2]))
+	}
+}
 
-		level := len(match[1])
-		text := strings.TrimSpace(match[2])
-		if level == 1 {
-			h1Count++
-			seenH1 = true
-		}
-		if lastHeadingLevel > 0 && level > lastHeadingLevel+1 {
-			issues = append(issues, issue{Path: rel, Line: lineNo, Message: "heading levels must not skip"})
-		}
-		lastHeadingLevel = level
-		if strings.ContainsAny(text, "`[]*") {
-			issues = append(
-				issues,
-				issue{Path: rel, Line: lineNo, Message: "headings must not contain code, links, or emphasis"},
-			)
-		}
-		if strings.HasSuffix(text, ".") || strings.HasSuffix(text, ":") || strings.HasSuffix(text, "?") ||
-			strings.HasSuffix(text, "!") {
-			issues = append(issues, issue{Path: rel, Line: lineNo, Message: "headings must not end with punctuation"})
-		}
-		slug := headingSlug(text)
-		if previous, ok := headings[slug]; ok {
-			issues = append(
-				issues,
-				issue{
-					Path:    rel,
-					Line:    lineNo,
-					Message: fmt.Sprintf("duplicate heading %q also appears on line %d", text, previous),
-				},
-			)
-		}
-		headings[slug] = lineNo
-		if level == 2 && text == "Before you begin" {
-			hasBeforeYouBegin = true
-		}
-		if level == 2 && text == "Verify the result" {
-			hasVerifyResult = true
-		}
+func (v *structureVerifier) checkSummaryParagraph(trimmed string) {
+	if !v.seenH1 || v.hasSummary || trimmed == "" {
+		return
 	}
+	if strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, ">") {
+		return
+	}
+	v.hasSummary = true
+}
 
-	if h1Count != 1 {
-		issues = append(issues, issue{Path: rel, Message: fmt.Sprintf("expected exactly one H1, found %d", h1Count)})
+func (v *structureVerifier) checkHeading(lineNo, level int, text string) {
+	if level == 1 {
+		v.h1Count++
+		v.seenH1 = true
 	}
-	if !hasSummary {
-		issues = append(issues, issue{Path: rel, Message: "page must include a summary paragraph after the H1"})
+	if v.lastHeadingLevel > 0 && level > v.lastHeadingLevel+1 {
+		v.issues = append(v.issues, issue{Path: v.rel, Line: lineNo, Message: "heading levels must not skip"})
 	}
-	if requiresProcedureSections(path) {
-		if !hasBeforeYouBegin {
-			issues = append(
-				issues,
-				issue{Path: rel, Message: "how-to and runbook pages must include ## Before you begin"},
-			)
-		}
-		if !hasVerifyResult {
-			issues = append(
-				issues,
-				issue{Path: rel, Message: "how-to and runbook pages must include ## Verify the result"},
-			)
-		}
+	v.lastHeadingLevel = level
+	v.checkHeadingText(lineNo, text)
+	v.checkDuplicateHeading(lineNo, text)
+	v.checkProcedureHeading(level, text)
+}
+
+func (v *structureVerifier) checkHeadingText(lineNo int, text string) {
+	if strings.ContainsAny(text, "`[]*") {
+		v.issues = append(
+			v.issues,
+			issue{Path: v.rel, Line: lineNo, Message: "headings must not contain code, links, or emphasis"},
+		)
 	}
-	return issues
+	if hasHeadingTerminalPunctuation(text) {
+		v.issues = append(v.issues, issue{Path: v.rel, Line: lineNo, Message: "headings must not end with punctuation"})
+	}
+}
+
+func (v *structureVerifier) checkDuplicateHeading(lineNo int, text string) {
+	slug := headingSlug(text)
+	if previous, ok := v.headings[slug]; ok {
+		v.issues = append(
+			v.issues,
+			issue{
+				Path:    v.rel,
+				Line:    lineNo,
+				Message: fmt.Sprintf("duplicate heading %q also appears on line %d", text, previous),
+			},
+		)
+	}
+	v.headings[slug] = lineNo
+}
+
+func (v *structureVerifier) checkProcedureHeading(level int, text string) {
+	if level == 2 && text == "Before you begin" {
+		v.hasBeforeYouBegin = true
+	}
+	if level == 2 && text == "Verify the result" {
+		v.hasVerifyResult = true
+	}
+}
+
+func (v *structureVerifier) checkRequiredSections() {
+	if v.h1Count != 1 {
+		v.issues = append(v.issues, issue{Path: v.rel, Message: fmt.Sprintf("expected exactly one H1, found %d", v.h1Count)})
+	}
+	if !v.hasSummary {
+		v.issues = append(v.issues, issue{Path: v.rel, Message: "page must include a summary paragraph after the H1"})
+	}
+	if requiresProcedureSections(v.path) {
+		v.checkProcedureSections()
+	}
+}
+
+func (v *structureVerifier) checkProcedureSections() {
+	if !v.hasBeforeYouBegin {
+		v.issues = append(v.issues, issue{Path: v.rel, Message: "how-to and runbook pages must include ## Before you begin"})
+	}
+	if !v.hasVerifyResult {
+		v.issues = append(v.issues, issue{Path: v.rel, Message: "how-to and runbook pages must include ## Verify the result"})
+	}
+}
+
+func hasHeadingTerminalPunctuation(text string) bool {
+	return strings.HasSuffix(text, ".") || strings.HasSuffix(text, ":") ||
+		strings.HasSuffix(text, "?") || strings.HasSuffix(text, "!")
 }
 
 func requiresProcedureSections(path string) bool {

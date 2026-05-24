@@ -161,33 +161,55 @@ func checkAuditJSON(opts VerifyOptions, prefix string) error {
 func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 	var leaderMetrics promtext.Families
 	for _, nodeID := range raftAllNodeIDs() {
-		path := filepath.Join(
-			opts.FixtureDir,
-			"metrics",
-			fmt.Sprintf("openbao-%s-raft-%s-%s.prom", opts.Version, prefix, nodeID),
-		)
-		families, err := promtext.LoadFamilies(path)
+		families, err := checkRaftNodeMetrics(opts, prefix, nodeID)
 		if err != nil {
 			return err
 		}
-
-		for _, metric := range []string{
-			prefix + "_core_active",
-			prefix + "_core_unsealed",
-			prefix + "_core_in_flight_requests",
-			prefix + "_raft_get",
-			prefix + "_runtime_num_goroutines",
-		} {
-			if !families.HasMetric(metric) {
-				return fmt.Errorf("missing expected Raft metric in %s: %s", path, metric)
-			}
-		}
-
 		if nodeID == "node0" {
 			leaderMetrics = families
 		}
 	}
+	if err := checkRaftLeaderMetricInventory(leaderMetrics, prefix); err != nil {
+		return err
+	}
+	if err := checkRaftLeaderGaugeValues(leaderMetrics, prefix); err != nil {
+		return err
+	}
+	if err := checkRaftNamespaceMetrics(leaderMetrics, prefix); err != nil {
+		return err
+	}
+	return checkRaftAutopilotNodeMetrics(leaderMetrics, prefix)
+}
 
+func checkRaftNodeMetrics(opts VerifyOptions, prefix, nodeID string) (promtext.Families, error) {
+	path := filepath.Join(
+		opts.FixtureDir,
+		"metrics",
+		fmt.Sprintf("openbao-%s-raft-%s-%s.prom", opts.Version, prefix, nodeID),
+	)
+	families, err := promtext.LoadFamilies(path)
+	if err != nil {
+		return nil, err
+	}
+	for _, metric := range raftRequiredNodeMetrics(prefix) {
+		if !families.HasMetric(metric) {
+			return nil, fmt.Errorf("missing expected Raft metric in %s: %s", path, metric)
+		}
+	}
+	return families, nil
+}
+
+func raftRequiredNodeMetrics(prefix string) []string {
+	return []string{
+		prefix + "_core_active",
+		prefix + "_core_unsealed",
+		prefix + "_core_in_flight_requests",
+		prefix + "_raft_get",
+		prefix + "_runtime_num_goroutines",
+	}
+}
+
+func checkRaftLeaderMetricInventory(leaderMetrics promtext.Families, prefix string) error {
 	for _, metric := range []string{
 		prefix + "_autopilot_failure_tolerance",
 		prefix + "_autopilot_healthy",
@@ -205,6 +227,10 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 			return fmt.Errorf("missing expected Raft leader metric: %s", metric)
 		}
 	}
+	return nil
+}
+
+func checkRaftLeaderGaugeValues(leaderMetrics promtext.Families, prefix string) error {
 	if !hasAnyGaugeValue(leaderMetrics, prefix+"_autopilot_healthy", 1) {
 		return fmt.Errorf("missing healthy Autopilot gauge value")
 	}
@@ -217,6 +243,10 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 	if !hasAnyGaugeValue(leaderMetrics, prefix+"_raft_peers", float64(raftNodeCount)) {
 		return fmt.Errorf("missing Raft peer count of %d in Raft fixture", raftNodeCount)
 	}
+	return nil
+}
+
+func checkRaftNamespaceMetrics(leaderMetrics promtext.Families, prefix string) error {
 	if !leaderMetrics.HasMetricWithLabel(prefix+"_secret_lease_creation", "namespace", fixtureNamespace) {
 		return fmt.Errorf(
 			"missing %s namespace label on %s_secret_lease_creation in Raft fixture",
@@ -236,6 +266,10 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 			return fmt.Errorf("missing %s namespace label on %s in Raft fixture", fixtureNamespace, metric)
 		}
 	}
+	return nil
+}
+
+func checkRaftAutopilotNodeMetrics(leaderMetrics promtext.Families, prefix string) error {
 	for _, nodeID := range raftAllNodeIDs() {
 		if !leaderMetrics.HasMetricWithLabel(prefix+"_autopilot_node_healthy", "node_id", nodeID) {
 			return fmt.Errorf("missing Autopilot healthy node series for %s", nodeID)
@@ -264,6 +298,13 @@ func hasAnyGaugeValue(families promtext.Families, name string, value float64) bo
 }
 
 func checkRaftMetadata(opts VerifyOptions, prefix string) error {
+	if err := checkRaftPeerMetadata(opts, prefix); err != nil {
+		return err
+	}
+	return checkAutopilotMetadata(opts, prefix)
+}
+
+func checkRaftPeerMetadata(opts VerifyOptions, prefix string) error {
 	peersPath := filepath.Join(
 		opts.FixtureDir,
 		"metadata",
@@ -316,13 +357,16 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 			return fmt.Errorf("missing Raft peer %s in %s", nodeID, peersPath)
 		}
 	}
+	return nil
+}
 
+func checkAutopilotMetadata(opts VerifyOptions, prefix string) error {
 	autopilotPath := filepath.Join(
 		opts.FixtureDir,
 		"metadata",
 		fmt.Sprintf("openbao-%s-raft-%s-autopilot-state.json", opts.Version, prefix),
 	)
-	content, err = os.ReadFile(autopilotPath)
+	content, err := os.ReadFile(autopilotPath)
 	if err != nil {
 		return fmt.Errorf("read Autopilot fixture %s: %w", autopilotPath, err)
 	}
@@ -348,11 +392,19 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 			len(state.Servers),
 		)
 	}
+	autopilotVoters, autopilotNonVoters, err := countAutopilotServerTypes(state.Servers, autopilotPath)
+	if err != nil {
+		return err
+	}
+	return checkAutopilotServerCounts(autopilotPath, autopilotVoters, autopilotNonVoters)
+}
+
+func countAutopilotServerTypes(servers map[string]autopilotServer, autopilotPath string) (int, int, error) {
 	autopilotVoters := 0
 	autopilotNonVoters := 0
-	for id, server := range state.Servers {
+	for id, server := range servers {
 		if !server.Healthy {
-			return fmt.Errorf("autopilot server %s is unhealthy in %s", id, autopilotPath)
+			return 0, 0, fmt.Errorf("autopilot server %s is unhealthy in %s", id, autopilotPath)
 		}
 		switch server.NodeType {
 		case "voter":
@@ -360,9 +412,13 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 		case "non-voter":
 			autopilotNonVoters++
 		default:
-			return fmt.Errorf("autopilot server %s has node type %q in %s", id, server.NodeType, autopilotPath)
+			return 0, 0, fmt.Errorf("autopilot server %s has node type %q in %s", id, server.NodeType, autopilotPath)
 		}
 	}
+	return autopilotVoters, autopilotNonVoters, nil
+}
+
+func checkAutopilotServerCounts(autopilotPath string, autopilotVoters, autopilotNonVoters int) error {
 	if autopilotVoters != raftVoterCount {
 		return fmt.Errorf(
 			"expected %d Autopilot voters in %s, found %d",
@@ -647,56 +703,67 @@ func checkAuditJSONFile(path string) error {
 		_ = file.Close()
 	}()
 
-	var count int
-	var seenNestedRequestID bool
-	var seenTopLevelRequestID bool
-	var seenRequestPath bool
-
+	state := auditJSONCheckState{}
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
-		}
-
-		var entry map[string]any
-		if err := json.Unmarshal([]byte(line), &entry); err != nil {
-			return fmt.Errorf("parse audit JSON in %s: %w", path, err)
-		}
-
-		count++
-		if _, ok := entry["request_id"]; ok {
-			seenTopLevelRequestID = true
-		}
-
-		request, ok := entry["request"].(map[string]any)
-		if !ok {
-			continue
-		}
-		if value, ok := request["id"].(string); ok && value != "" {
-			seenNestedRequestID = true
-		}
-		if value, ok := request["path"].(string); ok && value != "" {
-			seenRequestPath = true
+		if err := state.checkAuditJSONLine(path, scanner.Text()); err != nil {
+			return err
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("scan audit fixture %s: %w", path, err)
 	}
+	return state.validate(path)
+}
 
-	if count == 0 {
+type auditJSONCheckState struct {
+	count                 int
+	seenNestedRequestID   bool
+	seenTopLevelRequestID bool
+	seenRequestPath       bool
+}
+
+func (s *auditJSONCheckState) checkAuditJSONLine(path, rawLine string) error {
+	line := strings.TrimSpace(rawLine)
+	if line == "" {
+		return nil
+	}
+
+	var entry map[string]any
+	if err := json.Unmarshal([]byte(line), &entry); err != nil {
+		return fmt.Errorf("parse audit JSON in %s: %w", path, err)
+	}
+
+	s.count++
+	if _, ok := entry["request_id"]; ok {
+		s.seenTopLevelRequestID = true
+	}
+	request, ok := entry["request"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	if value, ok := request["id"].(string); ok && value != "" {
+		s.seenNestedRequestID = true
+	}
+	if value, ok := request["path"].(string); ok && value != "" {
+		s.seenRequestPath = true
+	}
+	return nil
+}
+
+func (s auditJSONCheckState) validate(path string) error {
+	if s.count == 0 {
 		return fmt.Errorf("audit fixture is empty: %s", path)
 	}
-	if seenTopLevelRequestID {
+	if s.seenTopLevelRequestID {
 		return fmt.Errorf("audit fixture contains top-level request_id: %s", path)
 	}
-	if !seenNestedRequestID {
+	if !s.seenNestedRequestID {
 		return fmt.Errorf("audit fixture does not contain request.id: %s", path)
 	}
-	if !seenRequestPath {
+	if !s.seenRequestPath {
 		return fmt.Errorf("audit fixture does not contain request.path: %s", path)
 	}
-
 	return nil
 }
 

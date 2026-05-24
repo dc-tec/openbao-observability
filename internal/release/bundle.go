@@ -184,72 +184,86 @@ func collectBundleEntries(root string, includes []string) ([]bundleEntry, error)
 	var entries []bundleEntry
 
 	for _, include := range includes {
-		includePath := filepath.Join(root, include)
-		info, err := os.Lstat(includePath)
+		collected, err := collectIncludeBundleEntries(root, include, seen)
 		if err != nil {
-			return nil, fmt.Errorf("inspect release include %s: %w", include, err)
+			return nil, err
 		}
-		if info.Mode()&os.ModeSymlink != 0 {
-			return nil, fmt.Errorf(
-				"release include %s is a symlink; symlinks are not supported in release bundles",
-				include,
-			)
-		}
-		if !info.IsDir() {
-			entry, err := bundleEntryFor(root, includePath, info)
-			if err != nil {
-				return nil, err
-			}
-			if !seen[entry.RelativePath] {
-				seen[entry.RelativePath] = true
-				entries = append(entries, entry)
-			}
-			continue
-		}
-
-		err = filepath.WalkDir(includePath, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if d.Type()&os.ModeSymlink != 0 {
-				rel, relErr := filepath.Rel(root, path)
-				if relErr != nil {
-					return relErr
-				}
-				return fmt.Errorf(
-					"release include %s is a symlink; symlinks are not supported in release bundles",
-					filepath.ToSlash(rel),
-				)
-			}
-			if d.IsDir() {
-				return nil
-			}
-			info, err := d.Info()
-			if err != nil {
-				return err
-			}
-			if !info.Mode().IsRegular() {
-				return nil
-			}
-			entry, err := bundleEntryFor(root, path, info)
-			if err != nil {
-				return err
-			}
-			if !seen[entry.RelativePath] {
-				seen[entry.RelativePath] = true
-				entries = append(entries, entry)
-			}
-			return nil
-		})
-		if err != nil {
-			return nil, fmt.Errorf("walk release include %s: %w", include, err)
-		}
+		entries = append(entries, collected...)
 	}
 
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].RelativePath < entries[j].RelativePath
 	})
 	return entries, nil
+}
+
+func collectIncludeBundleEntries(root, include string, seen map[string]bool) ([]bundleEntry, error) {
+	includePath := filepath.Join(root, include)
+	info, err := os.Lstat(includePath)
+	if err != nil {
+		return nil, fmt.Errorf("inspect release include %s: %w", include, err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return nil, fmt.Errorf("release include %s is a symlink; symlinks are not supported in release bundles", include)
+	}
+	if !info.IsDir() {
+		entry, err := bundleEntryFor(root, includePath, info)
+		if err != nil || seen[entry.RelativePath] {
+			return nil, err
+		}
+		seen[entry.RelativePath] = true
+		return []bundleEntry{entry}, nil
+	}
+	entries, err := collectDirectoryBundleEntries(root, includePath, seen)
+	if err != nil {
+		return nil, fmt.Errorf("walk release include %s: %w", include, err)
+	}
+	return entries, nil
+}
+
+func collectDirectoryBundleEntries(root, includePath string, seen map[string]bool) ([]bundleEntry, error) {
+	var entries []bundleEntry
+	err := filepath.WalkDir(includePath, func(path string, d fs.DirEntry, err error) error {
+		entry, include, err := bundleEntryFromDirEntry(root, path, d, err)
+		if err != nil || !include {
+			return err
+		}
+		if !seen[entry.RelativePath] {
+			seen[entry.RelativePath] = true
+			entries = append(entries, entry)
+		}
+		return nil
+	})
+	return entries, err
+}
+
+func bundleEntryFromDirEntry(root, filePath string, d fs.DirEntry, walkErr error) (bundleEntry, bool, error) {
+	if walkErr != nil {
+		return bundleEntry{}, false, walkErr
+	}
+	if d.Type()&os.ModeSymlink != 0 {
+		return bundleEntry{}, false, releaseSymlinkError(root, filePath)
+	}
+	if d.IsDir() {
+		return bundleEntry{}, false, nil
+	}
+	info, err := d.Info()
+	if err != nil || !info.Mode().IsRegular() {
+		return bundleEntry{}, false, err
+	}
+	entry, err := bundleEntryFor(root, filePath, info)
+	return entry, err == nil, err
+}
+
+func releaseSymlinkError(root, filePath string) error {
+	rel, err := filepath.Rel(root, filePath)
+	if err != nil {
+		return err
+	}
+	return fmt.Errorf(
+		"release include %s is a symlink; symlinks are not supported in release bundles",
+		filepath.ToSlash(rel),
+	)
 }
 
 func bundleEntryFor(root, absolutePath string, info fs.FileInfo) (bundleEntry, error) {

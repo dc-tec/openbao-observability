@@ -171,40 +171,102 @@ func (r *captureRun) capturePrefix(ctx context.Context, prefix string, port int)
 
 func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase int) error {
 	opts := r.options
-	versionID := strings.ReplaceAll(opts.Version, ".", "-")
-	network := fmt.Sprintf("openbao-observability-%s-raft", versionID)
-	postgresContainer := fmt.Sprintf("openbao-observability-%s-postgres", versionID)
+	network, postgresContainer := raftFixtureNames(opts.Version)
+	if err := r.prepareRaftNetwork(ctx, network); err != nil {
+		return err
+	}
+	if err := r.startRaftPostgres(ctx, postgresContainer, network); err != nil {
+		return err
+	}
+	tempDir, sealDir, err := r.prepareRaftTempDir()
+	if err != nil {
+		return err
+	}
+	voters, readReplicas, err := createRaftNodes(opts.Version, prefix, portBase, tempDir, postgresContainer)
+	if err != nil {
+		return err
+	}
+	nodes := appendRaftNodes(voters, readReplicas)
+	r.registerRaftContainers(ctx, nodes)
 
+	if err := r.startRaftLeader(ctx, opts, prefix, voters, network, sealDir); err != nil {
+		return err
+	}
+	if err := r.startRaftFollowers(ctx, opts, prefix, voters, network, sealDir); err != nil {
+		return err
+	}
+	if err := r.startRaftReadReplicas(ctx, opts, prefix, voters, readReplicas, network, sealDir); err != nil {
+		return err
+	}
+	if err := r.runRaftWorkload(ctx, voters[0], readReplicas, prefix, postgresContainer); err != nil {
+		return err
+	}
+	return r.captureRaftOutputs(ctx, nodes, prefix)
+}
+
+func raftFixtureNames(version string) (string, string) {
+	versionID := strings.ReplaceAll(version, ".", "-")
+	return fmt.Sprintf("openbao-observability-%s-raft", versionID),
+		fmt.Sprintf("openbao-observability-%s-postgres", versionID)
+}
+
+func (r *captureRun) prepareRaftNetwork(ctx context.Context, network string) error {
 	_, _, _ = dockerCombined(ctx, "network", "rm", network)
 	if _, _, err := dockerCombined(ctx, "network", "create", network); err != nil {
 		return fmt.Errorf("create Docker network for Raft fixture: %w", err)
 	}
 	r.networks = append(r.networks, network)
+	return nil
+}
 
+func (r *captureRun) startRaftPostgres(ctx context.Context, postgresContainer, network string) error {
 	_, _, _ = dockerCombined(ctx, "rm", "-f", postgresContainer)
 	r.containers = append(r.containers, postgresContainer)
 	if err := r.startPostgres(ctx, postgresContainer, network); err != nil {
 		return err
 	}
-	if err := waitForPostgres(ctx, postgresContainer); err != nil {
-		return err
-	}
+	return waitForPostgres(ctx, postgresContainer)
+}
 
+func (r *captureRun) prepareRaftTempDir() (string, string, error) {
 	tempDir, err := os.MkdirTemp("/tmp", "openbao-observability-raft.")
 	if err != nil {
-		return fmt.Errorf("create temp Raft fixture directory: %w", err)
+		return "", "", fmt.Errorf("create temp Raft fixture directory: %w", err)
 	}
 	r.tempDirs = append(r.tempDirs, tempDir)
 
 	sealDir := filepath.Join(tempDir, "seal")
 	if err := os.MkdirAll(sealDir, 0o755); err != nil {
-		return fmt.Errorf("create static seal directory: %w", err)
+		return "", "", fmt.Errorf("create static seal directory: %w", err)
 	}
-	sealKeyPath := filepath.Join(sealDir, "static-unseal.key")
-	if err := writeStaticSealKey(sealKeyPath); err != nil {
-		return err
+	if err := writeStaticSealKey(filepath.Join(sealDir, "static-unseal.key")); err != nil {
+		return "", "", err
 	}
+	return tempDir, sealDir, nil
+}
 
+func createRaftNodes(
+	version, prefix string,
+	portBase int,
+	tempDir, postgresContainer string,
+) ([]raftNode, []raftNode, error) {
+	versionID := strings.ReplaceAll(version, ".", "-")
+	voters, err := createRaftVoterNodes(versionID, prefix, portBase, tempDir, postgresContainer)
+	if err != nil {
+		return nil, nil, err
+	}
+	readReplicas, err := createRaftReadReplicaNodes(versionID, prefix, portBase, tempDir, postgresContainer, voters)
+	if err != nil {
+		return nil, nil, err
+	}
+	return voters, readReplicas, nil
+}
+
+func createRaftVoterNodes(
+	versionID, prefix string,
+	portBase int,
+	tempDir, postgresContainer string,
+) ([]raftNode, error) {
 	voters := make([]raftNode, 0, raftVoterCount)
 	for index := 0; index < raftVoterCount; index++ {
 		node := raftNode{
@@ -215,11 +277,19 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 			Config:    filepath.Join(tempDir, fmt.Sprintf("node%d.hcl", index)),
 		}
 		if err := writeRaftConfig(prefix, node, index == 0, voters, postgresContainer, node.Config); err != nil {
-			return err
+			return nil, err
 		}
 		voters = append(voters, node)
 	}
+	return voters, nil
+}
 
+func createRaftReadReplicaNodes(
+	versionID, prefix string,
+	portBase int,
+	tempDir, postgresContainer string,
+	voters []raftNode,
+) ([]raftNode, error) {
 	readReplicas := make([]raftNode, 0, raftReadReplicaCount)
 	for index := 0; index < raftReadReplicaCount; index++ {
 		nodeIndex := raftVoterCount + index
@@ -232,17 +302,31 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 			Config:    filepath.Join(tempDir, fmt.Sprintf("read-replica%d.hcl", index)),
 		}
 		if err := writeRaftConfig(prefix, node, false, voters, postgresContainer, node.Config); err != nil {
-			return err
+			return nil, err
 		}
 		readReplicas = append(readReplicas, node)
 	}
+	return readReplicas, nil
+}
 
-	nodes := append(append([]raftNode{}, voters...), readReplicas...)
+func appendRaftNodes(voters, readReplicas []raftNode) []raftNode {
+	return append(append([]raftNode{}, voters...), readReplicas...)
+}
+
+func (r *captureRun) registerRaftContainers(ctx context.Context, nodes []raftNode) {
 	for _, node := range nodes {
 		_, _, _ = dockerCombined(ctx, "rm", "-f", node.Container)
 		r.containers = append(r.containers, node.Container)
 	}
+}
 
+func (r *captureRun) startRaftLeader(
+	ctx context.Context,
+	opts CaptureOptions,
+	prefix string,
+	voters []raftNode,
+	network, sealDir string,
+) error {
 	if err := r.startRaftNode(ctx, voters[0], network, sealDir); err != nil {
 		return err
 	}
@@ -250,10 +334,16 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 	if err := waitForInitializedUnsealed(ctx, voters[0].Port, healthPath); err != nil {
 		return err
 	}
-	if err := r.captureVersion(ctx, voters[0].Container, raftPrefix(prefix)); err != nil {
-		return err
-	}
+	return r.captureVersion(ctx, voters[0].Container, raftPrefix(prefix))
+}
 
+func (r *captureRun) startRaftFollowers(
+	ctx context.Context,
+	opts CaptureOptions,
+	prefix string,
+	voters []raftNode,
+	network, sealDir string,
+) error {
 	for _, node := range voters[1:] {
 		if err := r.startRaftNode(ctx, node, network, sealDir); err != nil {
 			return err
@@ -271,6 +361,16 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 	if err := r.waitForAutopilotTolerance(ctx, voters[0], raftVoterCount, 1); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r *captureRun) startRaftReadReplicas(
+	ctx context.Context,
+	opts CaptureOptions,
+	prefix string,
+	voters, readReplicas []raftNode,
+	network, sealDir string,
+) error {
 	for _, node := range readReplicas {
 		if err := r.startRaftNode(ctx, node, network, sealDir); err != nil {
 			return err
@@ -288,7 +388,16 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 	if err := r.waitForAutopilotTolerance(ctx, voters[0], raftNodeCount, 1); err != nil {
 		return err
 	}
-	if err := r.exerciseRaft(ctx, voters[0], prefix); err != nil {
+	return nil
+}
+
+func (r *captureRun) runRaftWorkload(
+	ctx context.Context,
+	leader raftNode,
+	readReplicas []raftNode,
+	prefix, postgresContainer string,
+) error {
+	if err := r.exerciseRaft(ctx, leader, prefix); err != nil {
 		return err
 	}
 	for _, node := range readReplicas {
@@ -296,9 +405,13 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 			return err
 		}
 	}
-	if err := r.runRaftScenario(ctx, voters[0], prefix, postgresContainer); err != nil {
+	if err := r.runRaftScenario(ctx, leader, prefix, postgresContainer); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r *captureRun) captureRaftOutputs(ctx context.Context, nodes []raftNode, prefix string) error {
 	if err := r.captureRaftState(ctx, nodes, prefix); err != nil {
 		return err
 	}
