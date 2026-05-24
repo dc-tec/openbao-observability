@@ -94,6 +94,18 @@ you are repairing generator output as part of the same change.
 4. Do not add real tokens, certificates, hostnames, customer names, IP
    addresses, or audit payloads.
 
+## Commit messages
+
+Use Conventional Commits so release-please can build release notes and version
+updates from the commit history.
+
+```shell
+git commit -s -m "feat: add dashboard contract"
+```
+
+Use the DCO signoff on every commit. The `-s` flag adds the required
+`Signed-off-by` trailer.
+
 ## Validate your change
 
 Run the narrow checks that match your change, then run the full verification
@@ -113,6 +125,28 @@ Run the full verification before publishing generated artifacts.
 make verify
 ```
 
+## Publishing readiness
+
+CI captures fresh OpenBao fixtures, runs the full repository verification, and
+checks whitespace. Before publishing a release candidate or making the
+repository public, run or verify the same gates locally:
+
+```shell
+make fixtures-openbao
+make verify
+git diff --check
+```
+
+Do not run `make validate-dashboard-queries` in baseline CI. It needs a running
+local Compose stack and is a live-profile check for dashboard query behavior.
+
+GitHub Actions workflows must pin third-party actions by commit SHA. Include a
+comment with the source tag next to each pinned action so maintainers can audit
+updates intentionally.
+
+Release PRs are managed by release-please from Conventional Commits. Release
+artifacts are draft by default until maintainers intentionally publish them.
+
 ## Pull request checklist
 
 - [ ] The change preserves the reference architecture and implementation
@@ -123,6 +157,7 @@ make verify
 - [ ] No secrets, live audit payloads, real customer identifiers, or sensitive
       environment values are included.
 - [ ] Validation commands relevant to the change pass.
+- [ ] Commits use Conventional Commits and include DCO signoff.
 
 ## Contribution license
 

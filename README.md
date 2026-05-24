@@ -1,5 +1,7 @@
 # OpenBao observability reference architecture
 
+[![CI](https://github.com/dc-tec/openbao-observability/actions/workflows/ci.yml/badge.svg)](https://github.com/dc-tec/openbao-observability/actions/workflows/ci.yml)
+
 Use this repository as an OpenBao observability reference architecture for
 metrics, operational logs, audit logs, dashboards, alerts, runbooks, and
 validation fixtures. It defines portable observability intent first, then
