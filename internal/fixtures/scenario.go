@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -150,6 +151,9 @@ path "secret/metadata/apps/payments/*" {
 		return err
 	}
 	if err := r.exerciseDatabaseLease(ctx); err != nil {
+		return err
+	}
+	if err := r.exerciseTransit(ctx); err != nil {
 		return err
 	}
 	if err := r.exerciseExpectedFailures(ctx); err != nil {
@@ -313,6 +317,123 @@ func (r *scenarioRunner) exerciseDatabaseLease(ctx context.Context) error {
 		}
 		r.addStep(step.name, "sys/leases", "success", "")
 	}
+	return nil
+}
+
+func (r *scenarioRunner) exerciseTransit(ctx context.Context) error {
+	if err := r.ensureTransitMount(ctx); err != nil {
+		return err
+	}
+
+	key, err := r.client.Logical().ReadWithContext(ctx, "transit/keys/payments")
+	if err != nil {
+		r.addStep("read-transit-key", "transit/keys/payments", "error", err.Error())
+		return fmt.Errorf("read transit key: %w", err)
+	}
+	if key == nil {
+		r.addStep("read-transit-key", "transit/keys/payments", "error", "missing key")
+		return errors.New("transit key payments does not exist")
+	}
+	r.addStep("read-transit-key", "transit/keys/payments", "success", "")
+
+	plaintext := "openbao-observability-secret-engine-scenario"
+	encrypted, err := r.client.Logical().WriteWithContext(ctx, "transit/encrypt/payments", map[string]any{
+		"plaintext": base64.StdEncoding.EncodeToString([]byte(plaintext)),
+	})
+	if err != nil {
+		r.addStep("encrypt-transit", "transit/encrypt/payments", "error", err.Error())
+		return fmt.Errorf("encrypt transit payload: %w", err)
+	}
+	if encrypted == nil || encrypted.Data == nil {
+		err := errors.New("transit encrypt response did not include data")
+		r.addStep("encrypt-transit", "transit/encrypt/payments", "error", err.Error())
+		return err
+	}
+	ciphertext, ok := encrypted.Data["ciphertext"].(string)
+	if !ok || ciphertext == "" {
+		err := errors.New("transit encrypt response did not include data.ciphertext")
+		r.addStep("encrypt-transit", "transit/encrypt/payments", "error", err.Error())
+		return err
+	}
+	r.addStep("encrypt-transit", "transit/encrypt/payments", "success", "")
+
+	decrypted, err := r.client.Logical().WriteWithContext(ctx, "transit/decrypt/payments", map[string]any{
+		"ciphertext": ciphertext,
+	})
+	if err != nil {
+		r.addStep("decrypt-transit", "transit/decrypt/payments", "error", err.Error())
+		return fmt.Errorf("decrypt transit payload: %w", err)
+	}
+	if decrypted == nil || decrypted.Data == nil {
+		err := errors.New("transit decrypt response did not include data")
+		r.addStep("decrypt-transit", "transit/decrypt/payments", "error", err.Error())
+		return err
+	}
+	encodedPlaintext, ok := decrypted.Data["plaintext"].(string)
+	if !ok || encodedPlaintext == "" {
+		err := errors.New("transit decrypt response did not include data.plaintext")
+		r.addStep("decrypt-transit", "transit/decrypt/payments", "error", err.Error())
+		return err
+	}
+	decoded, err := base64.StdEncoding.DecodeString(encodedPlaintext)
+	if err != nil {
+		r.addStep("decrypt-transit", "transit/decrypt/payments", "error", err.Error())
+		return fmt.Errorf("decode transit plaintext: %w", err)
+	}
+	if string(decoded) != plaintext {
+		err := errors.New("transit decrypt plaintext did not match original payload")
+		r.addStep("decrypt-transit", "transit/decrypt/payments", "error", err.Error())
+		return err
+	}
+	r.addStep("decrypt-transit", "transit/decrypt/payments", "success", "")
+	return nil
+}
+
+func (r *scenarioRunner) ensureTransitMount(ctx context.Context) error {
+	mounts, err := r.client.Logical().ReadWithContext(ctx, "sys/mounts")
+	if err != nil {
+		r.addStep("ensure-transit-mount", "sys/mounts", "error", err.Error())
+		return fmt.Errorf("read mounts before transit scenario: %w", err)
+	}
+	if mounts == nil || mounts.Data == nil {
+		err := errors.New("sys/mounts response did not include data")
+		r.addStep("ensure-transit-mount", "sys/mounts", "error", err.Error())
+		return err
+	}
+
+	if _, ok := mounts.Data["transit/"]; !ok {
+		if _, err := r.client.Logical().WriteWithContext(ctx, "sys/mounts/transit", map[string]any{
+			"type":        "transit",
+			"description": "Scenario Transit engine for observability reference captures.",
+		}); err != nil {
+			r.addStep("ensure-transit-mount", "sys/mounts/transit", "error", err.Error())
+			return fmt.Errorf("enable transit mount: %w", err)
+		}
+		r.addStep("ensure-transit-mount", "sys/mounts/transit", "success", "")
+	} else {
+		r.addStep("ensure-transit-mount", "sys/mounts", "success", "")
+	}
+
+	key, err := r.client.Logical().ReadWithContext(ctx, "transit/keys/payments")
+	if err != nil {
+		r.addStep("ensure-transit-key", "transit/keys/payments", "error", err.Error())
+		return fmt.Errorf("read transit key before scenario: %w", err)
+	}
+	if key != nil {
+		r.addStep("ensure-transit-key", "transit/keys/payments", "success", "")
+		return nil
+	}
+
+	if _, err := r.client.Logical().WriteWithContext(ctx, "transit/keys/payments", map[string]any{
+		"type":                   "aes256-gcm96",
+		"derived":                false,
+		"exportable":             false,
+		"allow_plaintext_backup": false,
+	}); err != nil {
+		r.addStep("ensure-transit-key", "transit/keys/payments", "error", err.Error())
+		return fmt.Errorf("create transit key: %w", err)
+	}
+	r.addStep("ensure-transit-key", "transit/keys/payments", "success", "")
 	return nil
 }
 

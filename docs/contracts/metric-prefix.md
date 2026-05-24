@@ -146,6 +146,7 @@ make verify-live
 | `contracts/dashboards/openbao-audit-investigation.yaml` | Audit investigation dashboard contract that uses query-time audit fields without turning them into Loki labels. |
 | `contracts/dashboards/openbao-auth-identity.yaml` | Auth and identity dashboard contract that filters audit request paths at query time without turning them into Loki labels. |
 | `contracts/dashboards/openbao-token-lease-lifecycle.yaml` | Token and lease lifecycle dashboard contract that consumes normalized token and lease rules plus query-time audit fields. |
+| `contracts/dashboards/openbao-secret-engines-mounts.yaml` | Secret engines and mounts dashboard contract that filters engine paths at query time without turning mount paths into Loki labels. |
 | `contracts/alerts/critical.yaml` | Alert contract that maps critical alerts to runbooks. |
 | `contracts/alerts/warning.yaml` | Alert contract that maps warning alerts to runbooks. |
 

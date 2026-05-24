@@ -452,6 +452,28 @@ initialize "fixture-foundation" {
     }
   }
 
+  request "enable-transit-secrets" {
+    operation = "update"
+    path      = "sys/mounts/transit"
+
+    data = {
+      type        = "transit"
+      description = "Fixture Transit engine for observability reference captures."
+    }
+  }
+
+  request "create-transit-payments-key" {
+    operation = "update"
+    path      = "transit/keys/payments"
+
+    data = {
+      type                   = "aes256-gcm96"
+      derived                = false
+      exportable             = false
+      allow_plaintext_backup = false
+    }
+  }
+
   request "configure-postgres-database" {
     operation = "update"
     path      = "database/config/postgres"

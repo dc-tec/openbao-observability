@@ -73,7 +73,8 @@ The stack provisions the generated `OpenBao overview` dashboard in the
 `OpenBao` folder. It also provisions the generated `OpenBao HA/Raft`,
 `OpenBao audit overview`, `OpenBao operational logs`, and
 `OpenBao audit investigation`, `OpenBao auth and identity`, and
-`OpenBao token and lease lifecycle` dashboards.
+`OpenBao token and lease lifecycle`, and `OpenBao secret engines and mounts`
+dashboards.
 
 ## Understand the local OpenBao setup
 
@@ -88,6 +89,7 @@ an `initialize` block. The self-initialization creates:
 - the `approle` auth method,
 - a KV v2 `secret/` mount,
 - a database secrets `database/` mount backed by the local PostgreSQL service,
+- a Transit `transit/` mount and local `payments` key,
 - a local `compose-admin` policy,
 - local `app-reader`, `app-writer`, and `identity-auditor` policies,
 - a local `openbao-metrics` policy,
@@ -168,7 +170,8 @@ production all-node scraping.
 
    The scenario performs userpass and AppRole logins, KV activity, identity
    activity, token create/lookup/renew/revoke operations, database credential
-   lease lookup/renew/revoke operations, and expected denied requests.
+   lease lookup/renew/revoke operations, Transit encrypt/decrypt operations,
+   and expected denied requests.
 
 6. Check Raft peers.
 
@@ -255,7 +258,8 @@ production all-node scraping.
 In Grafana, open **Dashboards**, select the `OpenBao` folder, and open
 `OpenBao overview`, `OpenBao HA/Raft`, `OpenBao audit overview`,
 `OpenBao operational logs`, `OpenBao audit investigation`, or
-`OpenBao auth and identity`, or `OpenBao token and lease lifecycle`.
+`OpenBao auth and identity`, `OpenBao token and lease lifecycle`, or
+`OpenBao secret engines and mounts`.
 
 Use the provisioned `Prometheus` data source to run these PromQL queries:
 
@@ -303,6 +307,12 @@ Use this query when you need token and lease lifecycle audit events:
 
 ```logql
 {log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"(auth/token/.*|sys/leases/.*)"
+```
+
+Use this query when you need secret engine and mount activity:
+
+```logql
+{log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"(secret|database|transit|pki|sys/mounts)(/.*)?"
 ```
 
 Use this query when you need an audit request ID drilldown:

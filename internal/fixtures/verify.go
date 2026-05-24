@@ -296,10 +296,15 @@ func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
 		"identity/group/name/scenario-services",
 		"secret/data/apps/payments/denied",
 		"secret/data/apps/payments/scenario",
+		"sys/mounts",
+		"sys/mounts/transit",
 		"sys/leases/lookup",
 		"sys/leases/renew",
 		"sys/leases/revoke",
 		"sys/policies/acl/scenario-app",
+		"transit/decrypt/payments",
+		"transit/encrypt/payments",
+		"transit/keys/payments",
 	})
 }
 
@@ -318,6 +323,10 @@ func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
 	expected := map[string]string{
 		"create-token":              "success",
 		"denied-reader-kv-write":    "expected_error",
+		"decrypt-transit":           "success",
+		"encrypt-transit":           "success",
+		"ensure-transit-key":        "success",
+		"ensure-transit-mount":      "success",
 		"failed-userpass-login":     "expected_error",
 		"list-kv-metadata":          "success",
 		"login-approle":             "success",
@@ -326,6 +335,7 @@ func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
 		"lookup-token":              "success",
 		"read-database-credentials": "success",
 		"read-kv":                   "success",
+		"read-transit-key":          "success",
 		"renew-database-lease":      "success",
 		"renew-token":               "success",
 		"revoke-database-lease":     "success",
