@@ -115,3 +115,24 @@ alerts:
     runbook: docs/runbooks/audit-canary-missing.md
     labels:
       component: audit
+  - id: OpenBaoAuditArchiveDegraded
+    type: prometheus
+    severity: critical
+    signal: archive
+    for: 10m
+    expression: >-
+      (max(openbao_audit_archive_enabled) == 1)
+      and (
+        absent(openbao_audit_archive_delivery_success)
+        or min(openbao_audit_archive_delivery_success) == 0
+        or absent(openbao_audit_archive_last_success_timestamp_seconds)
+        or (time() - max(openbao_audit_archive_last_success_timestamp_seconds)) > 900
+        or sum(increase(openbao_audit_archive_delivery_failures_total[15m])) > 0
+        or sum(increase(openbao_audit_archive_dead_letter_records_total[15m])) > 0
+      )
+    summary: OpenBao audit archive is degraded
+    description: The durable OpenBao audit archive path is enabled but missing, stale, failing, or dead-lettering records.
+    runbook: docs/runbooks/audit-archive-degraded.md
+    labels:
+      component: audit
+      subsystem: archive

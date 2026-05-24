@@ -113,6 +113,17 @@ can emit them:
 - Object-store or SIEM write errors.
 - Audit canary arrival in the archive backend.
 
+Use these reference metric names when you want to use the generated
+`OpenBaoAuditArchiveDegraded` alert:
+
+| Metric | Meaning |
+| ------ | ------- |
+| `openbao_audit_archive_enabled` | `1` when this environment expects durable audit archive delivery. |
+| `openbao_audit_archive_delivery_success` | `1` when the archive path is healthy and `0` when delivery is degraded. |
+| `openbao_audit_archive_last_success_timestamp_seconds` | Unix timestamp for the last successful archive delivery or acknowledgement. |
+| `openbao_audit_archive_delivery_failures_total` | Count of failed archive writes, rejected batches, or failed acknowledgements. |
+| `openbao_audit_archive_dead_letter_records_total` | Count of records sent to a dead-letter path instead of the durable archive. |
+
 Do not page on a backend-specific expression until you know what the signal
 means. A queue depth metric, SIEM acknowledgement metric, and object-store write
 metric each describe a different part of the archive path.
@@ -200,6 +211,8 @@ Use this checklist before you rely on the archive path:
   when OpenBao reports audit-device failures.
 - Use [Audit canary missing](../runbooks/audit-canary-missing.md) when the
   canary-backed audit stream alert fires.
+- Use [Audit archive degraded](../runbooks/audit-archive-degraded.md) when
+  archive delivery health fails.
 
 Source: General log-management guidance in
 [NIST SP 800-92][nist-sp-800-92] supports separate log-management

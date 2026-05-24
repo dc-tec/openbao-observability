@@ -77,6 +77,7 @@ Use these runbooks when the generated alert rules fire:
 - [Audit request and response failures](./runbooks/audit-request-response-failures.md)
 - [Audit canary missing](./runbooks/audit-canary-missing.md)
 - [Audit log stream missing](./runbooks/audit-log-stream-missing.md)
+- [Audit archive degraded](./runbooks/audit-archive-degraded.md)
 - [Operational log stream missing](./runbooks/operational-log-stream-missing.md)
 - [Debug logging enabled](./runbooks/debug-logging-enabled.md)
 - [Completed request logging enabled](./runbooks/completed-request-logging-enabled.md)
