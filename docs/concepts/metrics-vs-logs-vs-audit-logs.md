@@ -129,6 +129,10 @@ records, and platform events as the evidence behind the decision.
   how source signals become dashboards and alerts.
 - Use [High-cardinality and label safety](./high-cardinality-and-label-safety.md)
   before you promote any log or metric field into a label.
+- Use [Audit logs as security records](./audit-logs-as-security-records.md) to
+  understand audit-log access, retention, and canary design.
+- Use [Token and lease observability](./token-and-lease-observability.md) to
+  separate inventory, rate, latency, and audit context.
 - Use [OpenBao overview dashboard](../dashboards/overview-dashboard.md) to
   see how metrics, logs, and audit logs appear in one triage view.
 - Use [Configure declarative audit devices](../audit/declarative-audit.md) to

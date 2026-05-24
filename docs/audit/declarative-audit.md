@@ -245,6 +245,8 @@ The reference dashboards and alerts expect `log_stream="openbao.audit"`.
 
 - Use [Metrics, logs, and audit logs](../concepts/metrics-vs-logs-vs-audit-logs.md)
   to choose the right signal for troubleshooting or investigation.
+- Use [Audit logs as security records](../concepts/audit-logs-as-security-records.md)
+  to understand audit-log access, retention, and canary design.
 - Use [High-cardinality and label safety](../concepts/high-cardinality-and-label-safety.md)
   before you add audit fields to collector labels.
 - Use [Run the Docker Compose stack](../docker-compose.md) to inspect the local

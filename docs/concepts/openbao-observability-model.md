@@ -126,6 +126,12 @@ you only need cluster-level health.
   choose the right signal for a question.
 - Use [High-cardinality and label safety](./high-cardinality-and-label-safety.md)
   before you change Prometheus or Loki labels.
+- Use [Active-node and all-node observability](./active-node-vs-all-node-observability.md)
+  to choose a metrics scrape profile.
+- Use [Audit logs as security records](./audit-logs-as-security-records.md)
+  before you expand audit-log access or retention.
+- Use [Token and lease observability](./token-and-lease-observability.md) to
+  interpret token and lease panels.
 - Use [OpenBao overview dashboard](../dashboards/overview-dashboard.md) to
   read the generated first-stop dashboard.
 - Use [Configure a secure metrics scrape](../metrics/secure-metrics-scrape.md)

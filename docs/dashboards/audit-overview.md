@@ -111,6 +111,8 @@ each event matches an approved change or a known automation.
   request ID, path, operation, or node drilldown.
 - Use [Configure declarative audit devices](../audit/declarative-audit.md) to
   review the audit collection pattern.
+- Use [Audit logs as security records](../concepts/audit-logs-as-security-records.md)
+  to understand audit-log access, retention, and canary design.
 - Use [Metrics, logs, and audit logs](../concepts/metrics-vs-logs-vs-audit-logs.md)
   to separate audit records from operational logs.
 - Use [High-cardinality and label safety](../concepts/high-cardinality-and-label-safety.md)

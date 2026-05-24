@@ -120,6 +120,8 @@ Operational logs are troubleshooting context. They are not audit records.
 
 - Use [Configure an all-node metrics scrape](../metrics/all-node-metrics-scrape.md)
   when you need standby and follower visibility.
+- Use [OpenBao HA/Raft observability](../concepts/openbao-ha-raft-observability.md)
+  to understand leadership, quorum, Autopilot, and replication signals.
 - Use [OpenBao operational logs dashboard](./operational-logs.md) when the log
   panels need deeper process context.
 - Use [OpenBao Raft and Autopilot health](../runbooks/raft-autopilot-health.md)

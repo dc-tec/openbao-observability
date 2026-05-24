@@ -131,6 +131,8 @@ restricted query-time filters, not ingestion labels.
 
 - Use [OpenBao audit overview dashboard](./audit-overview.md) when you need
   audit-health and volume context before drilling down.
+- Use [Audit logs as security records](../concepts/audit-logs-as-security-records.md)
+  to understand why audit fields need restricted access.
 - Use [OpenBao auth and identity dashboard](./auth-identity.md) for focused
   auth method, token, and identity activity.
 - Use [OpenBao secret engines and mounts dashboard](./secret-engines-mounts.md)

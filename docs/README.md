@@ -19,6 +19,10 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [OpenBao observability model](./concepts/openbao-observability-model.md)
 - [Metrics, logs, and audit logs](./concepts/metrics-vs-logs-vs-audit-logs.md)
 - [High-cardinality and label safety](./concepts/high-cardinality-and-label-safety.md)
+- [Active-node and all-node observability](./concepts/active-node-vs-all-node-observability.md)
+- [OpenBao HA/Raft observability](./concepts/openbao-ha-raft-observability.md)
+- [Audit logs as security records](./concepts/audit-logs-as-security-records.md)
+- [Token and lease observability](./concepts/token-and-lease-observability.md)
 
 ## Dashboards
 

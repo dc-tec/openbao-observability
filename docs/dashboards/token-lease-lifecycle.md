@@ -126,6 +126,8 @@ storage, policy, application behavior, or cleanup behavior.
 
 - Use [Irrevocable leases present](../runbooks/irrevocable-leases.md) when
   OpenBao reports irrevocable leases.
+- Use [Token and lease observability](../concepts/token-and-lease-observability.md)
+  to understand inventory, rate, latency, and audit context.
 - Use [OpenBao auth and identity dashboard](./auth-identity.md) when token
   lifecycle panels point to auth method activity.
 - Use [Metrics, logs, and audit logs](../concepts/metrics-vs-logs-vs-audit-logs.md)
