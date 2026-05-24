@@ -94,6 +94,9 @@ Transit activity can represent application cryptographic workflows. Treat
 unexpected spikes as workload or security signals and correlate them with
 application changes.
 
+Use the [OpenBao Transit dashboard](./transit.md) for focused key management,
+cryptographic operation, denied request, and response error investigation.
+
 ## How to read PKI activity
 
 PKI panels filter roles, issue, issuer, root, certificate, tidy, and revoke
@@ -102,6 +105,9 @@ deployment enables PKI.
 
 PKI audit activity does not replace PKI-specific health checks, issuer checks,
 CRL behavior, or certificate expiry monitoring.
+
+Use the [OpenBao PKI dashboard](./pki.md) for focused issue and revoke metrics,
+certificate lifecycle audit streams, issuer activity, and response errors.
 
 ## How to read errors and denied requests
 
@@ -146,6 +152,10 @@ cardinality and metadata exposure tradeoff.
   broader request ID, path, operation, and node drilldown.
 - Use [OpenBao database secrets dashboard](./database-secrets.md) for focused
   database secrets engine investigation.
+- Use [OpenBao Transit dashboard](./transit.md) for focused Transit key
+  management and cryptographic operation investigation.
+- Use [OpenBao PKI dashboard](./pki.md) for focused PKI operation metrics and
+  certificate lifecycle investigation.
 - Use [High-cardinality and label safety](../concepts/high-cardinality-and-label-safety.md)
   before you add mount, engine, or path labels.
 - Use [Metrics, logs, and audit logs](../concepts/metrics-vs-logs-vs-audit-logs.md)

@@ -1,17 +1,17 @@
 # Secret engine feature warnings
 
-Use this runbook when a PKI or database secrets engine warning fires for
-OpenBao. These alerts point to failed or unusually slow feature-specific
+Use this runbook when a PKI, Transit, or database secrets engine warning fires
+for OpenBao. These alerts point to failed or unusually slow feature-specific
 operations and need correlation with audit logs, operational logs, and the
-external system behind the secret engine.
+backend or application context behind the secret engine.
 
 ## Before you begin
 
 - Get access to Prometheus or the metrics backend that evaluates the alert.
 - Get access to OpenBao operational logs and audit logs.
 - Get OpenBao CLI access with permission to inspect the affected secret engine.
-- Get access to the external PKI or database platform if the alert points to a
-  backend dependency.
+- Get access to the external PKI, database, or application platform if the
+  alert points to a backend dependency or client workload.
 - Get approval from the affected secret engine owner before you change roles,
   issuers, root credentials, leases, or mount configuration.
 
@@ -25,13 +25,13 @@ external system behind the secret engine.
 1. Check which warning fired.
 
    ```promql
-   ALERTS{alertstate="firing", alertname=~"OpenBao(PKI|DatabaseCredential).*"}
+   ALERTS{alertstate="firing", alertname=~"OpenBao(PKI|Transit|DatabaseCredential).*"}
    ```
 
 2. Open the `OpenBao secret engines and mounts` dashboard.
 
-   Open the `OpenBao database secrets` dashboard when a database warning
-   fires.
+   Open the `OpenBao PKI`, `OpenBao Transit`, or `OpenBao database secrets`
+   dashboard when a feature-specific warning fires.
 
 3. Check whether the warning correlates with request latency, storage latency,
    audit failures, or HA/Raft alerts.
@@ -46,7 +46,7 @@ external system behind the secret engine.
 4. Check operational logs around the alert window.
 
    ```logql
-   {log_stream="openbao.operational"} |~ "(?i)(pki|database|plugin|lease|revoke|issuer|certificate|connection|timeout|error|failed)"
+   {log_stream="openbao.operational"} |~ "(?i)(pki|transit|database|plugin|lease|revoke|issuer|certificate|connection|crypto|key|timeout|error|failed)"
    ```
 
 ## Investigate PKI warnings
@@ -89,6 +89,39 @@ external system behind the secret engine.
    ```shell
    bao read -address=<openbao_address> pki/roles/<role_name>
    ```
+
+## Investigate Transit warnings
+
+1. Check audited Transit response errors.
+
+   ```logql
+   {log_stream="openbao.audit"} | json audit_type="type", request_path="request.path", audit_error="error" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*"
+   ```
+
+2. Check denied Transit requests.
+
+   ```logql
+   {log_stream="openbao.audit"} | json request_path="request.path", audit_error="error" | audit_error=~"(?s).*permission denied.*" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*"
+   ```
+
+3. Check whether errors affect key management or cryptographic operations.
+
+   ```logql
+   {log_stream="openbao.audit"} | json audit_type="type", request_path="request.path", request_id="request.id" | audit_type="request" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*"
+   ```
+
+4. Inspect Transit mount configuration and key metadata before you change key
+   policy, deletion settings, or rotation settings.
+
+   ```shell
+   bao secrets list -detailed -address=<openbao_address>
+   bao list -address=<openbao_address> transit/keys
+   bao read -address=<openbao_address> transit/keys/<key_name>
+   ```
+
+5. If errors affect decrypt, verify, or rewrap operations, check for recent key
+   rotations, key version changes, policy changes, or application release
+   changes before you rotate again.
 
 ## Investigate database warnings
 
@@ -143,8 +176,8 @@ external system behind the secret engine.
 1. If failures correlate with external backend errors, restore the external
    backend before you change OpenBao configuration.
 
-2. If failures started after a role, issuer, policy, plugin, or mount change,
-   roll back or repair that change with the owner.
+2. If failures started after a role, issuer, Transit key, policy, plugin, or
+   mount change, roll back or repair that change with the owner.
 
 3. If database revocation fails, identify affected leases before you revoke or
    tidy lease state.
@@ -159,6 +192,11 @@ external system behind the secret engine.
 5. If PKI revoke latency rises with storage or Raft symptoms, use the HA/Raft
    runbook before you tune PKI settings.
 
+6. If Transit errors affect application decrypt, verify, or rewrap traffic,
+   coordinate recovery with the application owner before you delete keys,
+   change key versions, disable deletion protection, or change derived key
+   settings.
+
 ## Verify the result
 
 1. Confirm that failure counters stop increasing.
@@ -172,7 +210,13 @@ external system behind the secret engine.
    openbao:database_close_error:increase15m
    ```
 
-2. Confirm that operation latency returns toward baseline.
+2. Confirm that Transit audit response errors stop increasing.
+
+   ```logql
+   sum(count_over_time({log_stream="openbao.audit"} | json audit_type="type", request_path="request.path", audit_error="error" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*" [5m]))
+   ```
+
+3. Confirm that operation latency returns toward baseline.
 
    ```promql
    openbao:pki_issue:avg5m
@@ -183,14 +227,14 @@ external system behind the secret engine.
    openbao:database_close:avg5m
    ```
 
-3. Confirm that operational logs no longer show correlated backend or plugin
+4. Confirm that operational logs no longer show correlated backend or plugin
    errors.
 
    ```logql
-   {log_stream="openbao.operational"} |~ "(?i)(pki|database|plugin|lease|revoke)" |~ "(?i)(error|failed|timeout|denied)"
+   {log_stream="openbao.operational"} |~ "(?i)(pki|transit|database|plugin|lease|revoke|crypto|key)" |~ "(?i)(error|failed|timeout|denied)"
    ```
 
-4. Wait for the alert window to pass and confirm that the warning resolves.
+5. Wait for the alert window to pass and confirm that the warning resolves.
 
 ## Troubleshooting
 
@@ -203,7 +247,14 @@ OpenBao source metrics with the expected `vault_*` or `openbao_*` prefix.
 
 The failure metrics are optional and only appear after OpenBao emits the
 underlying source counter. Check audit and operational logs to confirm whether
-the alert came from a stale recording rule or a now-resolved failure.
+the alert came from a stale recording rule, a log-based Transit alert, or a
+now-resolved failure.
+
+### Transit alert does not match a custom mount
+
+The generated Transit warning matches the default `transit` mount path. If your
+deployment mounts Transit elsewhere, copy the alert and replace the
+`transit/` path prefix with the approved mount path.
 
 ### Latency is high but operations still succeed
 
@@ -214,6 +265,10 @@ and client workload changes before you change secret engine configuration.
 
 - Use [OpenBao secret engines and mounts dashboard](../dashboards/secret-engines-mounts.md)
   to inspect feature metrics and audit context together.
+- Use [OpenBao PKI dashboard](../dashboards/pki.md) to inspect PKI operation
+  metrics and certificate lifecycle audit streams together.
+- Use [OpenBao Transit dashboard](../dashboards/transit.md) to inspect Transit
+  key management, cryptographic operations, and response errors.
 - Use [OpenBao database secrets dashboard](../dashboards/database-secrets.md)
   to inspect database operation rates, latency, failures, leases, and audit
   streams together.
@@ -227,7 +282,10 @@ Source: OpenBao documents telemetry metric behavior in the
 documents database secrets engine behavior in the
 [OpenBao database secrets engine documentation][openbao-database]. OpenBao
 documents PKI behavior in the [OpenBao PKI documentation][openbao-pki].
+OpenBao documents Transit behavior in the
+[OpenBao Transit documentation][openbao-transit].
 
 [openbao-database]: https://openbao.org/docs/secrets/databases/
 [openbao-pki]: https://openbao.org/docs/secrets/pki/
 [openbao-telemetry-metrics]: https://openbao.org/docs/internals/telemetry/metrics/
+[openbao-transit]: https://openbao.org/docs/secrets/transit/

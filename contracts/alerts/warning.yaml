@@ -94,6 +94,18 @@ alerts:
     labels:
       component: secret-engines
       subsystem: pki
+  - id: OpenBaoTransitOperationErrors
+    type: loki
+    severity: warning
+    signal: loki
+    for: 5m
+    expression: 'sum(count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*" [5m])) > 0'
+    summary: OpenBao Transit operations are returning errors
+    description: OpenBao audit logs contain Transit response errors over the alert window.
+    runbook: docs/runbooks/secret-engine-feature-warnings.md
+    labels:
+      component: secret-engines
+      subsystem: transit
   - id: OpenBaoDatabaseCredentialOperationFailures
     type: prometheus
     severity: warning

@@ -7,6 +7,19 @@ spec:
     groups:
         - name: openbao.loki.alerts
           rules:
+            - alert: OpenBaoTransitOperationErrors
+              expr: sum(count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*" [5m])) > 0
+              for: 5m
+              labels:
+                component: secret-engines
+                severity: warning
+                signal: loki
+                source_prefix: openbao
+                subsystem: transit
+              annotations:
+                description: OpenBao audit logs contain Transit response errors over the alert window.
+                runbook_url: docs/runbooks/secret-engine-feature-warnings.md
+                summary: OpenBao Transit operations are returning errors
             - alert: OpenBaoOperationalLogStreamMissing
               expr: absent_over_time({log_stream="openbao.operational"}[10m])
               for: 10m

@@ -177,6 +177,8 @@ make verify-live
 | `contracts/dashboards/openbao-auth-identity.yaml` | Auth and identity dashboard contract that filters audit request paths at query time without turning them into Loki labels. |
 | `contracts/dashboards/openbao-token-lease-lifecycle.yaml` | Token and lease lifecycle dashboard contract that consumes normalized token and lease rules plus query-time audit fields. |
 | `contracts/dashboards/openbao-secret-engines-mounts.yaml` | Secret engines and mounts dashboard contract that filters engine paths at query time without turning mount paths into Loki labels. |
+| `contracts/dashboards/openbao-transit.yaml` | Transit dashboard contract that filters key management and cryptographic audit paths at query time without turning Transit key names into Loki labels. |
+| `contracts/dashboards/openbao-pki.yaml` | PKI dashboard contract that consumes normalized PKI rules and filters certificate lifecycle audit paths at query time. |
 | `contracts/dashboards/openbao-runtime-storage.yaml` | Runtime and storage dashboard contract that consumes normalized runtime, barrier, cache, and mount-table rules. |
 | `contracts/dashboards/openbao-kubernetes-platform.yaml` | Kubernetes platform dashboard contract that consumes kube-state-metrics, kubelet, cAdvisor, scrape target, and platform event signals. |
 | `contracts/dashboards/openbao-slo-availability.yaml` | SLO and availability dashboard contract that consumes optional synthetic probe metrics, OpenBao latency rules, and scrape availability signals. |
