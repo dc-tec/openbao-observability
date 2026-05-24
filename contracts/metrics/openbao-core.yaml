@@ -339,3 +339,184 @@ metrics:
     overview: false
     notes:
       - Observed as a counter in OpenBao 2.5.4 fixtures.
+  - id: secret_lease_creation
+    docsName: vault.secret.lease.creation
+    prometheusName: ${p}_secret_lease_creation
+    required: false
+    overview: false
+    notes:
+      - Observed as a counter in the OpenBao 2.5.4 HA/Raft fixture after issuing database dynamic credentials.
+      - Labels include namespace, secret_engine, mount_point, creation_ttl, and cluster.
+      - Treat mount_point and creation_ttl as advanced labels; dashboards should aggregate by secret_engine unless a drilldown needs more detail.
+  - id: pki_issue
+    docsName: vault.pki.issue
+    prometheusName: ${p}_pki_issue
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture after issuing a certificate from the default pki/ mount.
+      - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
+      - Labels include namespace and role; role is bounded by PKI role inventory but should still be treated as drilldown data.
+  - id: pki_revoke
+    docsName: vault.pki.revoke
+    prometheusName: ${p}_pki_revoke
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture after revoking a certificate from the default pki/ mount.
+      - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
+      - Labels include namespace.
+  - id: database_initialize
+    docsName: vault.database.Initialize
+    prometheusName: ${p}_database_Initialize
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture when configuring the PostgreSQL database secrets engine.
+      - Emitted by the database plugin metrics middleware as a generic database operation metric.
+  - id: database_new_user
+    docsName: vault.database.NewUser
+    prometheusName: ${p}_database_NewUser
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture after issuing database dynamic credentials.
+      - Emitted by the database plugin metrics middleware as a generic database operation metric.
+  - id: database_update_user
+    docsName: vault.database.UpdateUser
+    prometheusName: ${p}_database_UpdateUser
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture after renewing database dynamic credentials.
+      - Emitted by the database plugin metrics middleware as a generic database operation metric.
+  - id: database_delete_user
+    docsName: vault.database.DeleteUser
+    prometheusName: ${p}_database_DeleteUser
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture after revoking database dynamic credentials.
+      - Emitted by the database plugin metrics middleware as a generic database operation metric.
+  - id: database_pgx_initialize
+    docsName: vault.database.pgx.Initialize
+    prometheusName: ${p}_database_pgx_Initialize
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture with the PostgreSQL database plugin.
+      - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
+  - id: database_pgx_new_user
+    docsName: vault.database.pgx.NewUser
+    prometheusName: ${p}_database_pgx_NewUser
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture with the PostgreSQL database plugin.
+      - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
+  - id: database_pgx_update_user
+    docsName: vault.database.pgx.UpdateUser
+    prometheusName: ${p}_database_pgx_UpdateUser
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture with the PostgreSQL database plugin.
+      - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
+  - id: database_pgx_delete_user
+    docsName: vault.database.pgx.DeleteUser
+    prometheusName: ${p}_database_pgx_DeleteUser
+    required: false
+    overview: false
+    notes:
+      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture with the PostgreSQL database plugin.
+      - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
+  - id: route_create_kv_v1
+    docsName: vault.route.create.kv-v1-
+    prometheusName: ${p}_route_create_kv_v1_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default kv-v1/ mount.
+      - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_read_kv_v1
+    docsName: vault.route.read.kv-v1-
+    prometheusName: ${p}_route_read_kv_v1_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default kv-v1/ mount.
+      - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_list_kv_v1
+    docsName: vault.route.list.kv-v1-
+    prometheusName: ${p}_route_list_kv_v1_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default kv-v1/ mount.
+      - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_delete_kv_v1
+    docsName: vault.route.delete.kv-v1-
+    prometheusName: ${p}_route_delete_kv_v1_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default kv-v1/ mount.
+      - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_create_database
+    docsName: vault.route.create.database-
+    prometheusName: ${p}_route_create_database_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default database/ mount.
+      - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_read_database
+    docsName: vault.route.read.database-
+    prometheusName: ${p}_route_read_database_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default database/ mount.
+      - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_renew_database
+    docsName: vault.route.renew.database-
+    prometheusName: ${p}_route_renew_database_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default database/ mount.
+      - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_revoke_database
+    docsName: vault.route.revoke.database-
+    prometheusName: ${p}_route_revoke_database_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default database/ mount.
+      - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_read_pki
+    docsName: vault.route.read.pki-
+    prometheusName: ${p}_route_read_pki_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default pki/ mount.
+      - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_update_pki
+    docsName: vault.route.update.pki-
+    prometheusName: ${p}_route_update_pki_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default pki/ mount.
+      - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.

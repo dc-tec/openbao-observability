@@ -504,6 +504,76 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Expr:   cacheHitRatioExpression(sourcePrefix),
 							Labels: ruleLabels(sourcePrefix),
 						},
+						{
+							Record: recordPrefix + ":secret_lease_creation:increase15m",
+							Expr:   "sum(increase(" + metricName(sourcePrefix, "secret_lease_creation") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":secret_lease_creation_by_engine:increase15m",
+							Expr:   "sum by (secret_engine) (increase(" + metricName(sourcePrefix, "secret_lease_creation") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":pki_issue:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "pki_issue"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":pki_issue:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "pki_issue"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":pki_revoke:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "pki_revoke"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":pki_revoke:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "pki_revoke"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_initialize:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "database_Initialize"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_initialize:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "database_Initialize"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_new_user:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "database_NewUser"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_new_user:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "database_NewUser"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_update_user:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "database_UpdateUser"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_update_user:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "database_UpdateUser"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_delete_user:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "database_DeleteUser"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":database_delete_user:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "database_DeleteUser"),
+							Labels: ruleLabels(sourcePrefix),
+						},
 					},
 				},
 			},

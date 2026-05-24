@@ -242,3 +242,59 @@ groups:
           expr: sum(rate(openbao_cache_hit[5m])) / clamp_min(sum(rate(openbao_cache_hit[5m])) + sum(rate(openbao_cache_miss[5m])), 0.001)
           labels:
             source_prefix: openbao
+        - record: openbao:secret_lease_creation:increase15m
+          expr: sum(increase(openbao_secret_lease_creation[15m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:secret_lease_creation_by_engine:increase15m
+          expr: sum by (secret_engine) (increase(openbao_secret_lease_creation[15m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:pki_issue:rate5m
+          expr: sum(rate(openbao_pki_issue_count[5m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:pki_issue:avg5m
+          expr: sum(rate(openbao_pki_issue_sum[5m])) / clamp_min(sum(rate(openbao_pki_issue_count[5m])), 0.001)
+          labels:
+            source_prefix: openbao
+        - record: openbao:pki_revoke:rate5m
+          expr: sum(rate(openbao_pki_revoke_count[5m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:pki_revoke:avg5m
+          expr: sum(rate(openbao_pki_revoke_sum[5m])) / clamp_min(sum(rate(openbao_pki_revoke_count[5m])), 0.001)
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_initialize:rate5m
+          expr: sum(rate(openbao_database_Initialize_count[5m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_initialize:avg5m
+          expr: sum(rate(openbao_database_Initialize_sum[5m])) / clamp_min(sum(rate(openbao_database_Initialize_count[5m])), 0.001)
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_new_user:rate5m
+          expr: sum(rate(openbao_database_NewUser_count[5m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_new_user:avg5m
+          expr: sum(rate(openbao_database_NewUser_sum[5m])) / clamp_min(sum(rate(openbao_database_NewUser_count[5m])), 0.001)
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_update_user:rate5m
+          expr: sum(rate(openbao_database_UpdateUser_count[5m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_update_user:avg5m
+          expr: sum(rate(openbao_database_UpdateUser_sum[5m])) / clamp_min(sum(rate(openbao_database_UpdateUser_count[5m])), 0.001)
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_delete_user:rate5m
+          expr: sum(rate(openbao_database_DeleteUser_count[5m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:database_delete_user:avg5m
+          expr: sum(rate(openbao_database_DeleteUser_sum[5m])) / clamp_min(sum(rate(openbao_database_DeleteUser_count[5m])), 0.001)
+          labels:
+            source_prefix: openbao
