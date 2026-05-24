@@ -142,10 +142,14 @@ operational logs as audit evidence.
   to understand the source and derived signals behind the dashboard.
 - Use [Metrics, logs, and audit logs](../concepts/metrics-vs-logs-vs-audit-logs.md)
   to choose the right follow-up signal.
+- Use [OpenBao HA/Raft dashboard](./ha-raft.md) when HA, Raft, or Autopilot
+  panels look unhealthy.
 - Use [OpenBao audit overview dashboard](./audit-overview.md) when audit
   metrics or audit streams look unhealthy.
 - Use [OpenBao audit investigation dashboard](./audit-investigation.md) when
   you need request ID, path, operation, or node drilldown.
+- Use [OpenBao operational logs dashboard](./operational-logs.md) when
+  operational errors need deeper log context.
 - Use [Understand metric prefixes and recording rules](../contracts/metric-prefix.md)
   when a metric panel is empty.
 

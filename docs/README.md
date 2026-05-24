@@ -23,8 +23,13 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 ## Dashboards
 
 - [OpenBao overview dashboard](./dashboards/overview-dashboard.md)
+- [OpenBao HA/Raft dashboard](./dashboards/ha-raft.md)
 - [OpenBao audit overview dashboard](./dashboards/audit-overview.md)
 - [OpenBao audit investigation dashboard](./dashboards/audit-investigation.md)
+- [OpenBao operational logs dashboard](./dashboards/operational-logs.md)
+- [OpenBao auth and identity dashboard](./dashboards/auth-identity.md)
+- [OpenBao token and lease lifecycle dashboard](./dashboards/token-lease-lifecycle.md)
+- [OpenBao secret engines and mounts dashboard](./dashboards/secret-engines-mounts.md)
 
 ## Reference
 
