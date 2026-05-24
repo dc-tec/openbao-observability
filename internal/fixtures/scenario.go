@@ -19,6 +19,7 @@ const (
 	defaultScenarioPassword = "openbao-observability"
 	auditCanaryToken        = "openbao-observability-audit-canary-token"
 	auditCanaryPath         = "secret/data/observability/audit-canary"
+	fixtureNamespace        = "team-a"
 )
 
 var (
@@ -178,11 +179,169 @@ path "secret/metadata/apps/payments/*" {
 	if err := r.exercisePKI(ctx); err != nil {
 		return err
 	}
+	if err := r.exerciseNamespace(ctx); err != nil {
+		return err
+	}
 	if err := r.exerciseFeatureExpectedFailures(ctx); err != nil {
 		return err
 	}
 	if err := r.exerciseExpectedFailures(ctx); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (r *scenarioRunner) exerciseNamespace(ctx context.Context) error {
+	if err := r.ensureNamespace(ctx, fixtureNamespace); err != nil {
+		return err
+	}
+	if err := r.runOperation(ctx, scenarioOperation{name: "read-namespace-team-a", path: "sys/namespaces/" + fixtureNamespace, operation: "read"}); err != nil {
+		return err
+	}
+	if err := r.runOperation(ctx, scenarioOperation{name: "list-namespaces", path: "sys/namespaces", operation: "list"}); err != nil {
+		return err
+	}
+
+	namespaceClient := r.client.WithNamespace(fixtureNamespace)
+	return r.withClient(namespaceClient, func() error {
+		if err := r.ensureMount(ctx, "secret", "kv", "Namespace KV engine for observability reference captures.", map[string]any{
+			"version": "2",
+		}); err != nil {
+			return err
+		}
+		r.renameLastStep("ensure-secret-mount", "ensure-namespace-secret-mount")
+
+		steps := []scenarioOperation{
+			{name: "write-namespace-policy", path: "sys/policies/acl/namespace-app", operation: "write", data: map[string]any{
+				"policy": `path "secret/data/apps/team-a/*" {
+  capabilities = ["create", "read", "update", "delete"]
+}
+
+path "secret/metadata/apps/team-a/*" {
+  capabilities = ["list", "read", "delete"]
+}
+`,
+			}},
+			{name: "write-namespace-user", path: "auth/userpass/users/namespace-user", operation: "write", data: map[string]any{
+				"password":       defaultScenarioPassword,
+				"token_policies": []string{"namespace-app"},
+			}},
+			{name: "write-namespace-kv", path: "secret/data/apps/team-a/scenario", operation: "write", data: map[string]any{
+				"data": map[string]any{
+					"owner":    "team-a",
+					"scenario": "namespace-fixture",
+					"tier":     "demo",
+				},
+			}},
+			{name: "read-namespace-kv", path: "secret/data/apps/team-a/scenario", operation: "read"},
+			{name: "list-namespace-kv-metadata", path: "secret/metadata/apps/team-a", operation: "list"},
+		}
+		if err := r.ensureAuth(ctx, "userpass", "userpass", "Namespace userpass auth method for observability reference captures.", "ensure-namespace-userpass-auth"); err != nil {
+			return err
+		}
+		for _, step := range steps {
+			if err := r.runOperation(ctx, step); err != nil {
+				return err
+			}
+		}
+
+		if err := r.exerciseNamespaceUserpass(ctx); err != nil {
+			return err
+		}
+		if err := r.exerciseNamespaceToken(ctx); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (r *scenarioRunner) ensureNamespace(ctx context.Context, namespacePath string) error {
+	path := "sys/namespaces/" + namespacePath
+	if existing, err := r.client.Logical().ReadWithContext(ctx, path); err == nil && existing != nil {
+		r.addStep("ensure-namespace-"+namespacePath, path, "success", "")
+		return nil
+	}
+
+	_, err := r.client.Logical().WriteWithContext(ctx, path, map[string]any{
+		"custom_metadata": map[string]string{
+			"owner":   "platform",
+			"purpose": "observability-fixture",
+		},
+	})
+	if err != nil {
+		r.addStep("ensure-namespace-"+namespacePath, path, "error", err.Error())
+		return fmt.Errorf("create namespace %s: %w", namespacePath, err)
+	}
+	r.addStep("ensure-namespace-"+namespacePath, path, "success", "")
+	return nil
+}
+
+func (r *scenarioRunner) exerciseNamespaceUserpass(ctx context.Context) error {
+	config := baoapi.DefaultConfig()
+	config.Address = r.client.Address()
+	userClient, err := baoapi.NewClient(config)
+	if err != nil {
+		return fmt.Errorf("create namespace userpass client: %w", err)
+	}
+	userClient.SetNamespace(fixtureNamespace)
+
+	secret, err := userClient.Logical().WriteWithContext(ctx, "auth/userpass/login/namespace-user", map[string]any{
+		"password": defaultScenarioPassword,
+	})
+	if err != nil {
+		r.addStep("login-namespace-userpass", "auth/userpass/login/namespace-user", "error", err.Error())
+		return fmt.Errorf("log in with namespace userpass user: %w", err)
+	}
+	token, err := secret.TokenID()
+	if err != nil {
+		r.addStep("login-namespace-userpass", "auth/userpass/login/namespace-user", "error", err.Error())
+		return fmt.Errorf("read namespace userpass token: %w", err)
+	}
+	if token == "" {
+		err := errors.New("namespace login response did not include a client token")
+		r.addStep("login-namespace-userpass", "auth/userpass/login/namespace-user", "error", err.Error())
+		return err
+	}
+	r.addStep("login-namespace-userpass", "auth/userpass/login/namespace-user", "success", "")
+
+	userClient.SetToken(token)
+	if _, err := userClient.Logical().ReadWithContext(ctx, "secret/data/apps/team-a/scenario"); err != nil {
+		r.addStep("read-namespace-kv-as-user", "secret/data/apps/team-a/scenario", "error", err.Error())
+		return fmt.Errorf("read namespace KV with namespace user token: %w", err)
+	}
+	r.addStep("read-namespace-kv-as-user", "secret/data/apps/team-a/scenario", "success", "")
+	return nil
+}
+
+func (r *scenarioRunner) exerciseNamespaceToken(ctx context.Context) error {
+	secret, err := r.client.Logical().WriteWithContext(ctx, "auth/token/create", map[string]any{
+		"display_name": "namespace-scenario-token",
+		"policies":     []string{"namespace-app"},
+		"renewable":    true,
+		"ttl":          "5m",
+	})
+	if err != nil {
+		r.addStep("create-namespace-token", "auth/token/create", "error", err.Error())
+		return fmt.Errorf("create namespace token: %w", err)
+	}
+	r.addStep("create-namespace-token", "auth/token/create", "success", "")
+
+	token, err := secret.TokenID()
+	if err != nil {
+		return fmt.Errorf("read namespace token ID: %w", err)
+	}
+	if token == "" {
+		return errors.New("namespace token create response did not include a token")
+	}
+
+	steps := []scenarioOperation{
+		{name: "lookup-namespace-token", path: "auth/token/lookup", operation: "write", data: map[string]any{"token": token}},
+		{name: "revoke-namespace-token", path: "auth/token/revoke", operation: "write", data: map[string]any{"token": token}},
+	}
+	for _, step := range steps {
+		if err := r.runOperation(ctx, step); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -786,6 +945,54 @@ func (r *scenarioRunner) ensureMount(ctx context.Context, mountPath, engineType,
 	}
 	r.addStep(stepName, path, "success", "")
 	return nil
+}
+
+func (r *scenarioRunner) ensureAuth(ctx context.Context, mountPath, authType, description, stepName string) error {
+	auths, err := r.client.Logical().ReadWithContext(ctx, "sys/auth")
+	if err != nil {
+		r.addStep(stepName, "sys/auth", "error", err.Error())
+		return fmt.Errorf("read auth mounts before %s scenario: %w", mountPath, err)
+	}
+	if auths == nil || auths.Data == nil {
+		err := errors.New("sys/auth response did not include data")
+		r.addStep(stepName, "sys/auth", "error", err.Error())
+		return err
+	}
+
+	if _, ok := auths.Data[mountPath+"/"]; ok {
+		r.addStep(stepName, "sys/auth", "success", "")
+		return nil
+	}
+
+	path := "sys/auth/" + mountPath
+	if _, err := r.client.Logical().WriteWithContext(ctx, path, map[string]any{
+		"type":        authType,
+		"description": description,
+	}); err != nil {
+		r.addStep(stepName, path, "error", err.Error())
+		return fmt.Errorf("enable auth mount %s: %w", mountPath, err)
+	}
+	r.addStep(stepName, path, "success", "")
+	return nil
+}
+
+func (r *scenarioRunner) withClient(client *baoapi.Client, run func() error) error {
+	previous := r.client
+	r.client = client
+	defer func() {
+		r.client = previous
+	}()
+	return run()
+}
+
+func (r *scenarioRunner) renameLastStep(from, to string) {
+	if len(r.report.Steps) == 0 {
+		return
+	}
+	last := &r.report.Steps[len(r.report.Steps)-1]
+	if last.Name == from {
+		last.Name = to
+	}
 }
 
 func (r *scenarioRunner) exerciseExpectedFailures(ctx context.Context) error {

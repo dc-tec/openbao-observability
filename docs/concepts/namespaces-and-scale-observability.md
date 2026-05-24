@@ -2,8 +2,7 @@
 
 Use this explainer to understand how namespaces, Raft voters, and Raft
 non-voters affect OpenBao observability. It is for operators who need to plan
-dashboard, alert, and fixture coverage beyond a single root-namespace HA
-cluster.
+dashboard, alert, and fixture coverage beyond the baseline HA cluster.
 
 ## Why this matters
 
@@ -72,23 +71,28 @@ This project currently validates a focused local topology:
 | Area | Current status |
 | ---- | -------------- |
 | OpenBao version | Captured with OpenBao 2.5.4 fixtures. |
-| Namespace scope | Root-namespace behavior only. |
+| Namespace scope | Root namespace and one child namespace named `team-a`. |
+| Namespace activity | Userpass auth, token create/lookup/revoke, KV v2 write/read/list, policy writes, and audit request namespace fields. |
 | Raft topology | Three voter nodes in the HA/Raft fixture. |
 | Source prefixes | `vault` and `openbao` metric prefixes. |
 | Read replicas | Documented as supported OpenBao behavior, not fixture-tested here. |
-| Non-root namespaces | Documented as supported OpenBao behavior, not fixture-tested here. |
+| Nested namespaces | Documented as supported OpenBao behavior, not fixture-tested here. |
 
 Use the generated dashboards and alerts as validated for the current fixture
-scope. Treat namespace-heavy panels, namespace alert routing, read-replica
-health, and non-voter failure alerts as extensions until you capture fixtures
-for those shapes.
+scope. Treat namespace-heavy panels, namespace alert routing, feature-specific
+namespace behavior outside the captured scenario, read-replica health, and
+non-voter failure alerts as extensions until you capture fixtures for those
+shapes.
 
 ## Design recommendations
 
 Use these rules when you extend the reference architecture:
 
 - Keep root namespace as the baseline fixture.
-- Add a non-root namespace fixture before you group dashboards by `namespace`.
+- Keep the non-root namespace fixture in place before you group dashboards by
+  `namespace`.
+- Add feature-specific namespace fixtures before you rely on namespace grouping
+  for that feature.
 - Add a non-voter fixture before you alert on read-replica or non-voter health.
 - Keep `namespace`, `mount_point`, and `policy` out of default alert labels.
 - Use all-node scraping for HA/Raft and read-replica diagnostics.
@@ -104,8 +108,8 @@ leaving a path for deeper production profiles.
 - Treating a non-voter failure as the same condition as voter quorum loss.
 - Grouping overview panels by namespace before reviewing cardinality and access
   control.
-- Treating root-namespace fixture behavior as proof of non-root namespace
-  behavior.
+- Treating the `team-a` child namespace fixture as proof of nested namespace or
+  all feature-specific behavior.
 - Adding replication alerts without separating quorum health, read capacity,
   and scrape target health.
 - Using namespace names or paths as Loki labels without an access review.
@@ -115,9 +119,9 @@ leaving a path for deeper production profiles.
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed OpenBao docs behavior | OpenBao documents namespace commands, namespace limits, namespace-related lease metrics, Raft non-voters, and Autopilot states. |
-| Observed fixture behavior | The local OpenBao 2.5.4 fixtures validate root-namespace and three-voter HA/Raft behavior. |
+| Observed fixture behavior | The local OpenBao 2.5.4 fixtures validate root namespace, the `team-a` child namespace, and three-voter HA/Raft behavior. |
 | Design decision | This project treats namespace and non-voter coverage as explicit topology extensions, not default assumptions. |
-| To validate | Non-root namespace labels and audit fields, non-voter metric labels, read-replica request behavior, and production alert thresholds. |
+| To validate | Nested namespace behavior, feature-specific namespace labels outside the captured scenario, non-voter metric labels, read-replica request behavior, and production alert thresholds. |
 
 ## What's next
 

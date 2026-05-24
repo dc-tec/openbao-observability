@@ -200,6 +200,9 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 	if !hasAnyGaugeValue(leaderMetrics, prefix+"_core_active", 1) {
 		return fmt.Errorf("missing active leader gauge value in Raft fixture")
 	}
+	if !hasMetricWithNonRootNamespace(leaderMetrics, prefix+"_token_creation") {
+		return fmt.Errorf("missing non-root namespace label on %s in Raft fixture", prefix+"_token_creation")
+	}
 	for index := 0; index < raftNodeCount; index++ {
 		nodeID := fmt.Sprintf("node%d", index)
 		if !leaderMetrics.HasMetricWithLabel(prefix+"_autopilot_node_healthy", "node_id", nodeID) {
@@ -208,6 +211,21 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 	}
 
 	return nil
+}
+
+func hasMetricWithNonRootNamespace(families promtext.Families, name string) bool {
+	family, ok := families[name]
+	if !ok {
+		return false
+	}
+	for _, metric := range family.GetMetric() {
+		for _, label := range metric.GetLabel() {
+			if label.GetName() == "namespace" && label.GetValue() != "" && label.GetValue() != "root" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func hasAnyGaugeValue(families promtext.Families, name string, value float64) bool {
@@ -293,7 +311,7 @@ func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
 	if err := checkAuditJSONFile(path); err != nil {
 		return err
 	}
-	return checkAuditRequestPaths(path, []string{
+	if err := checkAuditRequestPaths(path, []string{
 		"auth/approle/login",
 		"auth/token/create",
 		"auth/token/lookup",
@@ -301,6 +319,8 @@ func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
 		"auth/token/revoke",
 		"auth/userpass/login/demo-admin",
 		"auth/userpass/login/demo-reader",
+		"auth/userpass/login/namespace-user",
+		"auth/userpass/users/namespace-user",
 		"database/config/postgres-bad",
 		"database/creds/failure-create",
 		"database/creds/failure-renew",
@@ -320,18 +340,28 @@ func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
 		"pki/roles/observability-dot-local",
 		"secret/data/apps/payments/denied",
 		"secret/data/apps/payments/scenario",
+		"secret/data/apps/team-a/scenario",
+		"secret/metadata/apps/team-a/",
+		"sys/auth/userpass",
 		"sys/mounts",
 		"sys/mounts/kv-v1",
 		"sys/mounts/pki",
+		"sys/mounts/secret",
 		"sys/mounts/transit",
+		"sys/namespaces/",
+		"sys/namespaces/team-a",
 		"sys/leases/lookup",
 		"sys/leases/renew",
 		"sys/leases/revoke",
+		"sys/policies/acl/namespace-app",
 		"sys/policies/acl/scenario-app",
 		"transit/decrypt/payments",
 		"transit/encrypt/payments",
 		"transit/keys/payments",
-	})
+	}); err != nil {
+		return err
+	}
+	return checkAuditNonRootNamespace(path)
 }
 
 func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
@@ -348,6 +378,7 @@ func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
 
 	expected := map[string]string{
 		"create-token":                                "success",
+		"create-namespace-token":                      "success",
 		"delete-kv-v1":                                "success",
 		"denied-reader-kv-write":                      "expected_error",
 		"decrypt-transit":                             "success",
@@ -355,6 +386,9 @@ func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
 		"ensure-kv-v1-mount":                          "success",
 		"ensure-pki-mount":                            "success",
 		"ensure-pki-root":                             "success",
+		"ensure-namespace-secret-mount":               "success",
+		"ensure-namespace-team-a":                     "success",
+		"ensure-namespace-userpass-auth":              "success",
 		"ensure-transit-key":                          "success",
 		"ensure-transit-mount":                        "success",
 		"failed-userpass-login":                       "expected_error",
@@ -367,13 +401,20 @@ func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
 		"issue-pki-certificate":                       "success",
 		"list-kv-v1":                                  "success",
 		"list-kv-metadata":                            "success",
+		"list-namespace-kv-metadata":                  "success",
+		"list-namespaces":                             "success",
 		"login-approle":                               "success",
+		"login-namespace-userpass":                    "success",
 		"login-userpass-admin":                        "success",
 		"lookup-database-lease":                       "success",
+		"lookup-namespace-token":                      "success",
 		"lookup-token":                                "success",
 		"read-database-credentials":                   "success",
 		"read-kv":                                     "success",
 		"read-kv-v1":                                  "success",
+		"read-namespace-kv":                           "success",
+		"read-namespace-kv-as-user":                   "success",
+		"read-namespace-team-a":                       "success",
 		"read-transit-key":                            "success",
 		"renew-database-lease":                        "success",
 		"renew-token":                                 "success",
@@ -381,9 +422,13 @@ func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
 		"revoke-database-lease":                       "success",
 		"revoke-database-failure-renew-lease":         "success",
 		"revoke-database-failure-revoke-lease":        "success",
+		"revoke-namespace-token":                      "success",
 		"revoke-token":                                "success",
 		"read-database-failure-renew-credentials":     "success",
 		"read-database-failure-revoke-credentials":    "success",
+		"write-namespace-kv":                          "success",
+		"write-namespace-policy":                      "success",
+		"write-namespace-user":                        "success",
 		"write-identity-entity":                       "success",
 		"write-identity-group":                        "success",
 		"write-kv":                                    "success",
@@ -511,4 +556,42 @@ func checkAuditRequestPaths(path string, required []string) error {
 		}
 	}
 	return nil
+}
+
+func checkAuditNonRootNamespace(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("open audit fixture %s: %w", path, err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		var entry map[string]any
+		if err := json.Unmarshal([]byte(line), &entry); err != nil {
+			return fmt.Errorf("parse audit JSON in %s: %w", path, err)
+		}
+
+		request, ok := entry["request"].(map[string]any)
+		if !ok {
+			continue
+		}
+		namespace, ok := request["namespace"].(map[string]any)
+		if !ok {
+			continue
+		}
+		if id, ok := namespace["id"].(string); ok && id != "" && id != "root" {
+			return nil
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("scan audit fixture %s: %w", path, err)
+	}
+
+	return fmt.Errorf("audit fixture %s does not contain a non-root request.namespace.id", path)
 }
