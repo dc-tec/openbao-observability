@@ -19,3 +19,55 @@ spec:
                 description: OpenBao reports one or more leases that it cannot automatically revoke.
                 runbook_url: docs/runbooks/irrevocable-leases.md
                 summary: OpenBao reports irrevocable leases
+            - alert: OpenBaoStorageBarrierLatencyElevated
+              expr: (openbao:barrier_get:avg5m > 3 * clamp_min(avg_over_time(openbao:barrier_get:avg5m[1h]), 0.001)) or (openbao:barrier_put:avg5m > 3 * clamp_min(avg_over_time(openbao:barrier_put:avg5m[1h]), 0.001)) or (openbao:barrier_list:avg5m > 3 * clamp_min(avg_over_time(openbao:barrier_list:avg5m[1h]), 0.001)) or (openbao:barrier_delete:avg5m > 3 * clamp_min(avg_over_time(openbao:barrier_delete:avg5m[1h]), 0.001))
+              for: 15m
+              labels:
+                component: storage
+                severity: warning
+                signal: metrics
+                source_prefix: openbao
+                subsystem: barrier
+              annotations:
+                description: OpenBao storage barrier latency is more than three times its recent baseline.
+                runbook_url: docs/runbooks/runtime-storage-warnings.md
+                summary: OpenBao storage barrier latency is elevated
+            - alert: OpenBaoStorageCacheHitRatioLow
+              expr: (openbao:cache_hit:rate5m + openbao:cache_miss:rate5m) > 1 and openbao:cache_hit_ratio:ratio5m < 0.50
+              for: 15m
+              labels:
+                component: storage
+                severity: warning
+                signal: metrics
+                source_prefix: openbao
+                subsystem: cache
+              annotations:
+                description: OpenBao storage cache hit ratio is below 50 percent while cache traffic is active.
+                runbook_url: docs/runbooks/runtime-storage-warnings.md
+                summary: OpenBao storage cache hit ratio is low
+            - alert: OpenBaoRuntimeMemoryGrowth
+              expr: predict_linear(openbao:runtime_sys_bytes:max[30m], 3600) > openbao:runtime_sys_bytes:max * 1.5 and openbao:runtime_sys_bytes:max > 0
+              for: 15m
+              labels:
+                component: runtime
+                severity: warning
+                signal: metrics
+                source_prefix: openbao
+                subsystem: memory
+              annotations:
+                description: OpenBao Go runtime system memory is projected to grow by more than 50 percent over the next hour.
+                runbook_url: docs/runbooks/runtime-storage-warnings.md
+                summary: OpenBao runtime memory is projected to grow
+            - alert: OpenBaoMountTableGrowth
+              expr: sum(openbao:core_mount_table_num_entries:max) - sum(openbao:core_mount_table_num_entries:max offset 1h) > 5
+              for: 10m
+              labels:
+                component: core
+                severity: warning
+                signal: metrics
+                source_prefix: openbao
+                subsystem: mounts
+              annotations:
+                description: OpenBao reports more than five additional mount table entries compared with one hour ago.
+                runbook_url: docs/runbooks/runtime-storage-warnings.md
+                summary: OpenBao mount table grew quickly

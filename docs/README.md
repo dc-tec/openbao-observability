@@ -67,6 +67,7 @@ Use these runbooks when the generated alert rules fire:
 - [Operational log stream missing](./runbooks/operational-log-stream-missing.md)
 - [Debug logging enabled](./runbooks/debug-logging-enabled.md)
 - [Irrevocable leases present](./runbooks/irrevocable-leases.md)
+- [Runtime and storage warnings](./runbooks/runtime-storage-warnings.md)
 
 Do not put implementation plans, work notes, or contributor-only design notes
 in this directory. Put those files under `workstreams/` with a `.local.md`

@@ -141,6 +141,8 @@ Operational logs are troubleshooting context. They are not audit records.
   when token checks, leases, or revocation work change at the same time.
 - Use [OpenBao secret engines and mounts dashboard](./secret-engines-mounts.md)
   when mount table changes need audit-based context.
+- Use [Runtime and storage warnings](../runbooks/runtime-storage-warnings.md)
+  when runtime, storage, cache, or mount table warning alerts fire.
 - Use [Understanding OpenBao metrics](../metrics/understanding-openbao-metrics.md)
   to understand source metrics, recording rules, labels, and scrape profiles.
 - Use [High-cardinality and label safety](../concepts/high-cardinality-and-label-safety.md)
