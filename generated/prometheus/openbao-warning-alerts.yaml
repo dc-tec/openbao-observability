@@ -118,6 +118,58 @@ groups:
             description: OpenBao database credential create, renew, or revoke latency is more than three times its recent baseline while database operations are active.
             runbook_url: docs/runbooks/secret-engine-feature-warnings.md
             summary: OpenBao database credential operation latency is elevated
+        - alert: OpenBaoSyntheticProbeFailing
+          expr: min_over_time(probe_success{job=~".*openbao.*"}[5m]) == 0
+          for: 5m
+          labels:
+            component: availability
+            severity: warning
+            signal: availability
+            source_prefix: vault
+            subsystem: synthetic-probe
+          annotations:
+            description: A synthetic probe for OpenBao has failed for the alert window.
+            runbook_url: docs/runbooks/slo-availability.md
+            summary: OpenBao synthetic probe is failing
+        - alert: OpenBaoAvailabilityFastBurn
+          expr: ((1 - avg_over_time(probe_success{job=~".*openbao.*"}[5m])) / 0.001 > 14.4) and ((1 - avg_over_time(probe_success{job=~".*openbao.*"}[1h])) / 0.001 > 14.4)
+          for: 5m
+          labels:
+            component: availability
+            severity: warning
+            signal: availability
+            source_prefix: vault
+            subsystem: error-budget
+          annotations:
+            description: Synthetic probe failures are consuming the 99.9 percent availability error budget across short and medium windows.
+            runbook_url: docs/runbooks/slo-availability.md
+            summary: OpenBao availability error budget has high burn rate
+        - alert: OpenBaoAvailabilitySlowBurn
+          expr: ((1 - avg_over_time(probe_success{job=~".*openbao.*"}[30m])) / 0.001 > 6) and ((1 - avg_over_time(probe_success{job=~".*openbao.*"}[6h])) / 0.001 > 6)
+          for: 30m
+          labels:
+            component: availability
+            severity: warning
+            signal: availability
+            source_prefix: vault
+            subsystem: error-budget
+          annotations:
+            description: Synthetic probe failures are consuming the 99.9 percent availability error budget across medium and long windows.
+            runbook_url: docs/runbooks/slo-availability.md
+            summary: OpenBao availability error budget is burning
+        - alert: OpenBaoSyntheticProbeLatencyElevated
+          expr: avg_over_time(probe_duration_seconds{job=~".*openbao.*"}[5m]) > 3 * clamp_min(avg_over_time(probe_duration_seconds{job=~".*openbao.*"}[1h]), 0.001)
+          for: 15m
+          labels:
+            component: availability
+            severity: warning
+            signal: availability
+            source_prefix: vault
+            subsystem: synthetic-probe
+          annotations:
+            description: Synthetic probe duration is more than three times its recent baseline.
+            runbook_url: docs/runbooks/slo-availability.md
+            summary: OpenBao synthetic probe latency is elevated
         - alert: OpenBaoKubernetesPodNotReady
           expr: min by (namespace, pod) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
           for: 10m

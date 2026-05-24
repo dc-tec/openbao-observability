@@ -1,0 +1,22 @@
+scrape_configs:
+  - job_name: openbao-synthetic-probe
+    metrics_path: /probe
+    params:
+      module:
+        - http_2xx
+    static_configs:
+      - targets:
+          - https://openbao-active.openbao.svc:8200/v1/sys/health
+        labels:
+          environment: production
+          region: example
+          cluster: openbao
+    relabel_configs:
+      - source_labels:
+          - __address__
+        target_label: __param_target
+      - source_labels:
+          - __param_target
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter.monitoring.svc:9115

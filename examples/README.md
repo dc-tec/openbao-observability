@@ -12,3 +12,5 @@ VM-style OpenBao observability profiles.
   example for scraping an audit archive health exporter.
 - `kubernetes/operator-managed/`: merge patches and adoption steps for
   OpenBao clusters managed by `dc-tec/openbao-operator`.
+- `synthetic-probes/`: optional blackbox-style probe contract for SLO and
+  availability dashboard panels and alerts.

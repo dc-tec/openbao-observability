@@ -350,6 +350,7 @@ func runValidateDashboardQueries(ctx context.Context, args []string) error {
 		filepath.Join("generated", "grafana", "openbao-secret-engines-mounts.json"),
 		filepath.Join("generated", "grafana", "openbao-runtime-storage.json"),
 		filepath.Join("generated", "grafana", "openbao-kubernetes-platform.json"),
+		filepath.Join("generated", "grafana", "openbao-slo-availability.json"),
 	}, ",")
 
 	fs := flag.NewFlagSet("validate dashboard-queries", flag.ContinueOnError)
@@ -459,6 +460,7 @@ func defaultDashboardContractPaths() []string {
 		filepath.Join("contracts", "dashboards", "openbao-secret-engines-mounts.yaml"),
 		filepath.Join("contracts", "dashboards", "openbao-runtime-storage.yaml"),
 		filepath.Join("contracts", "dashboards", "openbao-kubernetes-platform.yaml"),
+		filepath.Join("contracts", "dashboards", "openbao-slo-availability.yaml"),
 	}
 }
 

@@ -179,6 +179,7 @@ make verify-live
 | `contracts/dashboards/openbao-secret-engines-mounts.yaml` | Secret engines and mounts dashboard contract that filters engine paths at query time without turning mount paths into Loki labels. |
 | `contracts/dashboards/openbao-runtime-storage.yaml` | Runtime and storage dashboard contract that consumes normalized runtime, barrier, cache, and mount-table rules. |
 | `contracts/dashboards/openbao-kubernetes-platform.yaml` | Kubernetes platform dashboard contract that consumes kube-state-metrics, kubelet, cAdvisor, scrape target, and platform event signals. |
+| `contracts/dashboards/openbao-slo-availability.yaml` | SLO and availability dashboard contract that consumes optional synthetic probe metrics, OpenBao latency rules, and scrape availability signals. |
 | `contracts/alerts/critical.yaml` | Alert contract that maps critical alerts to runbooks. |
 | `contracts/alerts/warning.yaml` | Alert contract that maps warning alerts to runbooks. |
 

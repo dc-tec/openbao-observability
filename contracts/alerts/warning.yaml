@@ -128,6 +128,60 @@ alerts:
     labels:
       component: secret-engines
       subsystem: database
+  - id: OpenBaoSyntheticProbeFailing
+    type: prometheus
+    severity: warning
+    signal: availability
+    for: 5m
+    expression: min_over_time(probe_success{job=~".*openbao.*"}[5m]) == 0
+    summary: OpenBao synthetic probe is failing
+    description: A synthetic probe for OpenBao has failed for the alert window.
+    runbook: docs/runbooks/slo-availability.md
+    labels:
+      component: availability
+      subsystem: synthetic-probe
+  - id: OpenBaoAvailabilityFastBurn
+    type: prometheus
+    severity: warning
+    signal: availability
+    for: 5m
+    expression: >-
+      ((1 - avg_over_time(probe_success{job=~".*openbao.*"}[5m])) / 0.001 > 14.4)
+      and
+      ((1 - avg_over_time(probe_success{job=~".*openbao.*"}[1h])) / 0.001 > 14.4)
+    summary: OpenBao availability error budget has high burn rate
+    description: Synthetic probe failures are consuming the 99.9 percent availability error budget across short and medium windows.
+    runbook: docs/runbooks/slo-availability.md
+    labels:
+      component: availability
+      subsystem: error-budget
+  - id: OpenBaoAvailabilitySlowBurn
+    type: prometheus
+    severity: warning
+    signal: availability
+    for: 30m
+    expression: >-
+      ((1 - avg_over_time(probe_success{job=~".*openbao.*"}[30m])) / 0.001 > 6)
+      and
+      ((1 - avg_over_time(probe_success{job=~".*openbao.*"}[6h])) / 0.001 > 6)
+    summary: OpenBao availability error budget is burning
+    description: Synthetic probe failures are consuming the 99.9 percent availability error budget across medium and long windows.
+    runbook: docs/runbooks/slo-availability.md
+    labels:
+      component: availability
+      subsystem: error-budget
+  - id: OpenBaoSyntheticProbeLatencyElevated
+    type: prometheus
+    severity: warning
+    signal: availability
+    for: 15m
+    expression: avg_over_time(probe_duration_seconds{job=~".*openbao.*"}[5m]) > 3 * clamp_min(avg_over_time(probe_duration_seconds{job=~".*openbao.*"}[1h]), 0.001)
+    summary: OpenBao synthetic probe latency is elevated
+    description: Synthetic probe duration is more than three times its recent baseline.
+    runbook: docs/runbooks/slo-availability.md
+    labels:
+      component: availability
+      subsystem: synthetic-probe
   - id: OpenBaoKubernetesPodNotReady
     type: prometheus
     severity: warning
