@@ -15,6 +15,7 @@ The dashboard answers these questions:
 - Which audit entries match a request path pattern?
 - Which audited create, update, or delete operations touched high-risk
   `sys/` paths?
+- Which security detection category needs follow-up?
 - Which audited auth method, login, user, or token events match the filters?
 - Which response entries contain an error field?
 - Which OpenBao node produced the matching events?
@@ -82,6 +83,21 @@ These paths can change authentication, audit behavior, mount configuration,
 policy behavior, raw storage access, plugin behavior, Raft state, or rotation
 state. Confirm that matching events align with an approved change or automation.
 
+## How security detection panels work
+
+The security detection panels summarize activity that usually needs a change
+record or incident review:
+
+| Panel | Investigation focus |
+| ----- | ------------------- |
+| Audit config changes | Audit device enable, disable, tune, or delete activity. |
+| Privileged config changes | Policy, auth method, and mount configuration changes. |
+| High-risk sys paths | Raw storage, plugin, Raft storage, and rotation endpoints. |
+| Permission denied | Repeated authorization failures visible in audited responses. |
+
+Use these panels to choose the next log table and request ID drilldown. Keep
+request paths and request IDs as query-time fields.
+
 ## How auth activity works
 
 The auth activity panels filter audit paths that match `auth/.*` or
@@ -115,6 +131,8 @@ restricted query-time filters, not ingestion labels.
 - Entering an unescaped regular expression when you wanted an exact request ID.
 - Leaving a request ID filter active and assuming the audit stream is empty.
 - Treating risky system activity as malicious before checking approved changes.
+- Treating permission denied bursts as harmless without checking the targeted
+  paths.
 - Promoting investigation fields to Loki labels for convenience.
 - Giving the dashboard to users who do not have approval to inspect audit
   metadata.
@@ -143,6 +161,8 @@ restricted query-time filters, not ingestion labels.
   to decide whether the question belongs in audit logs.
 - Use [Configure declarative audit devices](../audit/declarative-audit.md) to
   review audit collection and retention boundaries.
+- Use [Security audit detections](../runbooks/security-audit-detections.md)
+  when a security detection alert fires.
 
 Source: OpenBao documents audit-device behavior, unaudited paths, and HMAC
 limits in the [OpenBao audit device documentation][openbao-audit]. Loki

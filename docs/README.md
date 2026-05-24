@@ -68,6 +68,7 @@ Use these runbooks when the generated alert rules fire:
 - [Debug logging enabled](./runbooks/debug-logging-enabled.md)
 - [Irrevocable leases present](./runbooks/irrevocable-leases.md)
 - [Runtime and storage warnings](./runbooks/runtime-storage-warnings.md)
+- [Security audit detections](./runbooks/security-audit-detections.md)
 
 Do not put implementation plans, work notes, or contributor-only design notes
 in this directory. Put those files under `workstreams/` with a `.local.md`

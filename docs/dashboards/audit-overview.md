@@ -18,6 +18,7 @@ The dashboard answers these questions:
 - Does Loki receive audit entries by node?
 - Are request and response entries broadly balanced?
 - Are audited mutations touching high-risk system paths?
+- Did security detection summary panels change recently?
 
 ## What this dashboard is not for
 
@@ -87,6 +88,21 @@ High-risk does not mean malicious. It means the operation can change the
 security, storage, or plugin behavior of the OpenBao deployment. Confirm that
 each event matches an approved change or a known automation.
 
+## How to read security detection summaries
+
+Use the security detection summary panels as a triage layer before you open the
+audit investigation dashboard.
+
+| Panel | What it means |
+| ----- | ------------- |
+| Audit config changes | Audit device configuration changed through an audited `sys/audit` path. |
+| Privileged config changes | Policy, auth method, or mount configuration changed. |
+| Permission denied | Audited responses included permission denied errors. |
+| Completed request logs | Completed request logging produced entries and needs an approved troubleshooting window. |
+
+These panels are not proof of malicious activity. They show events that should
+have an owner, change record, or incident context.
+
 ## Common mistakes
 
 - Treating a quiet audit volume panel as proof that the audit pipeline works.
@@ -95,6 +111,7 @@ each event matches an approved change or a known automation.
 - Giving broad operational users access to audit dashboards.
 - Treating system mutation activity as malicious without checking the approved
   change window.
+- Ignoring completed request log entries after a troubleshooting window ends.
 
 ## Known limitations
 
@@ -121,6 +138,8 @@ each event matches an approved change or a known automation.
   when audit failure metrics increase.
 - Use [Audit canary missing](../runbooks/audit-canary-missing.md) when the
   canary-backed audit alert fires.
+- Use [Security audit detections](../runbooks/security-audit-detections.md)
+  when a security detection alert fires.
 
 Source: OpenBao documents audit-device behavior, unaudited paths, and HMAC
 limits in the [OpenBao audit device documentation][openbao-audit]. OpenBao

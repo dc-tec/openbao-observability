@@ -124,6 +124,58 @@ panels:
       y: 12
       w: 12
       h: 8
+  - id: audit-configuration-activity
+    title: Audit config changes
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" [15m]))'
+    unit: short
+    description: Shows audited audit configuration changes over 15 minutes.
+    grid:
+      x: 0
+      y: 20
+      w: 6
+      h: 4
+  - id: privileged-configuration-mutations
+    title: Privileged config changes
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?" [15m]))'
+    unit: short
+    description: Shows audited policy, auth method, and mount configuration changes over 15 minutes.
+    grid:
+      x: 6
+      y: 20
+      w: 6
+      h: 4
+  - id: permission-denied-responses
+    title: Permission denied
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_type="response" | audit_error=~"(?s).*permission denied.*" [15m]))'
+    unit: short
+    description: Shows audited permission denied responses over 15 minutes.
+    grid:
+      x: 12
+      y: 20
+      w: 6
+      h: 4
+  - id: completed-request-logging
+    title: Completed request logs
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.completed_requests"}[15m]))'
+    unit: short
+    description: Shows completed request log entries over 15 minutes.
+    grid:
+      x: 18
+      y: 20
+      w: 6
+      h: 4
   - id: audit-stream
     title: Audit stream
     type: logs
@@ -133,6 +185,6 @@ panels:
     description: Shows recent OpenBao audit log entries.
     grid:
       x: 0
-      y: 20
+      y: 24
       w: 24
       h: 9

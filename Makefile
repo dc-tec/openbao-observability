@@ -38,11 +38,17 @@ contracts-verify:
 	$(GO) run ./cmd/openbao-observability contracts verify-alerts \
 		--contract "contracts/alerts/warning.yaml" \
 		--severity "warning"
+	$(GO) run ./cmd/openbao-observability contracts verify-alerts \
+		--contract "contracts/alerts/security.yaml" \
+		--severity "warning"
 	$(GO) run ./cmd/openbao-observability contracts verify-streams \
 		--contract "contracts/streams/log-streams.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-streams \
 		--contract "contracts/streams/log-streams.yaml" \
 		--alert-contract "contracts/alerts/warning.yaml"
+	$(GO) run ./cmd/openbao-observability contracts verify-streams \
+		--contract "contracts/streams/log-streams.yaml" \
+		--alert-contract "contracts/alerts/security.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
 		--contract "contracts/dashboards/openbao-overview.yaml"
 	$(GO) run ./cmd/openbao-observability contracts verify-dashboards \
@@ -137,6 +143,29 @@ generate:
 		--prometheus-output "generated/prometheusrules/openbao-prefix/openbao-warning-alerts.yaml" \
 		--prometheus-rule-output "generated/prometheus/openbao-prefix/openbao-warning-alerts.yaml" \
 		--loki-output "generated/loki/openbao-prefix/openbao-warning-alerts.yaml"
+	$(GO) run ./cmd/openbao-observability generate alert-rules \
+		--contract "contracts/alerts/security.yaml" \
+		--prometheus-name "openbao-security-alerts" \
+		--loki-name "openbao-loki-security-alerts" \
+		--prometheus-output "generated/prometheusrules/openbao-security-alerts.yaml" \
+		--prometheus-rule-output "generated/prometheus/openbao-security-alerts.yaml" \
+		--loki-output "generated/loki/openbao-security-alerts.yaml"
+	$(GO) run ./cmd/openbao-observability generate alert-rules \
+		--contract "contracts/alerts/security.yaml" \
+		--source-prefix "vault" \
+		--prometheus-name "openbao-security-alerts" \
+		--loki-name "openbao-loki-security-alerts" \
+		--prometheus-output "generated/prometheusrules/vault-prefix/openbao-security-alerts.yaml" \
+		--prometheus-rule-output "generated/prometheus/vault-prefix/openbao-security-alerts.yaml" \
+		--loki-output "generated/loki/vault-prefix/openbao-security-alerts.yaml"
+	$(GO) run ./cmd/openbao-observability generate alert-rules \
+		--contract "contracts/alerts/security.yaml" \
+		--source-prefix "openbao" \
+		--prometheus-name "openbao-security-alerts" \
+		--loki-name "openbao-loki-security-alerts" \
+		--prometheus-output "generated/prometheusrules/openbao-prefix/openbao-security-alerts.yaml" \
+		--prometheus-rule-output "generated/prometheus/openbao-prefix/openbao-security-alerts.yaml" \
+		--loki-output "generated/loki/openbao-prefix/openbao-security-alerts.yaml"
 	$(GO) run ./cmd/openbao-observability generate grafana-dashboard \
 		--contract "contracts/dashboards/openbao-overview.yaml" \
 		--output "generated/grafana/openbao-overview.json"
@@ -185,12 +214,15 @@ validate-generated:
 		/workspace/generated/prometheus/openbao-recording-rules.yaml \
 		/workspace/generated/prometheus/openbao-alerts.yaml \
 		/workspace/generated/prometheus/openbao-warning-alerts.yaml \
+		/workspace/generated/prometheus/openbao-security-alerts.yaml \
 		/workspace/generated/prometheus/vault-prefix/openbao-recording-rules.yaml \
 		/workspace/generated/prometheus/vault-prefix/openbao-alerts.yaml \
 		/workspace/generated/prometheus/vault-prefix/openbao-warning-alerts.yaml \
+		/workspace/generated/prometheus/vault-prefix/openbao-security-alerts.yaml \
 		/workspace/generated/prometheus/openbao-prefix/openbao-recording-rules.yaml \
 		/workspace/generated/prometheus/openbao-prefix/openbao-alerts.yaml \
-		/workspace/generated/prometheus/openbao-prefix/openbao-warning-alerts.yaml
+		/workspace/generated/prometheus/openbao-prefix/openbao-warning-alerts.yaml \
+		/workspace/generated/prometheus/openbao-prefix/openbao-security-alerts.yaml
 
 docs-verify:
 	$(GO) run ./cmd/openbao-observability validate docs \

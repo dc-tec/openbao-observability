@@ -124,6 +124,58 @@ panels:
       y: 4
       w: 12
       h: 8
+  - id: audit-configuration-activity
+    title: Audit config changes
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
+    unit: short
+    description: Shows audited audit configuration changes that match the selected filters over 15 minutes.
+    grid:
+      x: 0
+      y: 12
+      w: 6
+      h: 4
+  - id: privileged-configuration-mutations
+    title: Privileged config changes
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
+    unit: short
+    description: Shows audited policy, auth method, and mount configuration changes that match the selected filters over 15 minutes.
+    grid:
+      x: 6
+      y: 12
+      w: 6
+      h: 4
+  - id: high-risk-system-path-activity
+    title: High-risk sys paths
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json request_id="request.id", request_path="request.path" | request_path=~"sys/(raw|plugins|storage/raft|rotate)(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
+    unit: short
+    description: Shows audited high-risk system path activity that matches the selected filters over 15 minutes.
+    grid:
+      x: 12
+      y: 12
+      w: 6
+      h: 4
+  - id: permission-denied-responses
+    title: Permission denied
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error=~"(?s).*permission denied.*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
+    unit: short
+    description: Shows audited permission denied responses that match the selected filters over 15 minutes.
+    grid:
+      x: 18
+      y: 12
+      w: 6
+      h: 4
   - id: request-id-drilldown
     title: Request ID drilldown
     type: logs
@@ -133,7 +185,7 @@ panels:
     description: Shows audit entries matching the selected request ID, path, operation, and node filters.
     grid:
       x: 0
-      y: 12
+      y: 16
       w: 12
       h: 9
   - id: risky-system-events
@@ -145,7 +197,7 @@ panels:
     description: Shows audited create, update, and delete operations against high-risk system paths.
     grid:
       x: 12
-      y: 12
+      y: 16
       w: 12
       h: 9
   - id: auth-activity-events
@@ -157,7 +209,7 @@ panels:
     description: Shows audited auth method, login, user, and token events.
     grid:
       x: 0
-      y: 21
+      y: 25
       w: 12
       h: 9
   - id: audit-error-events
@@ -169,7 +221,31 @@ panels:
     description: Shows audited response entries that include error fields.
     grid:
       x: 12
-      y: 21
+      y: 25
+      w: 12
+      h: 9
+  - id: audit-configuration-events
+    title: Audit config events
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}"'
+    description: Shows audited audit configuration changes that match the selected investigation filters.
+    grid:
+      x: 0
+      y: 34
+      w: 12
+      h: 9
+  - id: permission-denied-events
+    title: Permission denied events
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error=~"(?s).*permission denied.*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}"'
+    description: Shows audited permission denied responses that match the selected investigation filters.
+    grid:
+      x: 12
+      y: 34
       w: 12
       h: 9
   - id: filtered-audit-stream
@@ -181,6 +257,6 @@ panels:
     description: Shows the full audit stream after applying the selected investigation filters.
     grid:
       x: 0
-      y: 30
+      y: 43
       w: 24
       h: 9
