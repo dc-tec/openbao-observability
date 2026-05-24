@@ -1,0 +1,146 @@
+{{ define "main" }}
+  <main class="home">
+    <section class="home-hero">
+      <div class="home-hero__inner">
+        <div class="home-hero__content">
+          <p class="section-label">{{ .Params.hero_label | default "Documentation" }}</p>
+          <h1>{{ .Title }}</h1>
+          <div class="home-hero__lead">
+            {{ .Content }}
+          </div>
+          <div class="home-hero__actions">
+            <a class="button button--primary" href="{{ relURL (strings.TrimPrefix "/" .Params.primary_href) }}">
+              {{ .Params.primary_label }}
+            </a>
+            <a class="button button--secondary" href="{{ relURL (strings.TrimPrefix "/" .Params.secondary_href) }}">
+              {{ .Params.secondary_label }}
+            </a>
+          </div>
+        </div>
+
+        <div class="home-hero__visual">
+          {{- if .Params.hero_image_path -}}
+            <img
+              class="home-hero__screenshot"
+              src="{{ relURL .Params.hero_image_path }}"
+              alt="{{ .Params.hero_image_alt | default "" }}"
+            >
+          {{- else -}}
+            <img
+              class="home-hero__mark"
+              src="{{ relURL (site.Params.heroMarkPath | default "brand/openbao-color.svg") }}"
+              alt=""
+            >
+          {{- end -}}
+        </div>
+      </div>
+    </section>
+
+    <section class="home-section">
+      <div class="home-section__header">
+        <p class="section-label">Workflow</p>
+        <h2>Read in the order you operate</h2>
+      </div>
+      <ol class="workflow-list">
+        <li>
+          <span class="workflow-list__step">01</span>
+          <div>
+            <h3><a href="{{ relURL "reference-architecture/overview/" }}">Understand the architecture</a></h3>
+            <p>Start with the signal layers, trust boundaries, and portable decisions that stay stable across monitoring and logging platforms.</p>
+            <div class="workflow-list__links">
+              <a href="{{ relURL "reference-architecture/overview/" }}">Overview</a>
+              <a href="{{ relURL "concepts/openbao-observability-model/" }}">Signal model</a>
+              <a href="{{ relURL "concepts/metrics-vs-logs-vs-audit-logs/" }}">Signal types</a>
+            </div>
+          </div>
+        </li>
+        <li>
+          <span class="workflow-list__step">02</span>
+          <div>
+            <h3><a href="{{ relURL "docker-compose/" }}">Run the local profile</a></h3>
+            <p>Use Docker Compose to inspect generated dashboards, alerts, logs, and fixture scenarios against a local OpenBao HA cluster.</p>
+            <div class="workflow-list__links">
+              <a href="{{ relURL "docker-compose/" }}">Docker Compose</a>
+              <a href="{{ relURL "implementation-profiles/prometheus-loki-grafana-alloy/" }}">Profile</a>
+              <a href="{{ relURL "dashboards/overview-dashboard/" }}">Overview dashboard</a>
+            </div>
+          </div>
+        </li>
+        <li>
+          <span class="workflow-list__step">03</span>
+          <div>
+            <h3><a href="{{ relURL "reference-architecture/adoption/" }}">Adopt the signals</a></h3>
+            <p>Map metrics, logs, audit logs, labels, dashboards, alerts, and runbooks into your own observability platform.</p>
+            <div class="workflow-list__links">
+              <a href="{{ relURL "reference-architecture/adoption/" }}">Adoption</a>
+              <a href="{{ relURL "metrics/secure-metrics-scrape/" }}">Secure scrape</a>
+              <a href="{{ relURL "logging/loki-label-strategy/" }}">Label strategy</a>
+            </div>
+          </div>
+        </li>
+        <li>
+          <span class="workflow-list__step">04</span>
+          <div>
+            <h3><a href="{{ relURL "dashboards/" }}">Read the dashboards</a></h3>
+            <p>Use dashboard docs to understand what each generated panel asks, what data it needs, and where to drill down next.</p>
+            <div class="workflow-list__links">
+              <a href="{{ relURL "dashboards/ha-raft/" }}">HA/Raft</a>
+              <a href="{{ relURL "dashboards/audit-investigation/" }}">Audit investigation</a>
+              <a href="{{ relURL "dashboards/secret-engines-mounts/" }}">Secret engines</a>
+            </div>
+          </div>
+        </li>
+        <li>
+          <span class="workflow-list__step">05</span>
+          <div>
+            <h3><a href="{{ relURL "runbooks/" }}">Respond to alerts</a></h3>
+            <p>Follow runbooks for scrape failures, sealed nodes, HA/Raft problems, audit failures, security detections, and SLO burn.</p>
+            <div class="workflow-list__links">
+              <a href="{{ relURL "runbooks/openbao-metrics-scrape-failing/" }}">Scrape failing</a>
+              <a href="{{ relURL "runbooks/raft-autopilot-health/" }}">Raft health</a>
+              <a href="{{ relURL "runbooks/security-audit-detections/" }}">Security detections</a>
+            </div>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="home-section">
+      <div class="home-section__header">
+        <p class="section-label">Sections</p>
+        <h2>Documentation map</h2>
+      </div>
+      <div class="home-directory">
+        {{ range site.Home.Sections.ByWeight }}
+          <a class="home-directory__item" href="{{ .RelPermalink }}">
+            <span class="home-directory__title">{{ partial "page_title.html" . }}</span>
+            {{ with partial "page_description.html" . }}
+              <span class="home-directory__summary">{{ . }}</span>
+            {{ end }}
+          </a>
+        {{ end }}
+      </div>
+    </section>
+
+    <section class="home-section home-section--accent">
+      <div class="home-section__header">
+        <p class="section-label">Reference</p>
+        <h2>Signals, safety, and operations</h2>
+      </div>
+      <div class="home-triad">
+        <a href="{{ relURL "metrics/" }}">
+          <span>Metrics</span>
+          <p>Metric behavior, scrape profiles, compatibility, recording rules, and derived OpenBao signals.</p>
+        </a>
+        <a href="{{ relURL "audit/" }}">
+          <span>Audit</span>
+          <p>Audit devices, audit logs, canary checks, archive health, and security-record handling.</p>
+        </a>
+        <a href="{{ relURL "implementation-profiles/openbao-operator/" }}">
+          <span>Operator profile</span>
+          <p>Companion guidance for using this reference architecture with operator-managed OpenBao clusters.</p>
+        </a>
+      </div>
+    </section>
+  </main>
+{{ end }}

@@ -164,6 +164,13 @@ Run the full verification before you publish or propose changes.
 make verify
 ```
 
+Build the Hugo documentation site locally when you change `docs/`, `website/`,
+or `hugo.toml`.
+
+```shell
+make docs-build
+```
+
 Validate dashboard PromQL and LogQL against a running Compose stack when
 dashboard queries change.
 
@@ -186,7 +193,9 @@ examples, generated artifacts, or validation code.
 | `examples/` | Runnable local and deployment examples, including Docker Compose. |
 | `fixtures/` | Captured metrics and log fixtures used by tests. |
 | `generated/` | Generated artifacts produced from contracts. |
+| `hugo.toml` | Hugo site configuration for the documentation site. |
 | `internal/` | Go packages that implement fixture capture and validation. |
+| `website/` | Hugo layouts, assets, and site-only content. |
 
 ## License
 

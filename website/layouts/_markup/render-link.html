@@ -1,0 +1,80 @@
+{{- $dest := .Destination -}}
+{{- $parts := split $dest "#" -}}
+{{- $pathPart := index $parts 0 -}}
+{{- $fragment := "" -}}
+{{- if gt (len $parts) 1 -}}
+  {{- $fragment = index $parts 1 -}}
+{{- end -}}
+
+{{- $href := $dest -}}
+{{- $isAnchor := hasPrefix $dest "#" -}}
+{{- $isExternal := or
+  (hasPrefix $pathPart "http://")
+  (hasPrefix $pathPart "https://")
+  (hasPrefix $pathPart "mailto:")
+  (hasPrefix $pathPart "tel:")
+-}}
+
+{{- if and (not $isAnchor) (not $isExternal) -}}
+  {{- if strings.HasSuffix $pathPart ".md" -}}
+    {{- $baseDir := "" -}}
+    {{- if and .Page .Page.File -}}
+      {{- $baseDir = path.Dir .Page.File.Path -}}
+    {{- end -}}
+    {{- $resolved := path.Clean (path.Join $baseDir $pathPart) -}}
+    {{- if hasPrefix $resolved "../" -}}
+      {{- with site.Params.repoURL -}}
+        {{- $repoPath := strings.TrimPrefix "../" $resolved -}}
+        {{- if in . "github.com" -}}
+          {{- $href = printf "%s/blob/%s/%s" . site.Params.defaultBranch $repoPath -}}
+        {{- else -}}
+          {{- $href = printf "%s/-/blob/%s/%s" . site.Params.defaultBranch $repoPath -}}
+        {{- end -}}
+      {{- end -}}
+    {{- else if and (eq $resolved "README.md") (eq $fragment "respond") -}}
+      {{- $href = relURL "/runbooks/" -}}
+    {{- else if and (eq $resolved "README.md") (eq $fragment "dashboards") -}}
+      {{- $href = relURL "/dashboards/" -}}
+    {{- else if eq $resolved "README.md" -}}
+      {{- $href = relURL "/" -}}
+    {{- else if strings.HasSuffix $resolved "/README.md" -}}
+      {{- $href = relURL (printf "/%s/" (path.Dir $resolved)) -}}
+    {{- else if strings.HasSuffix $resolved "_index.md" -}}
+      {{- $href = relURL (printf "/%s/" (path.Dir $resolved)) -}}
+    {{- else -}}
+      {{- $href = relURL (printf "/%s/" (strings.TrimSuffix ".md" $resolved)) -}}
+    {{- end -}}
+    {{- if $fragment -}}
+      {{- $href = printf "%s#%s" $href $fragment -}}
+    {{- end -}}
+  {{- else if hasPrefix $pathPart "/" -}}
+    {{- $href = relURL (strings.TrimPrefix "/" $pathPart) -}}
+    {{- if $fragment -}}
+      {{- $href = printf "%s#%s" $href $fragment -}}
+    {{- end -}}
+  {{- else if or (hasPrefix $pathPart "./") (hasPrefix $pathPart "../") -}}
+    {{- $repoBaseDir := "" -}}
+    {{- if and .Page .Page.File -}}
+      {{- $repoBaseDir = path.Dir (path.Join "docs" .Page.File.Path) -}}
+    {{- end -}}
+    {{- $resolved := path.Clean (path.Join $repoBaseDir $pathPart) -}}
+    {{- with site.Params.repoURL -}}
+      {{- if in . "github.com" -}}
+        {{- $href = printf "%s/blob/%s/%s" . site.Params.defaultBranch $resolved -}}
+      {{- else -}}
+        {{- $href = printf "%s/-/blob/%s/%s" . site.Params.defaultBranch $resolved -}}
+      {{- end -}}
+      {{- if $fragment -}}
+        {{- $href = printf "%s#%s" $href $fragment -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+<a
+  href="{{ $href | safeURL }}"
+  {{- with .Title }} title="{{ . }}"{{ end -}}
+  {{- if $isExternal }} target="_blank" rel="noreferrer"{{ end -}}
+>
+  {{- .Text | safeHTML -}}
+</a>

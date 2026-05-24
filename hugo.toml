@@ -1,0 +1,87 @@
+baseURL = "/"
+languageCode = "en-us"
+title = "OpenBao Observability Docs"
+enableRobotsTXT = true
+disableKinds = ["taxonomy", "term", "RSS"]
+ignoreFiles = ["README\\.md$"]
+
+[params]
+  repoURL = "https://github.com/dc-tec/openbao-observability"
+  defaultBranch = "main"
+  repoLabel = "GitHub"
+  productName = "OpenBao Observability"
+  footerBlurb = "OpenBao Observability reference architecture documentation, published with Hugo."
+  logoPath = "brand/openbao-text-color.svg"
+  logoAlt = "OpenBao"
+  heroMarkPath = "brand/openbao-color.svg"
+  faviconPath = "brand/openbao-single-color-square.svg"
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
+    ordered = false
+
+[module]
+  [[module.mounts]]
+    source = "website/content"
+    target = "content"
+
+  [[module.mounts]]
+    source = "docs/docker-compose.md"
+    target = "content/docker-compose.md"
+
+  [[module.mounts]]
+    source = "docs/reference-architecture"
+    target = "content/reference-architecture"
+
+  [[module.mounts]]
+    source = "docs/concepts"
+    target = "content/concepts"
+
+  [[module.mounts]]
+    source = "docs/implementation-profiles"
+    target = "content/implementation-profiles"
+
+  [[module.mounts]]
+    source = "docs/metrics"
+    target = "content/metrics"
+
+  [[module.mounts]]
+    source = "docs/logging"
+    target = "content/logging"
+
+  [[module.mounts]]
+    source = "docs/audit"
+    target = "content/audit"
+
+  [[module.mounts]]
+    source = "docs/dashboards"
+    target = "content/dashboards"
+
+  [[module.mounts]]
+    source = "docs/runbooks"
+    target = "content/runbooks"
+
+  [[module.mounts]]
+    source = "docs/contracts"
+    target = "content/contracts"
+
+  [[module.mounts]]
+    source = "docs/assets"
+    target = "static/docs/assets"
+
+  [[module.mounts]]
+    source = "website/layouts"
+    target = "layouts"
+
+  [[module.mounts]]
+    source = "website/assets"
+    target = "assets"
+
+  [[module.mounts]]
+    source = "website/static"
+    target = "static"

@@ -39,6 +39,13 @@ portable architecture, and generated artifacts implement one tested profile.
    make docs-verify
    ```
 
+5. Build the Hugo documentation site when you change `docs/`, `website/`, or
+   `hugo.toml`.
+
+   ```shell
+   make docs-build
+   ```
+
 ## Change contracts or generated artifacts
 
 1. Edit the relevant source contract under `contracts/`.
@@ -116,6 +123,7 @@ make test-unit
 make test-fixtures
 make contracts-verify
 make docs-verify
+make docs-build
 make validate-generated
 ```
 

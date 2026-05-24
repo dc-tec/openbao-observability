@@ -20,13 +20,17 @@ KIND_OPERATOR_PROMETHEUS_RULE_NAMESPACE ?= monitoring
 KIND_OPERATOR_RULE_PROFILE ?= openbao-prefix
 KIND_OPERATOR_WAIT_TIMEOUT ?= 10m
 GO ?= go
+HUGO_VERSION ?= v0.159.1
+HUGO_RUN ?= GOFLAGS="-mod=mod" "$(GO)" run github.com/gohugoio/hugo@$(HUGO_VERSION)
+DOCS_BASE_URL ?= https://dc-tec.github.io/openbao-observability/
+DOCS_OUT ?= public
 PROMTOOL ?= docker run --rm --entrypoint promtool -v "$(CURDIR):/workspace:ro" "$(PROMETHEUS_IMAGE)"
 PROMETHEUS_URL ?= http://127.0.0.1:19090
 LOKI_URL ?= http://127.0.0.1:13100
 DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml,contracts/dashboards/openbao-operational-logs.yaml,contracts/dashboards/openbao-audit-investigation.yaml,contracts/dashboards/openbao-auth-identity.yaml,contracts/dashboards/openbao-token-lease-lifecycle.yaml,contracts/dashboards/openbao-database-secrets.yaml,contracts/dashboards/openbao-transit.yaml,contracts/dashboards/openbao-pki.yaml,contracts/dashboards/openbao-secret-engines-mounts.yaml,contracts/dashboards/openbao-runtime-storage.yaml,contracts/dashboards/openbao-kubernetes-platform.yaml,contracts/dashboards/openbao-slo-availability.yaml
 GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json,generated/grafana/openbao-operational-logs.json,generated/grafana/openbao-audit-investigation.json,generated/grafana/openbao-auth-identity.json,generated/grafana/openbao-token-lease-lifecycle.json,generated/grafana/openbao-database-secrets.json,generated/grafana/openbao-transit.json,generated/grafana/openbao-pki.json,generated/grafana/openbao-secret-engines-mounts.json,generated/grafana/openbao-runtime-storage.json,generated/grafana/openbao-kubernetes-platform.json,generated/grafana/openbao-slo-availability.json
 
-.PHONY: compose-audit-archive-config compose-audit-archive-down compose-audit-archive-reset compose-audit-archive-up compose-config compose-down compose-reset compose-up contracts-verify docs-verify fixtures-openbao fixtures-scenarios generate kind-operator-api-server-endpoints kind-operator-apply kind-operator-apply-rules kind-operator-apply-tenant kind-operator-config kind-operator-down kind-operator-patch-api-server-endpoints kind-operator-up kind-operator-validate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
+.PHONY: compose-audit-archive-config compose-audit-archive-down compose-audit-archive-reset compose-audit-archive-up compose-config compose-down compose-reset compose-up contracts-verify docs-build docs-serve docs-verify fixtures-openbao fixtures-scenarios generate kind-operator-api-server-endpoints kind-operator-apply kind-operator-apply-rules kind-operator-apply-tenant kind-operator-config kind-operator-down kind-operator-patch-api-server-endpoints kind-operator-up kind-operator-validate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
 
 compose-config:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" config
@@ -287,7 +291,7 @@ generate:
 		--contract "contracts/dashboards/openbao-slo-availability.yaml" \
 		--output "generated/grafana/openbao-slo-availability.json"
 
-test: test-fixtures contracts-verify docs-verify validate-generated test-unit
+test: test-fixtures contracts-verify docs-verify docs-build validate-generated test-unit
 
 verify: generate test
 	git diff --exit-code -- generated
@@ -321,6 +325,12 @@ docs-verify:
 	$(GO) run ./cmd/openbao-observability validate docs \
 		--repository-root "." \
 		--docs-root "docs"
+
+docs-build:
+	$(HUGO_RUN) --source . --baseURL "$(DOCS_BASE_URL)" --destination "$(DOCS_OUT)" --cleanDestinationDir --gc --minify
+
+docs-serve:
+	$(HUGO_RUN) server --source . --baseURL http://localhost:1313/
 
 validate-dashboard-queries:
 	$(GO) run ./cmd/openbao-observability validate dashboard-queries \

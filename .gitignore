@@ -1,5 +1,8 @@
 /.DS_Store
+/.hugo_build.lock
 /fixtures/captured/
+/public/
+/resources/_gen/
 /tmp/
 /workstreams/*.local.md
 /examples/docker-compose/.env

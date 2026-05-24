@@ -6,6 +6,28 @@
   "include-v-in-tag": false,
   "include-v-in-release-name": false,
   "initial-version": "0.1.0",
+  "changelog-sections": [
+    {
+      "type": "feat",
+      "section": "Features"
+    },
+    {
+      "type": "fix",
+      "section": "Bug fixes"
+    },
+    {
+      "type": "docs",
+      "section": "Documentation"
+    },
+    {
+      "type": "perf",
+      "section": "Performance"
+    },
+    {
+      "type": "revert",
+      "section": "Reverts"
+    }
+  ],
   "packages": {
     ".": {
       "changelog-path": "CHANGELOG.md",
