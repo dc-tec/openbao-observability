@@ -72,7 +72,12 @@ func main() {
 	})
 
 	log.Printf("serving audit archive health metrics on %s%s", opts.ListenAddress, opts.MetricsPath)
-	if err := http.ListenAndServe(opts.ListenAddress, mux); err != nil {
+	server := &http.Server{
+		Addr:              opts.ListenAddress,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -121,7 +121,9 @@ func tarEntries(t *testing.T, data []byte) []string {
 	if err != nil {
 		t.Fatalf("open gzip archive: %v", err)
 	}
-	defer gzipReader.Close()
+	defer func() {
+		_ = gzipReader.Close()
+	}()
 
 	tarReader := tar.NewReader(gzipReader)
 	var entries []string

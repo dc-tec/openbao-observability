@@ -17,7 +17,9 @@ func LoadFamilies(path string) (Families, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open Prometheus fixture %s: %w", path, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	parser := expfmt.NewTextParser(model.LegacyValidation)
 	families, err := parser.TextToMetricFamilies(file)

@@ -53,6 +53,9 @@ jobs:
           docker version
           gh version
 
+      - name: Install quality tools
+        run: make install-go-tools
+
       - name: Capture OpenBao fixtures
         run: make fixtures-openbao
 

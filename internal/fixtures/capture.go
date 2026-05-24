@@ -724,7 +724,7 @@ func waitForHealth(ctx context.Context, port int, outputPath, container string) 
 			return err
 		}
 
-		resp, err := client.Do(req)
+		resp, err := client.Do(req) //nolint:bodyclose // readAndClose closes the response body.
 		if err == nil {
 			body, readErr := readAndClose(resp.Body)
 			if readErr != nil {
@@ -786,7 +786,7 @@ func waitForInitializedUnsealed(ctx context.Context, port int, outputPath string
 			return err
 		}
 
-		resp, err := client.Do(req)
+		resp, err := client.Do(req) //nolint:bodyclose // readAndClose closes the response body.
 		if err == nil {
 			body, readErr := readAndClose(resp.Body)
 			if readErr != nil {
@@ -1063,7 +1063,7 @@ func captureMetricsFromPort(ctx context.Context, label string, port int, token, 
 		req.Header.Set("X-Vault-Token", token)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := client.Do(req) //nolint:bodyclose // readAndClose closes the response body.
 	if err != nil {
 		return fmt.Errorf("fetch metrics for %s: %w", label, err)
 	}

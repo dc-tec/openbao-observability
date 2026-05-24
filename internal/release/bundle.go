@@ -92,16 +92,18 @@ func Checksums(opts ChecksumOptions) error {
 	if err != nil {
 		return fmt.Errorf("create checksum temp file: %w", err)
 	}
-	defer os.Remove(tmp.Name())
+	defer func() {
+		_ = os.Remove(tmp.Name())
+	}()
 
 	for _, entry := range entries {
 		sum, err := fileSHA256(entry.AbsolutePath)
 		if err != nil {
-			tmp.Close()
+			_ = tmp.Close()
 			return err
 		}
 		if _, err := fmt.Fprintf(tmp, "%s  %s\n", sum, filepath.ToSlash(entry.RelativePath)); err != nil {
-			tmp.Close()
+			_ = tmp.Close()
 			return fmt.Errorf("write checksum: %w", err)
 		}
 	}
@@ -267,7 +269,9 @@ func writeBundle(opts BundleOptions, entries []bundleEntry) error {
 	if err != nil {
 		return fmt.Errorf("create release bundle temp file: %w", err)
 	}
-	defer os.Remove(tmp.Name())
+	defer func() {
+		_ = os.Remove(tmp.Name())
+	}()
 
 	epoch := time.Unix(opts.SourceDateEpoch, 0).UTC()
 	gzipWriter := gzip.NewWriter(tmp)
@@ -287,23 +291,23 @@ func writeBundle(opts BundleOptions, entries []bundleEntry) error {
 		Uid:        0,
 		Gid:        0,
 	}); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return fmt.Errorf("write release bundle root header: %w", err)
 	}
 
 	for _, entry := range entries {
 		if err := writeBundleEntry(tarWriter, rootName, entry, epoch); err != nil {
-			tmp.Close()
+			_ = tmp.Close()
 			return err
 		}
 	}
 
 	if err := tarWriter.Close(); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return fmt.Errorf("close tar writer: %w", err)
 	}
 	if err := gzipWriter.Close(); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return fmt.Errorf("close gzip writer: %w", err)
 	}
 	if err := tmp.Close(); err != nil {
@@ -320,7 +324,9 @@ func writeBundleEntry(tarWriter *tar.Writer, rootName string, entry bundleEntry,
 	if err != nil {
 		return fmt.Errorf("open release bundle file %s: %w", entry.RelativePath, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	mode := int64(entry.Info.Mode().Perm())
 	if mode == 0 {
@@ -386,16 +392,18 @@ func checksumEntries(dir, outputPath string) ([]bundleEntry, error) {
 	return entries, nil
 }
 
-func fileSHA256(path string) (string, error) {
-	file, err := os.Open(path)
+func fileSHA256(filePath string) (string, error) {
+	file, err := os.Open(filePath)
 	if err != nil {
-		return "", fmt.Errorf("open release asset %s: %w", path, err)
+		return "", fmt.Errorf("open release asset %s: %w", filePath, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
-		return "", fmt.Errorf("hash release asset %s: %w", path, err)
+		return "", fmt.Errorf("hash release asset %s: %w", filePath, err)
 	}
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }

@@ -785,8 +785,8 @@ func verifyMakefileList(root, variable string, paths []string) error {
 		return err
 	}
 	expected := make([]string, 0, len(paths))
-	for _, path := range paths {
-		expected = append(expected, relPath(root, path))
+	for _, itemPath := range paths {
+		expected = append(expected, relPath(root, itemPath))
 	}
 	return compareStringSets("Makefile "+variable, listed, expected)
 }
@@ -814,23 +814,23 @@ func makefileCSVVariable(root, variable string) ([]string, error) {
 		return csvList(value), nil
 	}
 
-	return nil, fmt.Errorf("Makefile variable %s is not defined", variable)
+	return nil, fmt.Errorf("makefile variable %s is not defined", variable)
 }
 
-func loadGeneratedDashboard(path string) (*generatedDashboard, error) {
-	content, err := os.ReadFile(path)
+func loadGeneratedDashboard(dashboardPath string) (*generatedDashboard, error) {
+	content, err := os.ReadFile(dashboardPath)
 	if err != nil {
-		return nil, fmt.Errorf("read generated dashboard %s: %w", path, err)
+		return nil, fmt.Errorf("read generated dashboard %s: %w", dashboardPath, err)
 	}
 	var dashboard generatedDashboard
 	if err := json.Unmarshal(content, &dashboard); err != nil {
-		return nil, fmt.Errorf("parse generated dashboard %s: %w", path, err)
+		return nil, fmt.Errorf("parse generated dashboard %s: %w", dashboardPath, err)
 	}
 	return &dashboard, nil
 }
 
-func loadRecordingRuleNames(path string) (map[string]bool, error) {
-	rules, err := loadRuleFile(path)
+func loadRecordingRuleNames(rulePath string) (map[string]bool, error) {
+	rules, err := loadRuleFile(rulePath)
 	if err != nil {
 		return nil, err
 	}
@@ -876,14 +876,14 @@ func loadGeneratedAlertNames(root, pattern string, loki bool) (map[string]string
 	return alerts, nil
 }
 
-func loadRuleFile(path string) (*ruleFile, error) {
-	content, err := os.ReadFile(path)
+func loadRuleFile(rulePath string) (*ruleFile, error) {
+	content, err := os.ReadFile(rulePath)
 	if err != nil {
-		return nil, fmt.Errorf("read rule file %s: %w", path, err)
+		return nil, fmt.Errorf("read rule file %s: %w", rulePath, err)
 	}
 	var rules ruleFile
 	if err := yaml.Unmarshal(content, &rules); err != nil {
-		return nil, fmt.Errorf("parse rule file %s: %w", path, err)
+		return nil, fmt.Errorf("parse rule file %s: %w", rulePath, err)
 	}
 	return &rules, nil
 }

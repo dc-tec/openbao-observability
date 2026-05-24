@@ -2,6 +2,18 @@ OPENBAO_VERSION ?= 2.5.4
 OPENBAO_IMAGE ?= quay.io/openbao/openbao:$(OPENBAO_VERSION)
 POSTGRES_IMAGE ?= postgres:17-alpine
 PROMETHEUS_IMAGE ?= prom/prometheus:v3.11.2
+GO ?= go
+GOBIN ?= $(CURDIR)/bin
+GOFUMPT ?= $(if $(wildcard $(GOBIN)/gofumpt),$(GOBIN)/gofumpt,gofumpt)
+STATICCHECK ?= $(if $(wildcard $(GOBIN)/staticcheck),$(GOBIN)/staticcheck,staticcheck)
+GOVULNCHECK ?= $(if $(wildcard $(GOBIN)/govulncheck),$(GOBIN)/govulncheck,govulncheck)
+GOLANGCI_LINT ?= $(if $(wildcard $(GOBIN)/golangci-lint),$(GOBIN)/golangci-lint,golangci-lint)
+ACTIONLINT ?= $(if $(wildcard $(GOBIN)/actionlint),$(GOBIN)/actionlint,actionlint)
+GOFUMPT_VERSION ?= v0.9.2
+STATICCHECK_VERSION ?= v0.7.0
+GOVULNCHECK_VERSION ?= v1.2.0
+GOLANGCI_LINT_VERSION ?= v2.11.4
+ACTIONLINT_VERSION ?= v1.7.8
 OPENBAO_PORT_BASE ?= 18220
 OPENBAO_ROOT_TOKEN ?= root
 FIXTURE_DIR ?= fixtures/captured/openbao-$(OPENBAO_VERSION)
@@ -23,7 +35,6 @@ KIND_OPERATOR_TENANT ?= openbao-observability
 KIND_OPERATOR_PROMETHEUS_RULE_NAMESPACE ?= monitoring
 KIND_OPERATOR_RULE_PROFILE ?= openbao-prefix
 KIND_OPERATOR_WAIT_TIMEOUT ?= 10m
-GO ?= go
 HUGO_VERSION ?= v0.159.1
 HUGO_RUN ?= GOFLAGS="-mod=mod" "$(GO)" run github.com/gohugoio/hugo@$(HUGO_VERSION)
 DOCS_BASE_URL ?= https://dc-tec.github.io/openbao-observability/
@@ -34,7 +45,7 @@ LOKI_URL ?= http://127.0.0.1:13100
 DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml,contracts/dashboards/openbao-operational-logs.yaml,contracts/dashboards/openbao-audit-investigation.yaml,contracts/dashboards/openbao-auth-identity.yaml,contracts/dashboards/openbao-token-lease-lifecycle.yaml,contracts/dashboards/openbao-database-secrets.yaml,contracts/dashboards/openbao-transit.yaml,contracts/dashboards/openbao-pki.yaml,contracts/dashboards/openbao-secret-engines-mounts.yaml,contracts/dashboards/openbao-runtime-storage.yaml,contracts/dashboards/openbao-kubernetes-platform.yaml,contracts/dashboards/openbao-slo-availability.yaml
 GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json,generated/grafana/openbao-operational-logs.json,generated/grafana/openbao-audit-investigation.json,generated/grafana/openbao-auth-identity.json,generated/grafana/openbao-token-lease-lifecycle.json,generated/grafana/openbao-database-secrets.json,generated/grafana/openbao-transit.json,generated/grafana/openbao-pki.json,generated/grafana/openbao-secret-engines-mounts.json,generated/grafana/openbao-runtime-storage.json,generated/grafana/openbao-kubernetes-platform.json,generated/grafana/openbao-slo-availability.json
 
-.PHONY: checksums compose-audit-archive-config compose-audit-archive-down compose-audit-archive-reset compose-audit-archive-up compose-config compose-down compose-reset compose-up contracts-verify docs-build docs-serve docs-site-links docs-verify fixtures-openbao fixtures-scenarios generate kind-operator-api-server-endpoints kind-operator-apply kind-operator-apply-rules kind-operator-apply-tenant kind-operator-config kind-operator-down kind-operator-patch-api-server-endpoints kind-operator-up kind-operator-validate release-artifacts release-bundle test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
+.PHONY: checksums compose-audit-archive-config compose-audit-archive-down compose-audit-archive-reset compose-audit-archive-up compose-config compose-down compose-reset compose-up contracts-verify docs-build docs-serve docs-site-links docs-verify fixtures-openbao fixtures-scenarios fmt generate install-go-tools kind-operator-api-server-endpoints kind-operator-apply kind-operator-apply-rules kind-operator-apply-tenant kind-operator-config kind-operator-down kind-operator-patch-api-server-endpoints kind-operator-up kind-operator-validate lint release-artifacts release-bundle test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-fmt verify-live vulncheck
 
 compose-config:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" config
@@ -295,12 +306,51 @@ generate:
 		--contract "contracts/dashboards/openbao-slo-availability.yaml" \
 		--output "generated/grafana/openbao-slo-availability.json"
 
-test: test-fixtures contracts-verify docs-verify docs-build docs-site-links validate-generated test-unit
+test: test-fixtures contracts-verify docs-verify docs-build docs-site-links validate-generated lint vulncheck test-unit
 
 verify: generate test
 	git diff --exit-code -- generated
 
 verify-live: validate-dashboard-queries
+
+install-go-tools:
+	@mkdir -p "$(GOBIN)"
+	@env -u GOFLAGS GOBIN="$(GOBIN)" "$(GO)" install mvdan.cc/gofumpt@$(GOFUMPT_VERSION)
+	@env -u GOFLAGS GOBIN="$(GOBIN)" "$(GO)" install honnef.co/go/tools/cmd/staticcheck@$(STATICCHECK_VERSION)
+	@env -u GOFLAGS GOBIN="$(GOBIN)" "$(GO)" install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
+	@env -u GOFLAGS GOBIN="$(GOBIN)" "$(GO)" install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	@env -u GOFLAGS GOBIN="$(GOBIN)" "$(GO)" install github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VERSION)
+
+fmt:
+	@if find cmd internal examples -name '*.go' 2>/dev/null | grep -q .; then \
+		gofmt -w $$(find cmd internal examples -name '*.go'); \
+		if command -v "$(GOFUMPT)" >/dev/null 2>&1; then "$(GOFUMPT)" -w cmd internal examples; fi; \
+	else \
+		printf '%s\n' 'No Go files found; skipping Go formatting.'; \
+	fi
+
+verify-fmt:
+	@if find cmd internal examples -name '*.go' 2>/dev/null | grep -q .; then \
+		unformatted="$$(gofmt -l $$(find cmd internal examples -name '*.go'))"; \
+		if [ -n "$$unformatted" ]; then printf '%s\n' "$$unformatted"; exit 1; fi; \
+		if command -v "$(GOFUMPT)" >/dev/null 2>&1; then \
+			unformatted="$$("$(GOFUMPT)" -l cmd internal examples)"; \
+			if [ -n "$$unformatted" ]; then printf '%s\n' "$$unformatted"; exit 1; fi; \
+		else \
+			printf '%s\n' 'gofumpt not installed; skipping gofumpt verification.'; \
+		fi; \
+	else \
+		printf '%s\n' 'No Go files found; skipping Go formatting verification.'; \
+	fi
+
+lint: verify-fmt
+	$(GO) vet ./...
+	@if command -v "$(STATICCHECK)" >/dev/null 2>&1; then "$(STATICCHECK)" ./...; else printf '%s\n' 'staticcheck not installed; skipping staticcheck.'; fi
+	@if command -v "$(GOLANGCI_LINT)" >/dev/null 2>&1; then "$(GOLANGCI_LINT)" run; else printf '%s\n' 'golangci-lint not installed; skipping golangci-lint.'; fi
+	@if command -v "$(ACTIONLINT)" >/dev/null 2>&1; then "$(ACTIONLINT)" .github/workflows/*.yml; else printf '%s\n' 'actionlint not installed; skipping actionlint.'; fi
+
+vulncheck:
+	@if command -v "$(GOVULNCHECK)" >/dev/null 2>&1; then "$(GOVULNCHECK)" ./...; else printf '%s\n' 'govulncheck not installed; skipping govulncheck.'; fi
 
 release-artifacts: release-bundle checksums
 

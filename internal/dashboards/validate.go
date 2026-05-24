@@ -290,7 +290,9 @@ func validateLokiQuery(ctx context.Context, client *http.Client, baseURL string,
 	if err != nil {
 		return fmt.Errorf("query Loki for %s: %w", query.describe(), err)
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	var body lokiResponse
 	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {

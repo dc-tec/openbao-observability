@@ -275,10 +275,10 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 			leaders++
 		}
 		if voters[server.NodeID] && !server.Voter {
-			return fmt.Errorf("Raft peer %s is not a voter in %s", server.NodeID, peersPath)
+			return fmt.Errorf("raft peer %s is not a voter in %s", server.NodeID, peersPath)
 		}
 		if readReplicas[server.NodeID] && server.Voter {
-			return fmt.Errorf("Raft read replica peer %s is a voter in %s", server.NodeID, peersPath)
+			return fmt.Errorf("raft read replica peer %s is a voter in %s", server.NodeID, peersPath)
 		}
 		seen[server.NodeID] = true
 	}
@@ -301,7 +301,7 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 		return err
 	}
 	if !state.Healthy {
-		return fmt.Errorf("Autopilot reports unhealthy state in %s", autopilotPath)
+		return fmt.Errorf("autopilot reports unhealthy state in %s", autopilotPath)
 	}
 	if state.FailureTolerance < 1 {
 		return fmt.Errorf("expected Autopilot failure tolerance >= 1 in %s, found %d", autopilotPath, state.FailureTolerance)
@@ -313,7 +313,7 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 	autopilotNonVoters := 0
 	for id, server := range state.Servers {
 		if !server.Healthy {
-			return fmt.Errorf("Autopilot server %s is unhealthy in %s", id, autopilotPath)
+			return fmt.Errorf("autopilot server %s is unhealthy in %s", id, autopilotPath)
 		}
 		switch server.NodeType {
 		case "voter":
@@ -321,7 +321,7 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 		case "non-voter":
 			autopilotNonVoters++
 		default:
-			return fmt.Errorf("Autopilot server %s has node type %q in %s", id, server.NodeType, autopilotPath)
+			return fmt.Errorf("autopilot server %s has node type %q in %s", id, server.NodeType, autopilotPath)
 		}
 	}
 	if autopilotVoters != raftVoterCount {
@@ -576,7 +576,9 @@ func checkAuditJSONFile(path string) error {
 	if err != nil {
 		return fmt.Errorf("open audit fixture %s: %w", path, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	var count int
 	var seenNestedRequestID bool
@@ -636,7 +638,9 @@ func checkAuditRequestPaths(path string, required []string) error {
 	if err != nil {
 		return fmt.Errorf("open audit fixture %s: %w", path, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	seen := map[string]bool{}
 	scanner := bufio.NewScanner(file)
@@ -698,7 +702,9 @@ func auditNonRootNamespaceCount(path string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("open audit fixture %s: %w", path, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	seen := map[string]bool{}
 	scanner := bufio.NewScanner(file)

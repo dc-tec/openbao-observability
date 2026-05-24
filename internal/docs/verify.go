@@ -97,7 +97,9 @@ func verifyFile(repoRoot, docsRoot, path string) (issueList, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", path, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	rel := relPath(repoRoot, path)
 	refs := map[string]int{}
@@ -390,17 +392,17 @@ func (issues issueList) Error() string {
 	if limit > 20 {
 		limit = 20
 	}
-	builder.WriteString(fmt.Sprintf("documentation verification failed with %d issue(s):", len(issues)))
+	fmt.Fprintf(&builder, "documentation verification failed with %d issue(s):", len(issues))
 	for i := 0; i < limit; i++ {
 		item := issues[i]
 		if item.Line > 0 {
-			builder.WriteString(fmt.Sprintf("\n- %s:%d: %s", item.Path, item.Line, item.Message))
+			fmt.Fprintf(&builder, "\n- %s:%d: %s", item.Path, item.Line, item.Message)
 		} else {
-			builder.WriteString(fmt.Sprintf("\n- %s: %s", item.Path, item.Message))
+			fmt.Fprintf(&builder, "\n- %s: %s", item.Path, item.Message)
 		}
 	}
 	if len(issues) > limit {
-		builder.WriteString(fmt.Sprintf("\n- ... and %d more", len(issues)-limit))
+		fmt.Fprintf(&builder, "\n- ... and %d more", len(issues)-limit)
 	}
 	return builder.String()
 }

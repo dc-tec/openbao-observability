@@ -158,7 +158,7 @@ func writeGeneratedDashboardFromContract(t *testing.T, root string) {
 		if err != nil {
 			t.Fatalf("resolve datasource: %v", err)
 		}
-		ds := generatedDatasource{Type: datasource.Type, UID: datasource.UID}
+		ds := generatedDatasource(datasource)
 		panels = append(panels, generatedDashboardPanel{
 			Title:      panel.Title,
 			Type:       panel.Type,

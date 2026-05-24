@@ -61,7 +61,11 @@ func assertYAMLParses(t *testing.T, path string) {
 	if err != nil {
 		t.Fatalf("open YAML: %v", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			t.Fatalf("close YAML: %v", err)
+		}
+	}()
 
 	decoder := yaml.NewDecoder(file)
 	documents := 0
@@ -91,7 +95,11 @@ func assertKubernetesExampleAvoidsUnsafeDefaults(t *testing.T, path string) {
 	if err != nil {
 		t.Fatalf("open YAML: %v", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			t.Fatalf("close YAML: %v", err)
+		}
+	}()
 
 	decoder := yaml.NewDecoder(file)
 	for {

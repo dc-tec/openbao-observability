@@ -40,18 +40,18 @@ type VerifyAlertOptions struct {
 	ExpectedSeverity string
 }
 
-func LoadAlertContract(path string) (*AlertContract, error) {
-	content, err := os.ReadFile(path)
+func LoadAlertContract(contractPath string) (*AlertContract, error) {
+	content, err := os.ReadFile(contractPath)
 	if err != nil {
-		return nil, fmt.Errorf("read alert contract %s: %w", path, err)
+		return nil, fmt.Errorf("read alert contract %s: %w", contractPath, err)
 	}
 
 	var contract AlertContract
 	if err := yaml.Unmarshal(content, &contract); err != nil {
-		return nil, fmt.Errorf("parse alert contract %s: %w", path, err)
+		return nil, fmt.Errorf("parse alert contract %s: %w", contractPath, err)
 	}
 
-	if err := contract.validateShape(path); err != nil {
+	if err := contract.validateShape(contractPath); err != nil {
 		return nil, err
 	}
 
@@ -183,18 +183,18 @@ func isExternalRunbook(runbook string) bool {
 	return strings.HasPrefix(runbook, "https://") || strings.HasPrefix(runbook, "http://")
 }
 
-func (c AlertContract) validateShape(path string) error {
+func (c AlertContract) validateShape(contractPath string) error {
 	if len(c.Alerts) == 0 {
-		return fmt.Errorf("alert contract %s has no alerts", path)
+		return fmt.Errorf("alert contract %s has no alerts", contractPath)
 	}
 
 	seen := map[string]bool{}
 	for _, alert := range c.Alerts {
 		if alert.ID == "" {
-			return fmt.Errorf("alert contract %s has an alert without an id", path)
+			return fmt.Errorf("alert contract %s has an alert without an id", contractPath)
 		}
 		if seen[alert.ID] {
-			return fmt.Errorf("alert contract %s has duplicate alert id %q", path, alert.ID)
+			return fmt.Errorf("alert contract %s has duplicate alert id %q", contractPath, alert.ID)
 		}
 		seen[alert.ID] = true
 		if alert.Type == "" {

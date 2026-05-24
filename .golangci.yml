@@ -1,0 +1,99 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+  allow-parallel-runners: true
+
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errcheck
+    - forbidigo
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - revive
+    - staticcheck
+    - unconvert
+    - unused
+
+  settings:
+    forbidigo:
+      forbid:
+        - pattern: 'map\[string\]any'
+          msg: use a typed struct or a narrow boundary DTO
+        - pattern: 'map\[string\]interface\{\}'
+          msg: use a typed struct or a narrow boundary DTO
+        - pattern: '\bany\b'
+          msg: broad any is not allowed without a reviewed boundary adapter
+        - pattern: 'interface\{\}'
+          msg: broad interface{} is not allowed without a reviewed boundary adapter
+    revive:
+      rules:
+        - name: comment-spacings
+        - name: import-shadowing
+
+  exclusions:
+    generated: lax
+    rules:
+      - path: '(.+)_test\.go'
+        linters:
+          - forbidigo
+      - path: '^internal/dashboards/grafana\.go$'
+        linters:
+          - forbidigo
+      - path: '^internal/fixtures/(scenario|verify)\.go$'
+        linters:
+          - forbidigo
+      - path: '^internal/rules/prometheus\.go$'
+        linters:
+          - forbidigo
+      - path: '(.+)_test\.go'
+        linters:
+          - gosec
+      - path: '^internal/docs/site_links\.go$'
+        linters:
+          - gosec
+      - path: '^internal/docs/verify\.go$'
+        linters:
+          - gosec
+      - path: '^internal/fixtures/(capture|scenario|util)\.go$'
+        linters:
+          - gosec
+      - path: '^internal/fixtures/verify\.go$'
+        linters:
+          - gosec
+      - path: '^internal/release/bundle\.go$'
+        linters:
+          - gosec
+      - path: '^internal/promtext/metrics\.go$'
+        linters:
+          - gosec
+      - path: '^internal/contracts/alerts\.go$'
+        linters:
+          - gosec
+      - path: '^internal/contracts/(dashboards|metrics|streams)\.go$'
+        linters:
+          - gosec
+      - path: '^internal/contracts/repository\.go$'
+        linters:
+          - gosec
+      - path: '^internal/dashboards/validate\.go$'
+        linters:
+          - gosec
+      # Generated artifacts are intentionally repository-readable and live under
+      # caller-controlled output paths.
+      - path: '^internal/(compatibility/matrix|dashboards/grafana|rules/prometheus)\.go$'
+        linters:
+          - gosec
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax

@@ -36,8 +36,13 @@ func combined(ctx context.Context, name string, args ...string) ([]byte, int, er
 func readAndClose(responseBody interface {
 	io.Reader
 	io.Closer
-}) ([]byte, error) {
-	defer responseBody.Close()
+},
+) (body []byte, err error) {
+	defer func() {
+		if closeErr := responseBody.Close(); err == nil && closeErr != nil {
+			err = closeErr
+		}
+	}()
 	return io.ReadAll(responseBody)
 }
 
