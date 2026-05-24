@@ -149,7 +149,7 @@ func (r *captureRun) capturePrefix(ctx context.Context, prefix string, port int)
 	}
 
 	healthPath := metadataPath(opts, prefix, "health.json")
-	if err := waitForHealth(ctx, port, healthPath); err != nil {
+	if err := waitForHealth(ctx, port, healthPath, name); err != nil {
 		return err
 	}
 
@@ -713,10 +713,10 @@ audit "file" "local-file" {
 	return nil
 }
 
-func waitForHealth(ctx context.Context, port int, outputPath string) error {
+func waitForHealth(ctx context.Context, port int, outputPath, container string) error {
 	client := &http.Client{Timeout: 2 * time.Second}
 	url := fmt.Sprintf("http://127.0.0.1:%d/v1/sys/health", port)
-	deadline := time.Now().Add(30 * time.Second)
+	deadline := time.Now().Add(90 * time.Second)
 
 	var lastErr error
 	for time.Now().Before(deadline) {
@@ -749,7 +749,30 @@ func waitForHealth(ctx context.Context, port int, outputPath string) error {
 		}
 	}
 
-	return fmt.Errorf("OpenBao did not become healthy on %s: %w", url, lastErr)
+	return fmt.Errorf("OpenBao did not become healthy on %s: %w%s", url, lastErr, dockerDiagnostics(ctx, container))
+}
+
+func dockerDiagnostics(ctx context.Context, container string) string {
+	if container == "" {
+		return ""
+	}
+
+	inspect, _, _ := combined(ctx, "docker", "inspect", "--format", "state={{.State.Status}} exit={{.State.ExitCode}} error={{.State.Error}}", container)
+	logs, _, _ := combined(ctx, "docker", "logs", "--tail", "120", container)
+
+	var builder strings.Builder
+	builder.WriteString("\nDocker diagnostics for ")
+	builder.WriteString(container)
+	builder.WriteString(":\n")
+	if len(inspect) > 0 {
+		builder.WriteString(strings.TrimSpace(string(inspect)))
+		builder.WriteString("\n")
+	}
+	if len(logs) > 0 {
+		builder.WriteString(strings.TrimSpace(string(logs)))
+		builder.WriteString("\n")
+	}
+	return builder.String()
 }
 
 func waitForInitializedUnsealed(ctx context.Context, port int, outputPath string) error {
