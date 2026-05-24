@@ -1,5 +1,6 @@
 /.DS_Store
 /.hugo_build.lock
+/dist/
 /fixtures/captured/
 /public/
 /resources/_gen/

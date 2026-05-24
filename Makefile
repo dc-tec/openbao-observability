@@ -5,6 +5,10 @@ PROMETHEUS_IMAGE ?= prom/prometheus:v3.11.2
 OPENBAO_PORT_BASE ?= 18220
 OPENBAO_ROOT_TOKEN ?= root
 FIXTURE_DIR ?= fixtures/captured/openbao-$(OPENBAO_VERSION)
+VERSION ?= 0.0.0-dev
+DIST_DIR ?= dist/release
+SOURCE_DATE_EPOCH ?= 0
+RELEASE_BUNDLE ?= $(DIST_DIR)/openbao-observability_$(VERSION).tar.gz
 COMPOSE_FILE ?= examples/docker-compose/compose.yaml
 COMPOSE_AUDIT_ARCHIVE_FILE ?= examples/docker-compose/compose.audit-archive.yaml
 COMPOSE_PROJECT_DIR ?= examples/docker-compose
@@ -30,7 +34,7 @@ LOKI_URL ?= http://127.0.0.1:13100
 DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml,contracts/dashboards/openbao-operational-logs.yaml,contracts/dashboards/openbao-audit-investigation.yaml,contracts/dashboards/openbao-auth-identity.yaml,contracts/dashboards/openbao-token-lease-lifecycle.yaml,contracts/dashboards/openbao-database-secrets.yaml,contracts/dashboards/openbao-transit.yaml,contracts/dashboards/openbao-pki.yaml,contracts/dashboards/openbao-secret-engines-mounts.yaml,contracts/dashboards/openbao-runtime-storage.yaml,contracts/dashboards/openbao-kubernetes-platform.yaml,contracts/dashboards/openbao-slo-availability.yaml
 GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json,generated/grafana/openbao-operational-logs.json,generated/grafana/openbao-audit-investigation.json,generated/grafana/openbao-auth-identity.json,generated/grafana/openbao-token-lease-lifecycle.json,generated/grafana/openbao-database-secrets.json,generated/grafana/openbao-transit.json,generated/grafana/openbao-pki.json,generated/grafana/openbao-secret-engines-mounts.json,generated/grafana/openbao-runtime-storage.json,generated/grafana/openbao-kubernetes-platform.json,generated/grafana/openbao-slo-availability.json
 
-.PHONY: compose-audit-archive-config compose-audit-archive-down compose-audit-archive-reset compose-audit-archive-up compose-config compose-down compose-reset compose-up contracts-verify docs-build docs-serve docs-verify fixtures-openbao fixtures-scenarios generate kind-operator-api-server-endpoints kind-operator-apply kind-operator-apply-rules kind-operator-apply-tenant kind-operator-config kind-operator-down kind-operator-patch-api-server-endpoints kind-operator-up kind-operator-validate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
+.PHONY: checksums compose-audit-archive-config compose-audit-archive-down compose-audit-archive-reset compose-audit-archive-up compose-config compose-down compose-reset compose-up contracts-verify docs-build docs-serve docs-verify fixtures-openbao fixtures-scenarios generate kind-operator-api-server-endpoints kind-operator-apply kind-operator-apply-rules kind-operator-apply-tenant kind-operator-config kind-operator-down kind-operator-patch-api-server-endpoints kind-operator-up kind-operator-validate release-artifacts release-bundle test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
 
 compose-config:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" config
@@ -297,6 +301,19 @@ verify: generate test
 	git diff --exit-code -- generated
 
 verify-live: validate-dashboard-queries
+
+release-artifacts: release-bundle checksums
+
+release-bundle:
+	$(GO) run ./cmd/openbao-observability release bundle \
+		--version "$(VERSION)" \
+		--output "$(RELEASE_BUNDLE)" \
+		--source-date-epoch "$(SOURCE_DATE_EPOCH)"
+
+checksums:
+	$(GO) run ./cmd/openbao-observability release checksums \
+		--dir "$(DIST_DIR)" \
+		--output "$(DIST_DIR)/checksums.txt"
 
 test-unit:
 	$(GO) test ./...

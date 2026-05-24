@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]*.[0-9]*.[0-9]*"
+      - "[0-9]*.[0-9]*.[0-9]*-*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build release artifacts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    if: ${{ !github.event.repository.fork }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Resolve release metadata
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="${GITHUB_REF_NAME}"
+          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag ${version} is not SemVer without a leading v." >&2
+            exit 1
+          fi
+
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "source_date_epoch=$(git show -s --format=%ct HEAD)" >> "${GITHUB_OUTPUT}"
+
+      - name: Show tool versions
+        run: |
+          go version
+          docker version
+          gh version
+
+      - name: Capture OpenBao fixtures
+        run: make fixtures-openbao
+
+      - name: Verify repository
+        run: make verify
+
+      - name: Build release artifacts
+        run: |
+          make release-artifacts \
+            VERSION="${{ steps.release.outputs.version }}" \
+            SOURCE_DATE_EPOCH="${{ steps.release.outputs.source_date_epoch }}"
+
+      - name: Ensure draft release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.release.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for _ in {1..12}; do
+            if gh release view "${VERSION}" >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 10
+          done
+
+          gh release create "${VERSION}" \
+            --draft \
+            --title "${VERSION}" \
+            --notes "Release artifacts for ${VERSION}."
+
+      - name: Upload release artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: gh release upload "${VERSION}" dist/release/* --clobber

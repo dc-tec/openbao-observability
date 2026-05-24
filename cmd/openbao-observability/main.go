@@ -15,6 +15,7 @@ import (
 	dashboardgen "github.com/dc-tec/openbao-observability/internal/dashboards"
 	docverify "github.com/dc-tec/openbao-observability/internal/docs"
 	"github.com/dc-tec/openbao-observability/internal/fixtures"
+	releasepkg "github.com/dc-tec/openbao-observability/internal/release"
 	"github.com/dc-tec/openbao-observability/internal/rules"
 )
 
@@ -39,6 +40,8 @@ func run(ctx context.Context, args []string) error {
 		return runFixtures(ctx, args[1:])
 	case "generate":
 		return runGenerate(args[1:])
+	case "release":
+		return runRelease(args[1:])
 	case "validate":
 		return runValidate(ctx, args[1:])
 	case "-h", "--help", "help":
@@ -108,6 +111,23 @@ func runGenerate(args []string) error {
 		return generateUsage()
 	default:
 		return fmt.Errorf("unknown generate command %q\n\n%s", args[0], generateUsageText())
+	}
+}
+
+func runRelease(args []string) error {
+	if len(args) < 1 {
+		return releaseUsage()
+	}
+
+	switch args[0] {
+	case "bundle":
+		return runReleaseBundle(args[1:])
+	case "checksums":
+		return runReleaseChecksums(args[1:])
+	case "-h", "--help", "help":
+		return releaseUsage()
+	default:
+		return fmt.Errorf("unknown release command %q\n\n%s", args[0], releaseUsageText())
 	}
 }
 
@@ -337,6 +357,42 @@ func runGenerateGrafanaDashboard(args []string) error {
 	return dashboardgen.GenerateGrafanaDashboard(opts)
 }
 
+func runReleaseBundle(args []string) error {
+	fs := flag.NewFlagSet("release bundle", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := releasepkg.BundleOptions{}
+	var sourceDateEpoch string
+	fs.StringVar(&opts.RepositoryRoot, "repository-root", ".", "repository root")
+	fs.StringVar(&opts.Version, "version", envString("VERSION", "0.0.0-dev"), "release version without a leading v")
+	fs.StringVar(&opts.OutputPath, "output", "", "output tar.gz path")
+	fs.StringVar(&sourceDateEpoch, "source-date-epoch", envString("SOURCE_DATE_EPOCH", "0"), "deterministic source timestamp as Unix epoch seconds")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	epoch, err := strconv.ParseInt(sourceDateEpoch, 10, 64)
+	if err != nil {
+		return fmt.Errorf("parse --source-date-epoch: %w", err)
+	}
+	opts.SourceDateEpoch = epoch
+	return releasepkg.Bundle(opts)
+}
+
+func runReleaseChecksums(args []string) error {
+	fs := flag.NewFlagSet("release checksums", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := releasepkg.ChecksumOptions{}
+	fs.StringVar(&opts.Directory, "dir", filepath.Join("dist", "release"), "release asset directory")
+	fs.StringVar(&opts.OutputPath, "output", filepath.Join("dist", "release", "checksums.txt"), "checksum output path")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	return releasepkg.Checksums(opts)
+}
+
 func runValidateDashboardQueries(ctx context.Context, args []string) error {
 	defaultDashboardContracts := strings.Join(defaultDashboardContractPaths(), ",")
 	defaultGeneratedDashboards := strings.Join([]string{
@@ -482,6 +538,7 @@ func usageText() string {
   openbao-observability contracts <command>
   openbao-observability fixtures <command>
   openbao-observability generate <command>
+  openbao-observability release <command>
   openbao-observability validate <command>
 
 commands:
@@ -503,6 +560,8 @@ commands:
                       generate Grafana dashboard JSON
   generate prometheus-rules
                       generate Prometheus recording rules
+  release bundle     build deterministic release tarball
+  release checksums  write SHA256 checksums for release assets
   validate dashboard-queries
                       validate dashboard queries against Prometheus and Loki
   validate docs       validate user-facing Markdown documentation`
@@ -532,6 +591,10 @@ func generateUsage() error {
 	return fmt.Errorf("%s", generateUsageText())
 }
 
+func releaseUsage() error {
+	return fmt.Errorf("%s", releaseUsageText())
+}
+
 func validateUsage() error {
 	return fmt.Errorf("%s", validateUsageText())
 }
@@ -542,6 +605,12 @@ func generateUsageText() string {
   openbao-observability generate compatibility-matrix [flags]
   openbao-observability generate grafana-dashboard [flags]
   openbao-observability generate prometheus-rules [flags]`
+}
+
+func releaseUsageText() string {
+	return `usage:
+  openbao-observability release bundle [flags]
+  openbao-observability release checksums [flags]`
 }
 
 func validateUsageText() string {

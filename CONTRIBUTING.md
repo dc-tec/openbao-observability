@@ -155,6 +155,13 @@ updates intentionally.
 
 Release PRs are managed by release-please from Conventional Commits. Release
 artifacts are draft by default until maintainers intentionally publish them.
+Tag-triggered release automation builds a deterministic reference artifact
+bundle and SHA256 checksums, then attaches them to the draft GitHub release.
+Use the same target locally when validating release contents:
+
+```shell
+make release-artifacts VERSION=0.1.0 SOURCE_DATE_EPOCH=0
+```
 
 ## Pull request checklist
 
