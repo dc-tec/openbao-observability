@@ -31,6 +31,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [High-cardinality and label safety](./concepts/high-cardinality-and-label-safety.md)
 - [Active-node and all-node observability](./concepts/active-node-vs-all-node-observability.md)
 - [OpenBao HA/Raft observability](./concepts/openbao-ha-raft-observability.md)
+- [Namespaces and scale observability](./concepts/namespaces-and-scale-observability.md)
 - [Audit logs as security records](./concepts/audit-logs-as-security-records.md)
 - [Token and lease observability](./concepts/token-and-lease-observability.md)
 
@@ -62,6 +63,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [OpenBao PKI dashboard](./dashboards/pki.md)
 - [OpenBao secret engines and mounts dashboard](./dashboards/secret-engines-mounts.md)
 - [OpenBao runtime and storage dashboard](./dashboards/runtime-storage.md)
+- [OpenBao namespaces and scale dashboard](./dashboards/namespaces-scale.md)
 - [OpenBao Kubernetes platform dashboard](./dashboards/kubernetes-platform.md)
 - [OpenBao SLO and availability dashboard](./dashboards/slo-availability.md)
 

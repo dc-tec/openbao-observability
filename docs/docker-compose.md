@@ -112,12 +112,12 @@ Use this optional profile when you want to exercise the
 
 Grafana uses `admin` / `admin` by default. Change the local password in
 `examples/docker-compose/.env` when you need a different local credential.
-The stack provisions the generated `OpenBao overview` dashboard in the
-`OpenBao` folder. It also provisions the generated `OpenBao HA/Raft`,
-`OpenBao audit overview`, `OpenBao operational logs`, and
-`OpenBao audit investigation`, `OpenBao auth and identity`, and
-`OpenBao token and lease lifecycle`, `OpenBao database secrets`, and
-`OpenBao secret engines and mounts` dashboards.
+The stack provisions the generated dashboards in the `OpenBao` folder. Start
+with `OpenBao overview`, then use the focused HA/Raft, audit, operational
+logs, auth and identity, token and lease lifecycle, database secrets, Transit,
+PKI, secret engines and mounts, runtime and storage, namespaces and scale,
+Kubernetes platform, and SLO and availability dashboards when you need deeper
+context.
 
 ## Understand the local OpenBao setup
 

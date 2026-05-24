@@ -283,6 +283,26 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
+							Record: recordPrefix + ":raft_storage_commit_index:max",
+							Expr:   raftStorageMaxExpression(sourcePrefix, "raft_storage_stats_commit_index"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":raft_storage_applied_index:max",
+							Expr:   raftStorageMaxExpression(sourcePrefix, "raft_storage_stats_applied_index"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":raft_storage_apply_gap:max",
+							Expr:   raftStorageApplyGapExpression(sourcePrefix),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":raft_storage_fsm_pending:max",
+							Expr:   raftStorageMaxExpression(sourcePrefix, "raft_storage_stats_fsm_pending"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
 							Record: recordPrefix + ":audit_log_request_failure:increase5m",
 							Expr:   "sum(increase(" + metricName(sourcePrefix, "audit_log_request_failure") + "[5m]))",
 							Labels: ruleLabels(sourcePrefix),
@@ -355,6 +375,22 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						{
 							Record: recordPrefix + ":token_creation_by_auth:increase15m",
 							Expr: "sum by (auth_method) (increase(" + metricName(
+								sourcePrefix,
+								"token_creation",
+							) + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_creation_by_namespace:increase15m",
+							Expr: "sum by (namespace) (increase(" + metricName(
+								sourcePrefix,
+								"token_creation",
+							) + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":token_creation_by_auth_namespace:increase15m",
+							Expr: "sum by (namespace, auth_method) (increase(" + metricName(
 								sourcePrefix,
 								"token_creation",
 							) + "[15m]))",
@@ -719,6 +755,16 @@ func raftPeerCountExpression(sourcePrefix string) string {
 	storageStatsMetric := metricName(sourcePrefix, "raft_storage_stats_commit_index")
 	storageStatsPeerCount := "count(count by (peer_id) (" + storageStatsMetric + "))"
 	return rawPeerCount + " or " + storageStatsPeerCount
+}
+
+func raftStorageMaxExpression(sourcePrefix, id string) string {
+	return "max by (instance, peer_id) (" + metricName(sourcePrefix, id) + ")"
+}
+
+func raftStorageApplyGapExpression(sourcePrefix string) string {
+	commitIndex := metricName(sourcePrefix, "raft_storage_stats_commit_index")
+	appliedIndex := metricName(sourcePrefix, "raft_storage_stats_applied_index")
+	return "clamp_min(max by (instance, peer_id) (" + commitIndex + " - " + appliedIndex + "), 0)"
 }
 
 func summaryRateExpression(sourcePrefix, id string) string {

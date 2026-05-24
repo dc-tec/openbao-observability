@@ -119,6 +119,7 @@ func (o VerifyStreamOptions) withDefaults() VerifyStreamOptions {
 			filepath.Join("contracts", "dashboards", "openbao-pki.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-secret-engines-mounts.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-runtime-storage.yaml"),
+			filepath.Join("contracts", "dashboards", "openbao-namespaces-scale.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-kubernetes-platform.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-slo-availability.yaml"),
 		}

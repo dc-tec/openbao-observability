@@ -102,6 +102,23 @@ metrics:
       - Observed in the OpenBao 2.5.4 HA/Raft fixture and live Compose HA stack.
       - Used as the fallback source for normalized Raft peer count.
       - The HA/Raft fixture observes peer_id labels for voters and the read-replica peer_id read-replica0.
+  - id: raft_storage_stats_applied_index
+    docsName: vault.raft_storage.stats.applied_index
+    prometheusName: ${p}_raft_storage_stats_applied_index
+    required: false
+    overview: false
+    notes:
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture.
+      - Used with commit index to derive follower and read-replica apply lag.
+      - The HA/Raft fixture observes peer_id labels for voters and the read-replica peer_id read-replica0.
+  - id: raft_storage_stats_fsm_pending
+    docsName: vault.raft_storage.stats.fsm_pending
+    prometheusName: ${p}_raft_storage_stats_fsm_pending
+    required: false
+    overview: false
+    notes:
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture.
+      - Used as a node-level Raft apply pressure signal for voters and non-voter read replicas.
   - id: autopilot_healthy
     docsName: vault.autopilot.healthy
     prometheusName: ${p}_autopilot_healthy

@@ -67,6 +67,22 @@ spec:
               expr: min by (node_id) (vault_autopilot_node_healthy)
               labels:
                 source_prefix: vault
+            - record: openbao:raft_storage_commit_index:max
+              expr: max by (instance, peer_id) (vault_raft_storage_stats_commit_index)
+              labels:
+                source_prefix: vault
+            - record: openbao:raft_storage_applied_index:max
+              expr: max by (instance, peer_id) (vault_raft_storage_stats_applied_index)
+              labels:
+                source_prefix: vault
+            - record: openbao:raft_storage_apply_gap:max
+              expr: clamp_min(max by (instance, peer_id) (vault_raft_storage_stats_commit_index - vault_raft_storage_stats_applied_index), 0)
+              labels:
+                source_prefix: vault
+            - record: openbao:raft_storage_fsm_pending:max
+              expr: max by (instance, peer_id) (vault_raft_storage_stats_fsm_pending)
+              labels:
+                source_prefix: vault
             - record: openbao:audit_log_request_failure:increase5m
               expr: sum(increase(vault_audit_log_request_failure[5m]))
               labels:
@@ -125,6 +141,14 @@ spec:
                 source_prefix: vault
             - record: openbao:token_creation_by_auth:increase15m
               expr: sum by (auth_method) (increase(vault_token_creation[15m]))
+              labels:
+                source_prefix: vault
+            - record: openbao:token_creation_by_namespace:increase15m
+              expr: sum by (namespace) (increase(vault_token_creation[15m]))
+              labels:
+                source_prefix: vault
+            - record: openbao:token_creation_by_auth_namespace:increase15m
+              expr: sum by (namespace, auth_method) (increase(vault_token_creation[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:token_create:rate5m

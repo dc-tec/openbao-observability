@@ -132,6 +132,8 @@ storage, policy, application behavior, or cleanup behavior.
   to connect panels to source metrics and recording rules.
 - Use [OpenBao auth and identity dashboard](./auth-identity.md) when token
   lifecycle panels point to auth method activity.
+- Use [OpenBao namespaces and scale dashboard](./namespaces-scale.md) when
+  token or lease pressure appears namespace-specific.
 - Use [OpenBao database secrets dashboard](./database-secrets.md) when lease
   panels point to database credential creation, renewal, or revocation.
 - Use [Metrics, logs, and audit logs](../concepts/metrics-vs-logs-vs-audit-logs.md)

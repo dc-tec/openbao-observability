@@ -171,6 +171,8 @@ the secure active-node baseline.
   understand why HA/Raft troubleshooting benefits from all-node visibility.
 - Use [Namespaces and scale observability](./namespaces-and-scale-observability.md)
   before you add namespace or read-replica panels.
+- Use [OpenBao namespaces and scale dashboard](../dashboards/namespaces-scale.md)
+  when all-node scraping needs tenant and read-replica context.
 - Use [High-cardinality and label safety](./high-cardinality-and-label-safety.md)
   before you expose or group additional metric labels.
 - Use [OpenBao overview dashboard](../dashboards/overview-dashboard.md) to

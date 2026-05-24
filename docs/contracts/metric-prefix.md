@@ -180,6 +180,7 @@ make verify-live
 | `contracts/dashboards/openbao-transit.yaml` | Transit dashboard contract that filters key management and cryptographic audit paths at query time without turning Transit key names into Loki labels. |
 | `contracts/dashboards/openbao-pki.yaml` | PKI dashboard contract that consumes normalized PKI rules and filters certificate lifecycle audit paths at query time. |
 | `contracts/dashboards/openbao-runtime-storage.yaml` | Runtime and storage dashboard contract that consumes normalized runtime, barrier, cache, and mount-table rules. |
+| `contracts/dashboards/openbao-namespaces-scale.yaml` | Namespaces and scale dashboard contract that consumes namespace-aware token and lease rules plus Raft read-replica diagnostics. |
 | `contracts/dashboards/openbao-kubernetes-platform.yaml` | Kubernetes platform dashboard contract that consumes kube-state-metrics, kubelet, cAdvisor, scrape target, and platform event signals. |
 | `contracts/dashboards/openbao-slo-availability.yaml` | SLO and availability dashboard contract that consumes optional synthetic probe metrics, OpenBao latency rules, and scrape availability signals. |
 | `contracts/alerts/critical.yaml` | Alert contract that maps critical alerts to runbooks. |

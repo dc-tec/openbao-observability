@@ -136,6 +136,8 @@ leaving a path for deeper production profiles.
   understand quorum, failure tolerance, and follower progress.
 - Use [OpenBao HA/Raft metrics](../metrics/ha-raft-metrics.md) to connect the
   topology model to Prometheus series.
+- Use [OpenBao namespaces and scale dashboard](../dashboards/namespaces-scale.md)
+  to inspect namespace-aware activity, non-voters, and read-replica signals.
 - Use [High-cardinality and label safety](./high-cardinality-and-label-safety.md)
   before you expose namespace or mount dimensions.
 

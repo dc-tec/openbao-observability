@@ -55,6 +55,9 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"expr: max(openbao_raft_peers) or count(count by (peer_id) (openbao_raft_storage_stats_commit_index))",
 		"record: openbao:autopilot_node_healthy:min",
 		"expr: min by (node_id) (openbao_autopilot_node_healthy)",
+		"record: openbao:raft_storage_apply_gap:max",
+		"expr: clamp_min(max by (instance, peer_id) (openbao_raft_storage_stats_commit_index - " +
+			"openbao_raft_storage_stats_applied_index), 0)",
 		"record: openbao:audit_log_request:avg5m",
 		"expr: sum(rate(openbao_audit_log_request_sum[5m])) / " +
 			"clamp_min(sum(rate(openbao_audit_log_request_count[5m])), 0.001)",
@@ -64,6 +67,10 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"expr: max(max_over_time(openbao_token_count[30m]))",
 		"record: openbao:token_creation_by_auth:increase15m",
 		"expr: sum by (auth_method) (increase(openbao_token_creation[15m]))",
+		"record: openbao:token_creation_by_namespace:increase15m",
+		"expr: sum by (namespace) (increase(openbao_token_creation[15m]))",
+		"record: openbao:token_creation_by_auth_namespace:increase15m",
+		"expr: sum by (namespace, auth_method) (increase(openbao_token_creation[15m]))",
 		"record: openbao:token_lookup:avg5m",
 		"expr: sum(rate(openbao_token_lookup_sum[5m])) / clamp_min(sum(rate(openbao_token_lookup_count[5m])), 0.001)",
 		"record: openbao:runtime_heap_objects:max",

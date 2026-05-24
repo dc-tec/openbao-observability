@@ -1,0 +1,303 @@
+version: v0.1
+status: draft
+uid: openbao-namespaces-scale
+title: OpenBao namespaces and scale
+refresh: 30s
+tags:
+  - generated
+  - namespaces
+  - openbao
+  - raft
+  - reference
+  - scale
+timeRange:
+  from: now-1h
+  to: now
+datasources:
+  metrics:
+    type: prometheus
+    uid: prometheus
+  logs:
+    type: loki
+    uid: loki
+variables:
+  - name: namespace
+    label: OpenBao namespace
+    type: textbox
+    default: .*
+  - name: node_id
+    label: Node
+    type: textbox
+    default: .*
+  - name: peer_id
+    label: Raft peer
+    type: textbox
+    default: .*
+  - name: request_id
+    label: Request ID
+    type: textbox
+    default: .*
+  - name: operation
+    label: Operation
+    type: custom
+    default: .*
+    options:
+      - .*
+      - read
+      - list
+      - create
+      - update
+      - delete
+panels:
+  - id: namespace-audit-requests
+    title: Namespace audit requests
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", namespace_id="request.namespace.id" | audit_type="request" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    unit: short
+    description: Shows audited request entries for the selected OpenBao namespace ID over 5 minutes.
+    grid:
+      x: 0
+      y: 0
+      w: 6
+      h: 4
+  - id: namespace-response-errors
+    title: Namespace response errors
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", namespace_id="request.namespace.id" | audit_type="response" | audit_error!="" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    unit: short
+    description: Shows audited response entries with error fields for the selected OpenBao namespace ID over 5 minutes.
+    grid:
+      x: 6
+      y: 0
+      w: 6
+      h: 4
+  - id: namespace-token-creations
+    title: Namespace token creations
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(openbao:token_creation_by_namespace:increase15m{namespace=~"${namespace:raw}"}) or vector(0)
+    unit: short
+    description: Shows token creation events for the selected OpenBao namespace label over 15 minutes.
+    grid:
+      x: 12
+      y: 0
+      w: 6
+      h: 4
+  - id: namespace-dynamic-leases
+    title: Namespace dynamic leases
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(openbao:secret_lease_creation_by_engine_namespace:increase15m{namespace=~"${namespace:raw}"}) or vector(0)
+    unit: short
+    description: Shows dynamic secret lease creation events for the selected OpenBao namespace label over 15 minutes.
+    grid:
+      x: 18
+      y: 0
+      w: 6
+      h: 4
+  - id: token-creations-by-namespace
+    title: Token creations by namespace
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: topk(10, openbao:token_creation_by_namespace:increase15m{namespace=~"${namespace:raw}"})
+    legend: "{{namespace}}"
+    unit: short
+    description: Shows token creation events by bounded OpenBao namespace label over 15 minutes.
+    grid:
+      x: 0
+      y: 4
+      w: 8
+      h: 8
+  - id: token-creations-by-auth-and-namespace
+    title: Token creations by auth and namespace
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: topk(10, openbao:token_creation_by_auth_namespace:increase15m{namespace=~"${namespace:raw}"})
+    legend: "{{namespace}} {{auth_method}}"
+    unit: short
+    description: Shows token creation events by OpenBao namespace and bounded auth method label over 15 minutes.
+    grid:
+      x: 8
+      y: 4
+      w: 8
+      h: 8
+  - id: dynamic-leases-by-namespace-engine
+    title: Dynamic leases by namespace and engine
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: topk(10, openbao:secret_lease_creation_by_engine_namespace:increase15m{namespace=~"${namespace:raw}"})
+    legend: "{{namespace}} {{secret_engine}}"
+    unit: short
+    description: Shows dynamic secret lease creation events by OpenBao namespace and bounded secret engine label.
+    grid:
+      x: 16
+      y: 4
+      w: 8
+      h: 8
+  - id: mount-table-entries
+    title: Mount table entries
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:core_mount_table_num_entries:max
+    legend: "{{type}} local={{local}}"
+    unit: short
+    description: Shows mount table entry counts by bounded type and local labels.
+    grid:
+      x: 0
+      y: 12
+      w: 12
+      h: 8
+  - id: mount-table-size
+    title: Mount table size
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:core_mount_table_size:max
+    legend: "{{type}} local={{local}}"
+    unit: bytes
+    description: Shows mount table size by bounded type and local labels.
+    grid:
+      x: 12
+      y: 12
+      w: 12
+      h: 8
+  - id: raft-peers
+    title: Raft peers
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:raft_peers:max
+    unit: short
+    description: Shows normalized Raft peer count. This includes non-voter read replicas when the source metrics expose them.
+    grid:
+      x: 0
+      y: 20
+      w: 6
+      h: 4
+  - id: failure-tolerance
+    title: Failure tolerance
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:autopilot_failure_tolerance:max
+    unit: short
+    description: Shows voter-oriented Autopilot failure tolerance.
+    grid:
+      x: 6
+      y: 20
+      w: 6
+      h: 4
+  - id: healthy-raft-nodes
+    title: Healthy Raft nodes
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(openbao:autopilot_node_healthy:min{node_id=~"${node_id:raw}"})
+    unit: short
+    description: Shows Raft nodes Autopilot currently reports healthy for the selected node filter.
+    grid:
+      x: 12
+      y: 20
+      w: 6
+      h: 4
+  - id: unhealthy-raft-nodes
+    title: Unhealthy Raft nodes
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(1 - openbao:autopilot_node_healthy:min{node_id=~"${node_id:raw}"})
+    unit: short
+    description: Shows Raft nodes Autopilot currently reports unhealthy for the selected node filter.
+    grid:
+      x: 18
+      y: 20
+      w: 6
+      h: 4
+  - id: autopilot-node-health
+    title: Autopilot node health
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:autopilot_node_healthy:min{node_id=~"${node_id:raw}"}
+    legend: "{{node_id}}"
+    unit: short
+    description: Shows Autopilot health by Raft node ID, including non-voters when exposed by the source metrics.
+    grid:
+      x: 0
+      y: 24
+      w: 8
+      h: 8
+  - id: raft-apply-gap
+    title: Raft apply gap
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:raft_storage_apply_gap:max{peer_id=~"${peer_id:raw}"}
+    legend: "{{peer_id}} {{instance}}"
+    unit: short
+    description: Shows the derived difference between Raft commit and applied indexes by peer.
+    grid:
+      x: 8
+      y: 24
+      w: 8
+      h: 8
+  - id: raft-fsm-pending
+    title: Raft FSM pending
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:raft_storage_fsm_pending:max{peer_id=~"${peer_id:raw}"}
+    legend: "{{peer_id}} {{instance}}"
+    unit: short
+    description: Shows pending Raft FSM work by peer for voters and read replicas.
+    grid:
+      x: 16
+      y: 24
+      w: 8
+      h: 8
+  - id: namespace-audit-stream
+    title: Namespace audit stream
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path", namespace_id="request.namespace.id" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    description: Shows audited entries for the selected OpenBao namespace ID, request ID, node, and operation filters.
+    grid:
+      x: 0
+      y: 32
+      w: 12
+      h: 9
+  - id: namespace-response-error-stream
+    title: Namespace response error stream
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path", namespace_id="request.namespace.id" | audit_type="response" | audit_error!="" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    description: Shows audited response entries with errors for the selected namespace and operation filters.
+    grid:
+      x: 12
+      y: 32
+      w: 12
+      h: 9
+  - id: scale-operational-symptoms
+    title: Scale operational symptoms
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.operational", node_id=~"${node_id:raw}"} |~ "(?i)(namespace|raft|autopilot|non-voter|replica|read replica|storage)" |~ "(?i)(warn|error|failed|lag|behind|timeout|unhealthy)"'
+    description: Shows operational log lines related to namespace, Raft, Autopilot, non-voter, read-replica, or storage symptoms.
+    grid:
+      x: 0
+      y: 41
+      w: 24
+      h: 9
