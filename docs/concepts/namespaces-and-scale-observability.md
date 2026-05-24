@@ -49,9 +49,9 @@ namespace labels out of broad overview panels unless the namespace set is
 bounded and approved for the metrics or logging tenant.
 
 Some feature metrics also change metric-family names when they run inside a
-namespace. The `team-a` PKI fixture emits `vault_team_a_pki_issue` style
-families instead of only adding a `namespace="team-a"` label to the root PKI
-metric family. Do not hardcode demo namespace names in dashboards.
+namespace. The namespace PKI fixture emits `<prefix>_<sanitized_namespace>_pki_issue`
+style families instead of only adding a `namespace` label to the root PKI
+metric family. Do not hardcode fixture namespace names in dashboards.
 
 ## Scale signals
 

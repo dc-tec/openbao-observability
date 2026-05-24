@@ -368,7 +368,7 @@ metrics:
       - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture after issuing a certificate from the default pki/ mount.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace and role; role is bounded by PKI role inventory but should still be treated as drilldown data.
-      - Current fixtures validate root namespace for this metric and observe a separate team-a namespace-derived metric family.
+      - Current fixtures validate root namespace for this metric and observe separate namespace-derived metric families for non-root namespace PKI.
       - Do not assume one root PKI metric family covers all namespaces.
   - id: pki_revoke
     docsName: vault.pki.revoke
@@ -379,7 +379,7 @@ metrics:
       - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture after revoking a certificate from the default pki/ mount.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace.
-      - Current fixtures validate root namespace for this metric and observe a separate team-a namespace-derived metric family.
+      - Current fixtures validate root namespace for this metric and observe separate namespace-derived metric families for non-root namespace PKI.
       - Do not assume one root PKI metric family covers all namespaces.
   - id: pki_issue_failure
     docsName: vault.pki.issue.failure
@@ -391,7 +391,7 @@ metrics:
       - Source-backed by the OpenBao PKI metrics wrapper.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace and role when emitted.
-      - Current fixtures validate root namespace for this metric and observe a separate team-a namespace-derived metric family.
+      - Current fixtures validate root namespace for this metric and observe separate namespace-derived metric families for non-root namespace PKI.
       - Do not assume one root PKI metric family covers all namespaces.
   - id: pki_revoke_failure
     docsName: vault.pki.revoke.failure
@@ -403,44 +403,8 @@ metrics:
       - Source-backed by the OpenBao PKI metrics wrapper.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace when emitted.
-      - Current fixtures validate root namespace for this metric and observe a separate team-a namespace-derived metric family.
+      - Current fixtures validate root namespace for this metric and observe separate namespace-derived metric families for non-root namespace PKI.
       - Do not assume one root PKI metric family covers all namespaces.
-  - id: namespace_team_a_pki_issue
-    docsName: vault.team-a.pki.issue
-    prometheusName: ${p}_team_a_pki_issue
-    required: false
-    overview: false
-    notes:
-      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture after issuing a certificate from pki/ inside the team-a namespace.
-      - OpenBao prefixes this metric family with the sanitized namespace path instead of only adding a namespace label to the root pki metric family.
-      - Treat this as fixture evidence for namespace-derived metric-family naming; dashboards must not hardcode demo namespace names.
-  - id: namespace_team_a_pki_revoke
-    docsName: vault.team-a.pki.revoke
-    prometheusName: ${p}_team_a_pki_revoke
-    required: false
-    overview: false
-    notes:
-      - Observed as a summary in the OpenBao 2.5.4 HA/Raft fixture after revoking a certificate from pki/ inside the team-a namespace.
-      - OpenBao prefixes this metric family with the sanitized namespace path instead of only adding a namespace label to the root pki metric family.
-      - Treat this as fixture evidence for namespace-derived metric-family naming; dashboards must not hardcode demo namespace names.
-  - id: namespace_team_a_pki_issue_failure
-    docsName: vault.team-a.pki.issue.failure
-    prometheusName: ${p}_team_a_pki_issue_failure
-    required: false
-    overview: false
-    notes:
-      - Observed in the OpenBao 2.5.4 HA/Raft fixture after an intentional invalid-domain issue request inside the team-a namespace.
-      - OpenBao prefixes this metric family with the sanitized namespace path instead of only adding a namespace label to the root pki failure metric family.
-      - Treat this as fixture evidence for namespace-derived metric-family naming; dashboards must not hardcode demo namespace names.
-  - id: namespace_team_a_pki_revoke_failure
-    docsName: vault.team-a.pki.revoke.failure
-    prometheusName: ${p}_team_a_pki_revoke_failure
-    required: false
-    overview: false
-    notes:
-      - Observed in the OpenBao 2.5.4 HA/Raft fixture after an intentional invalid-serial revoke request inside the team-a namespace.
-      - OpenBao prefixes this metric family with the sanitized namespace path instead of only adding a namespace label to the root pki failure metric family.
-      - Treat this as fixture evidence for namespace-derived metric-family naming; dashboards must not hardcode demo namespace names.
   - id: database_initialize
     docsName: vault.database.Initialize
     prometheusName: ${p}_database_Initialize

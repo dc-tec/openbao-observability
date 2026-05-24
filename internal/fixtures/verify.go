@@ -200,12 +200,13 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 	if !hasAnyGaugeValue(leaderMetrics, prefix+"_core_active", 1) {
 		return fmt.Errorf("missing active leader gauge value in Raft fixture")
 	}
+	namespaceMetricPrefix := prefix + "_" + sanitizedMetricPathFragment(fixtureNamespace) + "_pki"
 	for _, metric := range []string{
 		prefix + "_token_creation",
-		prefix + "_team_a_pki_issue",
-		prefix + "_team_a_pki_revoke",
-		prefix + "_team_a_pki_issue_failure",
-		prefix + "_team_a_pki_revoke_failure",
+		namespaceMetricPrefix + "_issue",
+		namespaceMetricPrefix + "_revoke",
+		namespaceMetricPrefix + "_issue_failure",
+		namespaceMetricPrefix + "_revoke_failure",
 	} {
 		if !leaderMetrics.HasMetricWithLabel(metric, "namespace", fixtureNamespace) {
 			return fmt.Errorf("missing %s namespace label on %s in Raft fixture", fixtureNamespace, metric)
@@ -219,6 +220,11 @@ func checkRaftMetrics(opts VerifyOptions, prefix string) error {
 	}
 
 	return nil
+}
+
+func sanitizedMetricPathFragment(path string) string {
+	replacer := strings.NewReplacer("/", "_", "-", "_")
+	return strings.Trim(replacer.Replace(path), "_")
 }
 
 func hasAnyGaugeValue(families promtext.Families, name string, value float64) bool {
