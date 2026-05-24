@@ -1,8 +1,8 @@
 # Run the Docker Compose stack
 
 Use this how-to to run a local OpenBao Observability reference stack with a
-three-node OpenBao Raft cluster, Prometheus, Loki, Grafana Alloy, and Grafana.
-The stack is for local evaluation and contract validation.
+three-node OpenBao Raft cluster, PostgreSQL, Prometheus, Loki, Grafana Alloy,
+and Grafana. The stack is for local evaluation and contract validation.
 
 > [!WARNING]
 > This stack uses HTTP, a local static seal key, deterministic local credentials,
@@ -48,6 +48,7 @@ The stack is for local evaluation and contract validation.
    - `openbao-node0`
    - `openbao-node1`
    - `openbao-node2`
+   - `postgres`
    - `prometheus`
    - `loki`
    - `alloy`
@@ -60,6 +61,7 @@ The stack is for local evaluation and contract validation.
 | OpenBao node 0 | `http://127.0.0.1:18200` | Raft bootstrap node and expected active node. |
 | OpenBao node 1 | `http://127.0.0.1:18201` | Raft follower. |
 | OpenBao node 2 | `http://127.0.0.1:18202` | Raft follower. |
+| PostgreSQL | `127.0.0.1:15432` | Dynamic database secret backend for local lease activity. |
 | Prometheus | `http://127.0.0.1:19090` | Metrics, recording rules, and alerts. |
 | Loki | `http://127.0.0.1:13100` | Local log backend. |
 | Alloy | `http://127.0.0.1:12345` | Collector status UI. |
@@ -85,11 +87,13 @@ an `initialize` block. The self-initialization creates:
 - the `userpass` auth method,
 - the `approle` auth method,
 - a KV v2 `secret/` mount,
+- a database secrets `database/` mount backed by the local PostgreSQL service,
 - a local `compose-admin` policy,
 - local `app-reader`, `app-writer`, and `identity-auditor` policies,
 - a local `openbao-metrics` policy,
 - the `demo-admin`, `demo-reader`, and `demo-writer` users,
 - an `observability-app` AppRole and secret ID,
+- a PostgreSQL `readonly` dynamic credential role,
 - demo identity entities, entity aliases, and internal identity groups,
 - a sample `secret/data/apps/payments/api` secret, and
 - a deterministic local metrics token named
@@ -147,7 +151,26 @@ production all-node scraping.
    `demo-admin`, `demo-reader`, `demo-writer`, `platform-team`, and
    `payments-team`.
 
-4. Check Raft peers.
+4. Read a local dynamic database credential and inspect its lease.
+
+   ```shell
+   bao read database/creds/readonly
+   bao list sys/leases/lookup/database/creds/readonly
+   ```
+
+   Expected output includes a lease ID under `database/creds/readonly/`.
+
+5. Run the production-like fixture scenario.
+
+   ```shell
+   make fixtures-scenarios
+   ```
+
+   The scenario performs userpass and AppRole logins, KV activity, identity
+   activity, token create/lookup/renew/revoke operations, database credential
+   lease lookup/renew/revoke operations, and expected denied requests.
+
+6. Check Raft peers.
 
    ```shell
    bao operator raft list-peers
@@ -155,7 +178,7 @@ production all-node scraping.
 
    Expected output includes `node0`, `node1`, and `node2` as voters.
 
-5. Check Autopilot state.
+7. Check Autopilot state.
 
    ```shell
    bao operator raft autopilot state
@@ -164,7 +187,7 @@ production all-node scraping.
    Expected output includes a healthy cluster and a failure tolerance of `1`
    after Autopilot converges.
 
-6. Check Prometheus readiness.
+8. Check Prometheus readiness.
 
    ```shell
    curl -fsS http://127.0.0.1:19090/-/ready
@@ -176,7 +199,7 @@ production all-node scraping.
    Prometheus Server is Ready.
    ```
 
-7. Check the OpenBao scrape targets.
+9. Check the OpenBao scrape targets.
 
    ```shell
    curl -fsS -G http://127.0.0.1:19090/api/v1/query \
@@ -185,7 +208,7 @@ production all-node scraping.
 
    Expected output includes three `up` series with value `1`.
 
-8. Check Raft recording rules.
+10. Check Raft recording rules.
 
    ```shell
    curl -fsS -G http://127.0.0.1:19090/api/v1/query \
@@ -198,7 +221,7 @@ production all-node scraping.
    Expected output includes peer count `3` and failure tolerance `1` after the
    rule evaluation interval passes.
 
-9. Check Loki stream labels.
+11. Check Loki stream labels.
 
    ```shell
    curl -fsS http://127.0.0.1:13100/loki/api/v1/label/log_stream/values
@@ -210,7 +233,7 @@ production all-node scraping.
    ["openbao.audit","openbao.operational"]
    ```
 
-10. Check Grafana health.
+12. Check Grafana health.
 
    ```shell
    curl -fsS -u admin:admin http://127.0.0.1:13000/api/health
@@ -218,7 +241,7 @@ production all-node scraping.
 
    Expected output includes `"database": "ok"`.
 
-11. Validate dashboard queries against the local backends.
+13. Validate dashboard queries against the local backends.
 
     ```shell
     make validate-dashboard-queries

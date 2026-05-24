@@ -36,6 +36,8 @@ services:
     depends_on:
       openbao-seal-init:
         condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     command:
       - server
       - -config=/openbao/node0.hcl
@@ -49,6 +51,22 @@ services:
       - openbao-node0-logs:/openbao/logs
     healthcheck:
       test: ["CMD-SHELL", "BAO_ADDR=http://127.0.0.1:8200 bao status >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:17-alpine}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-openbao_app}
+      POSTGRES_USER: ${POSTGRES_USER:-openbao_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openbao_admin_password}
+    ports:
+      - 127.0.0.1:${POSTGRES_PORT:-15432}:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
       timeout: 3s
       retries: 24
@@ -188,3 +206,4 @@ volumes:
   openbao-node2-logs:
   openbao-seal:
   prometheus-data:
+  postgres-data:

@@ -37,6 +37,9 @@ func Verify(opts VerifyOptions) error {
 	if err := checkRaftMetadata(opts, "vault"); err != nil {
 		return err
 	}
+	if err := checkRaftScenarioReport(opts, "vault"); err != nil {
+		return err
+	}
 	if err := checkRaftAuditJSON(opts, "vault"); err != nil {
 		return err
 	}
@@ -277,7 +280,74 @@ func checkRaftMetadata(opts VerifyOptions, prefix string) error {
 
 func checkRaftAuditJSON(opts VerifyOptions, prefix string) error {
 	path := filepath.Join(opts.FixtureDir, "logs", "audit", fmt.Sprintf("openbao-%s-raft-%s-node0.jsonl", opts.Version, prefix))
-	return checkAuditJSONFile(path)
+	if err := checkAuditJSONFile(path); err != nil {
+		return err
+	}
+	return checkAuditRequestPaths(path, []string{
+		"auth/approle/login",
+		"auth/token/create",
+		"auth/token/lookup",
+		"auth/token/renew",
+		"auth/token/revoke",
+		"auth/userpass/login/demo-admin",
+		"auth/userpass/login/demo-reader",
+		"database/creds/readonly",
+		"identity/entity/name/scenario-service",
+		"identity/group/name/scenario-services",
+		"secret/data/apps/payments/denied",
+		"secret/data/apps/payments/scenario",
+		"sys/leases/lookup",
+		"sys/leases/renew",
+		"sys/leases/revoke",
+		"sys/policies/acl/scenario-app",
+	})
+}
+
+func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
+	path := filepath.Join(opts.FixtureDir, "metadata", fmt.Sprintf("openbao-%s-raft-%s-scenario.json", opts.Version, prefix))
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read scenario fixture %s: %w", path, err)
+	}
+
+	var report ScenarioReport
+	if err := json.Unmarshal(content, &report); err != nil {
+		return fmt.Errorf("parse scenario fixture %s: %w", path, err)
+	}
+
+	expected := map[string]string{
+		"create-token":              "success",
+		"denied-reader-kv-write":    "expected_error",
+		"failed-userpass-login":     "expected_error",
+		"list-kv-metadata":          "success",
+		"login-approle":             "success",
+		"login-userpass-admin":      "success",
+		"lookup-database-lease":     "success",
+		"lookup-token":              "success",
+		"read-database-credentials": "success",
+		"read-kv":                   "success",
+		"renew-database-lease":      "success",
+		"renew-token":               "success",
+		"revoke-database-lease":     "success",
+		"revoke-token":              "success",
+		"write-identity-entity":     "success",
+		"write-identity-group":      "success",
+		"write-kv":                  "success",
+	}
+	seen := map[string]string{}
+	for _, step := range report.Steps {
+		seen[step.Name] = step.Status
+	}
+	for name, status := range expected {
+		got, ok := seen[name]
+		if !ok {
+			return fmt.Errorf("scenario fixture %s is missing step %s", path, name)
+		}
+		if got != status {
+			return fmt.Errorf("scenario fixture %s step %s status %q, want %q", path, name, got, status)
+		}
+	}
+	return nil
 }
 
 func checkAuditJSONFile(path string) error {
@@ -337,5 +407,45 @@ func checkAuditJSONFile(path string) error {
 		return fmt.Errorf("audit fixture does not contain request.path: %s", path)
 	}
 
+	return nil
+}
+
+func checkAuditRequestPaths(path string, required []string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("open audit fixture %s: %w", path, err)
+	}
+	defer file.Close()
+
+	seen := map[string]bool{}
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		var entry map[string]any
+		if err := json.Unmarshal([]byte(line), &entry); err != nil {
+			return fmt.Errorf("parse audit JSON in %s: %w", path, err)
+		}
+
+		request, ok := entry["request"].(map[string]any)
+		if !ok {
+			continue
+		}
+		if value, ok := request["path"].(string); ok && value != "" {
+			seen[value] = true
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("scan audit fixture %s: %w", path, err)
+	}
+
+	for _, requestPath := range required {
+		if !seen[requestPath] {
+			return fmt.Errorf("audit fixture %s is missing request.path %s", path, requestPath)
+		}
+	}
 	return nil
 }

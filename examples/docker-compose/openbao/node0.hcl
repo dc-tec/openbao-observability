@@ -82,6 +82,45 @@ initialize "compose-foundation" {
     }
   }
 
+  request "enable-database-secrets" {
+    operation = "update"
+    path      = "sys/mounts/database"
+
+    data = {
+      type        = "database"
+      description = "Local Compose PostgreSQL dynamic secrets engine."
+    }
+  }
+
+  request "configure-postgres-database" {
+    operation = "update"
+    path      = "database/config/postgres"
+
+    data = {
+      plugin_name    = "postgresql-database-plugin"
+      allowed_roles  = ["readonly"]
+      connection_url = "postgresql://{{username}}:{{password}}@postgres:5432/openbao_app?sslmode=disable"
+      username       = "openbao_admin"
+      password       = "openbao_admin_password"
+    }
+  }
+
+  request "create-postgres-readonly-role" {
+    operation = "update"
+    path      = "database/roles/readonly"
+
+    data = {
+      db_name     = "postgres"
+      default_ttl = "5m"
+      max_ttl     = "30m"
+
+      creation_statements = [
+        "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';",
+        "GRANT CONNECT ON DATABASE openbao_app TO \"{{name}}\";"
+      ]
+    }
+  }
+
   request "create-compose-admin-policy" {
     operation = "update"
     path      = "sys/policies/acl/compose-admin"

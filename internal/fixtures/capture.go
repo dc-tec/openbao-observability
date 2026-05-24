@@ -14,11 +14,12 @@ import (
 )
 
 type CaptureOptions struct {
-	Version   string
-	Image     string
-	OutputDir string
-	PortBase  int
-	RootToken string
+	Version       string
+	Image         string
+	PostgresImage string
+	OutputDir     string
+	PortBase      int
+	RootToken     string
 }
 
 type captureRun struct {
@@ -37,8 +38,11 @@ type raftNode struct {
 }
 
 const (
-	raftNodeCount     = 3
-	fixtureAdminToken = "openbao-observability-fixture-token"
+	raftNodeCount           = 3
+	fixtureAdminToken       = "openbao-observability-fixture-token"
+	fixturePostgresDB       = "openbao_app"
+	fixturePostgresUser     = "openbao_admin"
+	fixturePostgresPassword = "openbao_admin_password"
 )
 
 func Capture(ctx context.Context, opts CaptureOptions) error {
@@ -75,6 +79,9 @@ func (o CaptureOptions) withDefaults() CaptureOptions {
 	}
 	if o.Image == "" {
 		o.Image = "quay.io/openbao/openbao:" + o.Version
+	}
+	if o.PostgresImage == "" {
+		o.PostgresImage = "postgres:17-alpine"
 	}
 	if o.OutputDir == "" {
 		o.OutputDir = filepath.Join("fixtures", "captured", "openbao-"+o.Version)
@@ -166,12 +173,22 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 	opts := r.options
 	versionID := strings.ReplaceAll(opts.Version, ".", "-")
 	network := fmt.Sprintf("openbao-observability-%s-raft", versionID)
+	postgresContainer := fmt.Sprintf("openbao-observability-%s-postgres", versionID)
 
 	_, _, _ = combined(ctx, "docker", "network", "rm", network)
 	if _, _, err := combined(ctx, "docker", "network", "create", network); err != nil {
 		return fmt.Errorf("create Docker network for Raft fixture: %w", err)
 	}
 	r.networks = append(r.networks, network)
+
+	_, _, _ = combined(ctx, "docker", "rm", "-f", postgresContainer)
+	r.containers = append(r.containers, postgresContainer)
+	if err := r.startPostgres(ctx, postgresContainer, network); err != nil {
+		return err
+	}
+	if err := waitForPostgres(ctx, postgresContainer); err != nil {
+		return err
+	}
 
 	tempDir, err := os.MkdirTemp("/tmp", "openbao-observability-raft.")
 	if err != nil {
@@ -197,7 +214,7 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 			Port:      portBase + index,
 			Config:    filepath.Join(tempDir, fmt.Sprintf("node%d.hcl", index)),
 		}
-		if err := writeRaftConfig(prefix, node, index == 0, nodes, node.Config); err != nil {
+		if err := writeRaftConfig(prefix, node, index == 0, nodes, postgresContainer, node.Config); err != nil {
 			return err
 		}
 		nodes = append(nodes, node)
@@ -235,6 +252,9 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 		return err
 	}
 	if err := r.exerciseRaft(ctx, nodes[0], prefix); err != nil {
+		return err
+	}
+	if err := r.runRaftScenario(ctx, nodes[0], prefix); err != nil {
 		return err
 	}
 	if err := r.captureRaftState(ctx, nodes, prefix); err != nil {
@@ -282,7 +302,44 @@ func (r *captureRun) startRaftNode(ctx context.Context, node raftNode, network, 
 	return nil
 }
 
-func writeRaftConfig(prefix string, node raftNode, initialize bool, existingNodes []raftNode, path string) error {
+func (r *captureRun) startPostgres(ctx context.Context, name, network string) error {
+	_, _, err := combined(ctx,
+		"docker",
+		"run",
+		"--detach",
+		"--name", name,
+		"--network", network,
+		"-e", "POSTGRES_DB="+fixturePostgresDB,
+		"-e", "POSTGRES_USER="+fixturePostgresUser,
+		"-e", "POSTGRES_PASSWORD="+fixturePostgresPassword,
+		r.options.PostgresImage,
+	)
+	if err != nil {
+		return fmt.Errorf("start PostgreSQL container for Raft fixture: %w", err)
+	}
+	return nil
+}
+
+func waitForPostgres(ctx context.Context, container string) error {
+	deadline := time.Now().Add(60 * time.Second)
+	var lastErr error
+	for time.Now().Before(deadline) {
+		_, _, err := combined(ctx, "docker", "exec", container, "pg_isready", "-U", fixturePostgresUser, "-d", fixturePostgresDB)
+		if err == nil {
+			return nil
+		}
+		lastErr = err
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(1 * time.Second):
+		}
+	}
+	return fmt.Errorf("PostgreSQL fixture did not become ready: %w", lastErr)
+}
+
+func writeRaftConfig(prefix string, node raftNode, initialize bool, existingNodes []raftNode, databaseHost, path string) error {
 	var retryJoin strings.Builder
 	if !initialize {
 		for _, leader := range existingNodes {
@@ -336,7 +393,7 @@ audit "file" "local-file" {
     log_raw       = "false"
   }
 }
-%s`, node.Container, node.Container, node.ID, retryJoin.String(), prefix, raftInitializeBlock(initialize))
+%s`, node.Container, node.Container, node.ID, retryJoin.String(), prefix, raftInitializeBlock(initialize, databaseHost))
 
 	if err := os.WriteFile(path, []byte(config), 0o600); err != nil {
 		return fmt.Errorf("write OpenBao Raft config %s: %w", path, err)
@@ -344,7 +401,7 @@ audit "file" "local-file" {
 	return nil
 }
 
-func raftInitializeBlock(enabled bool) string {
+func raftInitializeBlock(enabled bool, databaseHost string) string {
 	if !enabled {
 		return ""
 	}
@@ -358,6 +415,16 @@ initialize "fixture-foundation" {
 
     data = {
       type = "userpass"
+    }
+  }
+
+  request "enable-approle-auth" {
+    operation = "update"
+    path      = "sys/auth/approle"
+
+    data = {
+      type        = "approle"
+      description = "Fixture AppRole auth method for observability reference captures."
     }
   }
 
@@ -375,6 +442,44 @@ initialize "fixture-foundation" {
     }
   }
 
+  request "enable-database-secrets" {
+    operation = "update"
+    path      = "sys/mounts/database"
+
+    data = {
+      type        = "database"
+      description = "Fixture PostgreSQL dynamic secrets engine."
+    }
+  }
+
+  request "configure-postgres-database" {
+    operation = "update"
+    path      = "database/config/postgres"
+
+    data = {
+      plugin_name     = "postgresql-database-plugin"
+      allowed_roles   = ["readonly"]
+      connection_url  = "postgresql://{{username}}:{{password}}@%s:5432/openbao_app?sslmode=disable"
+      username        = "%s"
+      password        = "%s"
+    }
+  }
+
+  request "create-postgres-readonly-role" {
+    operation = "update"
+    path      = "database/roles/readonly"
+
+    data = {
+      db_name             = "postgres"
+      default_ttl         = "5m"
+      max_ttl             = "30m"
+      creation_statements = [
+        "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';",
+        "GRANT CONNECT ON DATABASE openbao_app TO \"{{name}}\";"
+      ]
+    }
+  }
+
   request "create-fixture-admin-policy" {
     operation = "update"
     path      = "sys/policies/acl/fixture-admin"
@@ -383,6 +488,40 @@ initialize "fixture-foundation" {
       policy = <<EOT
 path "*" {
   capabilities = ["create", "read", "update", "delete", "list", "sudo"]
+}
+EOT
+    }
+  }
+
+  request "create-app-reader-policy" {
+    operation = "update"
+    path      = "sys/policies/acl/app-reader"
+
+    data = {
+      policy = <<EOT
+path "secret/data/apps/*" {
+  capabilities = ["read"]
+}
+
+path "secret/metadata/apps/*" {
+  capabilities = ["list", "read"]
+}
+EOT
+    }
+  }
+
+  request "create-identity-auditor-policy" {
+    operation = "update"
+    path      = "sys/policies/acl/identity-auditor"
+
+    data = {
+      policy = <<EOT
+path "identity/*" {
+  capabilities = ["read", "list"]
+}
+
+path "sys/auth" {
+  capabilities = ["read", "list"]
 }
 EOT
     }
@@ -398,6 +537,29 @@ EOT
     }
   }
 
+  request "create-demo-reader-user" {
+    operation = "update"
+    path      = "auth/userpass/users/demo-reader"
+
+    data = {
+      password       = "openbao-observability"
+      token_policies = ["app-reader"]
+    }
+  }
+
+  request "create-observability-approle" {
+    operation = "update"
+    path      = "auth/approle/role/observability-app"
+
+    data = {
+      token_policies    = ["app-reader"]
+      token_ttl         = "15m"
+      token_max_ttl     = "1h"
+      secret_id_ttl     = "30m"
+      secret_id_num_uses = 5
+    }
+  }
+
   request "create-fixture-token" {
     operation = "update"
     path      = "auth/token/create-orphan"
@@ -407,7 +569,7 @@ EOT
       policies = ["fixture-admin"]
     }
   }
-}`, fixtureAdminToken)
+}`, databaseHost, fixturePostgresUser, fixturePostgresPassword, fixtureAdminToken)
 }
 
 func writeConfig(prefix, path string) error {
@@ -611,6 +773,13 @@ func (r *captureRun) exerciseRaft(ctx context.Context, node raftNode, prefix str
 	}
 
 	return writeFile(raftClusterMetadataPath(r.options, prefix, "exercise.txt"), output.Bytes())
+}
+
+func (r *captureRun) runRaftScenario(ctx context.Context, node raftNode, prefix string) error {
+	return RunScenario(ctx, ScenarioOptions{
+		Address:    fmt.Sprintf("http://127.0.0.1:%d", node.Port),
+		OutputPath: raftClusterMetadataPath(r.options, prefix, "scenario.json"),
+	})
 }
 
 func (r *captureRun) captureRaftState(ctx context.Context, nodes []raftNode, prefix string) error {

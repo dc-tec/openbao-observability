@@ -77,6 +77,8 @@ func runFixtures(ctx context.Context, args []string) error {
 	switch args[0] {
 	case "capture":
 		return runFixturesCapture(ctx, args[1:])
+	case "scenario":
+		return runFixturesScenario(ctx, args[1:])
 	case "verify":
 		return runFixturesVerify(args[1:])
 	case "-h", "--help", "help":
@@ -208,6 +210,7 @@ func runFixturesCapture(ctx context.Context, args []string) error {
 	opts := fixtures.CaptureOptions{}
 	fs.StringVar(&opts.Version, "version", version, "OpenBao version to capture")
 	fs.StringVar(&opts.Image, "image", envString("OPENBAO_IMAGE", defaultImage), "OpenBao container image")
+	fs.StringVar(&opts.PostgresImage, "postgres-image", envString("POSTGRES_IMAGE", "postgres:17-alpine"), "PostgreSQL container image for dynamic secret fixtures")
 	fs.StringVar(&opts.OutputDir, "output", envString("OUTPUT_DIR", defaultOutput), "fixture output directory")
 	fs.IntVar(&opts.PortBase, "port-base", envInt("OPENBAO_PORT_BASE", 18220), "first localhost port to use")
 	fs.StringVar(&opts.RootToken, "root-token", envString("OPENBAO_ROOT_TOKEN", "root"), "OpenBao dev root token")
@@ -217,6 +220,26 @@ func runFixturesCapture(ctx context.Context, args []string) error {
 	}
 
 	return fixtures.Capture(ctx, opts)
+}
+
+func runFixturesScenario(ctx context.Context, args []string) error {
+	version := envString("OPENBAO_VERSION", defaultOpenBAOVersion)
+	defaultOutput := filepath.Join("fixtures", "captured", "openbao-"+version, "metadata", "openbao-"+version+"-compose-scenario.json")
+
+	fs := flag.NewFlagSet("fixtures scenario", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := fixtures.ScenarioOptions{}
+	fs.StringVar(&opts.Address, "address", envString("BAO_ADDR", "http://127.0.0.1:18200"), "OpenBao API address")
+	fs.StringVar(&opts.Token, "token", envString("BAO_TOKEN", ""), "optional OpenBao token; defaults to userpass login")
+	fs.StringVar(&opts.Username, "username", "demo-admin", "userpass username when --token is empty")
+	fs.StringVar(&opts.Password, "password", "openbao-observability", "userpass password when --token is empty")
+	fs.StringVar(&opts.OutputPath, "output", defaultOutput, "scenario report output path")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	return fixtures.RunScenario(ctx, opts)
 }
 
 func runFixturesVerify(args []string) error {
@@ -419,6 +442,7 @@ commands:
   contracts verify-streams
                       verify log stream contracts
   fixtures capture    capture OpenBao Docker fixtures
+  fixtures scenario   run production-like fixture activity against OpenBao
   fixtures verify     verify captured OpenBao fixtures
   generate grafana-dashboard
                       generate Grafana dashboard JSON
@@ -444,6 +468,7 @@ func contractsUsageText() string {
 func fixturesUsageText() string {
 	return `usage:
   openbao-observability fixtures capture [flags]
+  openbao-observability fixtures scenario [flags]
   openbao-observability fixtures verify [flags]`
 }
 

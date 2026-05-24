@@ -1,5 +1,6 @@
 OPENBAO_VERSION ?= 2.5.4
 OPENBAO_IMAGE ?= quay.io/openbao/openbao:$(OPENBAO_VERSION)
+POSTGRES_IMAGE ?= postgres:17-alpine
 PROMETHEUS_IMAGE ?= prom/prometheus:v3.11.2
 OPENBAO_PORT_BASE ?= 18220
 OPENBAO_ROOT_TOKEN ?= root
@@ -13,7 +14,7 @@ LOKI_URL ?= http://127.0.0.1:13100
 DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml,contracts/dashboards/openbao-operational-logs.yaml,contracts/dashboards/openbao-audit-investigation.yaml,contracts/dashboards/openbao-auth-identity.yaml,contracts/dashboards/openbao-token-lease-lifecycle.yaml
 GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json,generated/grafana/openbao-operational-logs.json,generated/grafana/openbao-audit-investigation.json,generated/grafana/openbao-auth-identity.json,generated/grafana/openbao-token-lease-lifecycle.json
 
-.PHONY: compose-config compose-down compose-reset compose-up contracts-verify fixtures-openbao generate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
+.PHONY: compose-config compose-down compose-reset compose-up contracts-verify fixtures-openbao fixtures-scenarios generate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
 
 compose-config:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" config
@@ -62,9 +63,14 @@ fixtures-openbao:
 	$(GO) run ./cmd/openbao-observability fixtures capture \
 		--version "$(OPENBAO_VERSION)" \
 		--image "$(OPENBAO_IMAGE)" \
+		--postgres-image "$(POSTGRES_IMAGE)" \
 		--output "$(FIXTURE_DIR)" \
 		--port-base "$(OPENBAO_PORT_BASE)" \
 		--root-token "$(OPENBAO_ROOT_TOKEN)"
+
+fixtures-scenarios:
+	$(GO) run ./cmd/openbao-observability fixtures scenario \
+		--output "$(FIXTURE_DIR)/metadata/openbao-$(OPENBAO_VERSION)-compose-scenario.json"
 
 generate:
 	$(GO) run ./cmd/openbao-observability generate prometheus-rules \
