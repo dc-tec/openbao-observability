@@ -153,13 +153,20 @@ backend or application context behind the secret engine.
    openbao:secret_lease_creation_by_engine:increase15m
    ```
 
-4. Check audited database secrets engine requests.
+4. If lease creation is concentrated in one tenant, use namespace drilldown
+   without adding namespace to alert labels.
+
+   ```promql
+   topk(10, openbao:secret_lease_creation_by_engine_namespace:increase15m{secret_engine="database"})
+   ```
+
+5. Check audited database secrets engine requests.
 
    ```logql
    {log_stream="openbao.audit"} | json request_path="request.path", audit_error="error" | request_path=~"database/(config|roles|creds|static-roles|static-creds|rotate-root|rotate-role).*"
    ```
 
-5. Inspect database secrets engine configuration and roles.
+6. Inspect database secrets engine configuration and roles.
 
    ```shell
    bao secrets list -detailed -address=<openbao_address>
@@ -167,7 +174,7 @@ backend or application context behind the secret engine.
    bao read -address=<openbao_address> database/roles/<role_name>
    ```
 
-6. Check the external database directly for connection limits, authentication
+7. Check the external database directly for connection limits, authentication
    failures, lock waits, permission errors, or slow credential-management
    statements.
 

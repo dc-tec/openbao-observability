@@ -250,6 +250,10 @@ groups:
           expr: sum by (secret_engine) (increase(vault_secret_lease_creation[15m]))
           labels:
             source_prefix: vault
+        - record: openbao:secret_lease_creation_by_engine_namespace:increase15m
+          expr: sum by (namespace, secret_engine) (increase(vault_secret_lease_creation[15m]))
+          labels:
+            source_prefix: vault
         - record: openbao:pki_issue:rate5m
           expr: sum(rate(vault_pki_issue_count[5m]))
           labels:

@@ -255,6 +255,10 @@ spec:
               expr: sum by (secret_engine) (increase(openbao_secret_lease_creation[15m]))
               labels:
                 source_prefix: openbao
+            - record: openbao:secret_lease_creation_by_engine_namespace:increase15m
+              expr: sum by (namespace, secret_engine) (increase(openbao_secret_lease_creation[15m]))
+              labels:
+                source_prefix: openbao
             - record: openbao:pki_issue:rate5m
               expr: sum(rate(openbao_pki_issue_count[5m]))
               labels:

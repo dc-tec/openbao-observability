@@ -72,6 +72,8 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"expr: sum(rate(openbao_cache_hit[5m])) / clamp_min(sum(rate(openbao_cache_hit[5m])) + sum(rate(openbao_cache_miss[5m])), 0.001)",
 		"record: openbao:secret_lease_creation_by_engine:increase15m",
 		"expr: sum by (secret_engine) (increase(openbao_secret_lease_creation[15m]))",
+		"record: openbao:secret_lease_creation_by_engine_namespace:increase15m",
+		"expr: sum by (namespace, secret_engine) (increase(openbao_secret_lease_creation[15m]))",
 		"record: openbao:pki_issue:avg5m",
 		"expr: sum(rate(openbao_pki_issue_sum[5m])) / clamp_min(sum(rate(openbao_pki_issue_count[5m])), 0.001)",
 		"record: openbao:pki_issue_failure:increase15m",

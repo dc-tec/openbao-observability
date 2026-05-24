@@ -52,6 +52,7 @@ The dashboard exposes these variables:
 | -------- | ---- | ------- | --- |
 | Request ID | Textbox | `.*` | Narrow the stream to one request ID or pattern. |
 | Database mount path | Textbox | `database` | Select the database secrets engine mount path. |
+| OpenBao namespace | Textbox | `.*` | Filter namespace-aware database lease metrics. |
 | Operation | Custom | `.*` | Filter to `read`, `list`, `create`, `update`, or `delete`. |
 | Node | Textbox | `.*` | Narrow the stream to one OpenBao node label. |
 
@@ -75,6 +76,12 @@ The OpenBao `2.5.4` Prometheus fixture emits the generic operation families as
 `database_NewUser`, `database_UpdateUser`, and `database_DeleteUser`. The
 generated recording rules expose those as create, renew, and revoke dashboard
 signals.
+
+The database dynamic lease panels use `secret_lease_creation` recording rules.
+The namespace drilldown keeps only the bounded `namespace` and `secret_engine`
+dimensions. Use it to confirm whether dynamic database leases are concentrated
+in root, a tenant namespace, or an unexpected namespace before you inspect
+specific audit events.
 
 ## How to read failure panels
 
@@ -105,9 +112,10 @@ Keep this dashboard in a restricted Grafana folder.
 ## Label safety
 
 The dashboard parses request IDs, request paths, operations, and audit errors at
-query time. It does not require database role names, credential paths, lease
-IDs, request IDs, client addresses, token accessors, or entity IDs as Loki
-labels.
+query time. It uses the OpenBao namespace metric label only for bounded
+database lease drilldown. It does not require database role names, credential
+paths, lease IDs, request IDs, client addresses, token accessors, or entity IDs
+as Prometheus or Loki labels.
 
 Keep this pattern when you extend the dashboard. Database role names and mount
 paths can reveal application architecture.

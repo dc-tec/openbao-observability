@@ -515,6 +515,11 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
+							Record: recordPrefix + ":secret_lease_creation_by_engine_namespace:increase15m",
+							Expr:   "sum by (namespace, secret_engine) (increase(" + metricName(sourcePrefix, "secret_lease_creation") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
 							Record: recordPrefix + ":pki_issue:rate5m",
 							Expr:   summaryRateExpression(sourcePrefix, "pki_issue"),
 							Labels: ruleLabels(sourcePrefix),

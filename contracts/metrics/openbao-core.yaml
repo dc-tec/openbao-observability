@@ -360,7 +360,7 @@ metrics:
       - Observed as a counter in the OpenBao 2.5.4 HA/Raft fixture after issuing database dynamic credentials.
       - Labels include namespace, secret_engine, mount_point, creation_ttl, and cluster.
       - Treat mount_point and creation_ttl as advanced labels; dashboards should aggregate by secret_engine unless a drilldown needs more detail.
-      - Current fixtures only validate root-namespace behavior for this metric; non-root namespace grouping is to validate.
+      - Current fixtures validate root and team-a namespace behavior for database dynamic leases; broader nested namespace grouping remains to validate.
   - id: pki_issue
     docsName: vault.pki.issue
     prometheusName: ${p}_pki_issue
