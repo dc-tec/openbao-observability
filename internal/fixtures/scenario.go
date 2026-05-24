@@ -21,6 +21,17 @@ const (
 	auditCanaryPath         = "secret/data/observability/audit-canary"
 )
 
+var (
+	postgresCreationStatements = []string{
+		"CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';",
+		"GRANT CONNECT ON DATABASE openbao_app TO \"{{name}}\";",
+	}
+	postgresRevocationStatements = []string{}
+	postgresInvalidStatement     = []string{
+		"SELECT openbao_observability_fixture_missing_function();",
+	}
+)
+
 type ScenarioOptions struct {
 	Address    string
 	Token      string
@@ -165,6 +176,9 @@ path "secret/metadata/apps/payments/*" {
 		return err
 	}
 	if err := r.exercisePKI(ctx); err != nil {
+		return err
+	}
+	if err := r.exerciseFeatureExpectedFailures(ctx); err != nil {
 		return err
 	}
 	if err := r.exerciseExpectedFailures(ctx); err != nil {
@@ -529,6 +543,163 @@ func (r *scenarioRunner) exercisePKI(ctx context.Context) error {
 	}
 	r.addStep("revoke-pki-certificate", "pki/revoke", "success", "")
 	return nil
+}
+
+func (r *scenarioRunner) exerciseFeatureExpectedFailures(ctx context.Context) error {
+	if err := r.expectWriteError(ctx, "failed-pki-issue-invalid-domain", "pki/issue/observability-dot-local", map[string]any{
+		"common_name": "payments.unapproved.example",
+		"ttl":         "30m",
+	}); err != nil {
+		return err
+	}
+	if err := r.expectWriteError(ctx, "failed-pki-revoke-invalid-serial", "pki/revoke", map[string]any{
+		"serial_number": "not-a-valid-serial",
+	}); err != nil {
+		return err
+	}
+	if err := r.exerciseDatabaseExpectedFailures(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *scenarioRunner) exerciseDatabaseExpectedFailures(ctx context.Context) error {
+	if err := r.expectWriteError(ctx, "failed-database-initialize", "database/config/postgres-bad", map[string]any{
+		"plugin_name":    "postgresql-database-plugin",
+		"allowed_roles":  []string{"readonly"},
+		"connection_url": "postgresql://{{username}}:{{password}}@127.0.0.1:1/openbao_app?sslmode=disable",
+		"username":       fixturePostgresUser,
+		"password":       fixturePostgresPassword,
+	}); err != nil {
+		return err
+	}
+
+	if err := r.runOperation(ctx, scenarioOperation{
+		name:      "write-database-failure-create-role",
+		path:      "database/roles/failure-create",
+		operation: "write",
+		data: map[string]any{
+			"db_name":             "postgres",
+			"default_ttl":         "5m",
+			"max_ttl":             "30m",
+			"creation_statements": postgresInvalidStatement,
+		},
+	}); err != nil {
+		return err
+	}
+	if err := r.expectReadError(ctx, "failed-database-new-user", "database/creds/failure-create"); err != nil {
+		return err
+	}
+
+	renewLeaseID, err := r.issueDatabaseLease(ctx, "failure-renew", "read-database-failure-renew-credentials")
+	if err != nil {
+		return err
+	}
+	if err := r.writeDatabaseRole(ctx, "write-database-failure-renew-invalid-role", "failure-renew", postgresCreationStatements, postgresRevocationStatements, postgresInvalidStatement); err != nil {
+		return err
+	}
+	if err := r.expectLeaseRenewError(ctx, "failed-database-update-user", renewLeaseID); err != nil {
+		return err
+	}
+	if err := r.writeDatabaseRole(ctx, "write-database-failure-renew-recovery-role", "failure-renew", postgresCreationStatements, postgresRevocationStatements, nil); err != nil {
+		return err
+	}
+	if err := r.client.Sys().RevokeWithContext(ctx, renewLeaseID); err != nil {
+		r.addStep("revoke-database-failure-renew-lease", "sys/leases/revoke", "error", err.Error())
+		return fmt.Errorf("revoke database renew failure lease: %w", err)
+	}
+	r.addStep("revoke-database-failure-renew-lease", "sys/leases/revoke", "success", "")
+
+	revokeLeaseID, err := r.issueDatabaseLease(ctx, "failure-revoke", "read-database-failure-revoke-credentials")
+	if err != nil {
+		return err
+	}
+	if err := r.writeDatabaseRole(ctx, "write-database-failure-revoke-invalid-role", "failure-revoke", postgresCreationStatements, postgresInvalidStatement, nil); err != nil {
+		return err
+	}
+	if err := r.expectLeaseRevokeError(ctx, "failed-database-delete-user", revokeLeaseID); err != nil {
+		return err
+	}
+	if err := r.writeDatabaseRole(ctx, "write-database-failure-revoke-recovery-role", "failure-revoke", postgresCreationStatements, postgresRevocationStatements, nil); err != nil {
+		return err
+	}
+	if err := r.client.Sys().RevokeWithContext(ctx, revokeLeaseID); err != nil {
+		r.addStep("revoke-database-failure-revoke-lease", "sys/leases/revoke", "error", err.Error())
+		return fmt.Errorf("revoke database delete failure lease after recovery: %w", err)
+	}
+	r.addStep("revoke-database-failure-revoke-lease", "sys/leases/revoke", "success", "")
+
+	return nil
+}
+
+func (r *scenarioRunner) issueDatabaseLease(ctx context.Context, roleName, stepName string) (string, error) {
+	if err := r.writeDatabaseRole(ctx, "write-database-"+roleName+"-role", roleName, postgresCreationStatements, postgresRevocationStatements, nil); err != nil {
+		return "", err
+	}
+	secret, err := r.client.Logical().ReadWithContext(ctx, "database/creds/"+roleName)
+	if err != nil {
+		r.addStep(stepName, "database/creds/"+roleName, "error", err.Error())
+		return "", fmt.Errorf("read dynamic database credentials for %s: %w", roleName, err)
+	}
+	if secret == nil || secret.LeaseID == "" {
+		r.addStep(stepName, "database/creds/"+roleName, "error", "missing lease_id")
+		return "", fmt.Errorf("database credentials response for %s did not include a lease_id", roleName)
+	}
+	r.addStep(stepName, "database/creds/"+roleName, "success", "lease_id_present")
+	return secret.LeaseID, nil
+}
+
+func (r *scenarioRunner) writeDatabaseRole(ctx context.Context, stepName, roleName string, creationStatements, revocationStatements, renewStatements []string) error {
+	data := map[string]any{
+		"db_name":             "postgres",
+		"default_ttl":         "5m",
+		"max_ttl":             "30m",
+		"creation_statements": creationStatements,
+	}
+	if revocationStatements != nil {
+		data["revocation_statements"] = revocationStatements
+	}
+	if renewStatements != nil {
+		data["renew_statements"] = renewStatements
+	}
+	return r.runOperation(ctx, scenarioOperation{
+		name:      stepName,
+		path:      "database/roles/" + roleName,
+		operation: "write",
+		data:      data,
+	})
+}
+
+func (r *scenarioRunner) expectReadError(ctx context.Context, name, path string) error {
+	if _, err := r.client.Logical().ReadWithContext(ctx, path); err != nil {
+		r.addStep(name, path, "expected_error", "")
+		return nil
+	}
+	return fmt.Errorf("%s unexpectedly succeeded", name)
+}
+
+func (r *scenarioRunner) expectWriteError(ctx context.Context, name, path string, data map[string]any) error {
+	if _, err := r.client.Logical().WriteWithContext(ctx, path, data); err != nil {
+		r.addStep(name, path, "expected_error", "")
+		return nil
+	}
+	return fmt.Errorf("%s unexpectedly succeeded", name)
+}
+
+func (r *scenarioRunner) expectLeaseRenewError(ctx context.Context, name, leaseID string) error {
+	if _, err := r.client.Sys().RenewWithContext(ctx, leaseID, int((2 * time.Minute).Seconds())); err != nil {
+		r.addStep(name, "sys/leases/renew", "expected_error", "")
+		return nil
+	}
+	return fmt.Errorf("%s unexpectedly succeeded", name)
+}
+
+func (r *scenarioRunner) expectLeaseRevokeError(ctx context.Context, name, leaseID string) error {
+	if err := r.client.Sys().RevokeWithContext(ctx, leaseID); err != nil {
+		r.addStep(name, "sys/leases/revoke", "expected_error", "")
+		return nil
+	}
+	return fmt.Errorf("%s unexpectedly succeeded", name)
 }
 
 func (r *scenarioRunner) ensurePKIRoot(ctx context.Context) error {

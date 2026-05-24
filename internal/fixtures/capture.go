@@ -526,7 +526,7 @@ initialize "fixture-foundation" {
 
     data = {
       plugin_name     = "postgresql-database-plugin"
-      allowed_roles   = ["readonly"]
+      allowed_roles   = ["readonly", "failure-*"]
       connection_url  = "postgresql://{{username}}:{{password}}@%s:5432/openbao_app?sslmode=disable"
       username        = "%s"
       password        = "%s"

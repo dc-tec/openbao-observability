@@ -166,7 +166,7 @@ initialize "compose-foundation" {
 
     data = {
       plugin_name    = "postgresql-database-plugin"
-      allowed_roles  = ["readonly"]
+      allowed_roles  = ["readonly", "failure-*"]
       connection_url = "postgresql://{{username}}:{{password}}@postgres:5432/openbao_app?sslmode=disable"
       username       = "openbao_admin"
       password       = "openbao_admin_password"

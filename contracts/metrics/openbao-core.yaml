@@ -372,7 +372,8 @@ metrics:
     required: false
     overview: false
     notes:
-      - Source-backed by the OpenBao PKI metrics wrapper; not observed in successful OpenBao 2.5.4 fixtures.
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture after an intentional invalid-domain issue request.
+      - Source-backed by the OpenBao PKI metrics wrapper.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace and role when emitted.
   - id: pki_revoke_failure
@@ -381,7 +382,8 @@ metrics:
     required: false
     overview: false
     notes:
-      - Source-backed by the OpenBao PKI metrics wrapper; not observed in successful OpenBao 2.5.4 fixtures.
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture after an intentional invalid-serial revoke request.
+      - Source-backed by the OpenBao PKI metrics wrapper.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace when emitted.
   - id: database_initialize
@@ -422,7 +424,8 @@ metrics:
     required: false
     overview: false
     notes:
-      - Source-backed by the database plugin metrics middleware; not observed in successful OpenBao 2.5.4 fixtures.
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture after an intentional invalid PostgreSQL connection configuration.
+      - Source-backed by the database plugin metrics middleware.
       - Use this with database Initialize operation rate and operational logs to distinguish configuration issues from backend outages.
   - id: database_new_user_error
     docsName: vault.database.NewUser.error
@@ -430,7 +433,8 @@ metrics:
     required: false
     overview: false
     notes:
-      - Source-backed by the database plugin metrics middleware; not observed in successful OpenBao 2.5.4 fixtures.
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture after an intentional invalid creation statement.
+      - Source-backed by the database plugin metrics middleware.
       - This usually points to dynamic credential creation failures in the external database backend or role configuration.
   - id: database_update_user_error
     docsName: vault.database.UpdateUser.error
@@ -438,7 +442,8 @@ metrics:
     required: false
     overview: false
     notes:
-      - Source-backed by the database plugin metrics middleware; not observed in successful OpenBao 2.5.4 fixtures.
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture after an intentional invalid renewal statement.
+      - Source-backed by the database plugin metrics middleware.
       - This usually points to dynamic credential renewal failures in the external database backend or role configuration.
   - id: database_delete_user_error
     docsName: vault.database.DeleteUser.error
@@ -446,7 +451,8 @@ metrics:
     required: false
     overview: false
     notes:
-      - Source-backed by the database plugin metrics middleware; not observed in successful OpenBao 2.5.4 fixtures.
+      - Observed in the OpenBao 2.5.4 HA/Raft fixture after an intentional invalid revocation statement.
+      - Source-backed by the database plugin metrics middleware.
       - This usually points to dynamic credential revocation failures in the external database backend or role configuration.
   - id: database_pgx_initialize
     docsName: vault.database.pgx.Initialize
