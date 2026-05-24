@@ -10,6 +10,8 @@ VM-style OpenBao observability profiles.
   private all-node scrape profiles.
 - `kubernetes/audit-archive-health-scrape.yaml`: Service and ServiceMonitor
   example for scraping an audit archive health exporter.
+- `kubernetes/kind/operator-managed/`: kind validation profile for generated
+  observability artifacts against an operator-managed OpenBao cluster.
 - `kubernetes/operator-managed/`: merge patches and adoption steps for
   OpenBao clusters managed by `dc-tec/openbao-operator`.
 - `synthetic-probes/`: optional blackbox-style probe contract for SLO and

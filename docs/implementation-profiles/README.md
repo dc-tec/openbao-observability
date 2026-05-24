@@ -70,6 +70,9 @@ Use the operator-managed examples when you need patch-based `OpenBaoCluster`
 examples for active scraping, all-node scraping, declarative audit devices, and
 generated artifact adoption.
 
+Use the operator-managed kind validation profile when you need a local
+operator-managed cluster to validate this repository's generated artifacts.
+
 Use the bring-your-own-backend pattern when your organization already has a
 standard observability platform. Port the architecture, not the local demo
 stack.
@@ -89,3 +92,6 @@ stack.
   generated artifacts.
 - Use [Operator-managed OpenBao examples](../../examples/kubernetes/operator-managed/)
   when you want to adapt the contract to an existing operator-managed cluster.
+- Use [Operator-managed kind validation profile](../../examples/kubernetes/kind/operator-managed/)
+  when you want to validate generated artifacts against a local
+  operator-managed OpenBao cluster.

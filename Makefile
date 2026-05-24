@@ -8,6 +8,15 @@ FIXTURE_DIR ?= fixtures/captured/openbao-$(OPENBAO_VERSION)
 COMPOSE_FILE ?= examples/docker-compose/compose.yaml
 COMPOSE_AUDIT_ARCHIVE_FILE ?= examples/docker-compose/compose.audit-archive.yaml
 COMPOSE_PROJECT_DIR ?= examples/docker-compose
+KIND ?= kind
+KUBECTL ?= kubectl
+KIND_OPERATOR_PROFILE_DIR ?= examples/kubernetes/kind/operator-managed
+KIND_OPERATOR_CLUSTER ?= openbao-observability
+KIND_OPERATOR_NAMESPACE ?= openbao
+KIND_OPERATOR_OPENBAO_CLUSTER ?= openbao-observability
+KIND_OPERATOR_PROMETHEUS_RULE_NAMESPACE ?= monitoring
+KIND_OPERATOR_RULE_PROFILE ?= openbao-prefix
+KIND_OPERATOR_WAIT_TIMEOUT ?= 10m
 GO ?= go
 PROMTOOL ?= docker run --rm --entrypoint promtool -v "$(CURDIR):/workspace:ro" "$(PROMETHEUS_IMAGE)"
 PROMETHEUS_URL ?= http://127.0.0.1:19090
@@ -15,7 +24,7 @@ LOKI_URL ?= http://127.0.0.1:13100
 DASHBOARD_CONTRACTS ?= contracts/dashboards/openbao-overview.yaml,contracts/dashboards/openbao-ha-raft.yaml,contracts/dashboards/openbao-audit-overview.yaml,contracts/dashboards/openbao-operational-logs.yaml,contracts/dashboards/openbao-audit-investigation.yaml,contracts/dashboards/openbao-auth-identity.yaml,contracts/dashboards/openbao-token-lease-lifecycle.yaml,contracts/dashboards/openbao-database-secrets.yaml,contracts/dashboards/openbao-transit.yaml,contracts/dashboards/openbao-pki.yaml,contracts/dashboards/openbao-secret-engines-mounts.yaml,contracts/dashboards/openbao-runtime-storage.yaml,contracts/dashboards/openbao-kubernetes-platform.yaml,contracts/dashboards/openbao-slo-availability.yaml
 GENERATED_DASHBOARDS ?= generated/grafana/openbao-overview.json,generated/grafana/openbao-ha-raft.json,generated/grafana/openbao-audit-overview.json,generated/grafana/openbao-operational-logs.json,generated/grafana/openbao-audit-investigation.json,generated/grafana/openbao-auth-identity.json,generated/grafana/openbao-token-lease-lifecycle.json,generated/grafana/openbao-database-secrets.json,generated/grafana/openbao-transit.json,generated/grafana/openbao-pki.json,generated/grafana/openbao-secret-engines-mounts.json,generated/grafana/openbao-runtime-storage.json,generated/grafana/openbao-kubernetes-platform.json,generated/grafana/openbao-slo-availability.json
 
-.PHONY: compose-audit-archive-config compose-audit-archive-down compose-audit-archive-reset compose-audit-archive-up compose-config compose-down compose-reset compose-up contracts-verify docs-verify fixtures-openbao fixtures-scenarios generate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
+.PHONY: compose-audit-archive-config compose-audit-archive-down compose-audit-archive-reset compose-audit-archive-up compose-config compose-down compose-reset compose-up contracts-verify docs-verify fixtures-openbao fixtures-scenarios generate kind-operator-apply kind-operator-apply-rules kind-operator-config kind-operator-down kind-operator-up kind-operator-validate test test-fixtures test-unit validate-dashboard-queries validate-generated verify verify-live
 
 compose-config:
 	docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" config
@@ -40,6 +49,33 @@ compose-reset:
 
 compose-audit-archive-reset:
 	PROMETHEUS_CONFIG=./prometheus/prometheus.audit-archive.yml docker compose --project-directory "$(COMPOSE_PROJECT_DIR)" -f "$(COMPOSE_FILE)" -f "$(COMPOSE_AUDIT_ARCHIVE_FILE)" --profile audit-archive down --volumes
+
+kind-operator-config:
+	$(KUBECTL) kustomize "$(KIND_OPERATOR_PROFILE_DIR)"
+
+kind-operator-up:
+	$(KIND) create cluster \
+		--name "$(KIND_OPERATOR_CLUSTER)" \
+		--config "$(KIND_OPERATOR_PROFILE_DIR)/kind-config.yaml"
+
+kind-operator-apply:
+	$(KUBECTL) apply -k "$(KIND_OPERATOR_PROFILE_DIR)"
+
+kind-operator-apply-rules:
+	$(KUBECTL) -n "$(KIND_OPERATOR_PROMETHEUS_RULE_NAMESPACE)" apply -f "generated/prometheusrules/$(KIND_OPERATOR_RULE_PROFILE)/openbao-recording-rules.yaml"
+	$(KUBECTL) -n "$(KIND_OPERATOR_PROMETHEUS_RULE_NAMESPACE)" apply -f "generated/prometheusrules/$(KIND_OPERATOR_RULE_PROFILE)/openbao-alerts.yaml"
+	$(KUBECTL) -n "$(KIND_OPERATOR_PROMETHEUS_RULE_NAMESPACE)" apply -f "generated/prometheusrules/$(KIND_OPERATOR_RULE_PROFILE)/openbao-warning-alerts.yaml"
+	$(KUBECTL) -n "$(KIND_OPERATOR_PROMETHEUS_RULE_NAMESPACE)" apply -f "generated/prometheusrules/$(KIND_OPERATOR_RULE_PROFILE)/openbao-security-alerts.yaml"
+
+kind-operator-validate:
+	$(KUBECTL) get crd openbaoclusters.openbao.org
+	$(KUBECTL) -n "$(KIND_OPERATOR_NAMESPACE)" get openbaocluster "$(KIND_OPERATOR_OPENBAO_CLUSTER)"
+	$(KUBECTL) -n "$(KIND_OPERATOR_NAMESPACE)" wait --for=condition=Available "openbaocluster/$(KIND_OPERATOR_OPENBAO_CLUSTER)" --timeout="$(KIND_OPERATOR_WAIT_TIMEOUT)"
+	$(KUBECTL) -n "$(KIND_OPERATOR_NAMESPACE)" get servicemonitor -l "openbao.org/cluster=$(KIND_OPERATOR_OPENBAO_CLUSTER)"
+	$(MAKE) validate-dashboard-queries
+
+kind-operator-down:
+	$(KIND) delete cluster --name "$(KIND_OPERATOR_CLUSTER)"
 
 contracts-verify:
 	$(GO) run ./cmd/openbao-observability contracts verify \

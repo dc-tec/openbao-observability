@@ -1,0 +1,34 @@
+# Merge patch for a local validation OpenBaoCluster managed by
+# dc-tec/openbao-operator.
+#
+# This patch enables the observability shape this repository needs to validate:
+# all-node metrics, an OpenBao metric prefix, and one read replica.
+#
+# Apply with:
+# kubectl -n openbao patch openbaocluster openbao-observability --type merge \
+#   --patch-file examples/kubernetes/kind/operator-managed/openbaocluster-observability.patch.yaml
+spec:
+  telemetry:
+    metricsPrefix: openbao
+    prometheusRetentionTime: 30s
+    disableHostname: true
+  observability:
+    metrics:
+      enabled: true
+      scrapeProfile: AllNodes
+      metricsOnlyListener:
+        enabled: true
+        port: 8202
+        unauthenticatedMetricsAccess: true
+      serviceMonitor:
+        enabled: true
+        interval: 15s
+        scrapeTimeout: 10s
+        jobLabel: app.kubernetes.io/name
+        labels:
+          release: kube-prometheus-stack
+  readReplicas:
+    replicas: 1
+    service:
+      enabled: true
+      type: ClusterIP

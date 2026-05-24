@@ -181,6 +181,9 @@ For production operator-managed clusters:
 - Use [Operator-managed OpenBao examples](../../examples/kubernetes/operator-managed/)
   when you need patch-based examples for active scraping, all-node scraping,
   audit devices, and generated artifact adoption.
+- Use [Operator-managed kind validation profile](../../examples/kubernetes/kind/operator-managed/)
+  when you want to validate generated artifacts against a local
+  operator-managed OpenBao cluster.
 - Use [OpenBao Operator observability](https://dc-tec.github.io/openbao-operator/docs/user-guide/openbaocluster/configuration/observability)
   for operator-side metrics and workload telemetry configuration.
 - Use [OpenBao Operator production checklist](https://dc-tec.github.io/openbao-operator/docs/operate/production-checklist)
