@@ -141,6 +141,7 @@ make test
 | `generated/prometheusrules/openbao-recording-rules.yaml` | Prometheus Operator `PrometheusRule` artifact. |
 | `contracts/dashboards/openbao-overview.yaml` | Overview dashboard contract that consumes normalized rules. |
 | `contracts/dashboards/openbao-ha-raft.yaml` | HA/Raft dashboard contract that consumes normalized rules and validated Raft source metrics. |
+| `contracts/dashboards/openbao-audit-investigation.yaml` | Audit investigation dashboard contract that uses query-time audit fields without turning them into Loki labels. |
 | `contracts/alerts/critical.yaml` | Alert contract that maps critical alerts to runbooks. |
 | `contracts/alerts/warning.yaml` | Alert contract that maps warning alerts to runbooks. |
 

@@ -281,6 +281,7 @@ func runValidateDashboardQueries(ctx context.Context, args []string) error {
 		filepath.Join("generated", "grafana", "openbao-ha-raft.json"),
 		filepath.Join("generated", "grafana", "openbao-audit-overview.json"),
 		filepath.Join("generated", "grafana", "openbao-operational-logs.json"),
+		filepath.Join("generated", "grafana", "openbao-audit-investigation.json"),
 	}, ",")
 
 	fs := flag.NewFlagSet("validate dashboard-queries", flag.ContinueOnError)
@@ -369,6 +370,7 @@ func defaultDashboardContractPaths() []string {
 		filepath.Join("contracts", "dashboards", "openbao-ha-raft.yaml"),
 		filepath.Join("contracts", "dashboards", "openbao-audit-overview.yaml"),
 		filepath.Join("contracts", "dashboards", "openbao-operational-logs.yaml"),
+		filepath.Join("contracts", "dashboards", "openbao-audit-investigation.yaml"),
 	}
 }
 

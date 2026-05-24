@@ -75,8 +75,9 @@ func TestValidateDashboardQueries(t *testing.T) {
 	if prometheusQueries["openbao:core_active:sum"] != 1 {
 		t.Fatalf("Prometheus query count = %d, want 1", prometheusQueries["openbao:core_active:sum"])
 	}
-	if lokiQueries[`{log_stream="openbao.audit"}`] != 1 {
-		t.Fatalf("Loki query count = %d, want 1", lokiQueries[`{log_stream="openbao.audit"}`])
+	auditQuery := `{log_stream="openbao.audit"} | json request_id="request.id" | request_id=~".*"`
+	if lokiQueries[auditQuery] != 1 {
+		t.Fatalf("Loki query count = %d, want 1", lokiQueries[auditQuery])
 	}
 }
 

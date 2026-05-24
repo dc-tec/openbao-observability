@@ -49,7 +49,9 @@ func TestGenerateGrafanaDashboard(t *testing.T) {
 		`"expr": "openbao:core_active:sum"`,
 		`"expr": "openbao:autopilot_node_healthy:min"`,
 		`"legendFormat": "{{node_id}}"`,
-		`"expr": "{log_stream=\"openbao.audit\"}"`,
+		`"name": "request_id"`,
+		`"type": "textbox"`,
+		`"expr": "{log_stream=\"openbao.audit\"} | json request_id=\"request.id\" | request_id=~\"${request_id:raw}\""`,
 	} {
 		if !strings.Contains(text, fragment) {
 			t.Fatalf("generated dashboard missing %q:\n%s", fragment, text)
@@ -94,6 +96,11 @@ datasources:
   logs:
     type: loki
     uid: loki
+variables:
+  - name: request_id
+    label: Request ID
+    type: textbox
+    default: .*
 panels:
   - id: active-nodes
     title: Active nodes
@@ -125,7 +132,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.audit"}'
+    expression: '{log_stream="openbao.audit"} | json request_id="request.id" | request_id=~"${request_id:raw}"'
     grid:
       x: 0
       y: 12

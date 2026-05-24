@@ -21,6 +21,9 @@ func TestLoadDashboardContract(t *testing.T) {
 	if len(contract.Panels) != 2 {
 		t.Fatalf("panel count = %d, want 2", len(contract.Panels))
 	}
+	if len(contract.Variables) != 1 {
+		t.Fatalf("variable count = %d, want 1", len(contract.Variables))
+	}
 }
 
 func TestVerifyDashboardContract(t *testing.T) {
@@ -70,6 +73,42 @@ func TestLoadDashboardContractRejectsDuplicatePanelIDs(t *testing.T) {
 	}
 }
 
+func TestLoadDashboardContractRejectsDuplicateVariables(t *testing.T) {
+	contract := strings.Replace(baseDashboardContract(), "variables:", `variables:
+  - name: request_id
+    label: Duplicate request ID
+    type: textbox
+    default: .*
+`, 1)
+	path := writeDashboardContract(t, t.TempDir(), contract)
+
+	_, err := LoadDashboardContract(path)
+	if err == nil {
+		t.Fatal("expected duplicate variables to fail")
+	}
+	if !strings.Contains(err.Error(), "duplicate variable") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestVerifyDashboardContractAppliesVariableDefaults(t *testing.T) {
+	path := writeDashboardContract(t, t.TempDir(), baseDashboardContract())
+
+	contract, err := LoadDashboardContract(path)
+	if err != nil {
+		t.Fatalf("LoadDashboardContract returned error: %v", err)
+	}
+
+	expression := contract.ExpressionWithDefaultVariables(`{log_stream="openbao.audit"} | json request_id="request.id" | request_id=~"${request_id:raw}"`)
+	if !strings.Contains(expression, `request_id=~".*"`) {
+		t.Fatalf("expression = %q, want default variable interpolation", expression)
+	}
+
+	if err := contract.ValidateExpressions(); err != nil {
+		t.Fatalf("ValidateExpressions returned error: %v", err)
+	}
+}
+
 func writeDashboardContract(t *testing.T, dir, content string) string {
 	t.Helper()
 
@@ -96,6 +135,11 @@ datasources:
   logs:
     type: loki
     uid: loki
+variables:
+  - name: request_id
+    label: Request ID
+    type: textbox
+    default: .*
 panels:
   - id: scrape-health
     title: Scrape health
@@ -113,7 +157,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.audit"}'
+    expression: '{log_stream="openbao.audit"} | json request_id="request.id" | request_id=~"${request_id:raw}"'
     grid:
       x: 0
       y: 4

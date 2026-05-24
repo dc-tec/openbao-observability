@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/dc-tec/openbao-observability/internal/contracts"
 )
@@ -38,7 +39,7 @@ type grafanaAnnotations struct {
 }
 
 type grafanaTemplating struct {
-	List []any `json:"list"`
+	List []grafanaVariable `json:"list"`
 }
 
 type grafanaTimeRange struct {
@@ -61,6 +62,29 @@ type grafanaPanel struct {
 type grafanaDatasourceRef struct {
 	Type string `json:"type"`
 	UID  string `json:"uid"`
+}
+
+type grafanaVariable struct {
+	Current     grafanaVariableCurrent  `json:"current"`
+	Hide        int                     `json:"hide"`
+	Label       string                  `json:"label,omitempty"`
+	Name        string                  `json:"name"`
+	Options     []grafanaVariableOption `json:"options"`
+	Query       string                  `json:"query"`
+	SkipURLSync bool                    `json:"skipUrlSync"`
+	Type        string                  `json:"type"`
+}
+
+type grafanaVariableCurrent struct {
+	Selected bool   `json:"selected"`
+	Text     string `json:"text"`
+	Value    string `json:"value"`
+}
+
+type grafanaVariableOption struct {
+	Selected bool   `json:"selected"`
+	Text     string `json:"text"`
+	Value    string `json:"value"`
 }
 
 type grafanaFieldConfig struct {
@@ -157,7 +181,7 @@ func buildGrafanaDashboard(contract contracts.DashboardContract) grafanaDashboar
 		Refresh:              contract.Refresh,
 		SchemaVersion:        41,
 		Tags:                 contract.Tags,
-		Templating:           grafanaTemplating{List: []any{}},
+		Templating:           grafanaTemplating{List: buildGrafanaVariables(contract.Variables)},
 		Time: grafanaTimeRange{
 			From: contract.TimeRange.From,
 			To:   contract.TimeRange.To,
@@ -167,6 +191,46 @@ func buildGrafanaDashboard(contract contracts.DashboardContract) grafanaDashboar
 		UID:      contract.UID,
 		Version:  1,
 	}
+}
+
+func buildGrafanaVariables(variables []contracts.DashboardVariable) []grafanaVariable {
+	grafanaVariables := make([]grafanaVariable, 0, len(variables))
+	for _, variable := range variables {
+		label := variable.Label
+		if label == "" {
+			label = variable.Name
+		}
+
+		grafanaVariable := grafanaVariable{
+			Current: grafanaVariableCurrent{
+				Selected: true,
+				Text:     variable.Default,
+				Value:    variable.Default,
+			},
+			Hide:        0,
+			Label:       label,
+			Name:        variable.Name,
+			Options:     []grafanaVariableOption{},
+			Query:       variable.Default,
+			SkipURLSync: false,
+			Type:        variable.Type,
+		}
+
+		if variable.Type == "custom" {
+			grafanaVariable.Query = strings.Join(variable.Options, ",")
+			grafanaVariable.Options = make([]grafanaVariableOption, 0, len(variable.Options))
+			for _, option := range variable.Options {
+				grafanaVariable.Options = append(grafanaVariable.Options, grafanaVariableOption{
+					Selected: option == variable.Default,
+					Text:     option,
+					Value:    option,
+				})
+			}
+		}
+
+		grafanaVariables = append(grafanaVariables, grafanaVariable)
+	}
+	return grafanaVariables
 }
 
 func buildGrafanaPanel(contract contracts.DashboardContract, panel contracts.DashboardPanel, numericID int) grafanaPanel {
@@ -189,6 +253,20 @@ func buildGrafanaPanel(contract contracts.DashboardContract, panel contracts.Das
 		Title: panel.Title,
 		Type:  panel.Type,
 	}
+}
+
+func (d grafanaDashboard) variableDefaults() map[string]string {
+	defaults := map[string]string{}
+	for _, variable := range d.Templating.List {
+		value := variable.Current.Value
+		if value == "" {
+			value = variable.Current.Text
+		}
+		if value != "" {
+			defaults[variable.Name] = value
+		}
+	}
+	return defaults
 }
 
 func datasourceRef(contract contracts.DashboardContract, name string) grafanaDatasourceRef {

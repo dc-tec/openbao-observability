@@ -110,6 +110,8 @@ func (o VerifyStreamOptions) withDefaults() VerifyStreamOptions {
 			filepath.Join("contracts", "dashboards", "openbao-overview.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-ha-raft.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-audit-overview.yaml"),
+			filepath.Join("contracts", "dashboards", "openbao-operational-logs.yaml"),
+			filepath.Join("contracts", "dashboards", "openbao-audit-investigation.yaml"),
 		}
 	}
 	return o

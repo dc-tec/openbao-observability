@@ -103,6 +103,7 @@ func (o QueryValidationOptions) withDefaults() QueryValidationOptions {
 			filepath.Join("contracts", "dashboards", "openbao-ha-raft.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-audit-overview.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-operational-logs.yaml"),
+			filepath.Join("contracts", "dashboards", "openbao-audit-investigation.yaml"),
 		}
 	}
 	if len(o.GeneratedPaths) == 0 {
@@ -111,6 +112,7 @@ func (o QueryValidationOptions) withDefaults() QueryValidationOptions {
 			filepath.Join("generated", "grafana", "openbao-ha-raft.json"),
 			filepath.Join("generated", "grafana", "openbao-audit-overview.json"),
 			filepath.Join("generated", "grafana", "openbao-operational-logs.json"),
+			filepath.Join("generated", "grafana", "openbao-audit-investigation.json"),
 		}
 	}
 	if o.PrometheusURL == "" {
@@ -151,7 +153,7 @@ func loadDashboardQueries(opts QueryValidationOptions) ([]dashboardQuery, error)
 				PanelID:    panel.ID,
 				PanelTitle: panel.Title,
 				Signal:     panel.Signal,
-				Expression: panel.Expression,
+				Expression: contract.ExpressionWithDefaultVariables(panel.Expression),
 			})
 		}
 	}
@@ -164,6 +166,7 @@ func loadDashboardQueries(opts QueryValidationOptions) ([]dashboardQuery, error)
 		if err != nil {
 			return nil, err
 		}
+		variableDefaults := document.variableDefaults()
 		for _, panel := range document.Panels {
 			for _, target := range panel.Targets {
 				signal := signalFromDatasource(target.Datasource.Type)
@@ -179,7 +182,7 @@ func loadDashboardQueries(opts QueryValidationOptions) ([]dashboardQuery, error)
 					PanelID:    fmt.Sprintf("%d", panel.ID),
 					PanelTitle: panel.Title,
 					Signal:     signal,
-					Expression: target.Expr,
+					Expression: contracts.InterpolateDashboardVariables(target.Expr, variableDefaults),
 				})
 			}
 		}

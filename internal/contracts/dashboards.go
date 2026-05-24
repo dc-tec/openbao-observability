@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/prometheus/prometheus/promql/parser"
@@ -19,6 +21,7 @@ type DashboardContract struct {
 	Tags        []string             `yaml:"tags"`
 	TimeRange   DashboardTimeRange   `yaml:"timeRange"`
 	Datasources DashboardDatasources `yaml:"datasources"`
+	Variables   []DashboardVariable  `yaml:"variables"`
 	Panels      []DashboardPanel     `yaml:"panels"`
 }
 
@@ -35,6 +38,14 @@ type DashboardDatasources struct {
 type DashboardDatasource struct {
 	Type string `yaml:"type"`
 	UID  string `yaml:"uid"`
+}
+
+type DashboardVariable struct {
+	Name    string   `yaml:"name"`
+	Label   string   `yaml:"label"`
+	Type    string   `yaml:"type"`
+	Default string   `yaml:"default"`
+	Options []string `yaml:"options"`
 }
 
 type DashboardPanel struct {
@@ -60,6 +71,8 @@ type DashboardGrid struct {
 type VerifyDashboardOptions struct {
 	ContractPath string
 }
+
+var dashboardVariableNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 func LoadDashboardContract(path string) (*DashboardContract, error) {
 	content, err := os.ReadFile(path)
@@ -105,13 +118,14 @@ func (o VerifyDashboardOptions) withDefaults() VerifyDashboardOptions {
 func (c DashboardContract) ValidateExpressions() error {
 	promQLParser := parser.NewParser(parser.Options{})
 	for _, panel := range c.Panels {
+		expression := c.ExpressionWithDefaultVariables(panel.Expression)
 		switch panel.Signal {
 		case "metrics":
-			if _, err := promQLParser.ParseExpr(panel.Expression); err != nil {
+			if _, err := promQLParser.ParseExpr(expression); err != nil {
 				return fmt.Errorf("parse PromQL for dashboard panel %s: %w", panel.ID, err)
 			}
 		case "logs":
-			if !strings.Contains(panel.Expression, "{") || !strings.Contains(panel.Expression, "}") {
+			if !strings.Contains(expression, "{") || !strings.Contains(expression, "}") {
 				return fmt.Errorf("log panel %s expression must include a label selector", panel.ID)
 			}
 		default:
@@ -119,6 +133,37 @@ func (c DashboardContract) ValidateExpressions() error {
 		}
 	}
 	return nil
+}
+
+func (c DashboardContract) ExpressionWithDefaultVariables(expression string) string {
+	return InterpolateDashboardVariables(expression, c.variableDefaults())
+}
+
+func InterpolateDashboardVariables(expression string, values map[string]string) string {
+	names := make([]string, 0, len(values))
+	for name := range values {
+		names = append(names, name)
+	}
+	sort.Slice(names, func(i, j int) bool {
+		return len(names[i]) > len(names[j])
+	})
+
+	result := expression
+	for _, name := range names {
+		value := values[name]
+		result = strings.ReplaceAll(result, "${"+name+":raw}", value)
+		result = strings.ReplaceAll(result, "${"+name+"}", value)
+		result = strings.ReplaceAll(result, "$"+name, value)
+	}
+	return result
+}
+
+func (c DashboardContract) variableDefaults() map[string]string {
+	defaults := map[string]string{}
+	for _, variable := range c.Variables {
+		defaults[variable.Name] = variable.Default
+	}
+	return defaults
 }
 
 func (c DashboardContract) validateShape(path string) error {
@@ -139,6 +184,39 @@ func (c DashboardContract) validateShape(path string) error {
 	}
 	if len(c.Panels) == 0 {
 		return fmt.Errorf("dashboard contract %s has no panels", path)
+	}
+
+	seenVariables := map[string]bool{}
+	for _, variable := range c.Variables {
+		if variable.Name == "" {
+			return fmt.Errorf("dashboard contract %s has a variable without a name", path)
+		}
+		if !dashboardVariableNamePattern.MatchString(variable.Name) {
+			return fmt.Errorf("dashboard contract %s has invalid variable name %q", path, variable.Name)
+		}
+		if seenVariables[variable.Name] {
+			return fmt.Errorf("dashboard contract %s has duplicate variable %q", path, variable.Name)
+		}
+		seenVariables[variable.Name] = true
+		if variable.Type == "" {
+			return fmt.Errorf("dashboard variable %s is missing type", variable.Name)
+		}
+		switch variable.Type {
+		case "custom", "textbox":
+		default:
+			return fmt.Errorf("dashboard variable %s has unsupported type %q", variable.Name, variable.Type)
+		}
+		if variable.Default == "" {
+			return fmt.Errorf("dashboard variable %s is missing default", variable.Name)
+		}
+		if variable.Type == "custom" {
+			if len(variable.Options) == 0 {
+				return fmt.Errorf("dashboard variable %s has no options", variable.Name)
+			}
+			if !stringSet(variable.Options)[variable.Default] {
+				return fmt.Errorf("dashboard variable %s default %q is not listed in options", variable.Name, variable.Default)
+			}
+		}
 	}
 
 	seen := map[string]bool{}

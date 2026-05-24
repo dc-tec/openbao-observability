@@ -12,3 +12,4 @@ Current generated dashboards:
 - `OpenBao HA/Raft`
 - `OpenBao audit overview`
 - `OpenBao operational logs`
+- `OpenBao audit investigation`
