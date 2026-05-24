@@ -13,3 +13,4 @@ Current generated dashboards:
 - `OpenBao audit overview`
 - `OpenBao operational logs`
 - `OpenBao audit investigation`
+- `OpenBao auth and identity`

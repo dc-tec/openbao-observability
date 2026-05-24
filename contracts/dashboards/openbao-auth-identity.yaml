@@ -1,0 +1,251 @@
+version: v0.1
+status: draft
+uid: openbao-auth-identity
+title: OpenBao auth and identity
+refresh: 30s
+tags:
+  - audit
+  - auth
+  - generated
+  - identity
+  - openbao
+  - reference
+timeRange:
+  from: now-1h
+  to: now
+datasources:
+  metrics:
+    type: prometheus
+    uid: prometheus
+  logs:
+    type: loki
+    uid: loki
+variables:
+  - name: request_id
+    label: Request ID
+    type: textbox
+    default: .*
+  - name: auth_path
+    label: Auth or identity path
+    type: textbox
+    default: .*
+  - name: operation
+    label: Operation
+    type: custom
+    default: .*
+    options:
+      - .*
+      - read
+      - list
+      - create
+      - update
+      - delete
+  - name: node_id
+    label: Node
+    type: textbox
+    default: .*
+panels:
+  - id: auth-identity-events
+    title: Auth and identity events
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/.*|sys/auth/.*|identity/.*)" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    unit: short
+    description: Shows audited auth and identity events matching the selected filters over 5 minutes.
+    grid:
+      x: 0
+      y: 0
+      w: 6
+      h: 4
+  - id: login-events
+    title: Login events
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"auth/.*/login.*" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    unit: short
+    description: Shows audited auth login events over 5 minutes.
+    grid:
+      x: 6
+      y: 0
+      w: 6
+      h: 4
+  - id: token-lifecycle-events
+    title: Token lifecycle events
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"auth/token/(create|create-orphan|renew|revoke|lookup).*" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    unit: short
+    description: Shows audited token create, renew, revoke, and lookup events over 5 minutes.
+    grid:
+      x: 12
+      y: 0
+      w: 6
+      h: 4
+  - id: identity-mutations
+    title: Identity mutations
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | operation=~"${operation:raw}" | request_path=~"identity/(entity|entity-alias|group|group-alias|oidc).*" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" [5m]))'
+    unit: short
+    description: Shows audited identity entity, alias, group, and OIDC mutations over 5 minutes.
+    grid:
+      x: 18
+      y: 0
+      w: 6
+      h: 4
+  - id: auth-method-changes
+    title: Auth method changes
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | operation=~"${operation:raw}" | request_path=~"sys/auth/.*" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" [5m]))'
+    unit: short
+    description: Shows audited auth method enable, tune, and disable events over 5 minutes.
+    grid:
+      x: 0
+      y: 4
+      w: 6
+      h: 4
+  - id: userpass-management
+    title: Userpass management
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"auth/userpass/(users|config).*" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    unit: short
+    description: Shows audited userpass user and configuration changes over 5 minutes.
+    grid:
+      x: 6
+      y: 4
+      w: 6
+      h: 4
+  - id: approle-activity
+    title: AppRole activity
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"auth/approle/.*" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    unit: short
+    description: Shows audited AppRole role, role ID, secret ID, and login activity over 5 minutes.
+    grid:
+      x: 12
+      y: 4
+      w: 6
+      h: 4
+  - id: auth-identity-errors
+    title: Response errors
+    type: stat
+    signal: logs
+    datasource: logs
+    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"(auth/.*|sys/auth/.*|identity/.*)" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    unit: short
+    description: Shows audited auth and identity response entries with error fields over 5 minutes.
+    grid:
+      x: 18
+      y: 4
+      w: 6
+      h: 4
+  - id: auth-identity-events-by-node
+    title: Auth and identity by node
+    type: timeseries
+    signal: logs
+    datasource: logs
+    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/.*|sys/auth/.*|identity/.*)" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    legend: "{{node_id}}"
+    unit: short
+    description: Shows filtered auth and identity audit event volume by OpenBao node over 5 minutes.
+    grid:
+      x: 0
+      y: 8
+      w: 12
+      h: 8
+  - id: token-lifecycle-by-node
+    title: Token lifecycle by node
+    type: timeseries
+    signal: logs
+    datasource: logs
+    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"auth/token/(create|create-orphan|renew|revoke|lookup).*" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    legend: "{{node_id}}"
+    unit: short
+    description: Shows token lifecycle audit event volume by OpenBao node over 5 minutes.
+    grid:
+      x: 12
+      y: 8
+      w: 12
+      h: 8
+  - id: auth-method-events
+    title: Auth method events
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"sys/auth/.*" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    description: Shows audited auth method enable, tune, disable, and read events.
+    grid:
+      x: 0
+      y: 16
+      w: 12
+      h: 9
+  - id: login-token-events
+    title: Login and token events
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/.*/login.*|auth/token/(create|create-orphan|renew|revoke|lookup).*)" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    description: Shows audited login and token lifecycle events.
+    grid:
+      x: 12
+      y: 16
+      w: 12
+      h: 9
+  - id: userpass-approle-events
+    title: Userpass and AppRole events
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/userpass/.*|auth/approle/.*)" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    description: Shows audited userpass and AppRole configuration and use.
+    grid:
+      x: 0
+      y: 25
+      w: 12
+      h: 9
+  - id: identity-events
+    title: Identity events
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"identity/.*" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    description: Shows audited identity entity, alias, group, and OIDC events.
+    grid:
+      x: 12
+      y: 25
+      w: 12
+      h: 9
+  - id: auth-identity-error-events
+    title: Response error events
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"(auth/.*|sys/auth/.*|identity/.*)" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    description: Shows audited auth and identity response entries that include error fields.
+    grid:
+      x: 0
+      y: 34
+      w: 12
+      h: 9
+  - id: filtered-auth-identity-stream
+    title: Filtered auth and identity stream
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/.*|sys/auth/.*|identity/.*)" | request_path=~"${auth_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    description: Shows the full auth and identity audit stream after applying the selected filters.
+    grid:
+      x: 12
+      y: 34
+      w: 12
+      h: 9
