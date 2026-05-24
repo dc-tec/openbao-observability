@@ -8,7 +8,8 @@ auth, token, lease, log, or secret-engine drilldowns.
 
 Use the overview dashboard as the first stop during routine checks and
 incidents. It combines scrape health, cluster state, request health, HA/Raft
-state, runtime pressure, audit-log presence, and operational errors.
+state, runtime pressure, storage context, audit-log presence, and operational
+errors.
 
 The dashboard answers these questions:
 
@@ -17,6 +18,7 @@ The dashboard answers these questions:
 - How many nodes report as unsealed?
 - Are regular requests, login requests, or token checks getting slower?
 - Does Raft report expected peer and Autopilot health?
+- Are barrier latency, cache hit ratio, or runtime memory signals changing?
 - Are audit events and operational errors visible in Loki?
 
 ## What this dashboard is not for
@@ -31,6 +33,7 @@ Use a more specific dashboard when you need:
 - Auth and identity activity.
 - Token and lease lifecycle detail.
 - Secret engine and mount activity.
+- Runtime and storage correlation.
 - Full operational log exploration.
 
 ## Required data sources
@@ -112,6 +115,18 @@ Lease count can lag real activity because OpenBao high-cardinality usage
 gauges update on `usage_gauge_period`. Treat sudden growth as a prompt to
 open the token and lease lifecycle dashboard.
 
+## How to read storage and cache context
+
+The storage and cache row shows barrier GET latency, barrier PUT latency, cache
+hit ratio, runtime heap objects, runtime system bytes, and mount table entries.
+
+Read this row after request health. Barrier latency or cache-ratio changes are
+most useful when they line up with request latency, token-check latency, or
+operational log symptoms.
+
+Mount table entries use bounded aggregate labels in the generated recording
+rule. The overview shows inventory context without exposing mount paths.
+
 ## How to read audit and logs
 
 The bottom row shows the recent audit stream and operational log entries that
@@ -150,6 +165,8 @@ operational logs as audit evidence.
   you need request ID, path, operation, or node drilldown.
 - Use [OpenBao operational logs dashboard](./operational-logs.md) when
   operational errors need deeper log context.
+- Use [OpenBao runtime and storage dashboard](./runtime-storage.md) when
+  runtime, barrier, cache, or mount table signals need correlation.
 - Use [Understand metric prefixes and recording rules](../contracts/metric-prefix.md)
   when a metric panel is empty.
 

@@ -227,6 +227,84 @@ panels:
       y: 12
       w: 8
       h: 8
+  - id: barrier-get-latency
+    title: Barrier GET latency
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_get:avg5m
+    unit: ms
+    description: Shows average storage barrier GET latency over 5 minutes.
+    grid:
+      x: 0
+      y: 20
+      w: 4
+      h: 4
+  - id: barrier-put-latency
+    title: Barrier PUT latency
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_put:avg5m
+    unit: ms
+    description: Shows average storage barrier PUT latency over 5 minutes.
+    grid:
+      x: 4
+      y: 20
+      w: 4
+      h: 4
+  - id: cache-hit-ratio
+    title: Cache hit ratio
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:cache_hit_ratio:ratio5m
+    unit: percentunit
+    description: Shows the storage cache hit ratio over 5 minutes.
+    grid:
+      x: 8
+      y: 20
+      w: 4
+      h: 4
+  - id: heap-objects
+    title: Heap objects
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:runtime_heap_objects:max
+    unit: short
+    description: Shows the maximum observed Go heap object count.
+    grid:
+      x: 12
+      y: 20
+      w: 4
+      h: 4
+  - id: sys-bytes
+    title: System bytes
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:runtime_sys_bytes:max
+    unit: bytes
+    description: Shows the maximum observed Go runtime system memory.
+    grid:
+      x: 16
+      y: 20
+      w: 4
+      h: 4
+  - id: mount-table-entries
+    title: Mount table entries
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(openbao:core_mount_table_num_entries:max)
+    unit: short
+    description: Shows the total observed auth and logical mount table entries.
+    grid:
+      x: 20
+      y: 20
+      w: 4
+      h: 4
   - id: audit-stream
     title: Audit stream
     type: logs
@@ -236,7 +314,7 @@ panels:
     description: Shows OpenBao audit events collected by Alloy.
     grid:
       x: 0
-      y: 20
+      y: 24
       w: 12
       h: 9
   - id: operational-errors
@@ -248,6 +326,6 @@ panels:
     description: Shows OpenBao operational log entries containing error.
     grid:
       x: 12
-      y: 20
+      y: 24
       w: 12
       h: 9

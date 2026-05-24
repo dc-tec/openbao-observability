@@ -1,0 +1,388 @@
+version: v0.1
+status: draft
+uid: openbao-runtime-storage
+title: OpenBao runtime and storage
+refresh: 30s
+tags:
+  - openbao
+  - runtime
+  - storage
+  - reference
+  - generated
+timeRange:
+  from: now-1h
+  to: now
+datasources:
+  metrics:
+    type: prometheus
+    uid: prometheus
+  logs:
+    type: loki
+    uid: loki
+panels:
+  - id: request-latency
+    title: Request latency
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:core_handle_request:avg5m
+    unit: ms
+    description: Shows average regular OpenBao request handling latency over 5 minutes.
+    grid:
+      x: 0
+      y: 0
+      w: 4
+      h: 4
+  - id: token-check-latency
+    title: Token check latency
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:core_check_token:avg5m
+    unit: ms
+    description: Shows average token check latency over 5 minutes.
+    grid:
+      x: 4
+      y: 0
+      w: 4
+      h: 4
+  - id: barrier-get-latency
+    title: Barrier GET latency
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_get:avg5m
+    unit: ms
+    description: Shows average storage barrier GET latency over 5 minutes.
+    grid:
+      x: 8
+      y: 0
+      w: 4
+      h: 4
+  - id: barrier-put-latency
+    title: Barrier PUT latency
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_put:avg5m
+    unit: ms
+    description: Shows average storage barrier PUT latency over 5 minutes.
+    grid:
+      x: 12
+      y: 0
+      w: 4
+      h: 4
+  - id: cache-hit-ratio
+    title: Cache hit ratio
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:cache_hit_ratio:ratio5m
+    unit: percentunit
+    description: Shows the storage cache hit ratio over 5 minutes.
+    grid:
+      x: 16
+      y: 0
+      w: 4
+      h: 4
+  - id: goroutines
+    title: Goroutines
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: openbao:runtime_num_goroutines:max
+    unit: short
+    description: Shows the maximum observed Go goroutine count.
+    grid:
+      x: 20
+      y: 0
+      w: 4
+      h: 4
+  - id: barrier-get-rate
+    title: Barrier GET rate
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_get:rate5m
+    unit: ops
+    description: Shows storage barrier GET operations per second over 5 minutes.
+    grid:
+      x: 0
+      y: 4
+      w: 6
+      h: 7
+  - id: barrier-put-rate
+    title: Barrier PUT rate
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_put:rate5m
+    unit: ops
+    description: Shows storage barrier PUT operations per second over 5 minutes.
+    grid:
+      x: 6
+      y: 4
+      w: 6
+      h: 7
+  - id: barrier-list-rate
+    title: Barrier LIST rate
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_list:rate5m
+    unit: ops
+    description: Shows storage barrier LIST operations per second over 5 minutes.
+    grid:
+      x: 12
+      y: 4
+      w: 6
+      h: 7
+  - id: barrier-delete-rate
+    title: Barrier DELETE rate
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_delete:rate5m
+    unit: ops
+    description: Shows storage barrier DELETE operations per second over 5 minutes.
+    grid:
+      x: 18
+      y: 4
+      w: 6
+      h: 7
+  - id: barrier-get-latency-trend
+    title: Barrier GET latency
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_get:avg5m
+    unit: ms
+    description: Shows average storage barrier GET latency over time.
+    grid:
+      x: 0
+      y: 11
+      w: 6
+      h: 7
+  - id: barrier-put-latency-trend
+    title: Barrier PUT latency
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_put:avg5m
+    unit: ms
+    description: Shows average storage barrier PUT latency over time.
+    grid:
+      x: 6
+      y: 11
+      w: 6
+      h: 7
+  - id: barrier-list-latency
+    title: Barrier LIST latency
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_list:avg5m
+    unit: ms
+    description: Shows average storage barrier LIST latency over time.
+    grid:
+      x: 12
+      y: 11
+      w: 6
+      h: 7
+  - id: barrier-delete-latency
+    title: Barrier DELETE latency
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_delete:avg5m
+    unit: ms
+    description: Shows average storage barrier DELETE latency over time.
+    grid:
+      x: 18
+      y: 11
+      w: 6
+      h: 7
+  - id: cache-hit-rate
+    title: Cache hit rate
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:cache_hit:rate5m
+    unit: ops
+    description: Shows storage cache hits per second over 5 minutes.
+    grid:
+      x: 0
+      y: 18
+      w: 6
+      h: 7
+  - id: cache-miss-rate
+    title: Cache miss rate
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:cache_miss:rate5m
+    unit: ops
+    description: Shows storage cache misses per second over 5 minutes.
+    grid:
+      x: 6
+      y: 18
+      w: 6
+      h: 7
+  - id: cache-write-rate
+    title: Cache write rate
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:cache_write:rate5m
+    unit: ops
+    description: Shows storage cache writes per second over 5 minutes.
+    grid:
+      x: 12
+      y: 18
+      w: 6
+      h: 7
+  - id: cache-hit-ratio-trend
+    title: Cache hit ratio
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:cache_hit_ratio:ratio5m
+    unit: percentunit
+    description: Shows storage cache hit ratio over time.
+    grid:
+      x: 18
+      y: 18
+      w: 6
+      h: 7
+  - id: runtime-alloc-bytes
+    title: Allocated bytes
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:runtime_alloc_bytes:max
+    unit: bytes
+    description: Shows the maximum observed Go runtime allocated memory.
+    grid:
+      x: 0
+      y: 25
+      w: 6
+      h: 7
+  - id: runtime-sys-bytes
+    title: System bytes
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:runtime_sys_bytes:max
+    unit: bytes
+    description: Shows the maximum observed Go runtime system memory.
+    grid:
+      x: 6
+      y: 25
+      w: 6
+      h: 7
+  - id: runtime-heap-objects
+    title: Heap objects
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:runtime_heap_objects:max
+    unit: short
+    description: Shows the maximum observed Go heap object count.
+    grid:
+      x: 12
+      y: 25
+      w: 6
+      h: 7
+  - id: runtime-gc-pause
+    title: GC pause
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:runtime_gc_pause_ns:avg5m
+    unit: ns
+    description: Shows average Go GC pause duration over 5 minutes.
+    grid:
+      x: 18
+      y: 25
+      w: 6
+      h: 7
+  - id: runtime-total-gc-pause
+    title: Total GC pause
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:runtime_total_gc_pause_ns:max
+    unit: ns
+    description: Shows the maximum observed total Go GC pause time.
+    grid:
+      x: 0
+      y: 32
+      w: 8
+      h: 7
+  - id: runtime-total-gc-runs
+    title: Total GC runs
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:runtime_total_gc_runs:max
+    unit: short
+    description: Shows the maximum observed total Go GC run count.
+    grid:
+      x: 8
+      y: 32
+      w: 8
+      h: 7
+  - id: barrier-encryptions
+    title: Barrier encryptions
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:barrier_estimated_encryptions:increase15m
+    legend: "term {{term}}"
+    unit: short
+    description: Shows estimated barrier encryptions by barrier term over 15 minutes.
+    grid:
+      x: 16
+      y: 32
+      w: 8
+      h: 7
+  - id: mount-table-entries
+    title: Mount table entries
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:core_mount_table_num_entries:max
+    legend: "{{type}} local={{local}}"
+    unit: short
+    description: Shows auth and logical mount table entries by bounded labels.
+    grid:
+      x: 0
+      y: 39
+      w: 12
+      h: 7
+  - id: mount-table-size
+    title: Mount table size
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: openbao:core_mount_table_size:max
+    legend: "{{type}} local={{local}}"
+    unit: bytes
+    description: Shows auth and logical mount table size by bounded labels.
+    grid:
+      x: 12
+      y: 39
+      w: 12
+      h: 7
+  - id: runtime-storage-logs
+    title: Runtime and storage logs
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="openbao.operational"} |~ "(?i)storage|barrier|cache|runtime|gc|memory"'
+    description: Shows OpenBao operational logs related to storage, cache, runtime, and memory.
+    grid:
+      x: 0
+      y: 46
+      w: 24
+      h: 9
