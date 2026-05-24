@@ -63,6 +63,22 @@ metrics:
     notes:
       - Observed as a gauge in OpenBao 2.5.4 fixtures and HA/Raft captures.
       - Used as a request pressure indicator.
+  - id: core_mount_table_num_entries
+    docsName: vault.core.mount_table.num_entries
+    prometheusName: ${p}_core_mount_table_num_entries
+    required: true
+    overview: false
+    notes:
+      - Observed with cluster, local, and type labels in OpenBao 2.5.4 fixtures.
+      - Type and local are bounded labels suitable for aggregate mount inventory panels.
+  - id: core_mount_table_size
+    docsName: vault.core.mount_table.size
+    prometheusName: ${p}_core_mount_table_size
+    required: true
+    overview: false
+    notes:
+      - Observed with cluster, local, and type labels in OpenBao 2.5.4 fixtures.
+      - Use as a coarse mount-table size signal, not as mount-path inventory.
   - id: raft_peers
     docsName: vault.raft.peers
     prometheusName: ${p}_raft_peers
@@ -214,3 +230,112 @@ metrics:
     overview: true
     notes:
       - Observed without a cluster label in OpenBao 2.5.4 dev mode.
+  - id: runtime_alloc_bytes
+    docsName: vault.runtime.alloc_bytes
+    prometheusName: ${p}_runtime_alloc_bytes
+    required: true
+    overview: false
+    notes:
+      - Observed as an unlabeled gauge in OpenBao 2.5.4 fixtures.
+      - Use with runtime_sys_bytes and runtime_heap_objects to interpret memory pressure.
+  - id: runtime_heap_objects
+    docsName: vault.runtime.heap_objects
+    prometheusName: ${p}_runtime_heap_objects
+    required: true
+    overview: true
+    notes:
+      - Observed as an unlabeled gauge in OpenBao 2.5.4 fixtures.
+  - id: runtime_sys_bytes
+    docsName: vault.runtime.sys_bytes
+    prometheusName: ${p}_runtime_sys_bytes
+    required: true
+    overview: true
+    notes:
+      - Observed as an unlabeled gauge in OpenBao 2.5.4 fixtures.
+  - id: runtime_gc_pause_ns
+    docsName: vault.runtime.gc_pause_ns
+    prometheusName: ${p}_runtime_gc_pause_ns
+    required: true
+    overview: false
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+      - Quantile samples can be NaN in quiet HA/Raft captures; generated rules use sum and count.
+  - id: runtime_total_gc_pause_ns
+    docsName: vault.runtime.total_gc_pause_ns
+    prometheusName: ${p}_runtime_total_gc_pause_ns
+    required: true
+    overview: true
+    notes:
+      - Observed as an unlabeled gauge in OpenBao 2.5.4 fixtures.
+  - id: runtime_total_gc_runs
+    docsName: vault.runtime.total_gc_runs
+    prometheusName: ${p}_runtime_total_gc_runs
+    required: true
+    overview: false
+    notes:
+      - Observed as an unlabeled gauge in OpenBao 2.5.4 fixtures.
+  - id: barrier_get
+    docsName: vault.barrier.get
+    prometheusName: ${p}_barrier_get
+    required: true
+    overview: true
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+      - Barrier read latency can explain request and token-check latency.
+  - id: barrier_put
+    docsName: vault.barrier.put
+    prometheusName: ${p}_barrier_put
+    required: true
+    overview: true
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+      - Barrier write latency can explain write-heavy request pressure.
+  - id: barrier_list
+    docsName: vault.barrier.list
+    prometheusName: ${p}_barrier_list
+    required: true
+    overview: false
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+  - id: barrier_list_page
+    docsName: vault.barrier.list_page
+    prometheusName: ${p}_barrier_list_page
+    required: true
+    overview: false
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+  - id: barrier_delete
+    docsName: vault.barrier.delete
+    prometheusName: ${p}_barrier_delete
+    required: true
+    overview: false
+    notes:
+      - Observed as a summary in OpenBao 2.5.4 fixtures.
+  - id: barrier_estimated_encryptions
+    docsName: vault.barrier.estimated_encryptions
+    prometheusName: ${p}_barrier_estimated_encryptions
+    required: true
+    overview: false
+    notes:
+      - Observed as a counter with a term label in OpenBao 2.5.4 fixtures.
+  - id: cache_hit
+    docsName: vault.cache.hit
+    prometheusName: ${p}_cache_hit
+    required: true
+    overview: true
+    notes:
+      - Observed as a counter in OpenBao 2.5.4 fixtures.
+  - id: cache_miss
+    docsName: vault.cache.miss
+    prometheusName: ${p}_cache_miss
+    required: true
+    overview: true
+    notes:
+      - Observed as a counter in OpenBao 2.5.4 fixtures.
+  - id: cache_write
+    docsName: vault.cache.write
+    prometheusName: ${p}_cache_write
+    required: true
+    overview: false
+    notes:
+      - Observed as a counter in OpenBao 2.5.4 fixtures.

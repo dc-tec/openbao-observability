@@ -48,6 +48,8 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"expr: sum(rate(openbao_core_check_token_sum[5m])) / clamp_min(sum(rate(openbao_core_check_token_count[5m])), 0.001)",
 		"record: openbao:core_in_flight_requests:max",
 		"expr: max(openbao_core_in_flight_requests)",
+		"record: openbao:core_mount_table_num_entries:max",
+		"expr: max by (local, type) (openbao_core_mount_table_num_entries)",
 		"record: openbao:raft_peers:max",
 		"expr: max(openbao_raft_peers) or count(count by (peer_id) (openbao_raft_storage_stats_commit_index))",
 		"record: openbao:autopilot_node_healthy:min",
@@ -62,6 +64,12 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"expr: sum by (auth_method) (increase(openbao_token_creation[15m]))",
 		"record: openbao:token_lookup:avg5m",
 		"expr: sum(rate(openbao_token_lookup_sum[5m])) / clamp_min(sum(rate(openbao_token_lookup_count[5m])), 0.001)",
+		"record: openbao:runtime_heap_objects:max",
+		"expr: max(openbao_runtime_heap_objects)",
+		"record: openbao:barrier_get:avg5m",
+		"expr: sum(rate(openbao_barrier_get_sum[5m])) / clamp_min(sum(rate(openbao_barrier_get_count[5m])), 0.001)",
+		"record: openbao:cache_hit_ratio:ratio5m",
+		"expr: sum(rate(openbao_cache_hit[5m])) / clamp_min(sum(rate(openbao_cache_hit[5m])) + sum(rate(openbao_cache_miss[5m])), 0.001)",
 		"source_prefix: openbao",
 	}
 	for _, fragment := range required {

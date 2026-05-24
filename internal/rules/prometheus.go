@@ -250,6 +250,16 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
+							Record: recordPrefix + ":core_mount_table_num_entries:max",
+							Expr:   "max by (local, type) (" + metricName(sourcePrefix, "core_mount_table_num_entries") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":core_mount_table_size:max",
+							Expr:   "max by (local, type) (" + metricName(sourcePrefix, "core_mount_table_size") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
 							Record: recordPrefix + ":raft_peers:max",
 							Expr:   raftPeerCountExpression(sourcePrefix),
 							Labels: ruleLabels(sourcePrefix),
@@ -389,6 +399,111 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Expr:   "max(" + metricName(sourcePrefix, "runtime_num_goroutines") + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
+						{
+							Record: recordPrefix + ":runtime_alloc_bytes:max",
+							Expr:   "max(" + metricName(sourcePrefix, "runtime_alloc_bytes") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":runtime_heap_objects:max",
+							Expr:   "max(" + metricName(sourcePrefix, "runtime_heap_objects") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":runtime_sys_bytes:max",
+							Expr:   "max(" + metricName(sourcePrefix, "runtime_sys_bytes") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":runtime_gc_pause_ns:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "runtime_gc_pause_ns"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":runtime_total_gc_pause_ns:max",
+							Expr:   "max(" + metricName(sourcePrefix, "runtime_total_gc_pause_ns") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":runtime_total_gc_runs:max",
+							Expr:   "max(" + metricName(sourcePrefix, "runtime_total_gc_runs") + ")",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":barrier_get:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "barrier_get"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":barrier_get:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "barrier_get"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":barrier_put:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "barrier_put"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":barrier_put:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "barrier_put"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":barrier_list:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "barrier_list"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":barrier_list:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "barrier_list"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":barrier_list_page:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "barrier_list_page"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":barrier_list_page:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "barrier_list_page"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":barrier_delete:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "barrier_delete"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":barrier_delete:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "barrier_delete"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":barrier_estimated_encryptions:increase15m",
+							Expr:   "sum by (term) (increase(" + metricName(sourcePrefix, "barrier_estimated_encryptions") + "[15m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":cache_hit:rate5m",
+							Expr:   "sum(rate(" + metricName(sourcePrefix, "cache_hit") + "[5m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":cache_miss:rate5m",
+							Expr:   "sum(rate(" + metricName(sourcePrefix, "cache_miss") + "[5m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":cache_write:rate5m",
+							Expr:   "sum(rate(" + metricName(sourcePrefix, "cache_write") + "[5m]))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":cache_hit_ratio:ratio5m",
+							Expr:   cacheHitRatioExpression(sourcePrefix),
+							Labels: ruleLabels(sourcePrefix),
+						},
 					},
 				},
 			},
@@ -477,6 +592,12 @@ func summaryRateExpression(sourcePrefix, id string) string {
 
 func summaryAverageExpression(sourcePrefix, id string) string {
 	return "sum(rate(" + metricName(sourcePrefix, id+"_sum") + "[5m])) / clamp_min(sum(rate(" + metricName(sourcePrefix, id+"_count") + "[5m])), 0.001)"
+}
+
+func cacheHitRatioExpression(sourcePrefix string) string {
+	hits := "sum(rate(" + metricName(sourcePrefix, "cache_hit") + "[5m]))"
+	misses := "sum(rate(" + metricName(sourcePrefix, "cache_miss") + "[5m]))"
+	return hits + " / clamp_min(" + hits + " + " + misses + ", 0.001)"
 }
 
 func validatePromQL(document prometheusRule) error {

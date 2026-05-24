@@ -59,6 +59,12 @@ stable across deployments.
 | Lease count | `vault_expire_num_leases` | `openbao_expire_num_leases` | `openbao:expire_num_leases:max` |
 | Irrevocable leases | `vault_expire_num_irrevocable_leases` | `openbao_expire_num_irrevocable_leases` | `openbao:expire_num_irrevocable_leases:max` |
 | Goroutines | `vault_runtime_num_goroutines` | `openbao_runtime_num_goroutines` | `openbao:runtime_num_goroutines:max` |
+| Heap objects | `vault_runtime_heap_objects` | `openbao_runtime_heap_objects` | `openbao:runtime_heap_objects:max` |
+| System bytes | `vault_runtime_sys_bytes` | `openbao_runtime_sys_bytes` | `openbao:runtime_sys_bytes:max` |
+| Barrier GET latency | `vault_barrier_get` | `openbao_barrier_get` | `openbao:barrier_get:avg5m` |
+| Barrier PUT latency | `vault_barrier_put` | `openbao_barrier_put` | `openbao:barrier_put:avg5m` |
+| Cache hit ratio | `vault_cache_hit`, `vault_cache_miss` | `openbao_cache_hit`, `openbao_cache_miss` | `openbao:cache_hit_ratio:ratio5m` |
+| Mount table entries | `vault_core_mount_table_num_entries` | `openbao_core_mount_table_num_entries` | `openbao:core_mount_table_num_entries:max` |
 | Raft peer count | `vault_raft_peers` | `openbao_raft_peers` | `openbao:raft_peers:max` |
 | Autopilot health | `vault_autopilot_healthy` | `openbao_autopilot_healthy` | `openbao:autopilot_healthy:max` |
 
@@ -102,6 +108,8 @@ vault_core_active
 vault_core_unsealed
 vault_audit_log_request_failure
 vault_runtime_num_goroutines
+vault_barrier_get
+vault_cache_hit
 ```
 
 For an `openbao`-prefixed deployment, replace `vault_` with `openbao_`.

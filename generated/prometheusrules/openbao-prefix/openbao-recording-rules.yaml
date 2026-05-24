@@ -43,6 +43,14 @@ spec:
               expr: max(openbao_core_in_flight_requests)
               labels:
                 source_prefix: openbao
+            - record: openbao:core_mount_table_num_entries:max
+              expr: max by (local, type) (openbao_core_mount_table_num_entries)
+              labels:
+                source_prefix: openbao
+            - record: openbao:core_mount_table_size:max
+              expr: max by (local, type) (openbao_core_mount_table_size)
+              labels:
+                source_prefix: openbao
             - record: openbao:raft_peers:max
               expr: max(openbao_raft_peers) or count(count by (peer_id) (openbao_raft_storage_stats_commit_index))
               labels:
@@ -153,5 +161,89 @@ spec:
                 source_prefix: openbao
             - record: openbao:runtime_num_goroutines:max
               expr: max(openbao_runtime_num_goroutines)
+              labels:
+                source_prefix: openbao
+            - record: openbao:runtime_alloc_bytes:max
+              expr: max(openbao_runtime_alloc_bytes)
+              labels:
+                source_prefix: openbao
+            - record: openbao:runtime_heap_objects:max
+              expr: max(openbao_runtime_heap_objects)
+              labels:
+                source_prefix: openbao
+            - record: openbao:runtime_sys_bytes:max
+              expr: max(openbao_runtime_sys_bytes)
+              labels:
+                source_prefix: openbao
+            - record: openbao:runtime_gc_pause_ns:avg5m
+              expr: sum(rate(openbao_runtime_gc_pause_ns_sum[5m])) / clamp_min(sum(rate(openbao_runtime_gc_pause_ns_count[5m])), 0.001)
+              labels:
+                source_prefix: openbao
+            - record: openbao:runtime_total_gc_pause_ns:max
+              expr: max(openbao_runtime_total_gc_pause_ns)
+              labels:
+                source_prefix: openbao
+            - record: openbao:runtime_total_gc_runs:max
+              expr: max(openbao_runtime_total_gc_runs)
+              labels:
+                source_prefix: openbao
+            - record: openbao:barrier_get:rate5m
+              expr: sum(rate(openbao_barrier_get_count[5m]))
+              labels:
+                source_prefix: openbao
+            - record: openbao:barrier_get:avg5m
+              expr: sum(rate(openbao_barrier_get_sum[5m])) / clamp_min(sum(rate(openbao_barrier_get_count[5m])), 0.001)
+              labels:
+                source_prefix: openbao
+            - record: openbao:barrier_put:rate5m
+              expr: sum(rate(openbao_barrier_put_count[5m]))
+              labels:
+                source_prefix: openbao
+            - record: openbao:barrier_put:avg5m
+              expr: sum(rate(openbao_barrier_put_sum[5m])) / clamp_min(sum(rate(openbao_barrier_put_count[5m])), 0.001)
+              labels:
+                source_prefix: openbao
+            - record: openbao:barrier_list:rate5m
+              expr: sum(rate(openbao_barrier_list_count[5m]))
+              labels:
+                source_prefix: openbao
+            - record: openbao:barrier_list:avg5m
+              expr: sum(rate(openbao_barrier_list_sum[5m])) / clamp_min(sum(rate(openbao_barrier_list_count[5m])), 0.001)
+              labels:
+                source_prefix: openbao
+            - record: openbao:barrier_list_page:rate5m
+              expr: sum(rate(openbao_barrier_list_page_count[5m]))
+              labels:
+                source_prefix: openbao
+            - record: openbao:barrier_list_page:avg5m
+              expr: sum(rate(openbao_barrier_list_page_sum[5m])) / clamp_min(sum(rate(openbao_barrier_list_page_count[5m])), 0.001)
+              labels:
+                source_prefix: openbao
+            - record: openbao:barrier_delete:rate5m
+              expr: sum(rate(openbao_barrier_delete_count[5m]))
+              labels:
+                source_prefix: openbao
+            - record: openbao:barrier_delete:avg5m
+              expr: sum(rate(openbao_barrier_delete_sum[5m])) / clamp_min(sum(rate(openbao_barrier_delete_count[5m])), 0.001)
+              labels:
+                source_prefix: openbao
+            - record: openbao:barrier_estimated_encryptions:increase15m
+              expr: sum by (term) (increase(openbao_barrier_estimated_encryptions[15m]))
+              labels:
+                source_prefix: openbao
+            - record: openbao:cache_hit:rate5m
+              expr: sum(rate(openbao_cache_hit[5m]))
+              labels:
+                source_prefix: openbao
+            - record: openbao:cache_miss:rate5m
+              expr: sum(rate(openbao_cache_miss[5m]))
+              labels:
+                source_prefix: openbao
+            - record: openbao:cache_write:rate5m
+              expr: sum(rate(openbao_cache_write[5m]))
+              labels:
+                source_prefix: openbao
+            - record: openbao:cache_hit_ratio:ratio5m
+              expr: sum(rate(openbao_cache_hit[5m])) / clamp_min(sum(rate(openbao_cache_hit[5m])) + sum(rate(openbao_cache_miss[5m])), 0.001)
               labels:
                 source_prefix: openbao

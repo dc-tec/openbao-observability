@@ -79,6 +79,10 @@ Examples:
 | Lease count | `openbao:expire_num_leases:max` |
 | Token count | `openbao:token_count:max30m` |
 | Raft peer count | `openbao:raft_peers:max` |
+| Runtime heap objects | `openbao:runtime_heap_objects:max` |
+| Barrier read latency | `openbao:barrier_get:avg5m` |
+| Cache hit ratio | `openbao:cache_hit_ratio:ratio5m` |
+| Mount table entries | `openbao:core_mount_table_num_entries:max` |
 
 Use [Understand metric prefixes and recording rules](../contracts/metric-prefix.md)
 when you need the full prefix and artifact mapping.
@@ -134,6 +138,8 @@ make verify
 - Grouping by `mount_point`, `policy`, request path, or token metadata without
   a label review.
 - Expecting active-node scraping to show every standby or follower signal.
+- Reading barrier or cache metrics without request latency, token checks, and
+  storage context.
 - Treating an empty panel as an incident before checking source prefix, scrape
   profile, and recording rule deployment.
 - Writing dashboards directly against source metrics when a normalized rule
