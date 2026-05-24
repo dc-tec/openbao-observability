@@ -123,3 +123,55 @@ spec:
                 description: OpenBao database credential create, renew, or revoke latency is more than three times its recent baseline while database operations are active.
                 runbook_url: docs/runbooks/secret-engine-feature-warnings.md
                 summary: OpenBao database credential operation latency is elevated
+            - alert: OpenBaoKubernetesPodNotReady
+              expr: min by (namespace, pod) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
+              for: 10m
+              labels:
+                component: kubernetes
+                severity: warning
+                signal: platform
+                source_prefix: vault
+                subsystem: workload
+              annotations:
+                description: Kubernetes reports an OpenBao workload container as not ready for at least 10 minutes.
+                runbook_url: docs/runbooks/kubernetes-platform-health.md
+                summary: OpenBao Kubernetes pod is not ready
+            - alert: OpenBaoKubernetesPodRestartsIncreasing
+              expr: sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total{pod=~"openbao.*",container=~"openbao|bao"}[15m])) > 0
+              for: 5m
+              labels:
+                component: kubernetes
+                severity: warning
+                signal: platform
+                source_prefix: vault
+                subsystem: workload
+              annotations:
+                description: Kubernetes reports OpenBao workload container restarts in the last 15 minutes.
+                runbook_url: docs/runbooks/kubernetes-platform-health.md
+                summary: OpenBao Kubernetes pod restarted
+            - alert: OpenBaoKubernetesNodePressure
+              expr: max by (node, condition) (kube_node_status_condition{condition=~"DiskPressure|MemoryPressure|PIDPressure",status="true"}) == 1
+              for: 10m
+              labels:
+                component: kubernetes
+                severity: warning
+                signal: platform
+                source_prefix: vault
+                subsystem: node
+              annotations:
+                description: Kubernetes reports node pressure that can disrupt OpenBao scheduling, storage, or runtime behavior.
+                runbook_url: docs/runbooks/kubernetes-platform-health.md
+                summary: Kubernetes node pressure may affect OpenBao
+            - alert: OpenBaoLogCollectorTargetDown
+              expr: min_over_time(up{job=~".*(alloy|grafana-alloy|promtail).*"}[10m]) == 0
+              for: 10m
+              labels:
+                component: collector
+                severity: warning
+                signal: platform
+                source_prefix: vault
+                subsystem: logs
+              annotations:
+                description: Prometheus reports a log collector scrape target as down, which can break OpenBao log and audit-log exploration.
+                runbook_url: docs/runbooks/kubernetes-platform-health.md
+                summary: OpenBao log collector scrape target is down

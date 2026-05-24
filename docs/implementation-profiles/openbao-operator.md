@@ -175,6 +175,9 @@ For production operator-managed clusters:
 - Use [OpenBao Operator integration contract](./openbao-operator-integration-contract.md)
   when you need the concrete resource and label contract for operator-managed
   OpenBao clusters.
+- Use [OpenBao Kubernetes platform dashboard](../dashboards/kubernetes-platform.md)
+  when you need pod, PVC, node, collector, and Kubernetes event context around
+  an operator-managed OpenBao workload.
 - Use [Operator-managed OpenBao examples](../../examples/kubernetes/operator-managed/)
   when you need patch-based examples for active scraping, all-node scraping,
   audit devices, and generated artifact adoption.

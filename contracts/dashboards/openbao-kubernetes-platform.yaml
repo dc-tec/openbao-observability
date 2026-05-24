@@ -1,0 +1,225 @@
+version: v0.1
+status: draft
+uid: openbao-kubernetes-platform
+title: OpenBao Kubernetes platform
+refresh: 30s
+tags:
+  - generated
+  - kubernetes
+  - openbao
+  - platform
+  - reference
+timeRange:
+  from: now-1h
+  to: now
+datasources:
+  metrics:
+    type: prometheus
+    uid: prometheus
+  logs:
+    type: loki
+    uid: loki
+variables:
+  - name: namespace
+    label: Namespace
+    type: textbox
+    default: .*
+  - name: pod
+    label: Pod
+    type: textbox
+    default: openbao.*
+  - name: container
+    label: Container
+    type: textbox
+    default: openbao|bao
+  - name: pvc
+    label: PVC
+    type: textbox
+    default: .*(openbao|bao|audit|data).*
+  - name: node
+    label: Node
+    type: textbox
+    default: .*
+  - name: openbao_job
+    label: OpenBao scrape job
+    type: textbox
+    default: openbao.*
+  - name: collector_job
+    label: Collector scrape job
+    type: textbox
+    default: .*(alloy|grafana-alloy|promtail).*
+panels:
+  - id: ready-containers
+    title: Ready containers
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(kube_pod_container_status_ready{namespace=~"${namespace:raw}",pod=~"${pod:raw}",container=~"${container:raw}"})
+    unit: short
+    description: Shows OpenBao workload containers that Kubernetes reports as ready.
+    grid:
+      x: 0
+      y: 0
+      w: 4
+      h: 4
+  - id: unready-containers
+    title: Unready containers
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(1 - kube_pod_container_status_ready{namespace=~"${namespace:raw}",pod=~"${pod:raw}",container=~"${container:raw}"})
+    unit: short
+    description: Shows OpenBao workload containers that Kubernetes reports as not ready.
+    grid:
+      x: 4
+      y: 0
+      w: 4
+      h: 4
+  - id: container-restarts
+    title: Restarts
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: sum(increase(kube_pod_container_status_restarts_total{namespace=~"${namespace:raw}",pod=~"${pod:raw}",container=~"${container:raw}"}[15m]))
+    unit: short
+    description: Shows OpenBao workload container restarts over 15 minutes.
+    grid:
+      x: 8
+      y: 0
+      w: 4
+      h: 4
+  - id: openbao-scrape-health
+    title: OpenBao scrape health
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: min(up{job=~"${openbao_job:raw}"})
+    unit: none
+    description: Shows whether OpenBao scrape targets are healthy for the selected Prometheus job.
+    grid:
+      x: 12
+      y: 0
+      w: 4
+      h: 4
+  - id: collector-scrape-health
+    title: Collector scrape health
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: min(up{job=~"${collector_job:raw}"})
+    unit: none
+    description: Shows whether the log collector scrape target is healthy for the selected Prometheus job.
+    grid:
+      x: 16
+      y: 0
+      w: 4
+      h: 4
+  - id: audit-pvc-free
+    title: Audit PVC free
+    type: stat
+    signal: metrics
+    datasource: metrics
+    expression: 100 * min(kubelet_volume_stats_available_bytes{namespace=~"${namespace:raw}",persistentvolumeclaim=~"${pvc:raw}"}) / min(kubelet_volume_stats_capacity_bytes{namespace=~"${namespace:raw}",persistentvolumeclaim=~"${pvc:raw}"})
+    unit: percent
+    description: Shows the lowest matching OpenBao audit or data PVC free percentage.
+    grid:
+      x: 20
+      y: 0
+      w: 4
+      h: 4
+  - id: readiness-by-pod
+    title: Readiness by pod
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: min by (namespace, pod) (kube_pod_container_status_ready{namespace=~"${namespace:raw}",pod=~"${pod:raw}",container=~"${container:raw}"})
+    legend: "{{namespace}}/{{pod}}"
+    unit: none
+    description: Shows OpenBao container readiness by pod.
+    grid:
+      x: 0
+      y: 4
+      w: 8
+      h: 8
+  - id: restarts-by-pod
+    title: Restarts by pod
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total{namespace=~"${namespace:raw}",pod=~"${pod:raw}",container=~"${container:raw}"}[15m]))
+    legend: "{{namespace}}/{{pod}}"
+    unit: short
+    description: Shows OpenBao workload container restarts by pod over 15 minutes.
+    grid:
+      x: 8
+      y: 4
+      w: 8
+      h: 8
+  - id: node-pressure
+    title: Node pressure
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: max by (node, condition) (kube_node_status_condition{node=~"${node:raw}",condition=~"DiskPressure|MemoryPressure|PIDPressure",status="true"})
+    legend: "{{node}} {{condition}}"
+    unit: none
+    description: Shows Kubernetes node pressure conditions that can affect OpenBao pods.
+    grid:
+      x: 16
+      y: 4
+      w: 8
+      h: 8
+  - id: cpu-by-pod
+    title: CPU by pod
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: sum by (namespace, pod) (rate(container_cpu_usage_seconds_total{namespace=~"${namespace:raw}",pod=~"${pod:raw}",container=~"${container:raw}"}[5m]))
+    legend: "{{namespace}}/{{pod}}"
+    unit: cores
+    description: Shows OpenBao pod CPU usage in cores over 5 minutes.
+    grid:
+      x: 0
+      y: 12
+      w: 8
+      h: 8
+  - id: memory-by-pod
+    title: Memory by pod
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: max by (namespace, pod) (container_memory_working_set_bytes{namespace=~"${namespace:raw}",pod=~"${pod:raw}",container=~"${container:raw}"})
+    legend: "{{namespace}}/{{pod}}"
+    unit: bytes
+    description: Shows OpenBao pod memory working set by pod.
+    grid:
+      x: 8
+      y: 12
+      w: 8
+      h: 8
+  - id: pvc-free-by-claim
+    title: PVC free by claim
+    type: timeseries
+    signal: metrics
+    datasource: metrics
+    expression: 100 * min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes{namespace=~"${namespace:raw}",persistentvolumeclaim=~"${pvc:raw}"}) / min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{namespace=~"${namespace:raw}",persistentvolumeclaim=~"${pvc:raw}"})
+    legend: "{{namespace}}/{{persistentvolumeclaim}}"
+    unit: percent
+    description: Shows free space percentage for matching OpenBao audit or data PVCs.
+    grid:
+      x: 16
+      y: 12
+      w: 8
+      h: 8
+  - id: platform-events
+    title: Platform events
+    type: logs
+    signal: logs
+    datasource: logs
+    expression: '{log_stream="platform.kubernetes", namespace=~"${namespace:raw}", pod=~"${pod:raw}"} |~ "(?i)(warning|failed|unhealthy|backoff|evict|pressure|probe)"'
+    description: Shows warning-style Kubernetes platform events for matching OpenBao pods when collected into Loki.
+    grid:
+      x: 0
+      y: 20
+      w: 24
+      h: 9

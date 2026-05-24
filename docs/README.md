@@ -60,6 +60,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [OpenBao database secrets dashboard](./dashboards/database-secrets.md)
 - [OpenBao secret engines and mounts dashboard](./dashboards/secret-engines-mounts.md)
 - [OpenBao runtime and storage dashboard](./dashboards/runtime-storage.md)
+- [OpenBao Kubernetes platform dashboard](./dashboards/kubernetes-platform.md)
 
 ## Reference
 
@@ -84,6 +85,7 @@ Use these runbooks when the generated alert rules fire:
 - [Irrevocable leases present](./runbooks/irrevocable-leases.md)
 - [Runtime and storage warnings](./runbooks/runtime-storage-warnings.md)
 - [Secret engine feature warnings](./runbooks/secret-engine-feature-warnings.md)
+- [Kubernetes platform health](./runbooks/kubernetes-platform-health.md)
 - [Security audit detections](./runbooks/security-audit-detections.md)
 
 Do not put implementation plans, work notes, or contributor-only design notes

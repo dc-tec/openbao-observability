@@ -128,6 +128,54 @@ alerts:
     labels:
       component: secret-engines
       subsystem: database
+  - id: OpenBaoKubernetesPodNotReady
+    type: prometheus
+    severity: warning
+    signal: platform
+    for: 10m
+    expression: min by (namespace, pod) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
+    summary: OpenBao Kubernetes pod is not ready
+    description: Kubernetes reports an OpenBao workload container as not ready for at least 10 minutes.
+    runbook: docs/runbooks/kubernetes-platform-health.md
+    labels:
+      component: kubernetes
+      subsystem: workload
+  - id: OpenBaoKubernetesPodRestartsIncreasing
+    type: prometheus
+    severity: warning
+    signal: platform
+    for: 5m
+    expression: sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total{pod=~"openbao.*",container=~"openbao|bao"}[15m])) > 0
+    summary: OpenBao Kubernetes pod restarted
+    description: Kubernetes reports OpenBao workload container restarts in the last 15 minutes.
+    runbook: docs/runbooks/kubernetes-platform-health.md
+    labels:
+      component: kubernetes
+      subsystem: workload
+  - id: OpenBaoKubernetesNodePressure
+    type: prometheus
+    severity: warning
+    signal: platform
+    for: 10m
+    expression: max by (node, condition) (kube_node_status_condition{condition=~"DiskPressure|MemoryPressure|PIDPressure",status="true"}) == 1
+    summary: Kubernetes node pressure may affect OpenBao
+    description: Kubernetes reports node pressure that can disrupt OpenBao scheduling, storage, or runtime behavior.
+    runbook: docs/runbooks/kubernetes-platform-health.md
+    labels:
+      component: kubernetes
+      subsystem: node
+  - id: OpenBaoLogCollectorTargetDown
+    type: prometheus
+    severity: warning
+    signal: platform
+    for: 10m
+    expression: min_over_time(up{job=~".*(alloy|grafana-alloy|promtail).*"}[10m]) == 0
+    summary: OpenBao log collector scrape target is down
+    description: Prometheus reports a log collector scrape target as down, which can break OpenBao log and audit-log exploration.
+    runbook: docs/runbooks/kubernetes-platform-health.md
+    labels:
+      component: collector
+      subsystem: logs
   - id: OpenBaoOperationalLogStreamMissing
     type: loki
     severity: warning

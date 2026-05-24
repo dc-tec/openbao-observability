@@ -2,7 +2,8 @@
 
 Use this explainer to design retention and access boundaries for OpenBao logs.
 It is for operators who need different handling for operational logs,
-completed request logs, audit logs, and audit archives.
+completed request logs, audit logs, audit archives, and platform event
+streams.
 
 ## Why this matters
 
@@ -11,7 +12,8 @@ retention period or access policy is usually wrong.
 
 Operational logs support troubleshooting. Completed request logs are
 temporary. Audit logs are restricted security records. Audit archives are
-durable evidence paths governed by organizational policy.
+durable evidence paths governed by organizational policy. Platform events
+support Kubernetes triage but can still reveal workload and failure metadata.
 
 ## Retention model
 
@@ -23,6 +25,7 @@ Use retention based on stream purpose.
 | `openbao.completed_requests` | 24-72 hours. | Short troubleshooting windows with break-glass access. |
 | `openbao.audit` | 7-30 days in Loki. | Short-term security exploration and dashboard drilldown. |
 | `openbao.audit_archive` | Organization policy. | Long-term evidence, compliance, and legal requirements. |
+| `platform.kubernetes` | 7-30 days. | Kubernetes event context for pod, node, volume, and collector symptoms. |
 
 The exact values are deployment decisions. Keep them documented beside the
 collector, Loki tenant, archive destination, and Grafana access model.
@@ -37,6 +40,7 @@ Use access based on data sensitivity.
 | `openbao.completed_requests` | Break-glass users during approved troubleshooting windows. |
 | `openbao.audit` | Security-restricted users and approved incident responders. |
 | `openbao.audit_archive` | Security and compliance users under evidence-handling policy. |
+| `platform.kubernetes` | Platform SRE users who operate the Kubernetes environment. |
 
 Do not use one Grafana folder, one Loki tenant, or one role for every OpenBao
 log stream unless your organization explicitly accepts the exposure.
@@ -84,6 +88,7 @@ Examples:
 - Database secrets dashboard: restricted security and platform access.
 - Secret engines and mounts dashboard: restricted security and platform
   access.
+- Kubernetes platform dashboard: platform SRE access.
 
 If a dashboard mixes operational and audit data, use the audit access boundary.
 
@@ -96,13 +101,14 @@ If a dashboard mixes operational and audit data, use the audit access boundary.
 - Letting object storage lifecycle delete Loki data earlier than expected.
 - Putting request paths, token metadata, or identity metadata into labels and
   then trying to fix exposure with dashboard permissions.
+- Treating platform event retention as audit evidence retention.
 
 ## Evidence basis
 
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed upstream behavior | Loki documents retention through the Compactor. OpenBao documents completed request logging as disabled by default and audit logs as security-sensitive records. |
-| Design decision | This project separates operational logs, completed request logs, audit logs, and audit archives into different streams and access boundaries. |
+| Design decision | This project separates operational logs, completed request logs, audit logs, audit archives, and platform events into different streams and access boundaries. |
 | To validate | Your Loki tenant model, archive backend, legal retention, object-store lifecycle policy, and Grafana folder permissions. |
 
 ## What's next

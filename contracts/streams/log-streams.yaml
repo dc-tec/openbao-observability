@@ -25,6 +25,12 @@ streams:
     format: backend-native
     access: security-compliance
     retention: organization-policy
+  - id: platform.kubernetes
+    default: kubernetes-profiles
+    source: Kubernetes events and pod context
+    format: json
+    access: platform-sre
+    retention: 7-30d
 allowedLabels:
   - cluster
   - environment

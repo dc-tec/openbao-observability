@@ -46,6 +46,32 @@ groups:
             description: More than one active OpenBao node is visible to Prometheus.
             runbook_url: docs/runbooks/multiple-active-nodes.md
             summary: OpenBao has multiple active nodes
+        - alert: OpenBaoAllPodsUnavailable
+          expr: sum by (namespace) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
+          for: 5m
+          labels:
+            component: kubernetes
+            severity: critical
+            signal: platform
+            source_prefix: vault
+            subsystem: workload
+          annotations:
+            description: Kubernetes reports no ready OpenBao workload containers for the selected platform metrics.
+            runbook_url: docs/runbooks/kubernetes-platform-health.md
+            summary: All OpenBao Kubernetes pods are unavailable
+        - alert: OpenBaoAuditPVCPressure
+          expr: 100 * min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) / min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) < 15
+          for: 10m
+          labels:
+            component: kubernetes
+            severity: critical
+            signal: platform
+            source_prefix: vault
+            subsystem: storage
+          annotations:
+            description: A matching OpenBao audit or data PVC has less than 15 percent free space.
+            runbook_url: docs/runbooks/kubernetes-platform-health.md
+            summary: OpenBao audit or data PVC free space is low
         - alert: OpenBaoRaftPeerCountLow
           expr: openbao:raft_peers:max < 3
           for: 2m

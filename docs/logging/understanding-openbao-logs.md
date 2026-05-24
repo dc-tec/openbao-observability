@@ -1,22 +1,24 @@
 # Understanding OpenBao logs
 
-Use this explainer to understand the OpenBao log streams used by this
-reference architecture. It is for operators who need to distinguish
-operational logs, completed request logs, audit logs, and audit archives.
+Use this explainer to understand the OpenBao and platform log streams used by
+this reference architecture. It is for operators who need to distinguish
+operational logs, completed request logs, audit logs, audit archives, and
+Kubernetes platform events.
 
 ## Why this matters
 
 OpenBao logs are not one stream with one audience. Operational logs help you
 debug server behavior. Completed request logs help with temporary request
 troubleshooting. Audit logs are restricted security records. Audit archives are
-durable evidence paths.
+durable evidence paths. Platform events explain the Kubernetes environment
+around the OpenBao workload.
 
 Mixing these streams creates two problems: operators miss the signal they need,
 and sensitive audit metadata reaches audiences that do not need it.
 
 ## Stream model
 
-This project defines four OpenBao log streams.
+This project defines OpenBao log streams and one Kubernetes platform stream.
 
 | Stream | Default | Source | Access |
 | ------ | ------- | ------ | ------ |
@@ -24,6 +26,7 @@ This project defines four OpenBao log streams.
 | `openbao.completed_requests` | Disabled | OpenBao completed request logging. | Break-glass. |
 | `openbao.audit` | Enabled | OpenBao audit devices. | Security restricted. |
 | `openbao.audit_archive` | Production enabled | Security archive pipeline. | Security and compliance. |
+| `platform.kubernetes` | Kubernetes profiles | Kubernetes events and pod context. | Platform SRE. |
 
 Keep these streams separate at collection, storage, dashboard, and access
 layers.
@@ -74,6 +77,15 @@ correlation, but compliance retention needs separate design.
 Use [Audit archive reference design](../audit/audit-archive-reference-design.md)
 before you choose the production archive path.
 
+## Kubernetes platform events
+
+The `platform.kubernetes` stream represents Kubernetes events and pod context
+around the OpenBao workload. Use it to explain readiness, restart, scheduling,
+eviction, probe, and node-pressure symptoms.
+
+Do not treat Kubernetes events as OpenBao audit evidence. They are platform
+context for operational triage.
+
 ## Collection pattern
 
 Use collection labels to describe source and routing, not request content.
@@ -106,6 +118,7 @@ and user names.
 - Promoting request IDs or paths to Loki labels.
 - Treating a quiet operational stream as proof that OpenBao is healthy.
 - Treating Loki as an audit archive without retention and access approval.
+- Treating Kubernetes platform events as OpenBao audit records.
 
 ## What's next
 
@@ -119,6 +132,8 @@ and user names.
   to read the generated operational log view.
 - Use [OpenBao audit investigation dashboard](../dashboards/audit-investigation.md)
   for restricted audit drilldown.
+- Use [OpenBao Kubernetes platform dashboard](../dashboards/kubernetes-platform.md)
+  to inspect Kubernetes event context around OpenBao pods.
 - Use [Configure declarative audit devices](../audit/declarative-audit.md) for
   repeatable audit-device setup.
 

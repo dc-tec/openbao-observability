@@ -178,6 +178,7 @@ make verify-live
 | `contracts/dashboards/openbao-token-lease-lifecycle.yaml` | Token and lease lifecycle dashboard contract that consumes normalized token and lease rules plus query-time audit fields. |
 | `contracts/dashboards/openbao-secret-engines-mounts.yaml` | Secret engines and mounts dashboard contract that filters engine paths at query time without turning mount paths into Loki labels. |
 | `contracts/dashboards/openbao-runtime-storage.yaml` | Runtime and storage dashboard contract that consumes normalized runtime, barrier, cache, and mount-table rules. |
+| `contracts/dashboards/openbao-kubernetes-platform.yaml` | Kubernetes platform dashboard contract that consumes kube-state-metrics, kubelet, cAdvisor, scrape target, and platform event signals. |
 | `contracts/alerts/critical.yaml` | Alert contract that maps critical alerts to runbooks. |
 | `contracts/alerts/warning.yaml` | Alert contract that maps warning alerts to runbooks. |
 

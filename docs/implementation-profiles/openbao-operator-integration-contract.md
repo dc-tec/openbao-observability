@@ -171,7 +171,7 @@ Use dashboard families that keep control-plane and workload questions distinct.
 | ---------------- | ----- | ---------- |
 | Operator dashboards | OpenBao Operator | Reconcile health, controller errors, backup freshness, restore state, upgrade progress, read-replica lifecycle, and CR status. |
 | OpenBao workload dashboards | This repository | OpenBao availability, seal state, active node count, request latency, HA/Raft health, runtime pressure, token and lease pressure, audit health, and security investigation. |
-| Platform dashboards | Platform team | Pod readiness, restarts, node pressure, PVC pressure, NetworkPolicy reachability, collector health, and Prometheus target health. |
+| Platform dashboards | Platform team | Pod readiness, restarts, node pressure, PVC pressure, NetworkPolicy reachability, collector health, and Prometheus target health. Use the generated Kubernetes platform dashboard as the reference workload-context view. |
 
 When you link dashboards together, pass bounded context such as cluster,
 Kubernetes namespace, pod, node, scrape profile, and source prefix. Do not pass
@@ -244,5 +244,7 @@ quorum alerts separate from read-capacity alerts.
   you rely on feature-specific metrics.
 - Use [Namespaces and scale observability](../concepts/namespaces-and-scale-observability.md)
   before you expose namespace or read-replica dimensions broadly.
+- Use [OpenBao Kubernetes platform dashboard](../dashboards/kubernetes-platform.md)
+  for workload pod, PVC, node, collector, and Kubernetes event context.
 - Use [Loki label strategy for OpenBao](../logging/loki-label-strategy.md)
   before you promote log fields to labels.

@@ -109,6 +109,7 @@ func (o QueryValidationOptions) withDefaults() QueryValidationOptions {
 			filepath.Join("contracts", "dashboards", "openbao-database-secrets.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-secret-engines-mounts.yaml"),
 			filepath.Join("contracts", "dashboards", "openbao-runtime-storage.yaml"),
+			filepath.Join("contracts", "dashboards", "openbao-kubernetes-platform.yaml"),
 		}
 	}
 	if len(o.GeneratedPaths) == 0 {
@@ -123,6 +124,7 @@ func (o QueryValidationOptions) withDefaults() QueryValidationOptions {
 			filepath.Join("generated", "grafana", "openbao-database-secrets.json"),
 			filepath.Join("generated", "grafana", "openbao-secret-engines-mounts.json"),
 			filepath.Join("generated", "grafana", "openbao-runtime-storage.json"),
+			filepath.Join("generated", "grafana", "openbao-kubernetes-platform.json"),
 		}
 	}
 	if o.PrometheusURL == "" {
