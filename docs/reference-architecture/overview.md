@@ -112,6 +112,8 @@ complete.
 
 ## What's next
 
+- Use [Project status and maturity](./project-status.md) to understand what the
+  repository validates today and what remains your production responsibility.
 - Use [Adopt the reference architecture](./adoption.md) to map this design to
   your environment.
 - Use [Implementation profiles](../implementation-profiles/README.md) to choose

@@ -30,6 +30,23 @@ profile.*
 - Fixture capture and validation for verified OpenBao behavior.
 - Documentation for operating OpenBao observability safely.
 
+## Project status
+
+This repository is a validated reference architecture with an implemented local
+profile. It is not a drop-in production monitoring distribution. See
+[Project status and maturity](docs/reference-architecture/project-status.md)
+for the detailed maturity matrix, adoption paths, roadmap, and non-goals.
+
+| Area | Current state | Confidence |
+| ---- | ------------- | ---------- |
+| Metrics contracts and prefix variants | Generated and fixture-backed for OpenBao `2.5.4`, with `vault_*` and `openbao_*` variants. | High |
+| Prometheus rules and alert rules | Generated from source contracts with runbook links. | High |
+| Grafana dashboards | Generated from dashboard contracts and validated for syntax and query structure. | Medium to high |
+| Docker Compose profile | Implemented local HA profile for evaluation, screenshots, fixture scenarios, and live query validation. | High for local evaluation |
+| Kubernetes examples | Implemented scrape and generated-artifact examples. | Medium |
+| OpenBao Operator companion profile | Implemented profile and integration contract for operator-managed clusters. | Medium |
+| Audit archive and security detections | Reference design, local profile, and generated detection artifacts. | Early to medium |
+
 ## Architecture at a glance
 
 Every implementation profile maps the same OpenBao signals to a local
@@ -68,6 +85,7 @@ flowchart LR
 | Goal | Start with |
 | ---- | ---------- |
 | Understand the architecture | [Reference architecture overview](docs/reference-architecture/overview.md) |
+| Understand maturity and boundaries | [Project status and maturity](docs/reference-architecture/project-status.md) |
 | Learn the signal model | [OpenBao observability model](docs/concepts/openbao-observability-model.md) |
 | Run the local stack | [Run the Docker Compose stack](docs/docker-compose.md) |
 | Adopt the design in your platform | [Adopt the reference architecture](docs/reference-architecture/adoption.md) |

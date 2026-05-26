@@ -10,6 +10,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 ## Reference architecture
 
 - [Reference architecture overview](./reference-architecture/overview.md)
+- [Project status and maturity](./reference-architecture/project-status.md)
 - [Adopt the reference architecture](./reference-architecture/adoption.md)
 - [Implementation profiles](./implementation-profiles/README.md)
 - [Prometheus, Loki, Grafana, and Alloy](./implementation-profiles/prometheus-loki-grafana-alloy.md)
