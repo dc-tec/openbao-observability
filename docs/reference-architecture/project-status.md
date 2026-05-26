@@ -26,7 +26,6 @@ control, routing, packaging, and release process.
 | Audit archive design | Reference design plus local archive health profile. | Early to medium | Compliance requirements, immutability, encryption, retention, evidence export, and access review. |
 | Security audit detections | Reference detections and dashboards based on audit log patterns. | Medium | Local threat model, expected activity, false positives, and escalation policy. |
 | Feature-specific dashboards | Implemented for auth, identity, tokens, leases, database secrets, Transit, PKI, mounts, runtime, storage, namespaces, Kubernetes, and SLOs. | Medium | Feature enablement, namespaces, auth methods, secret engines, and data availability in your deployment. |
-| Release artifacts | Release automation can build deterministic bundles and checksums. | Medium | First tagged release, artifact consumption path, and internal promotion process. |
 
 ## How to consume the repository
 
