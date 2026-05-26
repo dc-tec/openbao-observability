@@ -1,0 +1,59 @@
+name: Feature request
+description: Propose a new signal, dashboard, alert, runbook, example, fixture, or documentation improvement.
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for user-facing improvements to the reference architecture. Keep local implementation planning outside the issue body when it contains sensitive context.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Metrics contract
+        - Log stream contract
+        - Dashboard
+        - Alert or runbook
+        - Fixture or validation
+        - Docker Compose profile
+        - Kubernetes example
+        - OpenBao Operator companion profile
+        - Documentation
+        - Packaging or adoption
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What operator, platform, or security question should this help answer?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+      description: Describe the artifact or behavior you want.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence or source
+      description: Link to upstream OpenBao docs, observed fixture behavior, prior art, or operational reasoning.
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: List compatibility, cardinality, security, retention, or access-control concerns.
+  - type: checkboxes
+    id: boundary
+    attributes:
+      label: Boundary check
+      options:
+        - label: This request preserves the reference architecture boundary and does not turn this repo into a production platform installer.
+          required: true

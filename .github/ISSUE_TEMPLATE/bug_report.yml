@@ -1,0 +1,69 @@
+name: Bug report
+description: Report a broken contract, generated artifact, example, dashboard, alert, runbook, or validation check.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Do not include secrets, live audit payloads, tokens, customer identifiers, or sensitive environment values.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Contracts
+        - Generated artifacts
+        - Dashboards
+        - Alerts or runbooks
+        - Docker Compose profile
+        - Kubernetes examples
+        - OpenBao Operator companion profile
+        - Fixtures or validation
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: openbao-version
+    attributes:
+      label: OpenBao version
+      description: Include the version when the issue depends on live OpenBao behavior.
+      placeholder: "2.5.4"
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Describe the observed behavior and why it looks wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Describe what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduce
+      description: List the smallest steps, commands, or profile needed to reproduce the issue.
+      placeholder: |
+        1. Run ...
+        2. Open ...
+        3. Observe ...
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation output
+      description: Paste relevant, redacted output from validation commands.
+      render: text
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed secrets, tokens, live audit payloads, and customer data.
+          required: true
