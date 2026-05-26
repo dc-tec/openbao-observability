@@ -85,18 +85,41 @@ platform.
 - It does not cover tracing or application instrumentation beyond the OpenBao
   signal model.
 
-## Roadmap focus
+## Roadmap
 
-The next project milestones should make the repository easier to adopt without
-blurring the production boundary:
+The roadmap focuses on making the reference architecture easier to adopt while
+keeping production responsibilities explicit.
 
-- Publish the first tagged release with generated artifacts attached.
-- Add a compact dashboard tour that shows how to read the main dashboards.
-- Keep expanding fixture-backed coverage for namespaces, read replicas, and
+### Adoption and packaging
+
+- Make generated artifacts easier to consume from GitOps workflows.
+- Keep Kubernetes examples practical, without becoming a full platform
+  installer.
+- Keep OpenBao Operator semantics in the operator repository and maintain this
+  repository as the observability companion.
+
+### Compatibility and validation
+
+- Track OpenBao version compatibility, starting with OpenBao `2.5.4`.
+- Add compatibility notes for relevant OpenBao Operator releases.
+- Expand fixture coverage for namespaces, read replicas, HA/Raft, and
   feature-specific secret engines.
-- Add compatibility notes that pair OpenBao versions, operator versions, and
-  generated artifact expectations.
-- Improve packaging only where it preserves the source-contract workflow.
+
+### Dashboard and alert depth
+
+- Continue feature-specific dashboards where OpenBao exposes useful, safe
+  signals.
+- Add alerts when thresholds are defensible from fixtures, documentation, or
+  operational reasoning.
+- Keep suspicious-activity detections as reference security signals, not a SIEM
+  replacement.
+
+### Documentation maturity
+
+- Add a dashboard tour with screenshots or a compact guided walkthrough.
+- Keep concept docs focused on how OpenBao observability works.
+- Keep production responsibilities explicit: retention, access control, paging,
+  and audit archive remain user-owned.
 
 ## What's next
 
