@@ -6,8 +6,8 @@ require (
 	github.com/openbao/openbao/api/v2 v2.5.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	github.com/prometheus/common v0.67.5
-	github.com/prometheus/prometheus v0.311.3
+	github.com/prometheus/common v0.68.0
+	github.com/prometheus/prometheus v0.312.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -36,7 +36,6 @@ require (
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
