@@ -91,7 +91,8 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"record: openbao:route_create_kv_v1:rate5m",
 		"expr: sum(rate(openbao_route_create_kv_v1__count[5m]))",
 		"record: openbao:route_read_kv_v1:avg5m",
-		"expr: sum(rate(openbao_route_read_kv_v1__sum[5m])) / clamp_min(sum(rate(openbao_route_read_kv_v1__count[5m])), 0.001)",
+		"expr: sum(rate(openbao_route_read_kv_v1__sum[5m])) / " +
+			"clamp_min(sum(rate(openbao_route_read_kv_v1__count[5m])), 0.001)",
 		"record: openbao:route_delete_kv_v1:rate5m",
 		"expr: sum(rate(openbao_route_delete_kv_v1__count[5m]))",
 		"record: openbao:pki_issue:avg5m",
