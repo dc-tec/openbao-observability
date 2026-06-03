@@ -571,6 +571,62 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
+							Record: recordPrefix + ":secret_kv_count:max30m",
+							Expr: "sum(max by (namespace, mount_point) (max_over_time(" + metricName(
+								sourcePrefix,
+								"secret_kv_count",
+							) + "[30m])))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":secret_kv_count_by_namespace:max30m",
+							Expr: "sum by (namespace) (max by (namespace, mount_point) (max_over_time(" + metricName(
+								sourcePrefix,
+								"secret_kv_count",
+							) + "[30m])))",
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_create_kv_v1:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "route_create_kv_v1_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_create_kv_v1:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "route_create_kv_v1_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_read_kv_v1:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "route_read_kv_v1_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_read_kv_v1:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "route_read_kv_v1_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_list_kv_v1:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "route_list_kv_v1_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_list_kv_v1:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "route_list_kv_v1_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_delete_kv_v1:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "route_delete_kv_v1_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_delete_kv_v1:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "route_delete_kv_v1_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
 							Record: recordPrefix + ":pki_issue:rate5m",
 							Expr:   summaryRateExpression(sourcePrefix, "pki_issue"),
 							Labels: ruleLabels(sourcePrefix),

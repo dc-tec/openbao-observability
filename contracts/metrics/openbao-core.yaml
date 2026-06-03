@@ -378,6 +378,17 @@ metrics:
       - Labels include namespace, secret_engine, mount_point, creation_ttl, and cluster.
       - Treat mount_point and creation_ttl as advanced labels; dashboards should aggregate by secret_engine unless a drilldown needs more detail.
       - Current fixtures validate root and team-a namespace behavior for database dynamic leases; broader nested namespace grouping remains to validate.
+  - id: secret_kv_count
+    docsName: vault.secret.kv.count
+    prometheusName: ${p}_secret_kv_count
+    required: false
+    overview: false
+    notes:
+      - KV secret count is a slow usage gauge.
+      - Observed in an OpenBao 2.5.4 dev check after writing KV v1 and KV v2 entries.
+      - Labels include cluster, mount_point, and namespace.
+      - Fixture capture shortens usage_gauge_period before scraping so the slow gauge can be observed.
+      - Treat mount_point as drilldown data because mount names can expose deployment-specific context.
   - id: pki_issue
     docsName: vault.pki.issue
     prometheusName: ${p}_pki_issue
