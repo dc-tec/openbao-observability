@@ -42,6 +42,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [Metric compatibility matrix](./metrics/compatibility-matrix.md)
 - [OpenBao HA/Raft metrics](./metrics/ha-raft-metrics.md)
 - [OpenBao token and lease metrics](./metrics/token-and-lease-metrics.md)
+- [OpenBao secret engine metrics](./metrics/secret-engine-metrics.md)
 
 ## Logging
 

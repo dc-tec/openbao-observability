@@ -52,4 +52,5 @@ and client addresses out of Prometheus labels.
 - [Understanding OpenBao metrics](./understanding-openbao-metrics.md)
 - [OpenBao HA/Raft metrics](./ha-raft-metrics.md)
 - [OpenBao token and lease metrics](./token-and-lease-metrics.md)
+- [OpenBao secret engine metrics](./secret-engine-metrics.md)
 - [Understand metric prefixes and recording rules](../contracts/metric-prefix.md)

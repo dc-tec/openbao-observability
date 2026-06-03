@@ -278,6 +278,46 @@ groups:
           expr: sum by (namespace, secret_engine) (increase(openbao_secret_lease_creation[15m]))
           labels:
             source_prefix: openbao
+        - record: openbao:secret_kv_count:max30m
+          expr: sum(max by (namespace, mount_point) (max_over_time(openbao_secret_kv_count[30m])))
+          labels:
+            source_prefix: openbao
+        - record: openbao:secret_kv_count_by_namespace:max30m
+          expr: sum by (namespace) (max by (namespace, mount_point) (max_over_time(openbao_secret_kv_count[30m])))
+          labels:
+            source_prefix: openbao
+        - record: openbao:route_create_kv_v1:rate5m
+          expr: sum(rate(openbao_route_create_kv_v1__count[5m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:route_create_kv_v1:avg5m
+          expr: sum(rate(openbao_route_create_kv_v1__sum[5m])) / clamp_min(sum(rate(openbao_route_create_kv_v1__count[5m])), 0.001)
+          labels:
+            source_prefix: openbao
+        - record: openbao:route_read_kv_v1:rate5m
+          expr: sum(rate(openbao_route_read_kv_v1__count[5m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:route_read_kv_v1:avg5m
+          expr: sum(rate(openbao_route_read_kv_v1__sum[5m])) / clamp_min(sum(rate(openbao_route_read_kv_v1__count[5m])), 0.001)
+          labels:
+            source_prefix: openbao
+        - record: openbao:route_list_kv_v1:rate5m
+          expr: sum(rate(openbao_route_list_kv_v1__count[5m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:route_list_kv_v1:avg5m
+          expr: sum(rate(openbao_route_list_kv_v1__sum[5m])) / clamp_min(sum(rate(openbao_route_list_kv_v1__count[5m])), 0.001)
+          labels:
+            source_prefix: openbao
+        - record: openbao:route_delete_kv_v1:rate5m
+          expr: sum(rate(openbao_route_delete_kv_v1__count[5m]))
+          labels:
+            source_prefix: openbao
+        - record: openbao:route_delete_kv_v1:avg5m
+          expr: sum(rate(openbao_route_delete_kv_v1__sum[5m])) / clamp_min(sum(rate(openbao_route_delete_kv_v1__count[5m])), 0.001)
+          labels:
+            source_prefix: openbao
         - record: openbao:pki_issue:rate5m
           expr: sum(rate(openbao_pki_issue_count[5m]))
           labels:

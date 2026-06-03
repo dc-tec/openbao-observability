@@ -78,6 +78,7 @@ Examples:
 | Audit request failures | `openbao:audit_log_request_failure:increase5m` |
 | Lease count | `openbao:expire_num_leases:max` |
 | Token count | `openbao:token_count:max30m` |
+| KV secret count | `openbao:secret_kv_count:max30m` |
 | Raft peer count | `openbao:raft_peers:max` |
 | Runtime heap objects | `openbao:runtime_heap_objects:max` |
 | Barrier read latency | `openbao:barrier_get:avg5m` |

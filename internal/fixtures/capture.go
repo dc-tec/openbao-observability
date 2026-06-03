@@ -46,6 +46,9 @@ const (
 	fixturePostgresDB       = "openbao_app"
 	fixturePostgresUser     = "openbao_admin"
 	fixturePostgresPassword = "openbao_admin_password"
+	fixturePromRetention    = "5m"
+	fixtureUsageGaugePeriod = "10s"
+	usageGaugeCaptureDelay  = 25 * time.Second
 )
 
 func Capture(ctx context.Context, opts CaptureOptions) error {
@@ -157,6 +160,9 @@ func (r *captureRun) capturePrefix(ctx context.Context, prefix string, port int)
 		return err
 	}
 	if err := r.exerciseOpenBao(ctx, name, prefix); err != nil {
+		return err
+	}
+	if err := waitForUsageGaugeCollection(ctx); err != nil {
 		return err
 	}
 	if err := r.captureMetrics(ctx, prefix, port); err != nil {
@@ -415,6 +421,9 @@ func (r *captureRun) captureRaftOutputs(ctx context.Context, nodes []raftNode, p
 	if err := r.captureRaftState(ctx, nodes, prefix); err != nil {
 		return err
 	}
+	if err := waitForUsageGaugeCollection(ctx); err != nil {
+		return err
+	}
 	if err := r.captureRaftMetrics(ctx, nodes, prefix); err != nil {
 		return err
 	}
@@ -501,6 +510,18 @@ func waitForPostgres(ctx context.Context, container string) error {
 	return fmt.Errorf("PostgreSQL fixture did not become ready: %w", lastErr)
 }
 
+func waitForUsageGaugeCollection(ctx context.Context) error {
+	timer := time.NewTimer(usageGaugeCaptureDelay)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
+}
+
 func writeRaftConfig(
 	prefix string,
 	node raftNode,
@@ -550,9 +571,10 @@ seal "static" {
 }
 
 telemetry {
-  prometheus_retention_time = "30s"
+  prometheus_retention_time = "%s"
   disable_hostname          = true
-  metrics_prefix           = "%s"
+  metrics_prefix            = "%s"
+  usage_gauge_period        = "%s"
 }
 
 audit "file" "local-file" {
@@ -571,7 +593,9 @@ audit "file" "local-file" {
 		node.ID,
 		nonVoterConfig,
 		retryJoin.String(),
+		fixturePromRetention,
 		prefix,
+		fixtureUsageGaugePeriod,
 		raftInitializeBlock(initialize, databaseHost),
 	)
 
@@ -822,9 +846,10 @@ EOT
 
 func writeConfig(prefix, path string) error {
 	config := fmt.Sprintf(`telemetry {
-  prometheus_retention_time = "30s"
+  prometheus_retention_time = "%s"
   disable_hostname          = true
-  metrics_prefix           = "%s"
+  metrics_prefix            = "%s"
+  usage_gauge_period        = "%s"
 }
 
 audit "file" "local-file" {
@@ -837,7 +862,7 @@ audit "file" "local-file" {
     log_raw       = "false"
   }
 }
-`, prefix)
+`, fixturePromRetention, prefix, fixtureUsageGaugePeriod)
 
 	if err := os.WriteFile(path, []byte(config), 0o644); err != nil {
 		return fmt.Errorf("write OpenBao config %s: %w", path, err)
