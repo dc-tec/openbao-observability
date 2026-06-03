@@ -8,13 +8,15 @@ mount lifecycle activity and common secret engine paths.
 
 Use the secret engines and mounts dashboard when you need to inspect audited
 activity for mounts, KV, database, Transit, PKI, and secret-engine response
-errors.
+errors. It also includes secret-engine metric signals where OpenBao exposes
+safe aggregate data.
 
 The dashboard answers these questions:
 
 - Which secret engine events match the current filters?
 - Did mount table reads or mount lifecycle changes occur?
 - Did KV v1 or KV v2 data and metadata activity change?
+- Did the aggregate KV secret count change over the usage-gauge window?
 - Did database credential, role, config, or root-rotation paths appear?
 - Did Transit cryptographic operation paths appear?
 - Did PKI role, issue, issuer, root, certificate, tidy, or revoke paths appear?
@@ -36,7 +38,7 @@ The generated dashboard expects these Grafana data sources:
 
 | Data source | UID | Used for |
 | ----------- | --- | -------- |
-| Prometheus | `prometheus` | Dynamic lease creation, PKI operation, and database operation metrics. |
+| Prometheus | `prometheus` | Mount inventory, KV secret count, KV route, dynamic lease creation, PKI operation, and database operation metrics. |
 | Loki | `loki` | Secret engine and mount audit streams. |
 
 The log panels query audit logs collected with `log_stream="openbao.audit"` and
@@ -62,6 +64,11 @@ Mount lifecycle panels filter `sys/mounts` paths. These events can represent
 mount table reads and mount lifecycle changes such as enable, tune, or disable
 activity.
 
+Mount inventory panels use `core_mount_table_num_entries` and
+`core_mount_table_size` recording rules. These metrics group by bounded mount
+metadata such as type and local status, not by mount path. Use them to detect
+growth or configuration churn before moving to restricted audit investigation.
+
 Confirm that mount lifecycle changes match approved change windows. Mount path
 changes can alter routing, policy boundaries, secret engine behavior, and
 application access.
@@ -70,6 +77,16 @@ application access.
 
 KV panels filter `secret/data/.*`, `secret/metadata/.*`, and `kv-v1/.*` paths,
 which match the reference stack's KV v2 and KV v1 mount paths.
+
+KV secret count panels use the `secret_kv_count` recording rules. OpenBao
+emits this as a slow usage gauge, so the dashboard reads the maximum observed
+value over 30 minutes. Use it for trends and broad namespace-level inventory,
+not as exact request-time state.
+
+KV v1 operation panels use route-derived metrics for the reference `kv-v1/`
+mount. These panels show create, read, list, and delete rates and average
+latency when OpenBao emits those route summary metrics. Custom KV mount paths
+produce different route metric names.
 
 KV path names can reveal business context. Keep request paths out of Loki
 labels and restrict dashboard access.
@@ -145,11 +162,17 @@ cardinality and metadata exposure tradeoff.
 - The dashboard depends on Loki retention for `log_stream="openbao.audit"`.
 - It cannot show paths that bypass the audit system.
 - It does not replace secret-engine-specific health checks.
+- KV secret count depends on the `usage_gauge_period` collector and may lag
+  recent writes or deletes.
+- KV route metrics are mount-path-derived; the generated KV v1 route panels
+  cover the reference `kv-v1/` mount, not every possible KV mount name.
 
 ## What's next
 
 - Use [OpenBao audit investigation dashboard](./audit-investigation.md) for
   broader request ID, path, operation, and node drilldown.
+- Use [OpenBao secret engine metrics](../metrics/secret-engine-metrics.md) for
+  metric names, recording rules, and gauge behavior.
 - Use [OpenBao database secrets dashboard](./database-secrets.md) for focused
   database secrets engine investigation.
 - Use [OpenBao Transit dashboard](./transit.md) for focused Transit key
