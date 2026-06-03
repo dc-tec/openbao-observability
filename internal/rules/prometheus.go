@@ -627,6 +627,46 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
+							Record: recordPrefix + ":route_create_kv_v2:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "route_create_secret_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_create_kv_v2:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "route_create_secret_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_read_kv_v2:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "route_read_secret_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_read_kv_v2:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "route_read_secret_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_list_kv_v2:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "route_list_secret_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_list_kv_v2:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "route_list_secret_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_delete_kv_v2:rate5m",
+							Expr:   summaryRateExpression(sourcePrefix, "route_delete_secret_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":route_delete_kv_v2:avg5m",
+							Expr:   summaryAverageExpression(sourcePrefix, "route_delete_secret_"),
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
 							Record: recordPrefix + ":pki_issue:rate5m",
 							Expr:   summaryRateExpression(sourcePrefix, "pki_issue"),
 							Labels: ruleLabels(sourcePrefix),
