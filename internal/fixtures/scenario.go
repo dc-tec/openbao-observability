@@ -166,6 +166,7 @@ path "secret/metadata/apps/payments/*" {
 		}},
 		{name: "read-kv", path: "secret/data/apps/payments/scenario", operation: "read"},
 		{name: "list-kv-metadata", path: "secret/metadata/apps/payments", operation: "list"},
+		{name: "delete-kv", path: "secret/data/apps/payments/scenario", operation: "delete"},
 		{
 			name:      "write-identity-entity",
 			path:      "identity/entity/name/scenario-service",

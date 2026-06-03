@@ -636,6 +636,42 @@ metrics:
       - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default kv-v1/ mount.
       - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_create_kv_v2
+    docsName: vault.route.create.secret-
+    prometheusName: ${p}_route_create_secret_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default secret/ KV v2 mount.
+      - Route metric names are derived from operation and mount path; custom KV v2 mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_read_kv_v2
+    docsName: vault.route.read.secret-
+    prometheusName: ${p}_route_read_secret_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default secret/ KV v2 mount.
+      - Route metric names are derived from operation and mount path; custom KV v2 mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_list_kv_v2
+    docsName: vault.route.list.secret-
+    prometheusName: ${p}_route_list_secret_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default secret/ KV v2 mount.
+      - Route metric names are derived from operation and mount path; custom KV v2 mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
+  - id: route_delete_kv_v2
+    docsName: vault.route.delete.secret-
+    prometheusName: ${p}_route_delete_secret_
+    required: false
+    overview: false
+    notes:
+      - Observed as a route-derived summary in the OpenBao 2.5.4 HA/Raft fixture for the default secret/ KV v2 mount.
+      - Route metric names are derived from operation and mount path; custom KV v2 mount paths produce different source metric names.
+      - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_create_database
     docsName: vault.route.create.database-
     prometheusName: ${p}_route_create_database_

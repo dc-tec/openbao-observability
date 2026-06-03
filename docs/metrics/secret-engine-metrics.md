@@ -53,11 +53,16 @@ access review.
 | `${p}_route_read_kv_v1_` | `openbao:route_read_kv_v1:rate5m` and `openbao:route_read_kv_v1:avg5m` | KV v1 read rate and average latency for the reference `kv-v1/` mount. |
 | `${p}_route_list_kv_v1_` | `openbao:route_list_kv_v1:rate5m` and `openbao:route_list_kv_v1:avg5m` | KV v1 list rate and average latency for the reference `kv-v1/` mount. |
 | `${p}_route_delete_kv_v1_` | `openbao:route_delete_kv_v1:rate5m` and `openbao:route_delete_kv_v1:avg5m` | KV v1 delete rate and average latency for the reference `kv-v1/` mount. |
+| `${p}_route_create_secret_` | `openbao:route_create_kv_v2:rate5m` and `openbao:route_create_kv_v2:avg5m` | KV v2 create rate and average latency for the default `secret/` mount. |
+| `${p}_route_read_secret_` | `openbao:route_read_kv_v2:rate5m` and `openbao:route_read_kv_v2:avg5m` | KV v2 read rate and average latency for the default `secret/` mount. |
+| `${p}_route_list_secret_` | `openbao:route_list_kv_v2:rate5m` and `openbao:route_list_kv_v2:avg5m` | KV v2 list rate and average latency for the default `secret/` mount. |
+| `${p}_route_delete_secret_` | `openbao:route_delete_kv_v2:rate5m` and `openbao:route_delete_kv_v2:avg5m` | KV v2 delete rate and average latency for the default `secret/` mount. |
 
 OpenBao derives route metric names from operation and mount path. The generated
-KV route rules intentionally cover the fixture-backed `kv-v1/` reference mount.
-Use audit logs for broad mount-path exploration, and add route rules for custom
-mounts only after reviewing the naming and label-safety tradeoff.
+KV route rules intentionally cover the fixture-backed `kv-v1/` reference mount
+and the default `secret/` KV v2 mount. Use audit logs for broad mount-path
+exploration, and add route rules for custom mounts only after reviewing the
+naming and label-safety tradeoff.
 
 ## Dynamic secret metrics
 
@@ -103,7 +108,8 @@ policies, and client addresses as labels.
 - Grouping broad dashboards by `mount_point` without reviewing metadata
   exposure.
 - Treating audit event volume as current secret inventory.
-- Expecting the `kv-v1/` route rules to cover custom KV mount paths.
+- Expecting the `kv-v1/` or `secret/` route rules to cover custom KV mount
+  paths.
 - Using dynamic lease creation as a proxy for static KV usage.
 - Looking only at operation rate while ignoring latency, errors, and audit
   context.

@@ -83,10 +83,10 @@ emits this as a slow usage gauge, so the dashboard reads the maximum observed
 value over 30 minutes. Use it for trends and broad namespace-level inventory,
 not as exact request-time state.
 
-KV v1 operation panels use route-derived metrics for the reference `kv-v1/`
-mount. These panels show create, read, list, and delete rates and average
-latency when OpenBao emits those route summary metrics. Custom KV mount paths
-produce different route metric names.
+KV v1 and KV v2 operation panels use route-derived metrics for the reference
+`kv-v1/` mount and the default `secret/` KV v2 mount. These panels show create,
+read, list, and delete rates and average latency when OpenBao emits those route
+summary metrics. Custom KV mount paths produce different route metric names.
 
 KV path names can reveal business context. Keep request paths out of Loki
 labels and restrict dashboard access.
@@ -164,8 +164,9 @@ cardinality and metadata exposure tradeoff.
 - It does not replace secret-engine-specific health checks.
 - KV secret count depends on the `usage_gauge_period` collector and may lag
   recent writes or deletes.
-- KV route metrics are mount-path-derived; the generated KV v1 route panels
-  cover the reference `kv-v1/` mount, not every possible KV mount name.
+- KV route metrics are mount-path-derived; the generated KV route panels
+  cover the reference `kv-v1/` and default `secret/` mounts, not every
+  possible KV mount name.
 
 ## What's next
 

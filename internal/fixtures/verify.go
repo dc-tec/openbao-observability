@@ -586,6 +586,7 @@ func checkRaftScenarioReport(opts VerifyOptions, prefix string) error {
 		"create-token":                                "success",
 		"create-namespace-token":                      "success",
 		"decrypt-namespace-transit":                   "success",
+		"delete-kv":                                   "success",
 		"delete-kv-v1":                                "success",
 		"denied-reader-kv-write":                      "expected_error",
 		"decrypt-transit":                             "success",
