@@ -22,8 +22,8 @@ This generated reference lists each metric contract entry against captured OpenB
 | `vault-prefix` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-vault-prefix.prom` | 40 | 42 |
 | `openbao-prefix` | `openbao` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-openbao-prefix.prom` | 40 | 42 |
 | `raft-vault-node0` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-node0.prom` | 80 | 2 |
-| `raft-vault-node1` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-node1.prom` | 26 | 56 |
-| `raft-vault-node2` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-node2.prom` | 26 | 56 |
+| `raft-vault-node1` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-node1.prom` | 25 | 57 |
+| `raft-vault-node2` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-node2.prom` | 25 | 57 |
 | `raft-vault-read-replica0` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-read-replica0.prom` | 27 | 55 |
 
 ## Metric coverage
@@ -279,8 +279,8 @@ This generated reference lists each metric contract entry against captured OpenB
 | `2.5.4` | `vault-prefix` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | observed | summary | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
 | `2.5.4` | `openbao-prefix` | `openbao` | `barrier_delete` | `vault.barrier.delete` | `openbao_barrier_delete` | observed | summary | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
 | `2.5.4` | `raft-vault-node0` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | observed | summary | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
-| `2.5.4` | `raft-vault-node1` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | observed | summary | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
-| `2.5.4` | `raft-vault-node2` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | observed | summary | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
+| `2.5.4` | `raft-vault-node1` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | missing | - | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
+| `2.5.4` | `raft-vault-node2` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | missing | - | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
 | `2.5.4` | `raft-vault-read-replica0` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | missing | - | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
 | `2.5.4` | `vault-prefix` | `vault` | `barrier_estimated_encryptions` | `vault.barrier.estimated_encryptions` | `vault_barrier_estimated_encryptions` | observed | counter | `term` | yes | no | Observed as a counter with a term label in OpenBao 2.5.4 fixtures. |
 | `2.5.4` | `openbao-prefix` | `openbao` | `barrier_estimated_encryptions` | `vault.barrier.estimated_encryptions` | `openbao_barrier_estimated_encryptions` | observed | counter | `term` | yes | no | Observed as a counter with a term label in OpenBao 2.5.4 fixtures. |
