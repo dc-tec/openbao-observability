@@ -12,7 +12,8 @@ This generated reference lists each metric contract entry against captured OpenB
 | Contract | `contracts/metrics/openbao-core.yaml` |
 | Fixture directory | `fixtures/captured/openbao-2.5.4` |
 | OpenBao version | `2.5.4` |
-| Contract status | `draft` |
+| Maturity lifecycle | `draft` |
+| Maturity evidence | `documented`, `fixture-validated`, `generated-validated` |
 | Supported prefixes | `vault`, `openbao` |
 
 ## Fixture profiles

@@ -12,7 +12,7 @@ import (
 
 type MetricContract struct {
 	Version        string         `yaml:"version"`
-	Status         string         `yaml:"status"`
+	Maturity       Maturity       `yaml:"maturity"`
 	OpenBAOVersion string         `yaml:"openbaoVersion"`
 	MetricPrefixes MetricPrefixes `yaml:"metricPrefixes"`
 	Normalization  Normalization  `yaml:"normalization"`
@@ -114,6 +114,9 @@ func (o VerifyOptions) withDefaults() VerifyOptions {
 }
 
 func (c MetricContract) validateShape(path string) error {
+	if err := validateMaturity(path, c.Maturity); err != nil {
+		return err
+	}
 	if c.OpenBAOVersion == "" {
 		return fmt.Errorf("metric contract %s is missing openbaoVersion", path)
 	}

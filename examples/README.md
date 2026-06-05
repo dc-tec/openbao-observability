@@ -16,3 +16,14 @@ VM-style OpenBao observability profiles.
   OpenBao clusters managed by `dc-tec/openbao-operator`.
 - `synthetic-probes/`: optional blackbox-style probe contract for SLO and
   availability dashboard panels and alerts.
+
+## Maturity labels
+
+| Example family | Lifecycle | Evidence |
+| -------------- | --------- | -------- |
+| `docker-compose/` | `stable` for local evaluation | `profile-validated` when live profile checks pass |
+| `audit-archive-health/` | `reference` | `documented` |
+| `kubernetes/` | `reference` | `documented` |
+| `kubernetes/kind/operator-managed/` | `reference` | `profile-validated` when kind validation passes |
+| `kubernetes/operator-managed/` | `reference` | `documented` |
+| `synthetic-probes/` | `reference` | `documented` |

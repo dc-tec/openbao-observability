@@ -12,7 +12,7 @@ import (
 
 type StreamContract struct {
 	Version         string   `yaml:"version"`
-	Status          string   `yaml:"status"`
+	Maturity        Maturity `yaml:"maturity"`
 	Streams         []Stream `yaml:"streams"`
 	AllowedLabels   []string `yaml:"allowedLabels"`
 	ForbiddenLabels []string `yaml:"forbiddenLabels"`
@@ -168,6 +168,9 @@ func (c StreamContract) validateShape(path string) error {
 }
 
 func (c StreamContract) validateStreamContractHeader(path string) error {
+	if err := validateMaturity(path, c.Maturity); err != nil {
+		return err
+	}
 	switch {
 	case len(c.Streams) == 0:
 		return fmt.Errorf("stream contract %s has no streams", path)

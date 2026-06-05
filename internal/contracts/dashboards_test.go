@@ -124,7 +124,10 @@ func writeDashboardContract(t *testing.T, dir, content string) string {
 
 func baseDashboardContract() string {
 	return `version: v0.1
-status: draft
+maturity:
+  lifecycle: draft
+  evidence:
+    - generated-validated
 uid: openbao-overview
 title: OpenBao overview
 refresh: 30s

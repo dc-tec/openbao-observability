@@ -17,7 +17,12 @@ func TestGenerateMatrixReportsFixtureCoverage(t *testing.T) {
 	}
 
 	writeFile(t, contractPath, `version: v0.1
-status: draft
+maturity:
+  lifecycle: draft
+  evidence:
+    - documented
+    - fixture-validated
+    - generated-validated
 openbaoVersion: "2.5.4"
 metricPrefixes:
   supported:
@@ -74,6 +79,8 @@ vault_core_active{cluster="test",instance="node0"} 1
 		"`vault-prefix`",
 		"`openbao-prefix`",
 		"`raft-vault-node0`",
+		"| Maturity lifecycle | `draft` |",
+		"| Maturity evidence | `documented`, `fixture-validated`, `generated-validated` |",
 		"`vault_core_active` | observed | gauge | `cluster`",
 		"`openbao_token_count` | observed | gauge | `namespace`",
 		"`vault_token_count` | missing | - | none",

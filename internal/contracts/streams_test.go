@@ -131,7 +131,10 @@ func writeStreamTestRepository(t *testing.T, streamContract, alertContract, dash
 
 func baseStreamContract() string {
 	return `version: v0.1
-status: draft
+maturity:
+  lifecycle: draft
+  evidence:
+    - documented
 streams:
   - id: openbao.operational
     default: enabled

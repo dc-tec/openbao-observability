@@ -167,7 +167,12 @@ func renderMatrix(
 	fmt.Fprintf(&buf, "| Contract | `%s` |\n", markdownCell(filepath.ToSlash(opts.ContractPath)))
 	fmt.Fprintf(&buf, "| Fixture directory | `%s` |\n", markdownCell(filepath.ToSlash(opts.FixtureDir)))
 	fmt.Fprintf(&buf, "| OpenBao version | `%s` |\n", markdownCell(contract.OpenBAOVersion))
-	fmt.Fprintf(&buf, "| Contract status | `%s` |\n", markdownCell(contract.Status))
+	fmt.Fprintf(&buf, "| Maturity lifecycle | `%s` |\n", markdownCell(contract.Maturity.Lifecycle))
+	fmt.Fprintf(
+		&buf,
+		"| Maturity evidence | `%s` |\n",
+		markdownCell(strings.Join(contract.Maturity.Evidence, "`, `")),
+	)
 	fmt.Fprintf(
 		&buf,
 		"| Supported prefixes | `%s` |\n",

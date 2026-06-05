@@ -1,5 +1,8 @@
 version: v0.1
-status: draft
+maturity:
+  lifecycle: draft
+  evidence:
+    - generated-validated
 uid: openbao-slo-availability
 title: OpenBao SLO and availability
 refresh: 30s
