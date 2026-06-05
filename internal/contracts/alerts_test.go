@@ -144,7 +144,11 @@ func writeAlertTestRepository(t *testing.T, content string, runbooks []string) s
 
 func baseAlertContract() string {
 	return `version: v0.1
-status: draft
+maturity:
+  lifecycle: draft
+  evidence:
+    - documented
+    - generated-validated
 metricPrefixVariable: ${p}
 sourcePrefix: vault
 alerts:

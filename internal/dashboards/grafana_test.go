@@ -85,7 +85,10 @@ func TestBuildGrafanaDashboardUsesStablePanelIDs(t *testing.T) {
 
 func dashboardContract() string {
 	return `version: v0.1
-status: draft
+maturity:
+  lifecycle: draft
+  evidence:
+    - generated-validated
 uid: openbao-overview
 title: OpenBao overview
 refresh: 30s

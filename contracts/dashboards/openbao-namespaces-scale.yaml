@@ -1,5 +1,8 @@
 version: v0.1
-status: draft
+maturity:
+  lifecycle: draft
+  evidence:
+    - generated-validated
 uid: openbao-namespaces-scale
 title: OpenBao namespaces and scale
 refresh: 30s

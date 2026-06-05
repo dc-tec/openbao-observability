@@ -14,7 +14,7 @@ import (
 
 type DashboardContract struct {
 	Version     string               `yaml:"version"`
-	Status      string               `yaml:"status"`
+	Maturity    Maturity             `yaml:"maturity"`
 	UID         string               `yaml:"uid"`
 	Title       string               `yaml:"title"`
 	Refresh     string               `yaml:"refresh"`
@@ -177,6 +177,9 @@ func (c DashboardContract) validateShape(path string) error {
 }
 
 func (c DashboardContract) validateMetadata(path string) error {
+	if err := validateMaturity(path, c.Maturity); err != nil {
+		return err
+	}
 	switch {
 	case c.UID == "":
 		return fmt.Errorf("dashboard contract %s is missing uid", path)

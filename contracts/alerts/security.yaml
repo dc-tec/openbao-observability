@@ -1,5 +1,9 @@
 version: v0.1
-status: draft
+maturity:
+  lifecycle: reference
+  evidence:
+    - documented
+    - generated-validated
 metricPrefixVariable: ${p}
 sourcePrefix: vault
 alerts:

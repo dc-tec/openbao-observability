@@ -12,11 +12,11 @@ import (
 )
 
 type AlertContract struct {
-	Version              string  `yaml:"version"`
-	Status               string  `yaml:"status"`
-	MetricPrefixVariable string  `yaml:"metricPrefixVariable"`
-	SourcePrefix         string  `yaml:"sourcePrefix"`
-	Alerts               []Alert `yaml:"alerts"`
+	Version              string   `yaml:"version"`
+	Maturity             Maturity `yaml:"maturity"`
+	MetricPrefixVariable string   `yaml:"metricPrefixVariable"`
+	SourcePrefix         string   `yaml:"sourcePrefix"`
+	Alerts               []Alert  `yaml:"alerts"`
 }
 
 type Alert struct {
@@ -184,6 +184,9 @@ func isExternalRunbook(runbook string) bool {
 }
 
 func (c AlertContract) validateShape(contractPath string) error {
+	if err := validateMaturity(contractPath, c.Maturity); err != nil {
+		return err
+	}
 	if len(c.Alerts) == 0 {
 		return fmt.Errorf("alert contract %s has no alerts", contractPath)
 	}

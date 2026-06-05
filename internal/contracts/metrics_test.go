@@ -47,6 +47,23 @@ func TestLoadMetricContractRejectsDuplicateMetricIDs(t *testing.T) {
 	}
 }
 
+func TestLoadMetricContractRejectsInvalidMaturity(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "contract.yaml")
+	content := strings.Replace(baseContract("2.5.4", nil), "lifecycle: draft", "lifecycle: preview", 1)
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write contract: %v", err)
+	}
+
+	_, err := LoadMetricContract(path)
+	if err == nil {
+		t.Fatal("expected invalid maturity lifecycle to fail")
+	}
+	if !strings.Contains(err.Error(), "maturity.lifecycle") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestVerifyMetricContract(t *testing.T) {
 	dir := t.TempDir()
 	fixtureDir := filepath.Join(dir, "fixtures")
@@ -124,7 +141,12 @@ func baseContract(version string, required []string) string {
 	}
 
 	return `version: v0.1
-status: draft
+maturity:
+  lifecycle: draft
+  evidence:
+    - documented
+    - fixture-validated
+    - generated-validated
 openbaoVersion: "` + version + `"
 metricPrefixes:
   supported:

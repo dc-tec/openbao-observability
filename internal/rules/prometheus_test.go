@@ -259,7 +259,12 @@ func TestBuildPrometheusRuleUsesDefaultRecordPrefix(t *testing.T) {
 
 func ruleContract() string {
 	return `version: v0.1
-status: draft
+maturity:
+  lifecycle: draft
+  evidence:
+    - documented
+    - fixture-validated
+    - generated-validated
 openbaoVersion: "2.5.4"
 metricPrefixes:
   supported:
@@ -279,7 +284,11 @@ metrics:
 
 func alertContract() string {
 	return `version: v0.1
-status: draft
+maturity:
+  lifecycle: draft
+  evidence:
+    - documented
+    - generated-validated
 metricPrefixVariable: ${p}
 sourcePrefix: vault
 alerts:
