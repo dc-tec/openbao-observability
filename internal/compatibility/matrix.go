@@ -20,9 +20,11 @@ type MatrixOptions struct {
 }
 
 type fixtureProfile struct {
-	Name   string
-	Prefix string
-	Path   string
+	Name               string
+	Class              string
+	Prefix             string
+	DefaultExpectation string
+	Path               string
 }
 
 type metricObservation struct {
@@ -30,6 +32,26 @@ type metricObservation struct {
 	Type   string
 	Labels []string
 }
+
+type profileCoverageCounts struct {
+	Observed            int
+	MissingRequired     int
+	OptionalMissing     int
+	NotApplicable       int
+	MissingUnclassified int
+}
+
+const (
+	profileClassPrefixSmoke = "prefix-smoke"
+
+	coverageUnclassified = "unclassified"
+
+	statusObserved            = "observed"
+	statusMissingRequired     = "missing-required"
+	statusOptionalMissing     = "optional-missing"
+	statusNotApplicable       = "not-applicable"
+	statusMissingUnclassified = "missing-unclassified"
+)
 
 func GenerateMatrix(opts MatrixOptions) error {
 	opts = opts.withDefaults()
@@ -81,6 +103,7 @@ func (o MatrixOptions) withDefaults() MatrixOptions {
 func fixtureProfiles(root string, contract *contracts.MetricContract) ([]fixtureProfile, error) {
 	seen := map[string]bool{}
 	profiles := []fixtureProfile{}
+	coverageProfiles := coverageProfilesByID(contract)
 
 	for _, prefix := range contract.MetricPrefixes.Supported {
 		profile := fixtureProfile{
@@ -92,6 +115,7 @@ func fixtureProfiles(root string, contract *contracts.MetricContract) ([]fixture
 				fmt.Sprintf("openbao-%s-%s-prefix.prom", contract.OpenBAOVersion, prefix),
 			),
 		}
+		applyCoverageProfile(&profile, coverageProfiles)
 		if _, err := os.Stat(profile.Path); err != nil {
 			return nil, fmt.Errorf("required compatibility fixture %s is not readable: %w", profile.Path, err)
 		}
@@ -116,10 +140,28 @@ func fixtureProfiles(root string, contract *contracts.MetricContract) ([]fixture
 			Prefix: fixturePrefix(filepath.Base(path), contract),
 			Path:   path,
 		}
+		applyCoverageProfile(&profile, coverageProfiles)
 		profiles = append(profiles, profile)
 	}
 
 	return profiles, nil
+}
+
+func coverageProfilesByID(contract *contracts.MetricContract) map[string]contracts.CoverageProfile {
+	profiles := make(map[string]contracts.CoverageProfile, len(contract.CoverageProfiles))
+	for _, profile := range contract.CoverageProfiles {
+		profiles[profile.ID] = profile
+	}
+	return profiles
+}
+
+func applyCoverageProfile(profile *fixtureProfile, coverageProfiles map[string]contracts.CoverageProfile) {
+	coverageProfile, ok := coverageProfiles[profile.Name]
+	if !ok {
+		return
+	}
+	profile.Class = coverageProfile.Class
+	profile.DefaultExpectation = coverageProfile.DefaultExpectation
 }
 
 func fixtureProfileName(base, version string) string {
@@ -182,18 +224,30 @@ func renderMatrix(
 
 	fmt.Fprintln(&buf, "## Fixture profiles")
 	fmt.Fprintln(&buf)
-	fmt.Fprintln(&buf, "| Profile | Prefix | Fixture | Observed metrics | Missing contract metrics |")
-	fmt.Fprintln(&buf, "| ------- | ------ | ------- | ---------------- | ------------------------ |")
+	fmt.Fprintln(
+		&buf,
+		"| Profile | Class | Prefix | Fixture | Observed | Missing required | "+
+			"Optional missing | Not applicable | Unclassified missing |",
+	)
+	fmt.Fprintln(
+		&buf,
+		"| ------- | ----- | ------ | ------- | -------- | ---------------- | "+
+			"---------------- | -------------- | -------------------- |",
+	)
 	for _, profile := range profiles {
-		observed, missing := profileCounts(contract, profile, familiesByProfile[profile.Name])
+		counts := profileCounts(contract, profile, familiesByProfile[profile.Name])
 		fmt.Fprintf(
 			&buf,
-			"| `%s` | `%s` | `%s` | %d | %d |\n",
+			"| `%s` | `%s` | `%s` | `%s` | %d | %d | %d | %d | %d |\n",
 			markdownCell(profile.Name),
+			markdownCell(defaultDash(profile.Class)),
 			markdownCell(profile.Prefix),
 			markdownCell(filepath.ToSlash(profile.Path)),
-			observed,
-			missing,
+			counts.Observed,
+			counts.MissingRequired,
+			counts.OptionalMissing,
+			counts.NotApplicable,
+			counts.MissingUnclassified,
 		)
 	}
 	fmt.Fprintln(&buf)
@@ -202,27 +256,30 @@ func renderMatrix(
 	fmt.Fprintln(&buf)
 	fmt.Fprintln(
 		&buf,
-		"| OpenBao version | Profile | Prefix | Metric ID | Docs metric | Source metric | "+
-			"Status | Type | Labels | Required | Overview | Notes |",
+		"| OpenBao version | Profile | Profile class | Prefix | Metric ID | Docs metric | Source metric | "+
+			"Expectation | Status | Type | Labels | Required | Overview | Notes |",
 	)
 	fmt.Fprintln(
 		&buf,
-		"| --------------- | ------- | ------ | --------- | ----------- | ------------- | "+
-			"------ | ---- | ------ | -------- | -------- | ----- |",
+		"| --------------- | ------- | ------------- | ------ | --------- | ----------- | ------------- | "+
+			"----------- | ------ | ---- | ------ | -------- | -------- | ----- |",
 	)
 	for _, metric := range contract.Metrics {
 		for _, profile := range profiles {
 			sourceName := metric.FixtureName(profile.Prefix)
-			obs := observeMetric(familiesByProfile[profile.Name], sourceName)
+			expectation := metricExpectation(metric, profile)
+			obs := observeMetric(familiesByProfile[profile.Name], sourceName, expectation)
 			fmt.Fprintf(
 				&buf,
-				"| `%s` | `%s` | `%s` | `%s` | `%s` | `%s` | %s | %s | %s | %s | %s | %s |\n",
+				"| `%s` | `%s` | `%s` | `%s` | `%s` | `%s` | `%s` | %s | %s | %s | %s | %s | %s | %s |\n",
 				markdownCell(contract.OpenBAOVersion),
 				markdownCell(profile.Name),
+				markdownCell(defaultDash(profile.Class)),
 				markdownCell(profile.Prefix),
 				markdownCell(metric.ID),
 				markdownCell(metric.DocsName),
 				markdownCell(sourceName),
+				markdownCell(expectation),
 				markdownCell(obs.Status),
 				markdownCell(defaultDash(obs.Type)),
 				markdownCell(labelText(obs.Labels)),
@@ -236,28 +293,66 @@ func renderMatrix(
 	return buf.Bytes()
 }
 
-func profileCounts(contract *contracts.MetricContract, profile fixtureProfile, families promtext.Families) (int, int) {
-	observed := 0
-	missing := 0
+func profileCounts(
+	contract *contracts.MetricContract,
+	profile fixtureProfile,
+	families promtext.Families,
+) profileCoverageCounts {
+	var counts profileCoverageCounts
 	for _, metric := range contract.Metrics {
-		if families.HasMetric(metric.FixtureName(profile.Prefix)) {
-			observed++
-		} else {
-			missing++
+		expectation := metricExpectation(metric, profile)
+		obs := observeMetric(families, metric.FixtureName(profile.Prefix), expectation)
+		switch obs.Status {
+		case statusObserved:
+			counts.Observed++
+		case statusMissingRequired:
+			counts.MissingRequired++
+		case statusOptionalMissing:
+			counts.OptionalMissing++
+		case statusNotApplicable:
+			counts.NotApplicable++
+		case statusMissingUnclassified:
+			counts.MissingUnclassified++
 		}
 	}
-	return observed, missing
+	return counts
 }
 
-func observeMetric(families promtext.Families, name string) metricObservation {
+func metricExpectation(metric contracts.Metric, profile fixtureProfile) string {
+	if expectation := metric.Coverage[profile.Name]; expectation != "" {
+		return expectation
+	}
+	if profile.Class == profileClassPrefixSmoke && metric.Required {
+		return contracts.MetricCoverageRequired
+	}
+	if profile.DefaultExpectation != "" {
+		return profile.DefaultExpectation
+	}
+	return coverageUnclassified
+}
+
+func observeMetric(families promtext.Families, name, expectation string) metricObservation {
 	family, ok := families[name]
 	if !ok {
-		return metricObservation{Status: "missing"}
+		return metricObservation{Status: missingStatus(expectation)}
 	}
 	return metricObservation{
-		Status: "observed",
+		Status: statusObserved,
 		Type:   metricType(family.GetType()),
 		Labels: labelNames(family),
+	}
+}
+
+func missingStatus(expectation string) string {
+	switch expectation {
+	case contracts.MetricCoverageRequired:
+		return statusMissingRequired
+	case contracts.MetricCoverageOptional:
+		return statusOptionalMissing
+	case contracts.MetricCoverageNotApplicable:
+		return statusNotApplicable
+	default:
+		return statusMissingUnclassified
 	}
 }
 

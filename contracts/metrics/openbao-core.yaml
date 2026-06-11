@@ -22,6 +22,25 @@ fixtures:
   required:
     - fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-vault-prefix.prom
     - fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-openbao-prefix.prom
+coverageProfiles:
+  - id: vault-prefix
+    class: prefix-smoke
+    defaultExpectation: optional
+  - id: openbao-prefix
+    class: prefix-smoke
+    defaultExpectation: optional
+  - id: raft-vault-node0
+    class: ha-raft-active
+    defaultExpectation: optional
+  - id: raft-vault-node1
+    class: ha-raft-standby
+    defaultExpectation: optional
+  - id: raft-vault-node2
+    class: ha-raft-standby
+    defaultExpectation: optional
+  - id: raft-vault-read-replica0
+    class: ha-raft-read-replica
+    defaultExpectation: optional
 metrics:
   - id: core_active
     docsName: vault.core.active

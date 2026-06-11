@@ -11,13 +11,14 @@ import (
 )
 
 type MetricContract struct {
-	Version        string         `yaml:"version"`
-	Maturity       Maturity       `yaml:"maturity"`
-	OpenBAOVersion string         `yaml:"openbaoVersion"`
-	MetricPrefixes MetricPrefixes `yaml:"metricPrefixes"`
-	Normalization  Normalization  `yaml:"normalization"`
-	Fixtures       Fixtures       `yaml:"fixtures"`
-	Metrics        []Metric       `yaml:"metrics"`
+	Version          string            `yaml:"version"`
+	Maturity         Maturity          `yaml:"maturity"`
+	OpenBAOVersion   string            `yaml:"openbaoVersion"`
+	MetricPrefixes   MetricPrefixes    `yaml:"metricPrefixes"`
+	Normalization    Normalization     `yaml:"normalization"`
+	Fixtures         Fixtures          `yaml:"fixtures"`
+	CoverageProfiles []CoverageProfile `yaml:"coverageProfiles"`
+	Metrics          []Metric          `yaml:"metrics"`
 }
 
 type MetricPrefixes struct {
@@ -34,14 +35,27 @@ type Fixtures struct {
 	Required []string `yaml:"required"`
 }
 
+type CoverageProfile struct {
+	ID                 string `yaml:"id"`
+	Class              string `yaml:"class"`
+	DefaultExpectation string `yaml:"defaultExpectation"`
+}
+
+const (
+	MetricCoverageRequired      = "required"
+	MetricCoverageOptional      = "optional"
+	MetricCoverageNotApplicable = "not-applicable"
+)
+
 type Metric struct {
-	ID                    string   `yaml:"id"`
-	DocsName              string   `yaml:"docsName"`
-	PrometheusName        string   `yaml:"prometheusName"`
-	FixturePrometheusName string   `yaml:"fixturePrometheusName"`
-	Required              bool     `yaml:"required"`
-	Overview              bool     `yaml:"overview"`
-	Notes                 []string `yaml:"notes"`
+	ID                    string            `yaml:"id"`
+	DocsName              string            `yaml:"docsName"`
+	PrometheusName        string            `yaml:"prometheusName"`
+	FixturePrometheusName string            `yaml:"fixturePrometheusName"`
+	Required              bool              `yaml:"required"`
+	Overview              bool              `yaml:"overview"`
+	Notes                 []string          `yaml:"notes"`
+	Coverage              map[string]string `yaml:"coverage"`
 }
 
 type VerifyOptions struct {
@@ -117,6 +131,21 @@ func (c MetricContract) validateShape(path string) error {
 	if err := validateMaturity(path, c.Maturity); err != nil {
 		return err
 	}
+	if err := c.validateMetricContractShapeBasics(path); err != nil {
+		return err
+	}
+	coverageProfiles, err := c.validateCoverageProfiles(path)
+	if err != nil {
+		return err
+	}
+	if err := c.validateMetrics(path, coverageProfiles); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c MetricContract) validateMetricContractShapeBasics(path string) error {
 	if c.OpenBAOVersion == "" {
 		return fmt.Errorf("metric contract %s is missing openbaoVersion", path)
 	}
@@ -132,7 +161,33 @@ func (c MetricContract) validateShape(path string) error {
 	if len(c.Metrics) == 0 {
 		return fmt.Errorf("metric contract %s has no metrics", path)
 	}
+	return nil
+}
 
+func (c MetricContract) validateCoverageProfiles(path string) (map[string]bool, error) {
+	coverageProfiles := map[string]bool{}
+	for _, profile := range c.CoverageProfiles {
+		if profile.ID == "" {
+			return nil, fmt.Errorf("metric contract %s has a coverage profile without an id", path)
+		}
+		if coverageProfiles[profile.ID] {
+			return nil, fmt.Errorf("metric contract %s has duplicate coverage profile id %q", path, profile.ID)
+		}
+		coverageProfiles[profile.ID] = true
+		if profile.Class == "" {
+			return nil, fmt.Errorf("coverage profile %s is missing class", profile.ID)
+		}
+		if err := validateMetricCoverageExpectation(
+			profile.DefaultExpectation,
+			fmt.Sprintf("coverage profile %s defaultExpectation", profile.ID),
+		); err != nil {
+			return nil, err
+		}
+	}
+	return coverageProfiles, nil
+}
+
+func (c MetricContract) validateMetrics(path string, coverageProfiles map[string]bool) error {
 	seen := map[string]bool{}
 	for _, metric := range c.Metrics {
 		if metric.ID == "" {
@@ -145,9 +200,35 @@ func (c MetricContract) validateShape(path string) error {
 		if metric.PrometheusName == "" {
 			return fmt.Errorf("metric %s is missing prometheusName", metric.ID)
 		}
+		for profileID, expectation := range metric.Coverage {
+			if !coverageProfiles[profileID] {
+				return fmt.Errorf("metric %s has coverage for unknown profile %q", metric.ID, profileID)
+			}
+			if err := validateMetricCoverageExpectation(
+				expectation,
+				fmt.Sprintf("metric %s coverage for profile %s", metric.ID, profileID),
+			); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
+}
+
+func validateMetricCoverageExpectation(value, field string) error {
+	switch value {
+	case MetricCoverageRequired, MetricCoverageOptional, MetricCoverageNotApplicable:
+		return nil
+	default:
+		return fmt.Errorf(
+			"%s must be one of %q, %q, or %q",
+			field,
+			MetricCoverageRequired,
+			MetricCoverageOptional,
+			MetricCoverageNotApplicable,
+		)
+	}
 }
 
 func (m Metric) FixtureName(prefix string) string {

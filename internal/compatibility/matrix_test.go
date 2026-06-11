@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/dc-tec/openbao-observability/internal/contracts"
 )
 
 func TestGenerateMatrixReportsFixtureCoverage(t *testing.T) {
@@ -31,6 +33,16 @@ metricPrefixes:
   default: vault
 normalization:
   recordingRulePrefix: openbao
+coverageProfiles:
+  - id: vault-prefix
+    class: prefix-smoke
+    defaultExpectation: optional
+  - id: openbao-prefix
+    class: prefix-smoke
+    defaultExpectation: optional
+  - id: raft-vault-node0
+    class: ha-raft-active
+    defaultExpectation: optional
 metrics:
   - id: core_active
     docsName: vault.core.active
@@ -79,16 +91,54 @@ vault_core_active{cluster="test",instance="node0"} 1
 		"`vault-prefix`",
 		"`openbao-prefix`",
 		"`raft-vault-node0`",
+		"| `raft-vault-node0` | `ha-raft-active` | `vault` |",
 		"| Maturity lifecycle | `draft` |",
 		"| Maturity evidence | `documented`, `fixture-validated`, `generated-validated` |",
-		"`vault_core_active` | observed | gauge | `cluster`",
-		"`openbao_token_count` | observed | gauge | `namespace`",
-		"`vault_token_count` | missing | - | none",
+		"`vault_core_active` | required | observed | gauge | `cluster`",
+		"`openbao_token_count` | optional | observed | gauge | `namespace`",
+		"`vault_token_count` | optional | optional-missing | - | none",
 		"Observed in test fixtures.",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("generated matrix did not contain %q:\n%s", want, got)
 		}
+	}
+}
+
+func TestMissingStatusClassifiesExpectations(t *testing.T) {
+	tests := []struct {
+		name        string
+		expectation string
+		want        string
+	}{
+		{
+			name:        "required",
+			expectation: contracts.MetricCoverageRequired,
+			want:        statusMissingRequired,
+		},
+		{
+			name:        "optional",
+			expectation: contracts.MetricCoverageOptional,
+			want:        statusOptionalMissing,
+		},
+		{
+			name:        "not applicable",
+			expectation: contracts.MetricCoverageNotApplicable,
+			want:        statusNotApplicable,
+		},
+		{
+			name:        "unclassified",
+			expectation: coverageUnclassified,
+			want:        statusMissingUnclassified,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := missingStatus(tt.expectation); got != tt.want {
+				t.Fatalf("missingStatus(%q) = %q, want %q", tt.expectation, got, tt.want)
+			}
+		})
 	}
 }
 
