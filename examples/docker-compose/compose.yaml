@@ -148,7 +148,7 @@ services:
       - loki-data:/loki
 
   alloy:
-    image: ${ALLOY_IMAGE:-grafana/alloy:v1.16.2}
+    image: ${ALLOY_IMAGE:-grafana/alloy:v1.17.0}
     depends_on:
       - loki
       - openbao-node0
