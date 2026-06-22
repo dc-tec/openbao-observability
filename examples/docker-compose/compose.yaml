@@ -2,7 +2,7 @@ name: openbao-observability
 
 services:
   openbao-seal-init:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.5}
     user: "0"
     command:
       - sh
@@ -31,7 +31,7 @@ services:
     restart: "no"
 
   openbao-node0:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.5}
     user: "0"
     depends_on:
       openbao-seal-init:
@@ -72,7 +72,7 @@ services:
       retries: 24
 
   openbao-node1:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.5}
     user: "0"
     depends_on:
       openbao-node0:
@@ -95,7 +95,7 @@ services:
       retries: 24
 
   openbao-node2:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.5}
     user: "0"
     depends_on:
       openbao-node0:
@@ -172,7 +172,7 @@ services:
       - alloy-data:/var/lib/alloy/data
 
   openbao-audit-canary:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.4}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.5}
     depends_on:
       openbao-node0:
         condition: service_healthy
