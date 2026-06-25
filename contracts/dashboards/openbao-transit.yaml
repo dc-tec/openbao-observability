@@ -24,6 +24,10 @@ datasources:
     type: loki
     uid: loki
 variables:
+  - name: openbao_namespace
+    label: Kubernetes namespace
+    type: textbox
+    default: .*
   - name: request_id
     label: Request ID
     type: textbox
@@ -53,7 +57,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited Transit requests matching the selected filters over 5 minutes.
     grid:
@@ -66,7 +70,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited Transit response entries with error fields over 5 minutes.
     grid:
@@ -79,7 +83,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_error=~"(?s).*permission denied.*" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_error=~"(?s).*permission denied.*" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited Transit requests denied by policy over 5 minutes.
     grid:
@@ -92,7 +96,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/keys(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/keys(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited Transit key management requests over 5 minutes.
     grid:
@@ -105,7 +109,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/encrypt(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/encrypt(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited Transit encrypt requests over 5 minutes.
     grid:
@@ -118,7 +122,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/decrypt(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/decrypt(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited Transit decrypt requests over 5 minutes.
     grid:
@@ -131,7 +135,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(sign|verify)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(sign|verify)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited Transit sign and verify requests over 5 minutes.
     grid:
@@ -144,7 +148,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(datakey|random|hash|hmac)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(datakey|random|hash|hmac)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited Transit datakey, random, hash, and HMAC requests over 5 minutes.
     grid:
@@ -157,7 +161,7 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     legend: "{{node_id}}"
     unit: short
     description: Shows filtered Transit request volume by OpenBao node over 5 minutes.
@@ -171,7 +175,7 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     legend: "{{node_id}}"
     unit: short
     description: Shows audited Transit response errors by OpenBao node over 5 minutes.
@@ -185,7 +189,7 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/keys(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/keys(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     legend: "{{node_id}}"
     unit: short
     description: Shows Transit key management request volume by OpenBao node over 5 minutes.
@@ -199,7 +203,7 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     legend: "{{node_id}}"
     unit: short
     description: Shows Transit cryptographic request volume by OpenBao node over 5 minutes.
@@ -213,7 +217,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/keys(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/keys(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited Transit key management requests.
     grid:
       x: 0
@@ -225,7 +229,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${transit_path:raw}/(encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited Transit cryptographic operation requests.
     grid:
       x: 12
@@ -237,7 +241,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${transit_path:raw}/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited Transit response entries that include error fields.
     grid:
       x: 0
@@ -249,7 +253,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.operational", node_id=~"${node_id:raw}"} |~ "(?i)(transit|sealwrap|cipher|crypto|key)" |~ "(?i)(error|failed|warn|timeout|denied)"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational", node_id=~"${node_id:raw}"} |~ "(?i)(transit|sealwrap|cipher|crypto|key)" |~ "(?i)(error|failed|warn|timeout|denied)"'
     description: Shows operational log lines that mention Transit, cryptographic, or key symptoms.
     grid:
       x: 12

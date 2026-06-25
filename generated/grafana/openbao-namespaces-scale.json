@@ -59,7 +59,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", namespace_id=\"request.namespace.id\" | audit_type=\"request\" | namespace_id=~\"${namespace:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", namespace_id=\"request.namespace.id\" | audit_type=\"request\" | namespace_id=~\"${namespace:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -118,7 +118,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", namespace_id=\"request.namespace.id\" | audit_type=\"response\" | audit_error!=\"\" | namespace_id=~\"${namespace:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", namespace_id=\"request.namespace.id\" | audit_type=\"response\" | audit_error!=\"\" | namespace_id=~\"${namespace:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -478,7 +478,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_mount_table_num_entries:max",
+          "expr": "openbao:core_mount_table_num_entries:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "{{type}} local={{local}}",
           "range": true,
@@ -538,7 +538,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_mount_table_size:max",
+          "expr": "openbao:core_mount_table_size:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "{{type}} local={{local}}",
           "range": true,
@@ -599,7 +599,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:raft_peers:max",
+          "expr": "openbao:raft_peers:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Raft peers",
           "range": true,
@@ -660,7 +660,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:autopilot_failure_tolerance:max",
+          "expr": "openbao:autopilot_failure_tolerance:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Failure tolerance",
           "range": true,
@@ -721,7 +721,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(openbao:autopilot_node_healthy:min{node_id=~\"${node_id:raw}\"})",
+          "expr": "sum(openbao:autopilot_node_healthy:min{namespace=~\"${openbao_namespace:raw}\",node_id=~\"${node_id:raw}\"})",
           "format": "time_series",
           "legendFormat": "Healthy Raft nodes",
           "range": true,
@@ -782,7 +782,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(1 - openbao:autopilot_node_healthy:min{node_id=~\"${node_id:raw}\"})",
+          "expr": "sum(1 - openbao:autopilot_node_healthy:min{namespace=~\"${openbao_namespace:raw}\",node_id=~\"${node_id:raw}\"})",
           "format": "time_series",
           "legendFormat": "Unhealthy Raft nodes",
           "range": true,
@@ -842,7 +842,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:autopilot_node_healthy:min{node_id=~\"${node_id:raw}\"}",
+          "expr": "openbao:autopilot_node_healthy:min{namespace=~\"${openbao_namespace:raw}\",node_id=~\"${node_id:raw}\"}",
           "format": "time_series",
           "legendFormat": "{{node_id}}",
           "range": true,
@@ -902,7 +902,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:raft_storage_apply_gap:max{peer_id=~\"${peer_id:raw}\"}",
+          "expr": "openbao:raft_storage_apply_gap:max{namespace=~\"${openbao_namespace:raw}\",peer_id=~\"${peer_id:raw}\"}",
           "format": "time_series",
           "legendFormat": "{{peer_id}} {{instance}}",
           "range": true,
@@ -962,7 +962,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:raft_storage_fsm_pending:max{peer_id=~\"${peer_id:raw}\"}",
+          "expr": "openbao:raft_storage_fsm_pending:max{namespace=~\"${openbao_namespace:raw}\",peer_id=~\"${peer_id:raw}\"}",
           "format": "time_series",
           "legendFormat": "{{peer_id}} {{instance}}",
           "range": true,
@@ -1018,7 +1018,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\", namespace_id=\"request.namespace.id\" | namespace_id=~\"${namespace:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\", namespace_id=\"request.namespace.id\" | namespace_id=~\"${namespace:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -1072,7 +1072,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\", namespace_id=\"request.namespace.id\" | audit_type=\"response\" | audit_error!=\"\" | namespace_id=~\"${namespace:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\", namespace_id=\"request.namespace.id\" | audit_type=\"response\" | audit_error!=\"\" | namespace_id=~\"${namespace:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -1126,7 +1126,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.operational\", node_id=~\"${node_id:raw}\"} |~ \"(?i)(namespace|raft|autopilot|non-voter|replica|read replica|storage)\" |~ \"(?i)(warn|error|failed|lag|behind|timeout|unhealthy)\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\", node_id=~\"${node_id:raw}\"} |~ \"(?i)(namespace|raft|autopilot|non-voter|replica|read replica|storage)\" |~ \"(?i)(warn|error|failed|lag|behind|timeout|unhealthy)\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -1147,6 +1147,20 @@
   ],
   "templating": {
     "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Kubernetes namespace",
+        "name": "openbao_namespace",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
       {
         "current": {
           "selected": true,

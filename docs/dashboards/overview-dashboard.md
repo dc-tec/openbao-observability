@@ -49,6 +49,10 @@ Deploy the generated Prometheus recording rules before you rely on this
 dashboard. Most metric panels use normalized `openbao:` rules instead of raw
 `vault_*` or `openbao_*` source metrics.
 
+The generated dashboard exposes a Kubernetes namespace selector for
+deployments where multiple OpenBao instances share the same observability
+backend.
+
 ## Scrape profile assumptions
 
 The dashboard works best when the scrape profile matches the question you ask.
@@ -59,9 +63,10 @@ The dashboard works best when the scrape profile matches the question you ask.
 | Private all-node scrape | Per-node HA, Raft, Autopilot, runtime, and standby visibility. | Requires stronger network isolation and label review. |
 | Local Docker Compose scrape | Reference-stack validation and dashboard development. | Not a production security model. |
 
-The scrape health panel currently queries `up{job="openbao"}`. If your
-Prometheus job label is different, update the dashboard contract or add a
-compatible recording rule before you treat scrape health as authoritative.
+The scrape health panel filters `up` by the selected Kubernetes namespace and
+expects `job="openbao"`. If your Prometheus job label is different, update the
+dashboard contract or add a compatible recording rule before you treat scrape
+health as authoritative.
 
 ## How to read cluster health
 

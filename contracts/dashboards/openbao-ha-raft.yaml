@@ -21,13 +21,18 @@ datasources:
   logs:
     type: loki
     uid: loki
+variables:
+  - name: openbao_namespace
+    label: Kubernetes namespace
+    type: textbox
+    default: .*
 panels:
   - id: raft-peers
     title: Raft peers
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:raft_peers:max
+    expression: openbao:raft_peers:max{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows the normalized Raft peer count.
     grid:
@@ -40,7 +45,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:autopilot_healthy:max
+    expression: openbao:autopilot_healthy:max{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows whether OpenBao Autopilot reports the Raft cluster as healthy.
     grid:
@@ -53,7 +58,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:autopilot_failure_tolerance:max
+    expression: openbao:autopilot_failure_tolerance:max{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows the number of voter failures Autopilot reports the cluster can tolerate.
     grid:
@@ -66,7 +71,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum(1 - openbao:autopilot_node_healthy:min)
+    expression: sum(1 - openbao:autopilot_node_healthy:min{namespace=~"${openbao_namespace:raw}"})
     unit: none
     description: Shows the number of Raft nodes Autopilot reports as unhealthy.
     grid:
@@ -79,7 +84,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:core_active:sum
+    expression: openbao:core_active:sum{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows the number of active OpenBao nodes.
     grid:
@@ -92,7 +97,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:core_unsealed:sum
+    expression: openbao:core_unsealed:sum{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows the number of unsealed OpenBao nodes.
     grid:
@@ -131,7 +136,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:autopilot_node_healthy:min
+    expression: openbao:autopilot_node_healthy:min{namespace=~"${openbao_namespace:raw}"}
     legend: "{{node_id}}"
     unit: none
     description: Shows Autopilot node health by Raft node ID.
@@ -145,7 +150,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: max by (instance, peer_id) (vault_raft_storage_stats_commit_index)
+    expression: max by (instance, peer_id) (vault_raft_storage_stats_commit_index{namespace=~"${openbao_namespace:raw}"})
     legend: "{{peer_id}} commit"
     unit: none
     description: Shows Raft commit index by peer.
@@ -159,7 +164,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: max by (instance, peer_id) (vault_raft_storage_stats_applied_index)
+    expression: max by (instance, peer_id) (vault_raft_storage_stats_applied_index{namespace=~"${openbao_namespace:raw}"})
     legend: "{{peer_id}} applied"
     unit: none
     description: Shows Raft applied index by peer.
@@ -173,7 +178,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: max by (instance, peer_id) (vault_raft_storage_stats_fsm_pending)
+    expression: max by (instance, peer_id) (vault_raft_storage_stats_fsm_pending{namespace=~"${openbao_namespace:raw}"})
     legend: "{{peer_id}}"
     unit: none
     description: Shows pending Raft FSM work by peer.
@@ -187,7 +192,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: max by (instance, peer_id) (vault_raft_storage_stats_term)
+    expression: max by (instance, peer_id) (vault_raft_storage_stats_term{namespace=~"${openbao_namespace:raw}"})
     legend: "{{peer_id}}"
     unit: none
     description: Shows the current Raft term by peer.
@@ -201,7 +206,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: max by (instance) (vault_raft_leader_lastContact{quantile="0.99"})
+    expression: max by (instance) (vault_raft_leader_lastContact{namespace=~"${openbao_namespace:raw}",quantile="0.99"})
     legend: "{{instance}}"
     unit: ms
     description: Shows the p99 leader last-contact timer where OpenBao exposes it.
@@ -215,7 +220,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: max by (peer_id) (vault_raft_replication_heartbeat{quantile="0.99"})
+    expression: max by (peer_id) (vault_raft_replication_heartbeat{namespace=~"${openbao_namespace:raw}",quantile="0.99"})
     legend: "{{peer_id}}"
     unit: ms
     description: Shows the p99 Raft replication heartbeat timer by peer.
@@ -229,7 +234,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: max by (peer_id) (vault_raft_replication_appendEntries_logs)
+    expression: max by (peer_id) (vault_raft_replication_appendEntries_logs{namespace=~"${openbao_namespace:raw}"})
     legend: "{{peer_id}}"
     unit: none
     description: Shows append-entries log counts by peer.
@@ -243,7 +248,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.operational"} |~ "(?i)raft|storage|autopilot"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational"} |~ "(?i)raft|storage|autopilot"'
     description: Shows OpenBao operational logs related to Raft, storage, and Autopilot.
     grid:
       x: 0

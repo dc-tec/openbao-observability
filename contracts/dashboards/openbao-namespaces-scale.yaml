@@ -24,6 +24,10 @@ datasources:
     type: loki
     uid: loki
 variables:
+  - name: openbao_namespace
+    label: Kubernetes namespace
+    type: textbox
+    default: .*
   - name: namespace
     label: OpenBao namespace
     type: textbox
@@ -57,7 +61,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", namespace_id="request.namespace.id" | audit_type="request" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", namespace_id="request.namespace.id" | audit_type="request" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited request entries for the selected OpenBao namespace ID over 5 minutes.
     grid:
@@ -70,7 +74,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", namespace_id="request.namespace.id" | audit_type="response" | audit_error!="" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", namespace_id="request.namespace.id" | audit_type="response" | audit_error!="" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited response entries with error fields for the selected OpenBao namespace ID over 5 minutes.
     grid:
@@ -151,7 +155,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:core_mount_table_num_entries:max
+    expression: openbao:core_mount_table_num_entries:max{namespace=~"${openbao_namespace:raw}"}
     legend: "{{type}} local={{local}}"
     unit: short
     description: Shows mount table entry counts by bounded type and local labels.
@@ -165,7 +169,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:core_mount_table_size:max
+    expression: openbao:core_mount_table_size:max{namespace=~"${openbao_namespace:raw}"}
     legend: "{{type}} local={{local}}"
     unit: bytes
     description: Shows mount table size by bounded type and local labels.
@@ -179,7 +183,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:raft_peers:max
+    expression: openbao:raft_peers:max{namespace=~"${openbao_namespace:raw}"}
     unit: short
     description: Shows normalized Raft peer count. This includes non-voter read replicas when the source metrics expose them.
     grid:
@@ -192,7 +196,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:autopilot_failure_tolerance:max
+    expression: openbao:autopilot_failure_tolerance:max{namespace=~"${openbao_namespace:raw}"}
     unit: short
     description: Shows voter-oriented Autopilot failure tolerance.
     grid:
@@ -205,7 +209,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum(openbao:autopilot_node_healthy:min{node_id=~"${node_id:raw}"})
+    expression: sum(openbao:autopilot_node_healthy:min{namespace=~"${openbao_namespace:raw}",node_id=~"${node_id:raw}"})
     unit: short
     description: Shows Raft nodes Autopilot currently reports healthy for the selected node filter.
     grid:
@@ -218,7 +222,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum(1 - openbao:autopilot_node_healthy:min{node_id=~"${node_id:raw}"})
+    expression: sum(1 - openbao:autopilot_node_healthy:min{namespace=~"${openbao_namespace:raw}",node_id=~"${node_id:raw}"})
     unit: short
     description: Shows Raft nodes Autopilot currently reports unhealthy for the selected node filter.
     grid:
@@ -231,7 +235,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:autopilot_node_healthy:min{node_id=~"${node_id:raw}"}
+    expression: openbao:autopilot_node_healthy:min{namespace=~"${openbao_namespace:raw}",node_id=~"${node_id:raw}"}
     legend: "{{node_id}}"
     unit: short
     description: Shows Autopilot health by Raft node ID, including non-voters when exposed by the source metrics.
@@ -245,7 +249,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:raft_storage_apply_gap:max{peer_id=~"${peer_id:raw}"}
+    expression: openbao:raft_storage_apply_gap:max{namespace=~"${openbao_namespace:raw}",peer_id=~"${peer_id:raw}"}
     legend: "{{peer_id}} {{instance}}"
     unit: short
     description: Shows the derived difference between Raft commit and applied indexes by peer.
@@ -259,7 +263,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:raft_storage_fsm_pending:max{peer_id=~"${peer_id:raw}"}
+    expression: openbao:raft_storage_fsm_pending:max{namespace=~"${openbao_namespace:raw}",peer_id=~"${peer_id:raw}"}
     legend: "{{peer_id}} {{instance}}"
     unit: short
     description: Shows pending Raft FSM work by peer for voters and read replicas.
@@ -273,7 +277,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path", namespace_id="request.namespace.id" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path", namespace_id="request.namespace.id" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited entries for the selected OpenBao namespace ID, request ID, node, and operation filters.
     grid:
       x: 0
@@ -285,7 +289,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path", namespace_id="request.namespace.id" | audit_type="response" | audit_error!="" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path", namespace_id="request.namespace.id" | audit_type="response" | audit_error!="" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited response entries with errors for the selected namespace and operation filters.
     grid:
       x: 12
@@ -297,7 +301,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.operational", node_id=~"${node_id:raw}"} |~ "(?i)(namespace|raft|autopilot|non-voter|replica|read replica|storage)" |~ "(?i)(warn|error|failed|lag|behind|timeout|unhealthy)"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational", node_id=~"${node_id:raw}"} |~ "(?i)(namespace|raft|autopilot|non-voter|replica|read replica|storage)" |~ "(?i)(warn|error|failed|lag|behind|timeout|unhealthy)"'
     description: Shows operational log lines related to namespace, Raft, Autopilot, non-voter, read-replica, or storage symptoms.
     grid:
       x: 0

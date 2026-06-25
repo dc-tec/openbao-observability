@@ -59,7 +59,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:pki_issue:rate5m",
+          "expr": "openbao:pki_issue:rate5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Certificate issue rate",
           "range": true,
@@ -120,7 +120,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:pki_revoke:rate5m",
+          "expr": "openbao:pki_revoke:rate5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Certificate revoke rate",
           "range": true,
@@ -181,7 +181,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:pki_issue_failure:increase15m",
+          "expr": "openbao:pki_issue_failure:increase15m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Issue failures",
           "range": true,
@@ -242,7 +242,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:pki_revoke_failure:increase15m",
+          "expr": "openbao:pki_revoke_failure:increase15m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Revoke failures",
           "range": true,
@@ -303,7 +303,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -362,7 +362,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error!=\"\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error!=\"\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -421,7 +421,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_error=~\"(?s).*permission denied.*\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_error=~\"(?s).*permission denied.*\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -480,7 +480,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(issuer|issuers|root|intermediate)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(issuer|issuers|root|intermediate)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -538,7 +538,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(openbao:pki_issue:rate5m, \"pki_operation\", \"issue\", \"source_prefix\", \".*\") or label_replace(openbao:pki_revoke:rate5m, \"pki_operation\", \"revoke\", \"source_prefix\", \".*\")",
+          "expr": "label_replace(openbao:pki_issue:rate5m{namespace=~\"${openbao_namespace:raw}\"}, \"pki_operation\", \"issue\", \"source_prefix\", \".*\") or label_replace(openbao:pki_revoke:rate5m{namespace=~\"${openbao_namespace:raw}\"}, \"pki_operation\", \"revoke\", \"source_prefix\", \".*\")",
           "format": "time_series",
           "legendFormat": "{{pki_operation}}",
           "range": true,
@@ -598,7 +598,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(openbao:pki_issue:avg5m, \"pki_operation\", \"issue\", \"source_prefix\", \".*\") or label_replace(openbao:pki_revoke:avg5m, \"pki_operation\", \"revoke\", \"source_prefix\", \".*\")",
+          "expr": "label_replace(openbao:pki_issue:avg5m{namespace=~\"${openbao_namespace:raw}\"}, \"pki_operation\", \"issue\", \"source_prefix\", \".*\") or label_replace(openbao:pki_revoke:avg5m{namespace=~\"${openbao_namespace:raw}\"}, \"pki_operation\", \"revoke\", \"source_prefix\", \".*\")",
           "format": "time_series",
           "legendFormat": "{{pki_operation}}",
           "range": true,
@@ -658,7 +658,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(openbao:pki_issue_failure:increase15m, \"pki_operation\", \"issue\", \"source_prefix\", \".*\") or label_replace(openbao:pki_revoke_failure:increase15m, \"pki_operation\", \"revoke\", \"source_prefix\", \".*\")",
+          "expr": "label_replace(openbao:pki_issue_failure:increase15m{namespace=~\"${openbao_namespace:raw}\"}, \"pki_operation\", \"issue\", \"source_prefix\", \".*\") or label_replace(openbao:pki_revoke_failure:increase15m{namespace=~\"${openbao_namespace:raw}\"}, \"pki_operation\", \"revoke\", \"source_prefix\", \".*\")",
           "format": "time_series",
           "legendFormat": "{{pki_operation}}",
           "range": true,
@@ -718,7 +718,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (node_id) (count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum by (node_id) (count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -776,7 +776,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (node_id) (count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error!=\"\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum by (node_id) (count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error!=\"\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -834,7 +834,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (node_id) (count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(issue|sign|sign-verbatim|cert|certs|revoke)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum by (node_id) (count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(issue|sign|sign-verbatim|cert|certs|revoke)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -888,7 +888,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(issuer|issuers|root|intermediate)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(issuer|issuers|root|intermediate)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -942,7 +942,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(roles|config)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(roles|config)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -996,7 +996,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(issue|sign|sign-verbatim|cert|certs|revoke|tidy|crl)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"request\" | request_path=~\"${pki_path:raw}/(issue|sign|sign-verbatim|cert|certs|revoke|tidy|crl)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -1050,7 +1050,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error!=\"\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error!=\"\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -1071,6 +1071,20 @@
   ],
   "templating": {
     "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Kubernetes namespace",
+        "name": "openbao_namespace",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
       {
         "current": {
           "selected": true,

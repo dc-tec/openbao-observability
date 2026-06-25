@@ -49,6 +49,7 @@ The dashboard exposes these variables:
 
 | Variable | Default | Purpose |
 | -------- | ------- | ------- |
+| Kubernetes namespace | `.*` | Selects the OpenBao workload namespace when multiple OpenBao instances share the same observability backend. |
 | Synthetic probe job | `.*openbao.*` | Selects synthetic probe scrape jobs. |
 | Synthetic probe target | `.*` | Selects probe targets by `instance`. |
 | OpenBao scrape job | `openbao.*` | Selects OpenBao metrics scrape jobs. |

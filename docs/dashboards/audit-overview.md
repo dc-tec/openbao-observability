@@ -42,6 +42,10 @@ The generated dashboard expects these Grafana data sources:
 Prometheus panels depend on generated `openbao:` recording rules. Loki panels
 depend on audit logs collected with `log_stream="openbao.audit"`.
 
+The generated dashboard exposes a Kubernetes namespace selector for
+deployments where multiple OpenBao instances share the same observability
+backend.
+
 ## How to read audit health
 
 Start with request and response failures. Healthy values remain `0`.

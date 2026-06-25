@@ -22,13 +22,18 @@ datasources:
   logs:
     type: loki
     uid: loki
+variables:
+  - name: openbao_namespace
+    label: Kubernetes namespace
+    type: textbox
+    default: .*
 panels:
   - id: operational-log-volume
     title: Operational log volume
     type: timeseries
     signal: logs
     datasource: logs
-    expression: sum by (node_id) (count_over_time({log_stream="openbao.operational"}[5m]))
+    expression: sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational"}[5m]))
     legend: "{{node_id}}"
     unit: short
     description: Shows OpenBao operational log entries collected by Loki per node over 5 minutes.
@@ -42,7 +47,7 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.operational"} |~ "\"@level\":\"(warn|error)\"" [5m]))'
+    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational"} |~ "\"@level\":\"(warn|error)\"" [5m]))'
     legend: "{{node_id}}"
     unit: short
     description: Shows OpenBao operational warning and error log entries by node over 5 minutes.
@@ -56,7 +61,7 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m]))'
+    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m]))'
     unit: short
     description: Shows debug or trace operational log entries over 5 minutes.
     grid:
@@ -69,7 +74,7 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.operational"} |~ "(?i)(raft|storage|autopilot)" |~ "(?i)(warn|error|failed)" [5m]))'
+    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational"} |~ "(?i)(raft|storage|autopilot)" |~ "(?i)(warn|error|failed)" [5m]))'
     legend: "{{node_id}}"
     unit: short
     description: Shows Raft, storage, and Autopilot warning or error log entries by node over 5 minutes.
@@ -83,7 +88,7 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({log_stream="openbao.operational"} |~ "(?i)seal|unseal" [5m]))'
+    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational"} |~ "(?i)seal|unseal" [5m]))'
     legend: "{{node_id}}"
     unit: short
     description: Shows seal and unseal related operational log entries by node over 5 minutes.
@@ -97,7 +102,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.operational"} |~ "\"@level\":\"(warn|error)\""'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational"} |~ "\"@level\":\"(warn|error)\""'
     description: Shows recent OpenBao operational warning and error log entries.
     grid:
       x: 0
@@ -109,7 +114,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.operational"} |~ "(?i)raft|storage|autopilot"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational"} |~ "(?i)raft|storage|autopilot"'
     description: Shows recent OpenBao operational logs related to Raft, storage, and Autopilot.
     grid:
       x: 12
@@ -121,7 +126,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.operational"}'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational"}'
     description: Shows recent OpenBao operational log entries.
     grid:
       x: 0
