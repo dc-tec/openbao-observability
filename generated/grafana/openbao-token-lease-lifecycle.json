@@ -59,7 +59,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:token_count:max30m",
+          "expr": "openbao:token_count:max30m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Token count",
           "range": true,
@@ -120,7 +120,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:expire_num_leases:max",
+          "expr": "openbao:expire_num_leases:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Lease count",
           "range": true,
@@ -181,7 +181,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:expire_num_irrevocable_leases:max",
+          "expr": "openbao:expire_num_irrevocable_leases:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Irrevocable leases",
           "range": true,
@@ -242,7 +242,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:token_creation:increase15m",
+          "expr": "openbao:token_creation:increase15m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Token creations",
           "range": true,
@@ -303,7 +303,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:token_create:rate5m",
+          "expr": "openbao:token_create:rate5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Token create rate",
           "range": true,
@@ -364,7 +364,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:token_lookup:rate5m",
+          "expr": "openbao:token_lookup:rate5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Token lookup rate",
           "range": true,
@@ -425,7 +425,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:token_store:rate5m",
+          "expr": "openbao:token_store:rate5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Token store rate",
           "range": true,
@@ -486,7 +486,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:token_revoke_tree:rate5m",
+          "expr": "openbao:token_revoke_tree:rate5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Token revoke-tree rate",
           "range": true,
@@ -546,7 +546,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(openbao:token_count:max30m, \"lifecycle_signal\", \"token count\", \"source_prefix\", \".*\") or label_replace(openbao:expire_num_leases:max, \"lifecycle_signal\", \"lease count\", \"source_prefix\", \".*\") or label_replace(openbao:expire_num_irrevocable_leases:max, \"lifecycle_signal\", \"irrevocable leases\", \"source_prefix\", \".*\")",
+          "expr": "label_replace(openbao:token_count:max30m{namespace=~\"${openbao_namespace:raw}\"}, \"lifecycle_signal\", \"token count\", \"source_prefix\", \".*\") or label_replace(openbao:expire_num_leases:max{namespace=~\"${openbao_namespace:raw}\"}, \"lifecycle_signal\", \"lease count\", \"source_prefix\", \".*\") or label_replace(openbao:expire_num_irrevocable_leases:max{namespace=~\"${openbao_namespace:raw}\"}, \"lifecycle_signal\", \"irrevocable leases\", \"source_prefix\", \".*\")",
           "format": "time_series",
           "legendFormat": "{{lifecycle_signal}}",
           "range": true,
@@ -606,7 +606,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(openbao:token_create:rate5m, \"token_operation\", \"create\", \"source_prefix\", \".*\") or label_replace(openbao:token_lookup:rate5m, \"token_operation\", \"lookup\", \"source_prefix\", \".*\") or label_replace(openbao:token_store:rate5m, \"token_operation\", \"store\", \"source_prefix\", \".*\") or label_replace(openbao:token_revoke_tree:rate5m, \"token_operation\", \"revoke tree\", \"source_prefix\", \".*\")",
+          "expr": "label_replace(openbao:token_create:rate5m{namespace=~\"${openbao_namespace:raw}\"}, \"token_operation\", \"create\", \"source_prefix\", \".*\") or label_replace(openbao:token_lookup:rate5m{namespace=~\"${openbao_namespace:raw}\"}, \"token_operation\", \"lookup\", \"source_prefix\", \".*\") or label_replace(openbao:token_store:rate5m{namespace=~\"${openbao_namespace:raw}\"}, \"token_operation\", \"store\", \"source_prefix\", \".*\") or label_replace(openbao:token_revoke_tree:rate5m{namespace=~\"${openbao_namespace:raw}\"}, \"token_operation\", \"revoke tree\", \"source_prefix\", \".*\")",
           "format": "time_series",
           "legendFormat": "{{token_operation}}",
           "range": true,
@@ -666,7 +666,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(openbao:token_create:avg5m, \"token_operation\", \"create\", \"source_prefix\", \".*\") or label_replace(openbao:token_lookup:avg5m, \"token_operation\", \"lookup\", \"source_prefix\", \".*\") or label_replace(openbao:token_store:avg5m, \"token_operation\", \"store\", \"source_prefix\", \".*\") or label_replace(openbao:token_revoke_tree:avg5m, \"token_operation\", \"revoke tree\", \"source_prefix\", \".*\")",
+          "expr": "label_replace(openbao:token_create:avg5m{namespace=~\"${openbao_namespace:raw}\"}, \"token_operation\", \"create\", \"source_prefix\", \".*\") or label_replace(openbao:token_lookup:avg5m{namespace=~\"${openbao_namespace:raw}\"}, \"token_operation\", \"lookup\", \"source_prefix\", \".*\") or label_replace(openbao:token_store:avg5m{namespace=~\"${openbao_namespace:raw}\"}, \"token_operation\", \"store\", \"source_prefix\", \".*\") or label_replace(openbao:token_revoke_tree:avg5m{namespace=~\"${openbao_namespace:raw}\"}, \"token_operation\", \"revoke tree\", \"source_prefix\", \".*\")",
           "format": "time_series",
           "legendFormat": "{{token_operation}}",
           "range": true,
@@ -726,7 +726,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(openbao:expire_revoke:avg5m, \"lease_operation\", \"revoke\", \"source_prefix\", \".*\") or label_replace(openbao:expire_register_auth:avg5m, \"lease_operation\", \"register auth\", \"source_prefix\", \".*\")",
+          "expr": "label_replace(openbao:expire_revoke:avg5m{namespace=~\"${openbao_namespace:raw}\"}, \"lease_operation\", \"revoke\", \"source_prefix\", \".*\") or label_replace(openbao:expire_register_auth:avg5m{namespace=~\"${openbao_namespace:raw}\"}, \"lease_operation\", \"register auth\", \"source_prefix\", \".*\")",
           "format": "time_series",
           "legendFormat": "{{lease_operation}}",
           "range": true,
@@ -786,7 +786,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "topk(10, openbao:token_creation_by_auth:increase15m{auth_method=~\"${auth_method:raw}\"})",
+          "expr": "topk(10, openbao:token_creation_by_auth:increase15m{namespace=~\"${openbao_namespace:raw}\",auth_method=~\"${auth_method:raw}\"})",
           "format": "time_series",
           "legendFormat": "{{auth_method}}",
           "range": true,
@@ -846,7 +846,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:expire_revoke:rate5m",
+          "expr": "openbao:expire_revoke:rate5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Lease revoke rate",
           "range": true,
@@ -902,7 +902,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"auth/token/.*\" | request_path=~\"${request_path:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"auth/token/.*\" | request_path=~\"${request_path:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -956,7 +956,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"sys/leases/.*\" | request_path=~\"${request_path:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"sys/leases/.*\" | request_path=~\"${request_path:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -1010,7 +1010,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"(auth/token/.*|sys/leases/.*)\" | request_path=~\"${request_path:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"(auth/token/.*|sys/leases/.*)\" | request_path=~\"${request_path:raw}\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -1030,6 +1030,20 @@
   ],
   "templating": {
     "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Kubernetes namespace",
+        "name": "openbao_namespace",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
       {
         "current": {
           "selected": true,

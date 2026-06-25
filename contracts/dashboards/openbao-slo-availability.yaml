@@ -23,6 +23,10 @@ datasources:
     type: loki
     uid: loki
 variables:
+  - name: openbao_namespace
+    label: Kubernetes namespace
+    type: textbox
+    default: .*
   - name: probe_job
     label: Synthetic probe job
     type: textbox
@@ -45,7 +49,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: min(probe_success{job=~"${probe_job:raw}",instance=~"${probe_target:raw}"})
+    expression: min(probe_success{namespace=~"${openbao_namespace:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"})
     unit: none
     description: Shows whether the selected synthetic OpenBao probes currently succeed.
     grid:
@@ -58,7 +62,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: avg(avg_over_time(probe_success{job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[30d]))
+    expression: avg(avg_over_time(probe_success{namespace=~"${openbao_namespace:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[30d]))
     unit: percentunit
     description: Shows synthetic probe availability over 30 days.
     grid:
@@ -71,7 +75,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: 1 - ((1 - avg(avg_over_time(probe_success{job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[30d]))) / (1 - ${slo_target:raw}))
+    expression: 1 - ((1 - avg(avg_over_time(probe_success{namespace=~"${openbao_namespace:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[30d]))) / (1 - ${slo_target:raw}))
     unit: percentunit
     description: Shows the approximate remaining 30-day availability error budget for the selected SLO target.
     grid:
@@ -84,7 +88,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: (1 - avg(avg_over_time(probe_success{job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[5m]))) / (1 - ${slo_target:raw})
+    expression: (1 - avg(avg_over_time(probe_success{namespace=~"${openbao_namespace:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[5m]))) / (1 - ${slo_target:raw})
     unit: none
     description: Shows short-window availability error budget burn rate from synthetic probes.
     grid:
@@ -97,7 +101,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: (1 - avg(avg_over_time(probe_success{job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[1h]))) / (1 - ${slo_target:raw})
+    expression: (1 - avg(avg_over_time(probe_success{namespace=~"${openbao_namespace:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[1h]))) / (1 - ${slo_target:raw})
     unit: none
     description: Shows medium-window availability error budget burn rate from synthetic probes.
     grid:
@@ -110,7 +114,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: avg(probe_duration_seconds{job=~"${probe_job:raw}",instance=~"${probe_target:raw}"})
+    expression: avg(probe_duration_seconds{namespace=~"${openbao_namespace:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"})
     unit: s
     description: Shows average synthetic probe duration for the selected targets.
     grid:
@@ -123,7 +127,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: avg by (instance) (avg_over_time(probe_success{job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[1h]))
+    expression: avg by (instance) (avg_over_time(probe_success{namespace=~"${openbao_namespace:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[1h]))
     legend: "{{instance}}"
     unit: percentunit
     description: Shows one-hour synthetic availability by target.
@@ -137,7 +141,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: avg by (instance) ((1 - avg_over_time(probe_success{job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[5m])) / (1 - ${slo_target:raw}))
+    expression: avg by (instance) ((1 - avg_over_time(probe_success{namespace=~"${openbao_namespace:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[5m])) / (1 - ${slo_target:raw}))
     legend: "{{instance}}"
     unit: none
     description: Shows five-minute availability error budget burn rate by target.
@@ -151,7 +155,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: avg by (instance) (probe_duration_seconds{job=~"${probe_job:raw}",instance=~"${probe_target:raw}"})
+    expression: avg by (instance) (probe_duration_seconds{namespace=~"${openbao_namespace:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"})
     legend: "{{instance}}"
     unit: s
     description: Shows synthetic probe duration by target.
@@ -165,7 +169,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:core_handle_request:avg5m
+    expression: openbao:core_handle_request:avg5m{namespace=~"${openbao_namespace:raw}"}
     unit: ms
     description: Shows average regular OpenBao request handling latency over 5 minutes.
     grid:
@@ -178,7 +182,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:core_handle_login_request:avg5m
+    expression: openbao:core_handle_login_request:avg5m{namespace=~"${openbao_namespace:raw}"}
     unit: ms
     description: Shows average login request handling latency over 5 minutes.
     grid:
@@ -191,7 +195,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:core_check_token:avg5m
+    expression: openbao:core_check_token:avg5m{namespace=~"${openbao_namespace:raw}"}
     unit: ms
     description: Shows average token check latency over 5 minutes.
     grid:
@@ -204,7 +208,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: avg by (job, instance) (avg_over_time(up{job=~"${openbao_job:raw}"}[1h]))
+    expression: avg by (job, instance) (avg_over_time(up{namespace=~"${openbao_namespace:raw}",job=~"${openbao_job:raw}"}[1h]))
     legend: "{{job}} {{instance}}"
     unit: percentunit
     description: Shows one-hour Prometheus scrape availability for OpenBao scrape targets.
@@ -218,7 +222,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:core_active:sum
+    expression: openbao:core_active:sum{namespace=~"${openbao_namespace:raw}"}
     unit: short
     description: Shows active node count as context for availability symptoms.
     grid:
@@ -231,7 +235,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.operational"} |~ "(?i)(timeout|unavailable|latency|slow|error|failed|connection refused)"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational"} |~ "(?i)(timeout|unavailable|latency|slow|error|failed|connection refused)"'
     description: Shows operational log entries that can explain availability or latency symptoms.
     grid:
       x: 16

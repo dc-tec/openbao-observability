@@ -59,7 +59,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -118,7 +118,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [5m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -177,7 +177,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"(auth/.*|sys/auth/.*)\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"(auth/.*|sys/auth/.*)\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -236,7 +236,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error!=\"\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error!=\"\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -294,7 +294,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (node_id) (count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum by (node_id) (count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -352,7 +352,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (node_id) (count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [5m]))",
+          "expr": "sum by (node_id) (count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -411,7 +411,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/audit(/.*)?\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [15m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/audit(/.*)?\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [15m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -470,7 +470,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(policies|auth|mounts)(/.*)?\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [15m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(policies|auth|mounts)(/.*)?\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [15m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -529,7 +529,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"sys/(raw|plugins|storage/raft|rotate)(/.*)?\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [15m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"sys/(raw|plugins|storage/raft|rotate)(/.*)?\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [15m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -588,7 +588,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error=~\"(?s).*permission denied.*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [15m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error=~\"(?s).*permission denied.*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [15m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -642,7 +642,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -696,7 +696,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -750,7 +750,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"(auth/.*|sys/auth/.*)\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_path=~\"(auth/.*|sys/auth/.*)\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -804,7 +804,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error!=\"\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error!=\"\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -858,7 +858,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/audit(/.*)?\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/audit(/.*)?\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -912,7 +912,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error=~\"(?s).*permission denied.*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error=~\"(?s).*permission denied.*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -966,7 +966,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" | operation=~\"${operation:raw}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -986,6 +986,20 @@
   ],
   "templating": {
     "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Kubernetes namespace",
+        "name": "openbao_namespace",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
       {
         "current": {
           "selected": true,

@@ -20,13 +20,18 @@ datasources:
   logs:
     type: loki
     uid: loki
+variables:
+  - name: openbao_namespace
+    label: Kubernetes namespace
+    type: textbox
+    default: .*
 panels:
   - id: scrape-health
     title: Scrape health
     type: stat
     signal: metrics
     datasource: metrics
-    expression: min(up{job="openbao"})
+    expression: min(up{namespace=~"${openbao_namespace:raw}",job="openbao"})
     unit: none
     description: Shows whether Prometheus can scrape OpenBao.
     grid:
@@ -39,7 +44,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:core_active:sum
+    expression: openbao:core_active:sum{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows the number of active OpenBao nodes.
     grid:
@@ -52,7 +57,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:core_unsealed:sum
+    expression: openbao:core_unsealed:sum{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows the number of unsealed OpenBao nodes.
     grid:
@@ -65,7 +70,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:audit_log_request_failure:increase5m
+    expression: openbao:audit_log_request_failure:increase5m{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows audit request logging failures over 5 minutes.
     grid:
@@ -78,7 +83,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:core_in_flight_requests:max
+    expression: openbao:core_in_flight_requests:max{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows the maximum observed number of OpenBao requests currently being handled.
     grid:
@@ -91,7 +96,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:core_handle_request:rate5m
+    expression: openbao:core_handle_request:rate5m{namespace=~"${openbao_namespace:raw}"}
     unit: ops
     description: Shows regular OpenBao request handling throughput over 5 minutes.
     grid:
@@ -104,7 +109,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:core_handle_request:avg5m
+    expression: openbao:core_handle_request:avg5m{namespace=~"${openbao_namespace:raw}"}
     unit: ms
     description: Shows average regular OpenBao request handling latency over 5 minutes.
     grid:
@@ -117,7 +122,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:core_handle_login_request:avg5m
+    expression: openbao:core_handle_login_request:avg5m{namespace=~"${openbao_namespace:raw}"}
     unit: ms
     description: Shows average login request handling latency over 5 minutes.
     grid:
@@ -130,7 +135,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:core_check_token:avg5m
+    expression: openbao:core_check_token:avg5m{namespace=~"${openbao_namespace:raw}"}
     unit: ms
     description: Shows average token check latency over 5 minutes.
     grid:
@@ -143,7 +148,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:raft_peers:max
+    expression: openbao:raft_peers:max{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows the maximum observed Raft peer count.
     grid:
@@ -156,7 +161,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:autopilot_healthy:max
+    expression: openbao:autopilot_healthy:max{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows whether OpenBao Autopilot reports the Raft cluster as healthy.
     grid:
@@ -169,7 +174,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:autopilot_failure_tolerance:max
+    expression: openbao:autopilot_failure_tolerance:max{namespace=~"${openbao_namespace:raw}"}
     unit: none
     description: Shows the number of voter failures Autopilot reports the cluster can tolerate.
     grid:
@@ -182,7 +187,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum(1 - openbao:autopilot_node_healthy:min)
+    expression: sum(1 - openbao:autopilot_node_healthy:min{namespace=~"${openbao_namespace:raw}"})
     unit: none
     description: Shows the number of Raft nodes Autopilot reports as unhealthy.
     grid:
@@ -195,7 +200,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:autopilot_node_healthy:min
+    expression: openbao:autopilot_node_healthy:min{namespace=~"${openbao_namespace:raw}"}
     legend: "{{node_id}}"
     unit: none
     description: Shows Autopilot node health by Raft node ID.
@@ -209,7 +214,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:expire_num_leases:max
+    expression: openbao:expire_num_leases:max{namespace=~"${openbao_namespace:raw}"}
     unit: short
     description: Shows the maximum observed lease count.
     grid:
@@ -222,7 +227,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:runtime_num_goroutines:max
+    expression: openbao:runtime_num_goroutines:max{namespace=~"${openbao_namespace:raw}"}
     unit: short
     description: Shows the maximum observed Go goroutine count.
     grid:
@@ -235,7 +240,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:barrier_get:avg5m
+    expression: openbao:barrier_get:avg5m{namespace=~"${openbao_namespace:raw}"}
     unit: ms
     description: Shows average storage barrier GET latency over 5 minutes.
     grid:
@@ -248,7 +253,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:barrier_put:avg5m
+    expression: openbao:barrier_put:avg5m{namespace=~"${openbao_namespace:raw}"}
     unit: ms
     description: Shows average storage barrier PUT latency over 5 minutes.
     grid:
@@ -261,7 +266,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:cache_hit_ratio:ratio5m
+    expression: openbao:cache_hit_ratio:ratio5m{namespace=~"${openbao_namespace:raw}"}
     unit: percentunit
     description: Shows the storage cache hit ratio over 5 minutes.
     grid:
@@ -274,7 +279,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:runtime_heap_objects:max
+    expression: openbao:runtime_heap_objects:max{namespace=~"${openbao_namespace:raw}"}
     unit: short
     description: Shows the maximum observed Go heap object count.
     grid:
@@ -287,7 +292,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:runtime_sys_bytes:max
+    expression: openbao:runtime_sys_bytes:max{namespace=~"${openbao_namespace:raw}"}
     unit: bytes
     description: Shows the maximum observed Go runtime system memory.
     grid:
@@ -300,7 +305,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum(openbao:core_mount_table_num_entries:max)
+    expression: sum(openbao:core_mount_table_num_entries:max{namespace=~"${openbao_namespace:raw}"})
     unit: short
     description: Shows the total observed auth and logical mount table entries.
     grid:
@@ -313,7 +318,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.audit"}'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit"}'
     description: Shows OpenBao audit events collected by Alloy.
     grid:
       x: 0
@@ -325,7 +330,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.operational"} |= "error"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational"} |= "error"'
     description: Shows OpenBao operational log entries containing error.
     grid:
       x: 12

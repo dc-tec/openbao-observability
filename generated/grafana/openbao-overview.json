@@ -59,7 +59,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "min(up{job=\"openbao\"})",
+          "expr": "min(up{namespace=~\"${openbao_namespace:raw}\",job=\"openbao\"})",
           "format": "time_series",
           "legendFormat": "Scrape health",
           "range": true,
@@ -120,7 +120,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_active:sum",
+          "expr": "openbao:core_active:sum{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Active nodes",
           "range": true,
@@ -181,7 +181,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_unsealed:sum",
+          "expr": "openbao:core_unsealed:sum{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Unsealed nodes",
           "range": true,
@@ -242,7 +242,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:audit_log_request_failure:increase5m",
+          "expr": "openbao:audit_log_request_failure:increase5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Audit request failures",
           "range": true,
@@ -303,7 +303,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_in_flight_requests:max",
+          "expr": "openbao:core_in_flight_requests:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "In-flight requests",
           "range": true,
@@ -364,7 +364,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_handle_request:rate5m",
+          "expr": "openbao:core_handle_request:rate5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Request rate",
           "range": true,
@@ -425,7 +425,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_handle_request:avg5m",
+          "expr": "openbao:core_handle_request:avg5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Request latency",
           "range": true,
@@ -486,7 +486,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_handle_login_request:avg5m",
+          "expr": "openbao:core_handle_login_request:avg5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Login latency",
           "range": true,
@@ -547,7 +547,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_check_token:avg5m",
+          "expr": "openbao:core_check_token:avg5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Token check latency",
           "range": true,
@@ -608,7 +608,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:raft_peers:max",
+          "expr": "openbao:raft_peers:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Raft peers",
           "range": true,
@@ -669,7 +669,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:autopilot_healthy:max",
+          "expr": "openbao:autopilot_healthy:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Autopilot health",
           "range": true,
@@ -730,7 +730,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:autopilot_failure_tolerance:max",
+          "expr": "openbao:autopilot_failure_tolerance:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Failure tolerance",
           "range": true,
@@ -791,7 +791,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(1 - openbao:autopilot_node_healthy:min)",
+          "expr": "sum(1 - openbao:autopilot_node_healthy:min{namespace=~\"${openbao_namespace:raw}\"})",
           "format": "time_series",
           "legendFormat": "Unhealthy Raft nodes",
           "range": true,
@@ -851,7 +851,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:autopilot_node_healthy:min",
+          "expr": "openbao:autopilot_node_healthy:min{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "{{node_id}}",
           "range": true,
@@ -911,7 +911,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:expire_num_leases:max",
+          "expr": "openbao:expire_num_leases:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Lease count",
           "range": true,
@@ -971,7 +971,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:runtime_num_goroutines:max",
+          "expr": "openbao:runtime_num_goroutines:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Goroutines",
           "range": true,
@@ -1032,7 +1032,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:barrier_get:avg5m",
+          "expr": "openbao:barrier_get:avg5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Barrier GET latency",
           "range": true,
@@ -1093,7 +1093,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:barrier_put:avg5m",
+          "expr": "openbao:barrier_put:avg5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Barrier PUT latency",
           "range": true,
@@ -1154,7 +1154,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:cache_hit_ratio:ratio5m",
+          "expr": "openbao:cache_hit_ratio:ratio5m{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Cache hit ratio",
           "range": true,
@@ -1215,7 +1215,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:runtime_heap_objects:max",
+          "expr": "openbao:runtime_heap_objects:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Heap objects",
           "range": true,
@@ -1276,7 +1276,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:runtime_sys_bytes:max",
+          "expr": "openbao:runtime_sys_bytes:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "System bytes",
           "range": true,
@@ -1337,7 +1337,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(openbao:core_mount_table_num_entries:max)",
+          "expr": "sum(openbao:core_mount_table_num_entries:max{namespace=~\"${openbao_namespace:raw}\"})",
           "format": "time_series",
           "legendFormat": "Mount table entries",
           "range": true,
@@ -1393,7 +1393,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.audit\"}",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\"}",
           "queryType": "range",
           "refId": "A"
         }
@@ -1447,7 +1447,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.operational\"} |= \"error\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"} |= \"error\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -1464,7 +1464,22 @@
     "generated"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Kubernetes namespace",
+        "name": "openbao_namespace",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
   },
   "time": {
     "from": "now-1h",

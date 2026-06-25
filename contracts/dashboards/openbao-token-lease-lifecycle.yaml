@@ -23,6 +23,10 @@ datasources:
     type: loki
     uid: loki
 variables:
+  - name: openbao_namespace
+    label: Kubernetes namespace
+    type: textbox
+    default: .*
   - name: auth_method
     label: Auth method
     type: textbox
@@ -56,7 +60,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:token_count:max30m
+    expression: openbao:token_count:max30m{namespace=~"${openbao_namespace:raw}"}
     unit: short
     description: Shows the maximum token count observed over 30 minutes when OpenBao exposes the slow usage gauge.
     grid:
@@ -69,7 +73,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:expire_num_leases:max
+    expression: openbao:expire_num_leases:max{namespace=~"${openbao_namespace:raw}"}
     unit: short
     description: Shows the maximum observed lease count.
     grid:
@@ -82,7 +86,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:expire_num_irrevocable_leases:max
+    expression: openbao:expire_num_irrevocable_leases:max{namespace=~"${openbao_namespace:raw}"}
     unit: short
     description: Shows leases OpenBao reports it cannot automatically revoke.
     grid:
@@ -95,7 +99,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:token_creation:increase15m
+    expression: openbao:token_creation:increase15m{namespace=~"${openbao_namespace:raw}"}
     unit: short
     description: Shows token creation events over 15 minutes.
     grid:
@@ -108,7 +112,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:token_create:rate5m
+    expression: openbao:token_create:rate5m{namespace=~"${openbao_namespace:raw}"}
     unit: ops
     description: Shows token create operations per second over 5 minutes.
     grid:
@@ -121,7 +125,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:token_lookup:rate5m
+    expression: openbao:token_lookup:rate5m{namespace=~"${openbao_namespace:raw}"}
     unit: ops
     description: Shows token lookup operations per second over 5 minutes.
     grid:
@@ -134,7 +138,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:token_store:rate5m
+    expression: openbao:token_store:rate5m{namespace=~"${openbao_namespace:raw}"}
     unit: ops
     description: Shows token store operations per second over 5 minutes.
     grid:
@@ -147,7 +151,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:token_revoke_tree:rate5m
+    expression: openbao:token_revoke_tree:rate5m{namespace=~"${openbao_namespace:raw}"}
     unit: ops
     description: Shows token revoke-tree operations per second over 5 minutes.
     grid:
@@ -160,7 +164,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: label_replace(openbao:token_count:max30m, "lifecycle_signal", "token count", "source_prefix", ".*") or label_replace(openbao:expire_num_leases:max, "lifecycle_signal", "lease count", "source_prefix", ".*") or label_replace(openbao:expire_num_irrevocable_leases:max, "lifecycle_signal", "irrevocable leases", "source_prefix", ".*")
+    expression: label_replace(openbao:token_count:max30m{namespace=~"${openbao_namespace:raw}"}, "lifecycle_signal", "token count", "source_prefix", ".*") or label_replace(openbao:expire_num_leases:max{namespace=~"${openbao_namespace:raw}"}, "lifecycle_signal", "lease count", "source_prefix", ".*") or label_replace(openbao:expire_num_irrevocable_leases:max{namespace=~"${openbao_namespace:raw}"}, "lifecycle_signal", "irrevocable leases", "source_prefix", ".*")
     legend: "{{lifecycle_signal}}"
     unit: short
     description: Shows token count, lease count, and irrevocable lease gauges.
@@ -174,7 +178,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: label_replace(openbao:token_create:rate5m, "token_operation", "create", "source_prefix", ".*") or label_replace(openbao:token_lookup:rate5m, "token_operation", "lookup", "source_prefix", ".*") or label_replace(openbao:token_store:rate5m, "token_operation", "store", "source_prefix", ".*") or label_replace(openbao:token_revoke_tree:rate5m, "token_operation", "revoke tree", "source_prefix", ".*")
+    expression: label_replace(openbao:token_create:rate5m{namespace=~"${openbao_namespace:raw}"}, "token_operation", "create", "source_prefix", ".*") or label_replace(openbao:token_lookup:rate5m{namespace=~"${openbao_namespace:raw}"}, "token_operation", "lookup", "source_prefix", ".*") or label_replace(openbao:token_store:rate5m{namespace=~"${openbao_namespace:raw}"}, "token_operation", "store", "source_prefix", ".*") or label_replace(openbao:token_revoke_tree:rate5m{namespace=~"${openbao_namespace:raw}"}, "token_operation", "revoke tree", "source_prefix", ".*")
     legend: "{{token_operation}}"
     unit: ops
     description: Shows token create, lookup, store, and revoke-tree operation rates.
@@ -188,7 +192,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: label_replace(openbao:token_create:avg5m, "token_operation", "create", "source_prefix", ".*") or label_replace(openbao:token_lookup:avg5m, "token_operation", "lookup", "source_prefix", ".*") or label_replace(openbao:token_store:avg5m, "token_operation", "store", "source_prefix", ".*") or label_replace(openbao:token_revoke_tree:avg5m, "token_operation", "revoke tree", "source_prefix", ".*")
+    expression: label_replace(openbao:token_create:avg5m{namespace=~"${openbao_namespace:raw}"}, "token_operation", "create", "source_prefix", ".*") or label_replace(openbao:token_lookup:avg5m{namespace=~"${openbao_namespace:raw}"}, "token_operation", "lookup", "source_prefix", ".*") or label_replace(openbao:token_store:avg5m{namespace=~"${openbao_namespace:raw}"}, "token_operation", "store", "source_prefix", ".*") or label_replace(openbao:token_revoke_tree:avg5m{namespace=~"${openbao_namespace:raw}"}, "token_operation", "revoke tree", "source_prefix", ".*")
     legend: "{{token_operation}}"
     unit: ms
     description: Shows average token create, lookup, store, and revoke-tree latency over 5 minutes.
@@ -202,7 +206,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: label_replace(openbao:expire_revoke:avg5m, "lease_operation", "revoke", "source_prefix", ".*") or label_replace(openbao:expire_register_auth:avg5m, "lease_operation", "register auth", "source_prefix", ".*")
+    expression: label_replace(openbao:expire_revoke:avg5m{namespace=~"${openbao_namespace:raw}"}, "lease_operation", "revoke", "source_prefix", ".*") or label_replace(openbao:expire_register_auth:avg5m{namespace=~"${openbao_namespace:raw}"}, "lease_operation", "register auth", "source_prefix", ".*")
     legend: "{{lease_operation}}"
     unit: ms
     description: Shows average lease revoke and auth lease registration latency over 5 minutes.
@@ -216,7 +220,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: topk(10, openbao:token_creation_by_auth:increase15m{auth_method=~"${auth_method:raw}"})
+    expression: topk(10, openbao:token_creation_by_auth:increase15m{namespace=~"${openbao_namespace:raw}",auth_method=~"${auth_method:raw}"})
     legend: "{{auth_method}}"
     unit: short
     description: Shows token creation events by auth method over 15 minutes without grouping by mount point, policy, token accessor, or client identity.
@@ -230,7 +234,7 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:expire_revoke:rate5m
+    expression: openbao:expire_revoke:rate5m{namespace=~"${openbao_namespace:raw}"}
     unit: ops
     description: Shows lease revoke operations per second over 5 minutes.
     grid:
@@ -243,7 +247,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"auth/token/.*" | request_path=~"${request_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"auth/token/.*" | request_path=~"${request_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited token lifecycle requests after applying the selected filters.
     grid:
       x: 0
@@ -255,7 +259,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"sys/leases/.*" | request_path=~"${request_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"sys/leases/.*" | request_path=~"${request_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited lease lookup, revoke, and tidy requests after applying the selected filters.
     grid:
       x: 12
@@ -267,7 +271,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/token/.*|sys/leases/.*)" | request_path=~"${request_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/token/.*|sys/leases/.*)" | request_path=~"${request_path:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows the full token and lease audit stream after applying the selected filters.
     grid:
       x: 0

@@ -242,7 +242,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "min(up{job=~\"${openbao_job:raw}\"})",
+          "expr": "min(up{namespace=~\"${namespace:raw}\",job=~\"${openbao_job:raw}\"})",
           "format": "time_series",
           "legendFormat": "OpenBao scrape health",
           "range": true,
@@ -303,7 +303,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "min(up{job=~\"${collector_job:raw}\"})",
+          "expr": "min(up{namespace=~\"${namespace:raw}\",job=~\"${collector_job:raw}\"})",
           "format": "time_series",
           "legendFormat": "Collector scrape health",
           "range": true,

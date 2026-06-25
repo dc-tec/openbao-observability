@@ -50,6 +50,7 @@ The dashboard exposes these variables:
 
 | Variable | Type | Default | Use |
 | -------- | ---- | ------- | --- |
+| Kubernetes namespace | Textbox | `.*` | Selects the OpenBao workload namespace when multiple OpenBao instances share the same observability backend. |
 | Request ID | Textbox | `.*` | Narrow the stream to one request ID or pattern. |
 | Engine or mount path | Textbox | `.*` | Narrow the stream to a mount or engine path pattern. |
 | Operation | Custom | `.*` | Filter to `read`, `list`, `create`, `update`, or `delete`. |

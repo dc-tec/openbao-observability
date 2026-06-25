@@ -96,7 +96,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: min(up{job=~"${openbao_job:raw}"})
+    expression: min(up{namespace=~"${namespace:raw}",job=~"${openbao_job:raw}"})
     unit: none
     description: Shows whether OpenBao scrape targets are healthy for the selected Prometheus job.
     grid:
@@ -109,7 +109,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: min(up{job=~"${collector_job:raw}"})
+    expression: min(up{namespace=~"${namespace:raw}",job=~"${collector_job:raw}"})
     unit: none
     description: Shows whether the log collector scrape target is healthy for the selected Prometheus job.
     grid:

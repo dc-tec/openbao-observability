@@ -59,7 +59,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:raft_peers:max",
+          "expr": "openbao:raft_peers:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Raft peers",
           "range": true,
@@ -120,7 +120,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:autopilot_healthy:max",
+          "expr": "openbao:autopilot_healthy:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Autopilot health",
           "range": true,
@@ -181,7 +181,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:autopilot_failure_tolerance:max",
+          "expr": "openbao:autopilot_failure_tolerance:max{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Failure tolerance",
           "range": true,
@@ -242,7 +242,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(1 - openbao:autopilot_node_healthy:min)",
+          "expr": "sum(1 - openbao:autopilot_node_healthy:min{namespace=~\"${openbao_namespace:raw}\"})",
           "format": "time_series",
           "legendFormat": "Unhealthy Raft nodes",
           "range": true,
@@ -303,7 +303,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_active:sum",
+          "expr": "openbao:core_active:sum{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Active nodes",
           "range": true,
@@ -364,7 +364,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_unsealed:sum",
+          "expr": "openbao:core_unsealed:sum{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "Unsealed nodes",
           "range": true,
@@ -546,7 +546,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:autopilot_node_healthy:min",
+          "expr": "openbao:autopilot_node_healthy:min{namespace=~\"${openbao_namespace:raw}\"}",
           "format": "time_series",
           "legendFormat": "{{node_id}}",
           "range": true,
@@ -606,7 +606,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_commit_index)",
+          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_commit_index{namespace=~\"${openbao_namespace:raw}\"})",
           "format": "time_series",
           "legendFormat": "{{peer_id}} commit",
           "range": true,
@@ -666,7 +666,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_applied_index)",
+          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_applied_index{namespace=~\"${openbao_namespace:raw}\"})",
           "format": "time_series",
           "legendFormat": "{{peer_id}} applied",
           "range": true,
@@ -726,7 +726,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_fsm_pending)",
+          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_fsm_pending{namespace=~\"${openbao_namespace:raw}\"})",
           "format": "time_series",
           "legendFormat": "{{peer_id}}",
           "range": true,
@@ -786,7 +786,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_term)",
+          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_term{namespace=~\"${openbao_namespace:raw}\"})",
           "format": "time_series",
           "legendFormat": "{{peer_id}}",
           "range": true,
@@ -846,7 +846,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (instance) (vault_raft_leader_lastContact{quantile=\"0.99\"})",
+          "expr": "max by (instance) (vault_raft_leader_lastContact{namespace=~\"${openbao_namespace:raw}\",quantile=\"0.99\"})",
           "format": "time_series",
           "legendFormat": "{{instance}}",
           "range": true,
@@ -906,7 +906,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (peer_id) (vault_raft_replication_heartbeat{quantile=\"0.99\"})",
+          "expr": "max by (peer_id) (vault_raft_replication_heartbeat{namespace=~\"${openbao_namespace:raw}\",quantile=\"0.99\"})",
           "format": "time_series",
           "legendFormat": "{{peer_id}}",
           "range": true,
@@ -966,7 +966,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (peer_id) (vault_raft_replication_appendEntries_logs)",
+          "expr": "max by (peer_id) (vault_raft_replication_appendEntries_logs{namespace=~\"${openbao_namespace:raw}\"})",
           "format": "time_series",
           "legendFormat": "{{peer_id}}",
           "range": true,
@@ -1022,7 +1022,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.operational\"} |~ \"(?i)raft|storage|autopilot\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"} |~ \"(?i)raft|storage|autopilot\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -1040,7 +1040,22 @@
     "generated"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Kubernetes namespace",
+        "name": "openbao_namespace",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
   },
   "time": {
     "from": "now-1h",

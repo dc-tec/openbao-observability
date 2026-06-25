@@ -46,6 +46,7 @@ The dashboard exposes these variables:
 
 | Variable | Type | Default | Use |
 | -------- | ---- | ------- | --- |
+| Kubernetes namespace | Textbox | `.*` | Selects the OpenBao workload namespace when multiple OpenBao instances share the same observability backend. |
 | Auth method | Textbox | `.*` | Filter token creation metrics by auth method. |
 | Request ID | Textbox | `.*` | Narrow audit panels to one request ID or pattern. |
 | Request path | Textbox | `.*` | Narrow audit panels to token or lease paths. |

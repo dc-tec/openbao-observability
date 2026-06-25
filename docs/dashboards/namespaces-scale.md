@@ -55,6 +55,7 @@ The dashboard exposes these variables:
 
 | Variable | Type | Default | Use |
 | -------- | ---- | ------- | --- |
+| Kubernetes namespace | Textbox | `.*` | Selects the OpenBao workload namespace when multiple OpenBao instances share the same observability backend. |
 | OpenBao namespace | Textbox | `.*` | Filters namespace-aware metrics and audit `request.namespace.id`. |
 | Node | Textbox | `.*` | Filters OpenBao node labels in logs and node-aware metrics. |
 | Raft peer | Textbox | `.*` | Filters Raft storage statistics by peer ID. |

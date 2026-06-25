@@ -58,7 +58,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (node_id) (count_over_time({log_stream=\"openbao.operational\"}[5m]))",
+          "expr": "sum by (node_id) (count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"}[5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -116,7 +116,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (node_id) (count_over_time({log_stream=\"openbao.operational\"} |~ \"\\\"@level\\\":\\\"(warn|error)\\\"\" [5m]))",
+          "expr": "sum by (node_id) (count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"} |~ \"\\\"@level\\\":\\\"(warn|error)\\\"\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -174,7 +174,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({log_stream=\"openbao.operational\"} |~ \"\\\"@level\\\":\\\"(debug|trace)\\\"\" [5m]))",
+          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"} |~ \"\\\"@level\\\":\\\"(debug|trace)\\\"\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -232,7 +232,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (node_id) (count_over_time({log_stream=\"openbao.operational\"} |~ \"(?i)(raft|storage|autopilot)\" |~ \"(?i)(warn|error|failed)\" [5m]))",
+          "expr": "sum by (node_id) (count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"} |~ \"(?i)(raft|storage|autopilot)\" |~ \"(?i)(warn|error|failed)\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -290,7 +290,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (node_id) (count_over_time({log_stream=\"openbao.operational\"} |~ \"(?i)seal|unseal\" [5m]))",
+          "expr": "sum by (node_id) (count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"} |~ \"(?i)seal|unseal\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -344,7 +344,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.operational\"} |~ \"\\\"@level\\\":\\\"(warn|error)\\\"\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"} |~ \"\\\"@level\\\":\\\"(warn|error)\\\"\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -398,7 +398,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.operational\"} |~ \"(?i)raft|storage|autopilot\"",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"} |~ \"(?i)raft|storage|autopilot\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -452,7 +452,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"openbao.operational\"}",
+          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"}",
           "queryType": "range",
           "refId": "A"
         }
@@ -471,7 +471,22 @@
     "generated"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Kubernetes namespace",
+        "name": "openbao_namespace",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
   },
   "time": {
     "from": "now-1h",

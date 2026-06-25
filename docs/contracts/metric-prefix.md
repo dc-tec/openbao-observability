@@ -48,6 +48,12 @@ The generated recording rules use the `openbao:` namespace even when the source
 metric prefix is `vault`. This keeps Grafana dashboards and alert expressions
 stable across deployments.
 
+Aggregate recording rules preserve the `namespace` label where the backend
+provides it. Kubernetes deployments commonly use that label as the workload
+namespace, which lets one observability backend distinguish multiple OpenBao
+instances such as test and dev clusters. OpenBao logical namespace drilldowns
+remain separate dashboard filters where those signals are available.
+
 | Signal | Source metric with `vault` prefix | Source metric with `openbao` prefix | Recording rule |
 | ------ | --------------------------------- | ----------------------------------- | -------------- |
 | Active node count | `vault_core_active` | `openbao_core_active` | `openbao:core_active:sum` |

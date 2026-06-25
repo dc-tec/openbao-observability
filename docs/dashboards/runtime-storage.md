@@ -41,6 +41,10 @@ Deploy the generated Prometheus recording rules before you rely on this
 dashboard. The panels use normalized `openbao:` rules rather than raw
 `vault_*` or `openbao_*` source metrics.
 
+The generated dashboard exposes a Kubernetes namespace selector for
+deployments where multiple OpenBao instances share the same observability
+backend.
+
 ## Scrape profile assumptions
 
 The dashboard works with the authenticated active-node scrape, but all-node
