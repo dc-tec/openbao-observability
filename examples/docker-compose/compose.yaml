@@ -138,7 +138,7 @@ services:
       - prometheus-data:/prometheus
 
   loki:
-    image: ${LOKI_IMAGE:-grafana/loki:3.7.2}
+    image: ${LOKI_IMAGE:-grafana/loki:3.7.3}
     command:
       - -config.file=/etc/loki/loki.yaml
     ports:
@@ -190,7 +190,7 @@ services:
         done
 
   grafana:
-    image: ${GRAFANA_IMAGE:-grafana/grafana:13.0.2}
+    image: ${GRAFANA_IMAGE:-grafana/grafana:13.1.0}
     depends_on:
       - prometheus
       - loki
