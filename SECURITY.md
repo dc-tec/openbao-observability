@@ -32,3 +32,16 @@ Docker Compose, Kubernetes examples, and generated packaging artifacts.
 
 The local Docker Compose stack uses deterministic credentials and HTTP for
 local evaluation only. Do not treat those values as production guidance.
+
+## Known Dependency Caveats
+
+`make vulncheck` uses `.govulnignore` for reviewed vulnerability IDs that are
+not reachable through this repository's shipped or documented behavior. Keep
+entries narrow, document the rationale next to each ID, and remove them when an
+upgrade or advisory correction makes the ignore unnecessary.
+
+`GO-2026-5662` is ignored because it affects Prometheus web UI tooltip and
+metrics-explorer rendering. This repository imports Prometheus parser and text
+format packages for offline contract, rule, dashboard, and fixture validation;
+it does not serve, proxy, or embed the Prometheus web UI surface covered by the
+advisory.
