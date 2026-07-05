@@ -1,0 +1,8 @@
+# Govulncheck ignore list: one vulnerability ID per line (for example, GO-2026-4377).
+# Blank lines and lines starting with # are skipped.
+# See SECURITY.md "Known dependency caveats" for context on these entries.
+
+# Prometheus web UI stored XSS. This project uses Prometheus parser/text packages
+# for offline contract and fixture validation, and does not serve the Prometheus
+# web UI, metrics explorer, or tooltip surfaces covered by the advisory.
+GO-2026-5662

@@ -3,6 +3,7 @@ OPENBAO_IMAGE ?= quay.io/openbao/openbao:$(OPENBAO_VERSION)
 POSTGRES_IMAGE ?= postgres:17-alpine
 PROMETHEUS_IMAGE ?= prom/prometheus:v3.11.2
 GO ?= go
+GO_SOURCE_DIRS ?= cmd internal examples hack
 GOBIN ?= $(CURDIR)/bin
 GOFUMPT ?= $(if $(wildcard $(GOBIN)/gofumpt),$(GOBIN)/gofumpt,gofumpt)
 STATICCHECK ?= $(if $(wildcard $(GOBIN)/staticcheck),$(GOBIN)/staticcheck,staticcheck)
@@ -327,19 +328,19 @@ install-go-tools:
 	@env -u GOFLAGS GOBIN="$(GOBIN)" "$(GO)" install github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VERSION)
 
 fmt:
-	@if find cmd internal examples -name '*.go' 2>/dev/null | grep -q .; then \
-		gofmt -w $$(find cmd internal examples -name '*.go'); \
-		if command -v "$(GOFUMPT)" >/dev/null 2>&1; then "$(GOFUMPT)" -w cmd internal examples; fi; \
+	@if find $(GO_SOURCE_DIRS) -name '*.go' 2>/dev/null | grep -q .; then \
+		gofmt -w $$(find $(GO_SOURCE_DIRS) -name '*.go'); \
+		if command -v "$(GOFUMPT)" >/dev/null 2>&1; then "$(GOFUMPT)" -w $(GO_SOURCE_DIRS); fi; \
 	else \
 		printf '%s\n' 'No Go files found; skipping Go formatting.'; \
 	fi
 
 verify-fmt:
-	@if find cmd internal examples -name '*.go' 2>/dev/null | grep -q .; then \
-		unformatted="$$(gofmt -l $$(find cmd internal examples -name '*.go'))"; \
+	@if find $(GO_SOURCE_DIRS) -name '*.go' 2>/dev/null | grep -q .; then \
+		unformatted="$$(gofmt -l $$(find $(GO_SOURCE_DIRS) -name '*.go'))"; \
 		if [ -n "$$unformatted" ]; then printf '%s\n' "$$unformatted"; exit 1; fi; \
 		if command -v "$(GOFUMPT)" >/dev/null 2>&1; then \
-			unformatted="$$("$(GOFUMPT)" -l cmd internal examples)"; \
+			unformatted="$$("$(GOFUMPT)" -l $(GO_SOURCE_DIRS))"; \
 			if [ -n "$$unformatted" ]; then printf '%s\n' "$$unformatted"; exit 1; fi; \
 		else \
 			printf '%s\n' 'gofumpt not installed; skipping gofumpt verification.'; \
@@ -355,7 +356,11 @@ lint: verify-fmt
 	@if command -v "$(ACTIONLINT)" >/dev/null 2>&1; then "$(ACTIONLINT)" .github/workflows/*.yml; else printf '%s\n' 'actionlint not installed; skipping actionlint.'; fi
 
 vulncheck:
-	@if command -v "$(GOVULNCHECK)" >/dev/null 2>&1; then "$(GOVULNCHECK)" ./...; else printf '%s\n' 'govulncheck not installed; skipping govulncheck.'; fi
+	@if command -v "$(GOVULNCHECK)" >/dev/null 2>&1; then \
+		$(GO) run ./hack/govulncheck_wrapper/ -govulncheck "$(GOVULNCHECK)" -ignore .govulnignore -show-ignored="$${VULNCHECK_SHOW_IGNORED:-false}" ./...; \
+	else \
+		printf '%s\n' 'govulncheck not installed; skipping govulncheck.'; \
+	fi
 
 release-artifacts: release-bundle checksums
 
