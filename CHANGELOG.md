@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.0](https://github.com/dc-tec/openbao-observability/compare/0.1.0...0.2.0) (2026-07-05)
+
+
+### Features
+
+* add kv2 route observability ([#8](https://github.com/dc-tec/openbao-observability/issues/8)) ([042f1ac](https://github.com/dc-tec/openbao-observability/commit/042f1aca42476866e819d43df7a3bf80240e4a04))
+* **contracts:** add maturity metadata ([#9](https://github.com/dc-tec/openbao-observability/issues/9)) ([f7a6479](https://github.com/dc-tec/openbao-observability/commit/f7a6479d8bf9cdb633e9620d97acdcda015a0b82))
+* **dashboards:** support multi-instance namespace filtering ([#19](https://github.com/dc-tec/openbao-observability/issues/19)) ([9f6d2a8](https://github.com/dc-tec/openbao-observability/commit/9f6d2a834b94c89297cf6fa79e0889e164f73d43))
+* expand secret engine observability ([b80abfd](https://github.com/dc-tec/openbao-observability/commit/b80abfd870427387be328666dcdda3a4636d36e1))
+* **metrics:** add profile-aware fixture coverage ([#13](https://github.com/dc-tec/openbao-observability/issues/13)) ([c9aa9a1](https://github.com/dc-tec/openbao-observability/commit/c9aa9a1905ef42f307622ed8f06379bdfce2775c))
+
+
+### Bug fixes
+
+* **ci:** stabilize variable metric coverage ([#26](https://github.com/dc-tec/openbao-observability/issues/26)) ([a29f58f](https://github.com/dc-tec/openbao-observability/commit/a29f58fe55fbaf31f578afe43650d3ad4c03427a))
+
+
+### Documentation
+
+* **release:** add 0.2.0 release notes ([04cfc50](https://github.com/dc-tec/openbao-observability/commit/04cfc5084f960fabe810b89be3f83102182cb89c))
+* shorten README ([#14](https://github.com/dc-tec/openbao-observability/issues/14)) ([17280ee](https://github.com/dc-tec/openbao-observability/commit/17280eef9a8d840326c86e15c0904aa4c0c4735d))
+
 ## 0.1.0 (2026-05-26)
 
 
