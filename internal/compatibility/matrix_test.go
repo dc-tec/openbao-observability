@@ -56,6 +56,8 @@ metrics:
     prometheusName: ${p}_token_count
     required: false
     overview: true
+    coverage:
+      raft-vault-node0: variable
 `)
 	writeFile(t, metricPath("openbao-2.5.4-vault-prefix.prom"), `# HELP vault_core_active Active node status.
 # TYPE vault_core_active gauge
@@ -71,6 +73,9 @@ openbao_token_count{namespace="root"} 4
 	writeFile(t, metricPath("openbao-2.5.4-raft-vault-node0.prom"), `# HELP vault_core_active Active node status.
 # TYPE vault_core_active gauge
 vault_core_active{cluster="test",instance="node0"} 1
+# HELP vault_token_count Token count.
+# TYPE vault_token_count gauge
+vault_token_count{namespace="root"} 2
 `)
 
 	if err := GenerateMatrix(MatrixOptions{
@@ -97,6 +102,7 @@ vault_core_active{cluster="test",instance="node0"} 1
 		"`vault_core_active` | required | observed | gauge | `cluster`",
 		"`openbao_token_count` | optional | observed | gauge | `namespace`",
 		"`vault_token_count` | optional | optional-missing | - | none",
+		"`vault_token_count` | variable | variable | - | none",
 		"Observed in test fixtures.",
 	} {
 		if !strings.Contains(got, want) {

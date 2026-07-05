@@ -18,14 +18,14 @@ This generated reference lists each metric contract entry against captured OpenB
 
 ## Fixture profiles
 
-| Profile | Class | Prefix | Fixture | Observed | Missing required | Optional missing | Not applicable | Unclassified missing |
-| ------- | ----- | ------ | ------- | -------- | ---------------- | ---------------- | -------------- | -------------------- |
-| `vault-prefix` | `prefix-smoke` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-vault-prefix.prom` | 41 | 0 | 45 | 0 | 0 |
-| `openbao-prefix` | `prefix-smoke` | `openbao` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-openbao-prefix.prom` | 41 | 0 | 45 | 0 | 0 |
-| `raft-vault-node0` | `ha-raft-active` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-node0.prom` | 84 | 0 | 2 | 0 | 0 |
-| `raft-vault-node1` | `ha-raft-standby` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-node1.prom` | 25 | 0 | 61 | 0 | 0 |
-| `raft-vault-node2` | `ha-raft-standby` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-node2.prom` | 25 | 0 | 61 | 0 | 0 |
-| `raft-vault-read-replica0` | `ha-raft-read-replica` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-read-replica0.prom` | 28 | 0 | 58 | 0 | 0 |
+| Profile | Class | Prefix | Fixture | Observed | Missing required | Optional missing | Variable | Not applicable | Unclassified missing |
+| ------- | ----- | ------ | ------- | -------- | ---------------- | ---------------- | -------- | -------------- | -------------------- |
+| `vault-prefix` | `prefix-smoke` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-vault-prefix.prom` | 41 | 0 | 45 | 0 | 0 | 0 |
+| `openbao-prefix` | `prefix-smoke` | `openbao` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-openbao-prefix.prom` | 41 | 0 | 45 | 0 | 0 | 0 |
+| `raft-vault-node0` | `ha-raft-active` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-node0.prom` | 84 | 0 | 2 | 0 | 0 | 0 |
+| `raft-vault-node1` | `ha-raft-standby` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-node1.prom` | 25 | 0 | 60 | 1 | 0 | 0 |
+| `raft-vault-node2` | `ha-raft-standby` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-node2.prom` | 25 | 0 | 60 | 1 | 0 | 0 |
+| `raft-vault-read-replica0` | `ha-raft-read-replica` | `vault` | `fixtures/captured/openbao-2.5.4/metrics/openbao-2.5.4-raft-vault-read-replica0.prom` | 28 | 0 | 58 | 0 | 0 | 0 |
 
 ## Metric coverage
 
@@ -280,8 +280,8 @@ This generated reference lists each metric contract entry against captured OpenB
 | `2.5.4` | `vault-prefix` | `prefix-smoke` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | required | observed | summary | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
 | `2.5.4` | `openbao-prefix` | `prefix-smoke` | `openbao` | `barrier_delete` | `vault.barrier.delete` | `openbao_barrier_delete` | required | observed | summary | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
 | `2.5.4` | `raft-vault-node0` | `ha-raft-active` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | optional | observed | summary | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
-| `2.5.4` | `raft-vault-node1` | `ha-raft-standby` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | optional | optional-missing | - | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
-| `2.5.4` | `raft-vault-node2` | `ha-raft-standby` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | optional | optional-missing | - | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
+| `2.5.4` | `raft-vault-node1` | `ha-raft-standby` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | variable | variable | - | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
+| `2.5.4` | `raft-vault-node2` | `ha-raft-standby` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | variable | variable | - | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
 | `2.5.4` | `raft-vault-read-replica0` | `ha-raft-read-replica` | `vault` | `barrier_delete` | `vault.barrier.delete` | `vault_barrier_delete` | optional | optional-missing | - | none | yes | no | Observed as a summary in OpenBao 2.5.4 fixtures. |
 | `2.5.4` | `vault-prefix` | `prefix-smoke` | `vault` | `barrier_estimated_encryptions` | `vault.barrier.estimated_encryptions` | `vault_barrier_estimated_encryptions` | required | observed | counter | `term` | yes | no | Observed as a counter with a term label in OpenBao 2.5.4 fixtures. |
 | `2.5.4` | `openbao-prefix` | `prefix-smoke` | `openbao` | `barrier_estimated_encryptions` | `vault.barrier.estimated_encryptions` | `openbao_barrier_estimated_encryptions` | required | observed | counter | `term` | yes | no | Observed as a counter with a term label in OpenBao 2.5.4 fixtures. |

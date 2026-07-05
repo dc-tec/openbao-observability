@@ -28,7 +28,7 @@ promise for every OpenBao deployment shape.
 | Docs metric | Upstream OpenBao metric name from documentation-style notation. |
 | Source metric | Prometheus exposition name expected in that fixture. |
 | Expectation | Contract expectation for that metric in that fixture profile. |
-| Status | `observed` means the fixture contains the metric. `missing-required` means a required metric was absent. `optional-missing` means an optional metric was absent. `not-applicable` means the profile is not expected to emit the metric. `missing-unclassified` means the contract has not classified the absence yet. |
+| Status | `observed` means the fixture contains the metric. `missing-required` means a required metric was absent. `optional-missing` means an optional metric was absent. `variable` means the metric may appear or disappear in that profile across live fixture captures. `not-applicable` means the profile is not expected to emit the metric. `missing-unclassified` means the contract has not classified the absence yet. |
 | Type | Prometheus metric family type observed in the fixture. |
 | Labels | Label names observed in the fixture. Label values are omitted. |
 | Required | Whether contract verification requires the metric in prefix fixtures. |
@@ -44,6 +44,10 @@ all configurations.
 An `optional-missing` metric does not prove that OpenBao lacks the signal.
 Usage gauges, feature-specific metrics, and route-derived metrics depend on
 workload, enabled features, scrape timing, and telemetry configuration.
+
+A `variable` metric is a known live-capture timing boundary. Treat it as
+allowed in the profile, but do not use its current fixture presence or label set
+as stable compatibility evidence.
 
 Treat `missing-required` and `missing-unclassified` rows as coverage gaps to
 resolve in the contract, fixtures, or generator. Treat `not-applicable` as an
