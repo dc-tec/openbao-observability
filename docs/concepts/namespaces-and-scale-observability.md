@@ -75,7 +75,7 @@ This project currently validates a focused local topology:
 
 | Area | Current status |
 | ---- | -------------- |
-| OpenBao version | Captured with OpenBao 2.5.4 fixtures. |
+| OpenBao version | Captured with OpenBao 2.5.5 fixtures. |
 | Namespace scope | Root namespace, one child namespace named `team-a`, and a minimal nested namespace path named `team-a/payments`. |
 | Namespace activity | Userpass, AppRole, token create/lookup/revoke, KV v2, transit, PKI issue/revoke/failure, database lease lookup/renew/revoke, policy writes, and audit request namespace fields. |
 | Raft topology | Three voter nodes plus one non-voter read replica in the HA/Raft fixture. |
@@ -124,7 +124,7 @@ leaving a path for deeper production profiles.
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed OpenBao docs behavior | OpenBao documents namespace commands, namespace limits, namespace-related lease metrics, Raft non-voters, and Autopilot states. |
-| Observed fixture behavior | The local OpenBao 2.5.4 fixtures validate root namespace, the `team-a` child namespace across several auth and secrets-engine paths, minimal `team-a/payments` nested KV behavior, namespaced database leases, and HA/Raft behavior with three voters plus one non-voter read replica. |
+| Observed fixture behavior | The local OpenBao 2.5.5 fixtures validate root namespace, the `team-a` child namespace across several auth and secrets-engine paths, minimal `team-a/payments` nested KV behavior, namespaced database leases, and HA/Raft behavior with three voters plus one non-voter read replica. |
 | Design decision | This project treats namespace and read-replica coverage as explicit topology extensions, not default assumptions. |
 | To validate | Broader nested namespace feature behavior, operator-managed read-replica behavior, and production alert thresholds. |
 

@@ -81,7 +81,7 @@ func Capture(ctx context.Context, opts CaptureOptions) error {
 
 func (o CaptureOptions) withDefaults() CaptureOptions {
 	if o.Version == "" {
-		o.Version = "2.5.4"
+		o.Version = "2.5.5"
 	}
 	if o.Image == "" {
 		o.Image = "quay.io/openbao/openbao:" + o.Version

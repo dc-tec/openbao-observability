@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	defaultOpenBAOVersion = "2.5.4"
+	defaultOpenBAOVersion = "2.5.5"
 	helpFlag              = "--help"
 	helpCommand           = "help"
 )

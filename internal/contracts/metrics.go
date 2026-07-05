@@ -123,7 +123,7 @@ func (o VerifyOptions) withDefaults() VerifyOptions {
 		o.ContractPath = filepath.Join("contracts", "metrics", "openbao-core.yaml")
 	}
 	if o.FixtureDir == "" {
-		o.FixtureDir = filepath.Join("fixtures", "captured", "openbao-2.5.4")
+		o.FixtureDir = filepath.Join("fixtures", "captured", "openbao-2.5.5")
 	}
 	return o
 }

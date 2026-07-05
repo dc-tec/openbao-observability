@@ -49,7 +49,7 @@ non-voters, and nodes that are catching up.
 
 The normalized peer rule falls back to counting
 `${p}_raft_storage_stats_commit_index` by `peer_id` when `${p}_raft_peers` is
-not present. This keeps the dashboard useful across the OpenBao 2.5.4 fixture
+not present. This keeps the dashboard useful across the OpenBao 2.5.5 fixture
 and live all-node scrape behavior observed in this repository.
 
 The current fixture validates a topology with three voters plus one non-voter
@@ -88,7 +88,7 @@ Read non-voter health with all-node scraping and Autopilot or peer-state
 signals. Keep quorum alerts voter-aware, and keep read-capacity alerts separate
 from voter quorum alerts.
 
-The OpenBao 2.5.4 HA/Raft fixture starts one non-voter with
+The OpenBao 2.5.5 HA/Raft fixture starts one non-voter with
 `retry_join_as_non_voter = true`. The fixture verifies that the node can read a
 sample KV value, list mounts and auth methods, emit read-replica audit entries,
 and appear in Raft peer and Autopilot state as a non-voter.

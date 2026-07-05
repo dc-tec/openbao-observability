@@ -188,7 +188,7 @@ every 30 seconds. The exporter exposes the reference
    {
      "initialized": true,
      "sealed": false,
-     "version": "2.5.4"
+     "version": "2.5.5"
    }
    ```
 
