@@ -37,6 +37,7 @@ type profileCoverageCounts struct {
 	Observed            int
 	MissingRequired     int
 	OptionalMissing     int
+	Variable            int
 	NotApplicable       int
 	MissingUnclassified int
 }
@@ -49,6 +50,7 @@ const (
 	statusObserved            = "observed"
 	statusMissingRequired     = "missing-required"
 	statusOptionalMissing     = "optional-missing"
+	statusVariable            = "variable"
 	statusNotApplicable       = "not-applicable"
 	statusMissingUnclassified = "missing-unclassified"
 )
@@ -227,18 +229,18 @@ func renderMatrix(
 	fmt.Fprintln(
 		&buf,
 		"| Profile | Class | Prefix | Fixture | Observed | Missing required | "+
-			"Optional missing | Not applicable | Unclassified missing |",
+			"Optional missing | Variable | Not applicable | Unclassified missing |",
 	)
 	fmt.Fprintln(
 		&buf,
 		"| ------- | ----- | ------ | ------- | -------- | ---------------- | "+
-			"---------------- | -------------- | -------------------- |",
+			"---------------- | -------- | -------------- | -------------------- |",
 	)
 	for _, profile := range profiles {
 		counts := profileCounts(contract, profile, familiesByProfile[profile.Name])
 		fmt.Fprintf(
 			&buf,
-			"| `%s` | `%s` | `%s` | `%s` | %d | %d | %d | %d | %d |\n",
+			"| `%s` | `%s` | `%s` | `%s` | %d | %d | %d | %d | %d | %d |\n",
 			markdownCell(profile.Name),
 			markdownCell(defaultDash(profile.Class)),
 			markdownCell(profile.Prefix),
@@ -246,6 +248,7 @@ func renderMatrix(
 			counts.Observed,
 			counts.MissingRequired,
 			counts.OptionalMissing,
+			counts.Variable,
 			counts.NotApplicable,
 			counts.MissingUnclassified,
 		)
@@ -309,6 +312,8 @@ func profileCounts(
 			counts.MissingRequired++
 		case statusOptionalMissing:
 			counts.OptionalMissing++
+		case statusVariable:
+			counts.Variable++
 		case statusNotApplicable:
 			counts.NotApplicable++
 		case statusMissingUnclassified:
@@ -332,6 +337,10 @@ func metricExpectation(metric contracts.Metric, profile fixtureProfile) string {
 }
 
 func observeMetric(families promtext.Families, name, expectation string) metricObservation {
+	if expectation == contracts.MetricCoverageVariable {
+		return metricObservation{Status: statusVariable}
+	}
+
 	family, ok := families[name]
 	if !ok {
 		return metricObservation{Status: missingStatus(expectation)}

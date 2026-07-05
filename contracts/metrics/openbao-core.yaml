@@ -362,6 +362,9 @@ metrics:
     prometheusName: ${p}_barrier_delete
     required: true
     overview: false
+    coverage:
+      raft-vault-node1: variable
+      raft-vault-node2: variable
     notes:
       - Observed as a summary in OpenBao 2.5.4 fixtures.
   - id: barrier_estimated_encryptions

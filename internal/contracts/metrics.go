@@ -44,6 +44,7 @@ type CoverageProfile struct {
 const (
 	MetricCoverageRequired      = "required"
 	MetricCoverageOptional      = "optional"
+	MetricCoverageVariable      = "variable"
 	MetricCoverageNotApplicable = "not-applicable"
 )
 
@@ -218,14 +219,15 @@ func (c MetricContract) validateMetrics(path string, coverageProfiles map[string
 
 func validateMetricCoverageExpectation(value, field string) error {
 	switch value {
-	case MetricCoverageRequired, MetricCoverageOptional, MetricCoverageNotApplicable:
+	case MetricCoverageRequired, MetricCoverageOptional, MetricCoverageVariable, MetricCoverageNotApplicable:
 		return nil
 	default:
 		return fmt.Errorf(
-			"%s must be one of %q, %q, or %q",
+			"%s must be one of %q, %q, %q, or %q",
 			field,
 			MetricCoverageRequired,
 			MetricCoverageOptional,
+			MetricCoverageVariable,
 			MetricCoverageNotApplicable,
 		)
 	}
