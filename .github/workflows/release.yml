@@ -88,6 +88,24 @@ jobs:
             --title "${VERSION}" \
             --notes "Release artifacts for ${VERSION}."
 
+      - name: Apply release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.release.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          notes_file="docs/releases/${VERSION}.md"
+          if [[ -f "${notes_file}" ]]; then
+            release_notes="$(mktemp)"
+            trap 'rm -f "${release_notes}"' EXIT
+            sed \
+              "s#](../../CHANGELOG.md)#](https://github.com/${GITHUB_REPOSITORY}/blob/${VERSION}/CHANGELOG.md)#g" \
+              "${notes_file}" > "${release_notes}"
+            gh release edit "${VERSION}" --notes-file "${release_notes}"
+          fi
+
       - name: Upload release artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

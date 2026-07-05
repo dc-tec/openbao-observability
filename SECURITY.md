@@ -2,8 +2,15 @@
 
 ## Supported Versions
 
-Until the first tagged release, security fixes target the `main` branch. After
-tagged releases begin, this policy should list supported release lines.
+Security fixes target `main` and the latest tagged minor release. Older minor
+release lines do not receive backports unless maintainers explicitly announce a
+backport window.
+
+| Version | Supported |
+| ------- | --------- |
+| `main` | Active development and security fixes. |
+| Latest tagged minor | Security fixes after publication. |
+| Older tagged minors | Not supported unless explicitly announced. |
 
 ## Reporting a Vulnerability
 
@@ -11,9 +18,9 @@ Do not report vulnerabilities, leaked secrets, unsafe audit-log examples, or
 credential exposure through a public issue.
 
 Use GitHub private vulnerability reporting when it is enabled for this
-repository. If private reporting is not available yet, open a minimal public
-issue asking for a private maintainer contact and do not include exploit
-details, secret values, audit payloads, or environment identifiers.
+repository. If private reporting is not available, open a minimal public issue
+asking for a private maintainer contact and do not include exploit details,
+secret values, audit payloads, or environment identifiers.
 
 Useful reports include:
 

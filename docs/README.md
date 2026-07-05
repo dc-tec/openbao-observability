@@ -72,6 +72,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 ## Reference
 
 - [Understand metric prefixes and recording rules](./contracts/metric-prefix.md)
+- [Release notes](./releases/README.md)
 
 ## Respond
 
