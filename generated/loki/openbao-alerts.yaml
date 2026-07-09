@@ -17,5 +17,5 @@ spec:
                 source_prefix: vault
               annotations:
                 description: Loki has not received the expected OpenBao audit canary request for the alert window.
-                runbook_url: docs/runbooks/audit-canary-missing.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/audit-canary-missing.md
                 summary: OpenBao audit canary is missing

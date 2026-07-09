@@ -19,7 +19,7 @@ spec:
                 source_prefix: openbao
               annotations:
                 description: OpenBao audit logs show create, update, or delete activity against audit configuration paths.
-                runbook_url: docs/runbooks/security-audit-detections.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
                 summary: OpenBao audit configuration changed
             - alert: OpenBaoRootPolicyMutation
               expr: sum(count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/policies/(acl/)?root" [5m])) > 0
@@ -33,7 +33,7 @@ spec:
                 source_prefix: openbao
               annotations:
                 description: OpenBao audit logs show create, update, or delete activity against the root policy path.
-                runbook_url: docs/runbooks/security-audit-detections.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
                 summary: OpenBao root policy changed
             - alert: OpenBaoPrivilegedConfigurationMutation
               expr: sum(count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?" [5m])) > 0
@@ -47,7 +47,7 @@ spec:
                 source_prefix: openbao
               annotations:
                 description: OpenBao audit logs show create, update, or delete activity against policy, auth method, or mount configuration paths.
-                runbook_url: docs/runbooks/security-audit-detections.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
                 summary: OpenBao privileged configuration changed
             - alert: OpenBaoHighRiskSystemPathActivity
               expr: sum(count_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"sys/(raw|plugins|storage/raft|rotate)(/.*)?" [5m])) > 0
@@ -61,7 +61,7 @@ spec:
                 source_prefix: openbao
               annotations:
                 description: OpenBao audit logs show activity against high-risk system paths such as raw storage, plugins, Raft storage, or rotation endpoints.
-                runbook_url: docs/runbooks/security-audit-detections.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
                 summary: OpenBao high-risk system path activity observed
             - alert: OpenBaoPermissionDeniedBurst
               expr: sum(count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_type="response" | audit_error=~"(?s).*permission denied.*" [5m])) > 10
@@ -75,7 +75,7 @@ spec:
                 source_prefix: openbao
               annotations:
                 description: OpenBao audit logs show more than ten permission denied responses over 5 minutes.
-                runbook_url: docs/runbooks/security-audit-detections.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
                 summary: OpenBao permission denied responses increased
             - alert: OpenBaoCompletedRequestLoggingObserved
               expr: sum(count_over_time({log_stream="openbao.completed_requests"}[5m])) > 0
@@ -89,5 +89,5 @@ spec:
                 source_prefix: openbao
               annotations:
                 description: Loki has received completed request logs, which should only exist during an approved troubleshooting window.
-                runbook_url: docs/runbooks/completed-request-logging-enabled.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/completed-request-logging-enabled.md
                 summary: OpenBao completed request logging is active

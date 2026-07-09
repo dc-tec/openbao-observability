@@ -2,6 +2,7 @@ package rules
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,8 @@ import (
 	"github.com/prometheus/prometheus/promql/parser"
 	"gopkg.in/yaml.v3"
 )
+
+const runbookURLBase = "https://github.com/dc-tec/openbao-observability/blob/main/"
 
 type GenerateOptions struct {
 	ContractPath string
@@ -922,12 +925,19 @@ func alertAnnotations(alert contracts.Alert) map[string]string {
 	annotations := map[string]string{
 		"summary":     alert.Summary,
 		"description": alert.Description,
-		"runbook_url": alert.Runbook,
+		"runbook_url": runbookURL(alert.Runbook),
 	}
 	for key, value := range alert.Annotations {
 		annotations[key] = value
 	}
 	return annotations
+}
+
+func runbookURL(runbook string) string {
+	if _, err := url.ParseRequestURI(runbook); err == nil && strings.HasPrefix(runbook, "http") {
+		return runbook
+	}
+	return runbookURLBase + strings.TrimPrefix(runbook, "/")
 }
 
 func writeYAML(path string, document any) error {

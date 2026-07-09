@@ -16,7 +16,7 @@ spec:
                 source_prefix: vault
               annotations:
                 description: Prometheus cannot scrape OpenBao for at least 5 minutes.
-                runbook_url: docs/runbooks/openbao-metrics-scrape-failing.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/openbao-metrics-scrape-failing.md
                 summary: OpenBao metrics scrape is failing
             - alert: OpenBaoSealedUnexpectedly
               expr: vault_core_unsealed{cluster!=""} == 0
@@ -27,7 +27,7 @@ spec:
                 source_prefix: vault
               annotations:
                 description: A scraped OpenBao node reports that it is sealed.
-                runbook_url: docs/runbooks/openbao-sealed-unexpectedly.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/openbao-sealed-unexpectedly.md
                 summary: OpenBao is sealed
             - alert: OpenBaoNoActiveNode
               expr: openbao:core_active:sum == 0
@@ -38,7 +38,7 @@ spec:
                 source_prefix: vault
               annotations:
                 description: No active OpenBao node is visible to Prometheus.
-                runbook_url: docs/runbooks/no-active-openbao-leader.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/no-active-openbao-leader.md
                 summary: OpenBao has no active node
             - alert: OpenBaoMultipleActiveNodes
               expr: openbao:core_active:sum > 1
@@ -49,7 +49,7 @@ spec:
                 source_prefix: vault
               annotations:
                 description: More than one active OpenBao node is visible to Prometheus.
-                runbook_url: docs/runbooks/multiple-active-nodes.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/multiple-active-nodes.md
                 summary: OpenBao has multiple active nodes
             - alert: OpenBaoAllPodsUnavailable
               expr: sum by (namespace) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
@@ -62,7 +62,7 @@ spec:
                 subsystem: workload
               annotations:
                 description: Kubernetes reports no ready OpenBao workload containers for the selected platform metrics.
-                runbook_url: docs/runbooks/kubernetes-platform-health.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/kubernetes-platform-health.md
                 summary: All OpenBao Kubernetes pods are unavailable
             - alert: OpenBaoAuditPVCPressure
               expr: 100 * min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) / min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) < 15
@@ -75,7 +75,7 @@ spec:
                 subsystem: storage
               annotations:
                 description: A matching OpenBao audit or data PVC has less than 15 percent free space.
-                runbook_url: docs/runbooks/kubernetes-platform-health.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/kubernetes-platform-health.md
                 summary: OpenBao audit or data PVC free space is low
             - alert: OpenBaoRaftPeerCountLow
               expr: openbao:raft_peers:max < 3
@@ -87,7 +87,7 @@ spec:
                 source_prefix: vault
               annotations:
                 description: OpenBao Raft reports fewer than three peers, which removes the baseline redundancy expected for this reference architecture.
-                runbook_url: docs/runbooks/raft-autopilot-health.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/raft-autopilot-health.md
                 summary: OpenBao Raft peer count is below the HA baseline
             - alert: OpenBaoAutopilotUnhealthy
               expr: openbao:autopilot_healthy:max == 0
@@ -100,7 +100,7 @@ spec:
                 subsystem: autopilot
               annotations:
                 description: OpenBao Autopilot reports that the integrated storage cluster is unhealthy.
-                runbook_url: docs/runbooks/raft-autopilot-health.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/raft-autopilot-health.md
                 summary: OpenBao Autopilot reports an unhealthy cluster
             - alert: OpenBaoAutopilotFailureToleranceLost
               expr: openbao:raft_peers:max >= 3 and openbao:autopilot_failure_tolerance:max < 1
@@ -113,7 +113,7 @@ spec:
                 subsystem: autopilot
               annotations:
                 description: OpenBao Autopilot reports that the Raft cluster cannot lose a voter while maintaining the configured HA baseline.
-                runbook_url: docs/runbooks/raft-autopilot-health.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/raft-autopilot-health.md
                 summary: OpenBao Autopilot has no tolerated voter failure
             - alert: OpenBaoAutopilotNodeUnhealthy
               expr: openbao:autopilot_node_healthy:min == 0
@@ -126,7 +126,7 @@ spec:
                 subsystem: autopilot
               annotations:
                 description: OpenBao Autopilot reports that at least one known Raft node is unhealthy.
-                runbook_url: docs/runbooks/raft-autopilot-health.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/raft-autopilot-health.md
                 summary: OpenBao Autopilot reports an unhealthy node
             - alert: OpenBaoAuditRequestFailures
               expr: sum(increase(vault_audit_log_request_failure[5m])) > 0
@@ -137,7 +137,7 @@ spec:
                 source_prefix: vault
               annotations:
                 description: OpenBao reported at least one audit request logging failure.
-                runbook_url: docs/runbooks/audit-request-response-failures.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/audit-request-response-failures.md
                 summary: OpenBao audit request logging failed
             - alert: OpenBaoAuditResponseFailures
               expr: sum(increase(vault_audit_log_response_failure[5m])) > 0
@@ -148,7 +148,7 @@ spec:
                 source_prefix: vault
               annotations:
                 description: OpenBao reported at least one audit response logging failure.
-                runbook_url: docs/runbooks/audit-request-response-failures.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/audit-request-response-failures.md
                 summary: OpenBao audit response logging failed
             - alert: OpenBaoAuditArchiveDegraded
               expr: |-
@@ -169,5 +169,5 @@ spec:
                 subsystem: archive
               annotations:
                 description: The durable OpenBao audit archive path is enabled but missing, stale, failing, or dead-lettering records.
-                runbook_url: docs/runbooks/audit-archive-degraded.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/audit-archive-degraded.md
                 summary: OpenBao audit archive is degraded

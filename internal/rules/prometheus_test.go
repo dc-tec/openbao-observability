@@ -205,7 +205,7 @@ func TestGenerateAlertRules(t *testing.T) {
 		"component: raft",
 		"alert: OpenBaoAuditResponseFailures",
 		"expr: sum(increase(openbao_audit_log_response_failure[5m])) > 0",
-		"runbook_url: docs/runbooks/no-active-openbao-leader.md",
+		"runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/no-active-openbao-leader.md",
 	} {
 		if !strings.Contains(prometheusText, fragment) {
 			t.Fatalf("Prometheus alerts missing %q:\n%s", fragment, prometheusText)
@@ -251,6 +251,13 @@ func TestGenerateAlertRules(t *testing.T) {
 		if !strings.Contains(lokiText, fragment) {
 			t.Fatalf("Loki alerts missing %q:\n%s", fragment, lokiText)
 		}
+	}
+}
+
+func TestRunbookURLPreservesExternalURLs(t *testing.T) {
+	const externalRunbook = "https://example.com/runbooks/openbao"
+	if got := runbookURL(externalRunbook); got != externalRunbook {
+		t.Fatalf("runbookURL() = %q, want %q", got, externalRunbook)
 	}
 }
 
