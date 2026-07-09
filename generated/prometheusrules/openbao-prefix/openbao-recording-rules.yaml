@@ -52,7 +52,7 @@ spec:
               labels:
                 source_prefix: openbao
             - record: openbao:raft_peers:max
-              expr: max by (namespace) (openbao_raft_peers) or count by (namespace) (count by (namespace, peer_id) (openbao_raft_storage_stats_commit_index))
+              expr: max by (namespace) (openbao_raft_peers) or count by (namespace) (openbao_autopilot_node_healthy) or count by (namespace) (count by (namespace, peer_id) (openbao_raft_storage_stats_commit_index))
               labels:
                 source_prefix: openbao
             - record: openbao:autopilot_healthy:max

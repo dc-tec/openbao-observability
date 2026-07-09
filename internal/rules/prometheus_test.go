@@ -54,6 +54,7 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"expr: max by (namespace, local, type) (openbao_core_mount_table_num_entries)",
 		"record: openbao:raft_peers:max",
 		"expr: max by (namespace) (openbao_raft_peers) or " +
+			"count by (namespace) (openbao_autopilot_node_healthy) or " +
 			"count by (namespace) (count by (namespace, peer_id) (openbao_raft_storage_stats_commit_index))",
 		"record: openbao:autopilot_node_healthy:min",
 		"expr: min by (namespace, node_id) (openbao_autopilot_node_healthy)",
@@ -196,9 +197,9 @@ func TestGenerateAlertRules(t *testing.T) {
 	for _, fragment := range []string{
 		"kind: PrometheusRule",
 		"alert: OpenBaoNoActiveNode",
-		"expr: sum(openbao_core_active) == 0",
+		"expr: openbao:core_active:sum == 0",
 		"alert: OpenBaoMultipleActiveNodes",
-		"expr: sum(openbao_core_active) > 1",
+		"expr: openbao:core_active:sum > 1",
 		"alert: OpenBaoAutopilotFailureToleranceLost",
 		"expr: openbao:raft_peers:max >= 3 and openbao:autopilot_failure_tolerance:max < 1",
 		"component: raft",
@@ -220,9 +221,9 @@ func TestGenerateAlertRules(t *testing.T) {
 		"groups:",
 		"name: openbao.alerts",
 		"alert: OpenBaoNoActiveNode",
-		"expr: sum(openbao_core_active) == 0",
+		"expr: openbao:core_active:sum == 0",
 		"alert: OpenBaoMultipleActiveNodes",
-		"expr: sum(openbao_core_active) > 1",
+		"expr: openbao:core_active:sum > 1",
 		"alert: OpenBaoAutopilotFailureToleranceLost",
 		"expr: openbao:raft_peers:max >= 3 and openbao:autopilot_failure_tolerance:max < 1",
 		"alert: OpenBaoAuditResponseFailures",
@@ -303,7 +304,7 @@ alerts:
     severity: critical
     signal: metrics
     for: 2m
-    expression: sum(${p}_core_active) == 0
+    expression: openbao:core_active:sum == 0
     summary: OpenBao has no active node
     description: No active OpenBao node is visible to Prometheus.
     runbook: docs/runbooks/no-active-openbao-leader.md
@@ -312,7 +313,7 @@ alerts:
     severity: critical
     signal: metrics
     for: 2m
-    expression: sum(${p}_core_active) > 1
+    expression: openbao:core_active:sum > 1
     summary: OpenBao has multiple active nodes
     description: More than one active OpenBao node is visible to Prometheus.
     runbook: docs/runbooks/multiple-active-nodes.md
