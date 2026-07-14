@@ -8,15 +8,15 @@ import (
 )
 
 func TestLoadMetricContract(t *testing.T) {
-	path := writeContract(t, t.TempDir(), "2.5.5", nil)
+	path := writeContract(t, t.TempDir(), "2.6.0", nil)
 
 	contract, err := LoadMetricContract(path)
 	if err != nil {
 		t.Fatalf("LoadMetricContract returned error: %v", err)
 	}
 
-	if contract.OpenBAOVersion != "2.5.5" {
-		t.Fatalf("OpenBAOVersion = %q, want 2.5.5", contract.OpenBAOVersion)
+	if contract.OpenBAOVersion != "2.6.0" {
+		t.Fatalf("OpenBAOVersion = %q, want 2.6.0", contract.OpenBAOVersion)
 	}
 	if got := contract.Metrics[0].FixtureName("openbao"); got != "openbao_core_active" {
 		t.Fatalf("FixtureName = %q, want openbao_core_active", got)
@@ -29,7 +29,7 @@ func TestLoadMetricContract(t *testing.T) {
 func TestLoadMetricContractRejectsDuplicateMetricIDs(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "contract.yaml")
-	content := baseContract("2.5.5", nil) + `
+	content := baseContract("2.6.0", nil) + `
   - id: core_active
     prometheusName: ${p}_core_active_duplicate
     required: true
@@ -50,7 +50,7 @@ func TestLoadMetricContractRejectsDuplicateMetricIDs(t *testing.T) {
 func TestLoadMetricContractRejectsInvalidMaturity(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "contract.yaml")
-	content := strings.Replace(baseContract("2.5.5", nil), "lifecycle: draft", "lifecycle: preview", 1)
+	content := strings.Replace(baseContract("2.6.0", nil), "lifecycle: draft", "lifecycle: preview", 1)
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("write contract: %v", err)
 	}
@@ -71,10 +71,10 @@ func TestVerifyMetricContract(t *testing.T) {
 	writeMetricFixture(t, fixtureDir, "openbao")
 
 	required := []string{
-		filepath.Join(fixtureDir, "metrics", "openbao-2.5.5-vault-prefix.prom"),
-		filepath.Join(fixtureDir, "metrics", "openbao-2.5.5-openbao-prefix.prom"),
+		filepath.Join(fixtureDir, "metrics", "openbao-2.6.0-vault-prefix.prom"),
+		filepath.Join(fixtureDir, "metrics", "openbao-2.6.0-openbao-prefix.prom"),
 	}
-	contractPath := writeContract(t, dir, "2.5.5", required)
+	contractPath := writeContract(t, dir, "2.6.0", required)
 
 	err := VerifyMetricContract(VerifyOptions{
 		ContractPath: contractPath,
@@ -91,7 +91,7 @@ func TestVerifyMetricContractFailsWhenMetricMissing(t *testing.T) {
 	writeMetricFixture(t, fixtureDir, "vault")
 	writeMetricFixture(t, fixtureDir, "openbao")
 
-	openbaoFixture := filepath.Join(fixtureDir, "metrics", "openbao-2.5.5-openbao-prefix.prom")
+	openbaoFixture := filepath.Join(fixtureDir, "metrics", "openbao-2.6.0-openbao-prefix.prom")
 	content, err := os.ReadFile(openbaoFixture)
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
@@ -102,10 +102,10 @@ func TestVerifyMetricContractFailsWhenMetricMissing(t *testing.T) {
 	}
 
 	required := []string{
-		filepath.Join(fixtureDir, "metrics", "openbao-2.5.5-vault-prefix.prom"),
-		filepath.Join(fixtureDir, "metrics", "openbao-2.5.5-openbao-prefix.prom"),
+		filepath.Join(fixtureDir, "metrics", "openbao-2.6.0-vault-prefix.prom"),
+		filepath.Join(fixtureDir, "metrics", "openbao-2.6.0-openbao-prefix.prom"),
 	}
-	contractPath := writeContract(t, dir, "2.5.5", required)
+	contractPath := writeContract(t, dir, "2.6.0", required)
 
 	err = VerifyMetricContract(VerifyOptions{
 		ContractPath: contractPath,
@@ -174,7 +174,7 @@ fixtures:
 func writeMetricFixture(t *testing.T, root, prefix string) {
 	t.Helper()
 
-	path := filepath.Join(root, "metrics", "openbao-2.5.5-"+prefix+"-prefix.prom")
+	path := filepath.Join(root, "metrics", "openbao-2.6.0-"+prefix+"-prefix.prom")
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatalf("create fixture directory: %v", err)
 	}

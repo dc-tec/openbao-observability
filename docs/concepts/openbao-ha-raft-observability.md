@@ -123,7 +123,7 @@ the metrics exposure surface.
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed OpenBao docs behavior | OpenBao documents Raft leaders, followers, quorum, committed entries, Autopilot behavior, and failure tolerance. |
-| Observed fixture behavior | The OpenBao 2.5.5 HA fixture exercises active state, unseal state, peer metrics, Autopilot health, Raft storage stats, three voters, and one non-voter read replica. |
+| Observed fixture behavior | The OpenBao 2.6.0 HA fixture exercises active state, unseal state, peer metrics, Autopilot health, Raft storage stats, three voters, and one non-voter read replica. |
 | Design decision | This project separates HA/Raft dashboard interpretation from recovery procedures and treats all-node scraping as the richer diagnostics profile. |
 | To validate | Production Raft labels, storage latency, network policy, node replacement procedures, and alert thresholds. |
 

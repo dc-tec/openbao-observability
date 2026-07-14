@@ -120,7 +120,7 @@ you need HA/Raft diagnostics or per-node visibility.
 
 This project validates metrics at three layers:
 
-- Captured OpenBao 2.5.5 fixtures under `fixtures/captured/openbao-2.5.5/`.
+- Captured OpenBao 2.6.0 fixtures under `fixtures/captured/openbao-2.6.0/`.
 - Metric contracts under `contracts/metrics/`.
 - Generated Prometheus rules under `generated/prometheus/` and
   `generated/prometheusrules/`.

@@ -146,7 +146,7 @@ The HA/Raft dashboard uses `openbao:raft_peers:max` instead of raw
 OpenBao exposes it and falls back to counting
 `*_raft_storage_stats_commit_index` by `peer_id` in all-node scrape profiles.
 
-This fallback exists because the current OpenBao 2.5.5 HA/Raft fixture
+This fallback exists because the current OpenBao 2.6.0 HA/Raft fixture
 observed `vault_raft_peers` on the active node, while the live Docker Compose
 all-node scrape exposed Raft storage stats without `vault_raft_peers`.
 

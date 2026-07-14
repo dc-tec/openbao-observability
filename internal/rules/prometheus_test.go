@@ -271,7 +271,7 @@ maturity:
     - documented
     - fixture-validated
     - generated-validated
-openbaoVersion: "2.5.5"
+openbaoVersion: "2.6.0"
 metricPrefixes:
   supported:
     - vault

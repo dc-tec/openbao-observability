@@ -131,7 +131,7 @@ credentials or resources that outlive the intended lifecycle.
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed OpenBao docs behavior | OpenBao documents token types, lease renewal, revocation, token-linked leases, and `usage_gauge_period` behavior. |
-| Observed fixture behavior | The OpenBao 2.5.5 fixture emits token and lease metrics plus token and lease audit events from the demo workload. |
+| Observed fixture behavior | The OpenBao 2.6.0 fixture emits token and lease metrics plus token and lease audit events from the demo workload. |
 | Design decision | This project combines metrics for inventory, rate, and latency with query-time audit filters for request context. |
 | To validate | Auth method mix, token TTL policy, dynamic-secret backends, lease cleanup behavior, and retention windows in your deployment. |
 
