@@ -126,9 +126,9 @@ func (o ScenarioOptions) withDefaults() ScenarioOptions {
 		o.OutputPath = filepath.Join(
 			"fixtures",
 			"captured",
-			"openbao-2.5.5",
+			"openbao-2.6.0",
 			"metadata",
-			"openbao-2.5.5-compose-scenario.json",
+			"openbao-2.6.0-compose-scenario.json",
 		)
 	}
 	return o

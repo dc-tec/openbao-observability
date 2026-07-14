@@ -1,4 +1,4 @@
-OPENBAO_VERSION ?= 2.5.5
+OPENBAO_VERSION ?= 2.6.0
 OPENBAO_IMAGE ?= quay.io/openbao/openbao:$(OPENBAO_VERSION)
 POSTGRES_IMAGE ?= postgres:17-alpine
 PROMETHEUS_IMAGE ?= prom/prometheus:v3.11.2

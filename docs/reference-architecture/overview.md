@@ -95,7 +95,7 @@ choices.
 
 The current repository validates one concrete implementation profile:
 
-- OpenBao `2.5.5` fixture capture.
+- OpenBao `2.6.0` fixture capture.
 - `vault_*` and `openbao_*` metric prefix variants.
 - Generated Prometheus recording rules and alert rules.
 - Generated Loki alert reference artifacts.

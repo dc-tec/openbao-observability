@@ -116,7 +116,7 @@ you only need cluster-level health.
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed OpenBao docs behavior | OpenBao documents telemetry metric types, the `/sys/metrics` scrape endpoint, audit-device behavior, unaudited paths, and completed request logging. |
-| Observed fixture behavior | The OpenBao 2.5.5 fixtures in this repository exercise HA/Raft metrics, audit streams, and both supported metric-prefix variants. |
+| Observed fixture behavior | The OpenBao 2.6.0 fixtures in this repository exercise HA/Raft metrics, audit streams, and both supported metric-prefix variants. |
 | Design decision | This project normalizes source metrics into `openbao:` recording rules and keeps audit fields out of Loki labels. |
 | To validate | Deployment-specific labels, scrape identities, retention controls, and OpenBao versions outside the validated fixture set. |
 

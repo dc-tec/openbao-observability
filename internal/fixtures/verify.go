@@ -50,7 +50,7 @@ func Verify(opts VerifyOptions) error {
 
 func (o VerifyOptions) withDefaults() VerifyOptions {
 	if o.Version == "" {
-		o.Version = "2.5.5"
+		o.Version = "2.6.0"
 	}
 	if o.FixtureDir == "" {
 		o.FixtureDir = filepath.Join("fixtures", "captured", "openbao-"+o.Version)

@@ -12,7 +12,7 @@ import (
 func TestGenerateMatrixReportsFixtureCoverage(t *testing.T) {
 	root := t.TempDir()
 	contractPath := filepath.Join(root, "contracts", "metrics", "openbao-core.yaml")
-	fixtureDir := filepath.Join(root, "fixtures", "captured", "openbao-2.5.5")
+	fixtureDir := filepath.Join(root, "fixtures", "captured", "openbao-2.6.0")
 	outputPath := filepath.Join(root, "generated", "docs", "metric-compatibility-matrix.md")
 	metricPath := func(name string) string {
 		return filepath.Join(fixtureDir, "metrics", name)
@@ -25,7 +25,7 @@ maturity:
     - documented
     - fixture-validated
     - generated-validated
-openbaoVersion: "2.5.5"
+openbaoVersion: "2.6.0"
 metricPrefixes:
   supported:
     - vault
@@ -59,18 +59,18 @@ metrics:
     coverage:
       raft-vault-node0: variable
 `)
-	writeFile(t, metricPath("openbao-2.5.5-vault-prefix.prom"), `# HELP vault_core_active Active node status.
+	writeFile(t, metricPath("openbao-2.6.0-vault-prefix.prom"), `# HELP vault_core_active Active node status.
 # TYPE vault_core_active gauge
 vault_core_active{cluster="test"} 1
 `)
-	writeFile(t, metricPath("openbao-2.5.5-openbao-prefix.prom"), `# HELP openbao_core_active Active node status.
+	writeFile(t, metricPath("openbao-2.6.0-openbao-prefix.prom"), `# HELP openbao_core_active Active node status.
 # TYPE openbao_core_active gauge
 openbao_core_active{cluster="test"} 1
 # HELP openbao_token_count Token count.
 # TYPE openbao_token_count gauge
 openbao_token_count{namespace="root"} 4
 `)
-	writeFile(t, metricPath("openbao-2.5.5-raft-vault-node0.prom"), `# HELP vault_core_active Active node status.
+	writeFile(t, metricPath("openbao-2.6.0-raft-vault-node0.prom"), `# HELP vault_core_active Active node status.
 # TYPE vault_core_active gauge
 vault_core_active{cluster="test",instance="node0"} 1
 # HELP vault_token_count Token count.

@@ -5,7 +5,7 @@ maturity:
     - documented
     - fixture-validated
     - generated-validated
-openbaoVersion: "2.5.5"
+openbaoVersion: "2.6.0"
 metricPrefixes:
   supported:
     - vault
@@ -20,8 +20,8 @@ normalization:
     - Database lease behavior inside namespaces, nested namespace behavior, and feature-specific namespace behavior outside the captured scenario must be fixture-tested before dashboards or alerts depend on those dimensions.
 fixtures:
   required:
-    - fixtures/captured/openbao-2.5.5/metrics/openbao-2.5.5-vault-prefix.prom
-    - fixtures/captured/openbao-2.5.5/metrics/openbao-2.5.5-openbao-prefix.prom
+    - fixtures/captured/openbao-2.6.0/metrics/openbao-2.6.0-vault-prefix.prom
+    - fixtures/captured/openbao-2.6.0/metrics/openbao-2.6.0-openbao-prefix.prom
 coverageProfiles:
   - id: vault-prefix
     class: prefix-smoke
@@ -48,14 +48,14 @@ metrics:
     required: true
     overview: true
     notes:
-      - Observed with a cluster label in OpenBao 2.5.5 dev mode.
+      - Observed with a cluster label in OpenBao 2.6.0 dev mode.
   - id: core_unsealed
     docsName: vault.core.unsealed
     prometheusName: ${p}_core_unsealed
     required: true
     overview: true
     notes:
-      - Observed with both cluster="" and a real cluster label in OpenBao 2.5.5 dev mode.
+      - Observed with both cluster="" and a real cluster label in OpenBao 2.6.0 dev mode.
       - Generated rules must exclude or normalize the empty cluster series.
       - Unsealed node count is not voter count; non-voters and read replicas can also be unsealed.
   - id: core_handle_request
@@ -64,7 +64,7 @@ metrics:
     required: true
     overview: true
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
       - Used for regular request rate and request handling latency.
   - id: core_handle_login_request
     docsName: vault.core.handle_login_request
@@ -72,7 +72,7 @@ metrics:
     required: true
     overview: true
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
       - Used for login request latency.
   - id: core_check_token
     docsName: vault.core.check_token
@@ -80,7 +80,7 @@ metrics:
     required: true
     overview: true
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
       - Used for token check latency.
   - id: core_in_flight_requests
     docsName: vault.core.in_flight_requests
@@ -88,7 +88,7 @@ metrics:
     required: true
     overview: true
     notes:
-      - Observed as a gauge in OpenBao 2.5.5 fixtures and HA/Raft captures.
+      - Observed as a gauge in OpenBao 2.6.0 fixtures and HA/Raft captures.
       - Used as a request pressure indicator.
   - id: core_mount_table_num_entries
     docsName: vault.core.mount_table.num_entries
@@ -96,7 +96,7 @@ metrics:
     required: true
     overview: false
     notes:
-      - Observed with cluster, local, and type labels in OpenBao 2.5.5 fixtures.
+      - Observed with cluster, local, and type labels in OpenBao 2.6.0 fixtures.
       - Type and local are bounded labels suitable for aggregate mount inventory panels.
   - id: core_mount_table_size
     docsName: vault.core.mount_table.size
@@ -104,7 +104,7 @@ metrics:
     required: true
     overview: false
     notes:
-      - Observed with cluster, local, and type labels in OpenBao 2.5.5 fixtures.
+      - Observed with cluster, local, and type labels in OpenBao 2.6.0 fixtures.
       - Use as a coarse mount-table size signal, not as mount-path inventory.
   - id: raft_peers
     docsName: vault.raft.peers
@@ -112,7 +112,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture on the active node.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture on the active node.
       - The current fixture observes value 4 for a topology with three voters plus one non-voter read replica.
       - Not always present in current live all-node scrapes.
       - Recording rules fall back to counting raft_storage_stats_commit_index by peer_id.
@@ -123,7 +123,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture and live Compose HA stack.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture and live Compose HA stack.
       - Used as the fallback source for normalized Raft peer count.
       - The HA/Raft fixture observes peer_id labels for voters and the read-replica peer_id read-replica0.
   - id: raft_storage_stats_applied_index
@@ -132,7 +132,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture.
       - Used with commit index to derive follower and read-replica apply lag.
       - The HA/Raft fixture observes peer_id labels for voters and the read-replica peer_id read-replica0.
   - id: raft_storage_stats_fsm_pending
@@ -141,7 +141,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture.
       - Used as a node-level Raft apply pressure signal for voters and non-voter read replicas.
   - id: autopilot_healthy
     docsName: vault.autopilot.healthy
@@ -149,7 +149,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed on the active node in the OpenBao 2.5.5 HA/Raft fixture.
+      - Observed on the active node in the OpenBao 2.6.0 HA/Raft fixture.
       - Current fixture coverage includes three voters and one non-voter read replica.
   - id: autopilot_failure_tolerance
     docsName: vault.autopilot.failure_tolerance
@@ -157,7 +157,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed on the active node in the OpenBao 2.5.5 HA/Raft fixture.
+      - Observed on the active node in the OpenBao 2.6.0 HA/Raft fixture.
       - Failure tolerance remains 1 in the fixture with three voters plus one non-voter read replica.
       - Failure tolerance is voter-oriented; do not treat read replicas or non-voters as added quorum margin.
   - id: autopilot_node_healthy
@@ -166,7 +166,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed with a node_id label in the OpenBao 2.5.5 HA/Raft fixture.
+      - Observed with a node_id label in the OpenBao 2.6.0 HA/Raft fixture.
       - Current fixture coverage includes voter node_id values node0, node1, node2 and non-voter node_id read-replica0.
   - id: audit_log_request_failure
     docsName: vault.audit.log_request_failure
@@ -184,14 +184,14 @@ metrics:
     required: true
     overview: true
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
   - id: audit_log_response
     docsName: vault.audit.log_response
     prometheusName: ${p}_audit_log_response
     required: true
     overview: true
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
   - id: audit_device_log_request
     docsName: vault.audit.{DEVICE}.log_request
     prometheusName: ${p}_audit_<device>__log_request
@@ -206,28 +206,28 @@ metrics:
     required: true
     overview: true
     notes:
-      - Observed without a cluster label in OpenBao 2.5.5 dev mode.
+      - Observed without a cluster label in OpenBao 2.6.0 dev mode.
   - id: expire_num_irrevocable_leases
     docsName: vault.expire.num_irrevocable_leases
     prometheusName: ${p}_expire_num_irrevocable_leases
     required: true
     overview: false
     notes:
-      - Observed without a cluster label in OpenBao 2.5.5 fixtures.
+      - Observed without a cluster label in OpenBao 2.6.0 fixtures.
   - id: expire_revoke
     docsName: vault.expire.revoke
     prometheusName: ${p}_expire_revoke
     required: true
     overview: false
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
   - id: expire_register_auth
     docsName: vault.expire.register_auth
     prometheusName: ${p}_expire_register_auth
     required: true
     overview: false
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
   - id: token_count
     docsName: vault.token.count
     prometheusName: ${p}_token_count
@@ -235,7 +235,7 @@ metrics:
     overview: true
     notes:
       - Token count is a slow usage gauge.
-      - Observed in the live OpenBao 2.5.5 Docker Compose HA stack with a namespace label.
+      - Observed in the live OpenBao 2.6.0 Docker Compose HA stack with a namespace label.
       - Not required in short-lived fixtures because usage gauges can update later than the fixture capture window.
       - Current fixtures do not require this usage gauge; non-root namespace grouping for this metric is to validate.
   - id: token_creation
@@ -244,7 +244,7 @@ metrics:
     required: true
     overview: false
     notes:
-      - Observed as a counter in OpenBao 2.5.5 fixtures.
+      - Observed as a counter in OpenBao 2.6.0 fixtures.
       - Labels include auth_method, creation_ttl, mount_point, namespace, and token_type.
       - Generated dashboards must not group by mount_point or policy.
       - Current HA/Raft fixtures validate root and team-a namespace labels for this metric, including namespace AppRole, userpass, and token-created token paths; nested namespace grouping is to validate.
@@ -254,42 +254,42 @@ metrics:
     required: true
     overview: false
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
   - id: token_lookup
     docsName: vault.token.lookup
     prometheusName: ${p}_token_lookup
     required: true
     overview: false
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
   - id: token_store
     docsName: vault.token.store
     prometheusName: ${p}_token_store
     required: true
     overview: false
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
   - id: token_revoke_tree
     docsName: vault.token.revoke_tree
     prometheusName: ${p}_token_revoke_tree
     required: true
     overview: false
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
   - id: runtime_num_goroutines
     docsName: vault.runtime.num_goroutines
     prometheusName: ${p}_runtime_num_goroutines
     required: true
     overview: true
     notes:
-      - Observed without a cluster label in OpenBao 2.5.5 dev mode.
+      - Observed without a cluster label in OpenBao 2.6.0 dev mode.
   - id: runtime_alloc_bytes
     docsName: vault.runtime.alloc_bytes
     prometheusName: ${p}_runtime_alloc_bytes
     required: true
     overview: false
     notes:
-      - Observed as an unlabeled gauge in OpenBao 2.5.5 fixtures.
+      - Observed as an unlabeled gauge in OpenBao 2.6.0 fixtures.
       - Use with runtime_sys_bytes and runtime_heap_objects to interpret memory pressure.
   - id: runtime_heap_objects
     docsName: vault.runtime.heap_objects
@@ -297,21 +297,21 @@ metrics:
     required: true
     overview: true
     notes:
-      - Observed as an unlabeled gauge in OpenBao 2.5.5 fixtures.
+      - Observed as an unlabeled gauge in OpenBao 2.6.0 fixtures.
   - id: runtime_sys_bytes
     docsName: vault.runtime.sys_bytes
     prometheusName: ${p}_runtime_sys_bytes
     required: true
     overview: true
     notes:
-      - Observed as an unlabeled gauge in OpenBao 2.5.5 fixtures.
+      - Observed as an unlabeled gauge in OpenBao 2.6.0 fixtures.
   - id: runtime_gc_pause_ns
     docsName: vault.runtime.gc_pause_ns
     prometheusName: ${p}_runtime_gc_pause_ns
     required: true
     overview: false
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
       - Quantile samples can be NaN in quiet HA/Raft captures; generated rules use sum and count.
   - id: runtime_total_gc_pause_ns
     docsName: vault.runtime.total_gc_pause_ns
@@ -319,21 +319,21 @@ metrics:
     required: true
     overview: true
     notes:
-      - Observed as an unlabeled gauge in OpenBao 2.5.5 fixtures.
+      - Observed as an unlabeled gauge in OpenBao 2.6.0 fixtures.
   - id: runtime_total_gc_runs
     docsName: vault.runtime.total_gc_runs
     prometheusName: ${p}_runtime_total_gc_runs
     required: true
     overview: false
     notes:
-      - Observed as an unlabeled gauge in OpenBao 2.5.5 fixtures.
+      - Observed as an unlabeled gauge in OpenBao 2.6.0 fixtures.
   - id: barrier_get
     docsName: vault.barrier.get
     prometheusName: ${p}_barrier_get
     required: true
     overview: true
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
       - Barrier read latency can explain request and token-check latency.
   - id: barrier_put
     docsName: vault.barrier.put
@@ -341,7 +341,7 @@ metrics:
     required: true
     overview: true
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
       - Barrier write latency can explain write-heavy request pressure.
   - id: barrier_list
     docsName: vault.barrier.list
@@ -349,14 +349,14 @@ metrics:
     required: true
     overview: false
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
   - id: barrier_list_page
     docsName: vault.barrier.list_page
     prometheusName: ${p}_barrier_list_page
     required: true
     overview: false
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
   - id: barrier_delete
     docsName: vault.barrier.delete
     prometheusName: ${p}_barrier_delete
@@ -366,42 +366,42 @@ metrics:
       raft-vault-node1: variable
       raft-vault-node2: variable
     notes:
-      - Observed as a summary in OpenBao 2.5.5 fixtures.
+      - Observed as a summary in OpenBao 2.6.0 fixtures.
   - id: barrier_estimated_encryptions
     docsName: vault.barrier.estimated_encryptions
     prometheusName: ${p}_barrier_estimated_encryptions
     required: true
     overview: false
     notes:
-      - Observed as a counter with a term label in OpenBao 2.5.5 fixtures.
+      - Observed as a counter with a term label in OpenBao 2.6.0 fixtures.
   - id: cache_hit
     docsName: vault.cache.hit
     prometheusName: ${p}_cache_hit
     required: true
     overview: true
     notes:
-      - Observed as a counter in OpenBao 2.5.5 fixtures.
+      - Observed as a counter in OpenBao 2.6.0 fixtures.
   - id: cache_miss
     docsName: vault.cache.miss
     prometheusName: ${p}_cache_miss
     required: true
     overview: true
     notes:
-      - Observed as a counter in OpenBao 2.5.5 fixtures.
+      - Observed as a counter in OpenBao 2.6.0 fixtures.
   - id: cache_write
     docsName: vault.cache.write
     prometheusName: ${p}_cache_write
     required: true
     overview: false
     notes:
-      - Observed as a counter in OpenBao 2.5.5 fixtures.
+      - Observed as a counter in OpenBao 2.6.0 fixtures.
   - id: secret_lease_creation
     docsName: vault.secret.lease.creation
     prometheusName: ${p}_secret_lease_creation
     required: false
     overview: false
     notes:
-      - Observed as a counter in the OpenBao 2.5.5 HA/Raft fixture after issuing database dynamic credentials.
+      - Observed as a counter in the OpenBao 2.6.0 HA/Raft fixture after issuing database dynamic credentials.
       - Labels include namespace, secret_engine, mount_point, creation_ttl, and cluster.
       - Treat mount_point and creation_ttl as advanced labels; dashboards should aggregate by secret_engine unless a drilldown needs more detail.
       - Current fixtures validate root and team-a namespace behavior for database dynamic leases; broader nested namespace grouping remains to validate.
@@ -412,7 +412,7 @@ metrics:
     overview: false
     notes:
       - KV secret count is a slow usage gauge.
-      - Observed in an OpenBao 2.5.5 dev check after writing KV v1 and KV v2 entries.
+      - Observed in an OpenBao 2.6.0 dev check after writing KV v1 and KV v2 entries.
       - Labels include cluster, mount_point, and namespace.
       - Fixture capture shortens usage_gauge_period before scraping so the slow gauge can be observed.
       - Treat mount_point as drilldown data because mount names can expose deployment-specific context.
@@ -422,7 +422,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture after issuing a certificate from the default pki/ mount.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture after issuing a certificate from the default pki/ mount.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace and role; role is bounded by PKI role inventory but should still be treated as drilldown data.
       - Current fixtures validate root namespace for this metric and observe separate namespace-derived metric families for non-root namespace PKI.
@@ -433,7 +433,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture after revoking a certificate from the default pki/ mount.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture after revoking a certificate from the default pki/ mount.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace.
       - Current fixtures validate root namespace for this metric and observe separate namespace-derived metric families for non-root namespace PKI.
@@ -444,7 +444,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture after an intentional invalid-domain issue request.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture after an intentional invalid-domain issue request.
       - Source-backed by the OpenBao PKI metrics wrapper.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace and role when emitted.
@@ -456,7 +456,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture after an intentional invalid-serial revoke request.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture after an intentional invalid-serial revoke request.
       - Source-backed by the OpenBao PKI metrics wrapper.
       - OpenBao derives this metric family from the PKI mount path; custom PKI mount names produce different source metric names.
       - Labels include namespace when emitted.
@@ -468,7 +468,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture when configuring the PostgreSQL database secrets engine.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture when configuring the PostgreSQL database secrets engine.
       - Emitted by the database plugin metrics middleware as a generic database operation metric.
   - id: database_close
     docsName: vault.database.Close
@@ -476,7 +476,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture when the PostgreSQL database secrets engine closed a connection.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture when the PostgreSQL database secrets engine closed a connection.
       - Emitted by the database plugin metrics middleware as a generic database operation metric.
   - id: database_new_user
     docsName: vault.database.NewUser
@@ -484,7 +484,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture after issuing database dynamic credentials.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture after issuing database dynamic credentials.
       - Emitted by the database plugin metrics middleware as a generic database operation metric.
   - id: database_update_user
     docsName: vault.database.UpdateUser
@@ -492,7 +492,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture after renewing database dynamic credentials.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture after renewing database dynamic credentials.
       - Emitted by the database plugin metrics middleware as a generic database operation metric.
   - id: database_delete_user
     docsName: vault.database.DeleteUser
@@ -500,7 +500,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture after revoking database dynamic credentials.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture after revoking database dynamic credentials.
       - Emitted by the database plugin metrics middleware as a generic database operation metric.
   - id: database_initialize_error
     docsName: vault.database.Initialize.error
@@ -508,7 +508,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture after an intentional invalid PostgreSQL connection configuration.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture after an intentional invalid PostgreSQL connection configuration.
       - Source-backed by the database plugin metrics middleware.
       - Use this with database Initialize operation rate and operational logs to distinguish configuration issues from backend outages.
   - id: database_close_error
@@ -526,7 +526,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture after an intentional invalid creation statement.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture after an intentional invalid creation statement.
       - Source-backed by the database plugin metrics middleware.
       - This usually points to dynamic credential creation failures in the external database backend or role configuration.
   - id: database_update_user_error
@@ -535,7 +535,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture after an intentional invalid renewal statement.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture after an intentional invalid renewal statement.
       - Source-backed by the database plugin metrics middleware.
       - This usually points to dynamic credential renewal failures in the external database backend or role configuration.
   - id: database_delete_user_error
@@ -544,7 +544,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture after an intentional invalid revocation statement.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture after an intentional invalid revocation statement.
       - Source-backed by the database plugin metrics middleware.
       - This usually points to dynamic credential revocation failures in the external database backend or role configuration.
   - id: database_pgx_initialize
@@ -553,7 +553,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture with the PostgreSQL database plugin.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture with the PostgreSQL database plugin.
       - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
   - id: database_pgx_close
     docsName: vault.database.pgx.Close
@@ -561,7 +561,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture with the PostgreSQL database plugin.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture with the PostgreSQL database plugin.
       - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
   - id: database_pgx_new_user
     docsName: vault.database.pgx.NewUser
@@ -569,7 +569,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture with the PostgreSQL database plugin.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture with the PostgreSQL database plugin.
       - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
   - id: database_pgx_update_user
     docsName: vault.database.pgx.UpdateUser
@@ -577,7 +577,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture with the PostgreSQL database plugin.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture with the PostgreSQL database plugin.
       - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
   - id: database_pgx_delete_user
     docsName: vault.database.pgx.DeleteUser
@@ -585,7 +585,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a summary in the OpenBao 2.5.5 HA/Raft fixture with the PostgreSQL database plugin.
+      - Observed as a summary in the OpenBao 2.6.0 HA/Raft fixture with the PostgreSQL database plugin.
       - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
   - id: database_pgx_initialize_error
     docsName: vault.database.pgx.Initialize.error
@@ -593,7 +593,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid connection configuration.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid connection configuration.
       - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
   - id: database_pgx_close_error
     docsName: vault.database.pgx.Close.error
@@ -609,7 +609,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid creation statement.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid creation statement.
       - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
   - id: database_pgx_update_user_error
     docsName: vault.database.pgx.UpdateUser.error
@@ -617,7 +617,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid renewal statement.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid renewal statement.
       - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
   - id: database_pgx_delete_user_error
     docsName: vault.database.pgx.DeleteUser.error
@@ -625,7 +625,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed in the OpenBao 2.5.5 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid revocation statement.
+      - Observed in the OpenBao 2.6.0 HA/Raft fixture with the PostgreSQL database plugin after an intentional invalid revocation statement.
       - This is plugin-type-specific and should not be used in generic dashboards without a generic database metric fallback.
   - id: route_create_kv_v1
     docsName: vault.route.create.kv-v1-
@@ -633,7 +633,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default kv-v1/ mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default kv-v1/ mount.
       - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_read_kv_v1
@@ -642,7 +642,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default kv-v1/ mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default kv-v1/ mount.
       - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_list_kv_v1
@@ -651,7 +651,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default kv-v1/ mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default kv-v1/ mount.
       - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_delete_kv_v1
@@ -660,7 +660,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default kv-v1/ mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default kv-v1/ mount.
       - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_create_kv_v2
@@ -669,7 +669,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default secret/ KV v2 mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default secret/ KV v2 mount.
       - Route metric names are derived from operation and mount path; custom KV v2 mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_read_kv_v2
@@ -678,7 +678,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default secret/ KV v2 mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default secret/ KV v2 mount.
       - Route metric names are derived from operation and mount path; custom KV v2 mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_list_kv_v2
@@ -687,7 +687,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default secret/ KV v2 mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default secret/ KV v2 mount.
       - Route metric names are derived from operation and mount path; custom KV v2 mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_delete_kv_v2
@@ -696,7 +696,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default secret/ KV v2 mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default secret/ KV v2 mount.
       - Route metric names are derived from operation and mount path; custom KV v2 mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_create_database
@@ -705,7 +705,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default database/ mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default database/ mount.
       - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_read_database
@@ -714,7 +714,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default database/ mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default database/ mount.
       - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_renew_database
@@ -723,7 +723,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default database/ mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default database/ mount.
       - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_revoke_database
@@ -732,7 +732,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default database/ mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default database/ mount.
       - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_read_pki
@@ -741,7 +741,7 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default pki/ mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default pki/ mount.
       - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.
   - id: route_update_pki
@@ -750,6 +750,6 @@ metrics:
     required: false
     overview: false
     notes:
-      - Observed as a route-derived summary in the OpenBao 2.5.5 HA/Raft fixture for the default pki/ mount.
+      - Observed as a route-derived summary in the OpenBao 2.6.0 HA/Raft fixture for the default pki/ mount.
       - Route metric names are derived from operation and mount path; custom mount paths produce different source metric names.
       - Treat as advanced drilldown data and prefer audit logs for mount-path exploration.

@@ -172,7 +172,7 @@ Parse them at query time in restricted dashboards instead.
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed OpenBao docs behavior | OpenBao documents audited request and response entries, unaudited paths, HMAC behavior, multiple audit devices, and audit failure behavior. |
-| Observed fixture behavior | The OpenBao 2.5.5 fixture emits audit JSON lines and audit telemetry metrics, and the demo stack separates audit logs from operational logs. |
+| Observed fixture behavior | The OpenBao 2.6.0 fixture emits audit JSON lines and audit telemetry metrics, and the demo stack separates audit logs from operational logs. |
 | Design decision | This project treats audit logs as restricted security records and uses canary-backed missing-audit alerts. |
 | To validate | Archive retention, SIEM forwarding, access controls, tenant boundaries, and failure behavior in your deployment. |
 

@@ -30,7 +30,7 @@ body:
     attributes:
       label: OpenBao version
       description: Include the version when the issue depends on live OpenBao behavior.
-      placeholder: "2.5.5"
+      placeholder: "2.6.0"
   - type: textarea
     id: actual
     attributes:

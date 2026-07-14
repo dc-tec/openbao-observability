@@ -94,7 +94,7 @@ func (o MatrixOptions) withDefaults() MatrixOptions {
 		o.ContractPath = filepath.Join("contracts", "metrics", "openbao-core.yaml")
 	}
 	if o.FixtureDir == "" {
-		o.FixtureDir = filepath.Join("fixtures", "captured", "openbao-2.5.5")
+		o.FixtureDir = filepath.Join("fixtures", "captured", "openbao-2.6.0")
 	}
 	if o.OutputPath == "" {
 		o.OutputPath = filepath.Join("generated", "docs", "metric-compatibility-matrix.md")
