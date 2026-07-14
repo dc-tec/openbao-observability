@@ -2,7 +2,7 @@ name: openbao-observability
 
 services:
   openbao-seal-init:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.5}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.0}
     user: "0"
     command:
       - sh
@@ -31,7 +31,7 @@ services:
     restart: "no"
 
   openbao-node0:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.5}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.0}
     user: "0"
     depends_on:
       openbao-seal-init:
@@ -72,7 +72,7 @@ services:
       retries: 24
 
   openbao-node1:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.5}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.0}
     user: "0"
     depends_on:
       openbao-node0:
@@ -95,7 +95,7 @@ services:
       retries: 24
 
   openbao-node2:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.5}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.0}
     user: "0"
     depends_on:
       openbao-node0:
@@ -118,7 +118,7 @@ services:
       retries: 24
 
   prometheus:
-    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.13.0}
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.13.1}
     depends_on:
       openbao-node0:
         condition: service_healthy
@@ -172,7 +172,7 @@ services:
       - alloy-data:/var/lib/alloy/data
 
   openbao-audit-canary:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.5.5}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.0}
     depends_on:
       openbao-node0:
         condition: service_healthy
