@@ -2,7 +2,7 @@ name: openbao-observability
 
 services:
   openbao-seal-init:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.0}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.1}
     user: "0"
     command:
       - sh
@@ -31,7 +31,7 @@ services:
     restart: "no"
 
   openbao-node0:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.0}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.1}
     user: "0"
     depends_on:
       openbao-seal-init:
@@ -72,7 +72,7 @@ services:
       retries: 24
 
   openbao-node1:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.0}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.1}
     user: "0"
     depends_on:
       openbao-node0:
@@ -95,7 +95,7 @@ services:
       retries: 24
 
   openbao-node2:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.0}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.1}
     user: "0"
     depends_on:
       openbao-node0:
@@ -118,7 +118,7 @@ services:
       retries: 24
 
   prometheus:
-    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.13.1}
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.13.2}
     depends_on:
       openbao-node0:
         condition: service_healthy
@@ -138,7 +138,7 @@ services:
       - prometheus-data:/prometheus
 
   loki:
-    image: ${LOKI_IMAGE:-grafana/loki:3.7.3}
+    image: ${LOKI_IMAGE:-grafana/loki:3.7.4}
     command:
       - -config.file=/etc/loki/loki.yaml
     ports:
@@ -148,7 +148,7 @@ services:
       - loki-data:/loki
 
   alloy:
-    image: ${ALLOY_IMAGE:-grafana/alloy:v1.17.1}
+    image: ${ALLOY_IMAGE:-grafana/alloy:v1.18.0}
     depends_on:
       - loki
       - openbao-node0
@@ -172,7 +172,7 @@ services:
       - alloy-data:/var/lib/alloy/data
 
   openbao-audit-canary:
-    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.0}
+    image: ${OPENBAO_IMAGE:-quay.io/openbao/openbao:2.6.1}
     depends_on:
       openbao-node0:
         condition: service_healthy
@@ -190,7 +190,7 @@ services:
         done
 
   grafana:
-    image: ${GRAFANA_IMAGE:-grafana/grafana:13.1.0}
+    image: ${GRAFANA_IMAGE:-grafana/grafana:13.1.1}
     depends_on:
       - prometheus
       - loki
