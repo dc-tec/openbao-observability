@@ -42,9 +42,10 @@ The generated dashboard expects these Grafana data sources:
 Prometheus panels depend on generated `openbao:` recording rules. Loki panels
 depend on audit logs collected with `log_stream="openbao.audit"`.
 
-The generated dashboard exposes cluster, Kubernetes namespace, and scrape
-profile selectors. Use them to select one OpenBao deployment before you
-compare metrics and logs.
+The generated dashboard exposes cluster, Kubernetes namespace, scrape profile,
+archive environment, archive backend, and archive pipeline selectors. Use them
+to select one OpenBao deployment and archive pipeline before you compare
+metrics and logs.
 
 ## How to read audit health
 
@@ -76,6 +77,12 @@ Read these panels together. `Archive expected` is the guardrail. If it is `0`,
 the environment has not declared archive delivery as required through the
 reference exporter metrics. If it is `1`, then delivery health, success age,
 failures, and dead letters describe the durable evidence path.
+
+Each archive panel keeps `cluster`, `environment`, `backend`, and `pipeline`
+identity. One healthy archive pipeline does not hide another stale or failed
+pipeline. `Not configured` or `No archive status` is not a healthy value.
+Check the exporter and its expectation marker before you treat missing data as
+an exempt environment.
 
 These panels do not come from OpenBao itself. They come from the archive
 pipeline or from the reference archive health exporter. Use

@@ -24,6 +24,13 @@ func TestLoadDashboardContract(t *testing.T) {
 	if len(contract.Variables) != 1 {
 		t.Fatalf("variable count = %d, want 1", len(contract.Variables))
 	}
+	stat := contract.Panels[0]
+	if stat.ColorMode != "background" || stat.NoData != "No data" {
+		t.Fatalf("stat presentation = colorMode %q, noData %q", stat.ColorMode, stat.NoData)
+	}
+	if len(stat.ValueMappings) != 2 || len(stat.Thresholds) != 3 {
+		t.Fatalf("stat mappings = %d and thresholds = %d, want 2 and 3", len(stat.ValueMappings), len(stat.Thresholds))
+	}
 }
 
 func TestVerifyDashboardContract(t *testing.T) {
@@ -112,6 +119,91 @@ func TestVerifyDashboardContractAppliesVariableDefaults(t *testing.T) {
 	}
 }
 
+func TestLoadDashboardContractRejectsInvalidStatPresentation(t *testing.T) {
+	tests := []struct {
+		name      string
+		old       string
+		new       string
+		errorText string
+	}{
+		{
+			name:      "first threshold value",
+			old:       "thresholds:\n      - color: red",
+			new:       "thresholds:\n      - value: 0\n        color: red",
+			errorText: "first threshold must not have a value",
+		},
+		{
+			name:      "threshold order",
+			old:       "- value: 2\n        color: red",
+			new:       "- value: 0\n        color: red",
+			errorText: "threshold values must be strictly increasing",
+		},
+		{
+			name:      "threshold color",
+			old:       "- color: red",
+			new:       "- color: vermilion",
+			errorText: "invalid color",
+		},
+		{
+			name:      "mapping value",
+			old:       `value: "0"`,
+			new:       `value: ""`,
+			errorText: "mapping without a value",
+		},
+		{
+			name:      "mapping text",
+			old:       "text: Down",
+			new:       `text: ""`,
+			errorText: "has no text",
+		},
+		{
+			name:      "mapping duplicate",
+			old:       `value: "1"`,
+			new:       `value: "0"`,
+			errorText: "duplicate value mapping",
+		},
+		{
+			name:      "mapping color",
+			old:       "color: green",
+			new:       "color: chartreuse",
+			errorText: "invalid color",
+		},
+		{
+			name:      "color mode",
+			old:       "colorMode: background",
+			new:       "colorMode: rainbow",
+			errorText: "unsupported colorMode",
+		},
+		{
+			name:      "no data display",
+			old:       "noData: No data",
+			new:       `noData: "   "`,
+			errorText: "empty noData display",
+		},
+		{
+			name: "presentation on logs panel",
+			old:  "type: logs\n    signal: logs",
+			new: "type: logs\n    colorMode: value\n" +
+				"    signal: logs",
+			errorText: "uses stat presentation fields",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			contract := strings.Replace(baseDashboardContract(), test.old, test.new, 1)
+			path := writeDashboardContract(t, t.TempDir(), contract)
+			_, err := LoadDashboardContract(path)
+			if err == nil {
+				t.Fatal("expected invalid stat presentation to fail")
+			}
+			if !strings.Contains(err.Error(), test.errorText) {
+				t.Fatalf("error = %v, want text %q", err, test.errorText)
+			}
+		})
+	}
+}
+
 func writeDashboardContract(t *testing.T, dir, content string) string {
 	t.Helper()
 
@@ -153,6 +245,21 @@ panels:
     signal: metrics
     datasource: metrics
     expression: min(up{job="openbao"})
+    valueMappings:
+      - value: "0"
+        text: Down
+        color: red
+      - value: "1"
+        text: Up
+        color: green
+    thresholds:
+      - color: red
+      - value: 1
+        color: yellow
+      - value: 2
+        color: red
+    colorMode: background
+    noData: No data
     grid:
       x: 0
       y: 0

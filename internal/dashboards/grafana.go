@@ -10,6 +10,11 @@ import (
 	"github.com/dc-tec/openbao-observability/internal/contracts"
 )
 
+const (
+	dashboardPanelTypeStat = "stat"
+	grafanaValueNone       = "none"
+)
+
 type GenerateOptions struct {
 	ContractPath string
 	OutputPath   string
@@ -93,9 +98,27 @@ type grafanaFieldConfig struct {
 }
 
 type grafanaFieldDefaults struct {
-	Color      map[string]string `json:"color,omitempty"`
-	Thresholds grafanaThresholds `json:"thresholds,omitempty"`
-	Unit       string            `json:"unit,omitempty"`
+	Color      map[string]string     `json:"color,omitempty"`
+	Mappings   []grafanaValueMapping `json:"mappings,omitempty"`
+	NoValue    string                `json:"noValue,omitempty"`
+	Thresholds grafanaThresholds     `json:"thresholds,omitempty"`
+	Unit       string                `json:"unit,omitempty"`
+}
+
+type grafanaValueMapping struct {
+	Options any    `json:"options"`
+	Type    string `json:"type"`
+}
+
+type grafanaValueMappingResult struct {
+	Color string `json:"color,omitempty"`
+	Index int    `json:"index"`
+	Text  string `json:"text"`
+}
+
+type grafanaSpecialValueMappingOptions struct {
+	Match  string                    `json:"match"`
+	Result grafanaValueMappingResult `json:"result"`
 }
 
 type grafanaThresholds struct {
@@ -119,9 +142,10 @@ type grafanaTarget struct {
 	Datasource   grafanaDatasourceRef `json:"datasource"`
 	Expr         string               `json:"expr"`
 	Format       string               `json:"format,omitempty"`
+	Instant      bool                 `json:"instant,omitempty"`
 	LegendFormat string               `json:"legendFormat,omitempty"`
 	QueryType    string               `json:"queryType,omitempty"`
-	Range        bool                 `json:"range,omitempty"`
+	Range        *bool                `json:"range,omitempty"`
 	RefID        string               `json:"refId"`
 }
 
@@ -242,7 +266,7 @@ func buildGrafanaPanel(
 	return grafanaPanel{
 		Datasource:  datasource,
 		Description: panel.Description,
-		FieldConfig: fieldConfig(panel.Unit),
+		FieldConfig: fieldConfig(panel),
 		GridPos: grafanaGridPos{
 			H: panel.Grid.H,
 			W: panel.Grid.W,
@@ -250,7 +274,7 @@ func buildGrafanaPanel(
 			Y: panel.Grid.Y,
 		},
 		ID:      numericID,
-		Options: panelOptions(panel.Type),
+		Options: panelOptions(panel),
 		Targets: []grafanaTarget{
 			target(panel, datasource, "A"),
 		},
@@ -286,20 +310,36 @@ func datasourceRef(contract contracts.DashboardContract, name string) grafanaDat
 	}
 }
 
-func fieldConfig(unit string) grafanaFieldConfig {
+func fieldConfig(panel contracts.DashboardPanel) grafanaFieldConfig {
+	unit := panel.Unit
 	if unit == "" {
-		unit = "none"
+		unit = grafanaValueNone
+	}
+	colorMode := "palette-classic"
+	if panel.Type == dashboardPanelTypeStat && len(panel.Thresholds) > 0 {
+		colorMode = "thresholds"
+	}
+
+	thresholds := []grafanaThreshold{{Color: "green"}}
+	if len(panel.Thresholds) > 0 {
+		thresholds = make([]grafanaThreshold, 0, len(panel.Thresholds))
+		for _, threshold := range panel.Thresholds {
+			thresholds = append(thresholds, grafanaThreshold{
+				Color: threshold.Color,
+				Value: threshold.Value,
+			})
+		}
 	}
 	return grafanaFieldConfig{
 		Defaults: grafanaFieldDefaults{
 			Color: map[string]string{
-				"mode": "palette-classic",
+				"mode": colorMode,
 			},
+			Mappings: valueMappings(panel),
+			NoValue:  panel.NoData,
 			Thresholds: grafanaThresholds{
-				Mode: "absolute",
-				Steps: []grafanaThreshold{
-					{Color: "green"},
-				},
+				Mode:  "absolute",
+				Steps: thresholds,
 			},
 			Unit: unit,
 		},
@@ -307,11 +347,40 @@ func fieldConfig(unit string) grafanaFieldConfig {
 	}
 }
 
-func panelOptions(panelType string) map[string]any {
-	switch panelType {
+func valueMappings(panel contracts.DashboardPanel) []grafanaValueMapping {
+	mappings := make([]grafanaValueMapping, 0, 2)
+	if len(panel.ValueMappings) > 0 {
+		options := make(map[string]grafanaValueMappingResult, len(panel.ValueMappings))
+		for index, mapping := range panel.ValueMappings {
+			options[mapping.Value] = grafanaValueMappingResult{
+				Color: mapping.Color,
+				Index: index,
+				Text:  mapping.Text,
+			}
+		}
+		mappings = append(mappings, grafanaValueMapping{Options: options, Type: "value"})
+	}
+	if panel.NoData != "" {
+		mappings = append(mappings, grafanaValueMapping{
+			Options: grafanaSpecialValueMappingOptions{
+				Match: "null+nan",
+				Result: grafanaValueMappingResult{
+					Color: "gray",
+					Index: len(panel.ValueMappings),
+					Text:  panel.NoData,
+				},
+			},
+			Type: "special",
+		})
+	}
+	return mappings
+}
+
+func panelOptions(panel contracts.DashboardPanel) map[string]any {
+	switch panel.Type {
 	case dashboardSignalLogs:
 		return map[string]any{
-			"dedupStrategy":      "none",
+			"dedupStrategy":      grafanaValueNone,
 			"enableLogDetails":   true,
 			"prettifyLogMessage": false,
 			"showLabels":         false,
@@ -319,10 +388,17 @@ func panelOptions(panelType string) map[string]any {
 			"sortOrder":          "Descending",
 			"wrapLogMessage":     false,
 		}
-	case "stat":
+	case dashboardPanelTypeStat:
+		colorMode := panel.ColorMode
+		if colorMode == "" {
+			colorMode = grafanaValueNone
+			if len(panel.Thresholds) > 0 || hasColoredValueMapping(panel.ValueMappings) {
+				colorMode = "value"
+			}
+		}
 		return map[string]any{
-			"colorMode":   "value",
-			"graphMode":   "none",
+			"colorMode":   colorMode,
+			"graphMode":   grafanaValueNone,
 			"justifyMode": "auto",
 			"orientation": "auto",
 			"reduceOptions": map[string]any{
@@ -343,10 +419,19 @@ func panelOptions(panelType string) map[string]any {
 			"tooltip": map[string]any{
 				"hideZeros": false,
 				"mode":      "single",
-				"sort":      "none",
+				"sort":      grafanaValueNone,
 			},
 		}
 	}
+}
+
+func hasColoredValueMapping(mappings []contracts.DashboardValueMapping) bool {
+	for _, mapping := range mappings {
+		if mapping.Color != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func target(panel contracts.DashboardPanel, datasource grafanaDatasourceRef, refID string) grafanaTarget {
@@ -361,10 +446,19 @@ func target(panel contracts.DashboardPanel, datasource grafanaDatasourceRef, ref
 		if panel.Legend != "" {
 			result.LegendFormat = panel.Legend
 		}
-		result.Range = true
+		if panel.Type == dashboardPanelTypeStat {
+			result.Instant = true
+			result.Range = boolPointer(false)
+			return result
+		}
+		result.Range = boolPointer(true)
 		return result
 	}
 
 	result.QueryType = "range"
 	return result
+}
+
+func boolPointer(value bool) *bool {
+	return &value
 }

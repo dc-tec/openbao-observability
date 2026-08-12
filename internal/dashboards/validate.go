@@ -32,8 +32,16 @@ type dashboardQuery struct {
 	PanelID    string
 	PanelTitle string
 	Signal     string
+	Mode       dashboardQueryMode
 	Expression string
 }
+
+type dashboardQueryMode string
+
+const (
+	dashboardQueryModeInstant dashboardQueryMode = "instant"
+	dashboardQueryModeRange   dashboardQueryMode = "range"
+)
 
 type lokiResponse struct {
 	Status string `json:"status"`
@@ -60,9 +68,10 @@ func ValidateDashboardQueries(ctx context.Context, opts QueryValidationOptions) 
 	}
 
 	client := &http.Client{Timeout: opts.Timeout}
+	now := time.Now()
 	window := v1.Range{
-		Start: time.Now().Add(-opts.Range),
-		End:   time.Now(),
+		Start: now.Add(-opts.Range),
+		End:   now,
 		Step:  opts.Step,
 	}
 
@@ -70,7 +79,7 @@ func ValidateDashboardQueries(ctx context.Context, opts QueryValidationOptions) 
 	metricQueries := 0
 	logQueries := 0
 	for _, query := range queries {
-		key := query.Signal + "\x00" + query.Expression
+		key := query.Signal + "\x00" + string(query.Mode) + "\x00" + query.Expression
 		if seen[key] {
 			continue
 		}
@@ -79,7 +88,7 @@ func ValidateDashboardQueries(ctx context.Context, opts QueryValidationOptions) 
 		switch query.Signal {
 		case dashboardSignalMetrics:
 			metricQueries++
-			if err := validatePrometheusQuery(ctx, prometheusAPI, query, window, opts.Timeout); err != nil {
+			if err := validatePrometheusQuery(ctx, prometheusAPI, query, now, window, opts.Timeout); err != nil {
 				return err
 			}
 		case dashboardSignalLogs:
@@ -176,6 +185,7 @@ func loadDashboardQueries(opts QueryValidationOptions) ([]dashboardQuery, error)
 				PanelID:    panel.ID,
 				PanelTitle: panel.Title,
 				Signal:     panel.Signal,
+				Mode:       contractQueryMode(panel),
 				Expression: contract.ExpressionWithDefaultVariables(panel.Expression),
 			})
 		}
@@ -204,12 +214,17 @@ func loadDashboardQueries(opts QueryValidationOptions) ([]dashboardQuery, error)
 						target.Datasource.Type,
 					)
 				}
+				mode, err := generatedQueryMode(signal, panel.Type, target)
+				if err != nil {
+					return nil, fmt.Errorf("generated dashboard %s panel %q: %w", path, panel.Title, err)
+				}
 				queries = append(queries, dashboardQuery{
 					Source:     path,
 					Dashboard:  document.Title,
 					PanelID:    fmt.Sprintf("%d", panel.ID),
 					PanelTitle: panel.Title,
 					Signal:     signal,
+					Mode:       mode,
 					Expression: contracts.InterpolateDashboardVariables(target.Expr, variableDefaults),
 				})
 			}
@@ -217,6 +232,40 @@ func loadDashboardQueries(opts QueryValidationOptions) ([]dashboardQuery, error)
 	}
 
 	return queries, nil
+}
+
+func contractQueryMode(panel contracts.DashboardPanel) dashboardQueryMode {
+	if panel.Signal == dashboardSignalMetrics && panel.Type == dashboardPanelTypeStat {
+		return dashboardQueryModeInstant
+	}
+	return dashboardQueryModeRange
+}
+
+func generatedQueryMode(signal, panelType string, target grafanaTarget) (dashboardQueryMode, error) {
+	if signal != dashboardSignalMetrics {
+		return dashboardQueryModeRange, nil
+	}
+	if target.Range == nil {
+		return "", fmt.Errorf("prometheus target must set range explicitly")
+	}
+	if target.Instant == *target.Range {
+		return "", fmt.Errorf(
+			"prometheus target must enable exactly one query mode, got instant=%t and range=%t",
+			target.Instant,
+			*target.Range,
+		)
+	}
+	mode := dashboardQueryModeRange
+	if target.Instant {
+		mode = dashboardQueryModeInstant
+	}
+	if panelType == dashboardPanelTypeStat && mode != dashboardQueryModeInstant {
+		return "", fmt.Errorf("prometheus stat target must use instant mode")
+	}
+	if panelType != dashboardPanelTypeStat && mode != dashboardQueryModeRange {
+		return "", fmt.Errorf("prometheus %s target must use range mode", panelType)
+	}
+	return mode, nil
 }
 
 func loadGeneratedDashboard(path string) (*grafanaDashboard, error) {
@@ -261,13 +310,23 @@ func validatePrometheusQuery(
 	ctx context.Context,
 	api v1.API,
 	query dashboardQuery,
+	now time.Time,
 	window v1.Range,
 	timeout time.Duration,
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, warnings, err := api.QueryRange(ctx, query.Expression, window, v1.WithTimeout(timeout))
+	var warnings v1.Warnings
+	var err error
+	switch query.Mode {
+	case dashboardQueryModeInstant:
+		_, warnings, err = api.Query(ctx, query.Expression, now, v1.WithTimeout(timeout))
+	case dashboardQueryModeRange:
+		_, warnings, err = api.QueryRange(ctx, query.Expression, window, v1.WithTimeout(timeout))
+	default:
+		return fmt.Errorf("query %s has unsupported mode %q", query.describe(), query.Mode)
+	}
 	if err != nil {
 		return fmt.Errorf("validate PromQL for %s: %w", query.describe(), err)
 	}

@@ -2,6 +2,7 @@ package contracts
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -49,16 +50,31 @@ type DashboardVariable struct {
 }
 
 type DashboardPanel struct {
-	ID          string        `yaml:"id"`
-	Title       string        `yaml:"title"`
-	Type        string        `yaml:"type"`
-	Signal      string        `yaml:"signal"`
-	Datasource  string        `yaml:"datasource"`
-	Expression  string        `yaml:"expression"`
-	Legend      string        `yaml:"legend"`
-	Unit        string        `yaml:"unit"`
-	Description string        `yaml:"description"`
-	Grid        DashboardGrid `yaml:"grid"`
+	ID            string                   `yaml:"id"`
+	Title         string                   `yaml:"title"`
+	Type          string                   `yaml:"type"`
+	Signal        string                   `yaml:"signal"`
+	Datasource    string                   `yaml:"datasource"`
+	Expression    string                   `yaml:"expression"`
+	Legend        string                   `yaml:"legend"`
+	Unit          string                   `yaml:"unit"`
+	Description   string                   `yaml:"description"`
+	ValueMappings []DashboardValueMapping  `yaml:"valueMappings"`
+	Thresholds    []DashboardThresholdStep `yaml:"thresholds"`
+	ColorMode     string                   `yaml:"colorMode"`
+	NoData        string                   `yaml:"noData"`
+	Grid          DashboardGrid            `yaml:"grid"`
+}
+
+type DashboardValueMapping struct {
+	Value string `yaml:"value"`
+	Text  string `yaml:"text"`
+	Color string `yaml:"color"`
+}
+
+type DashboardThresholdStep struct {
+	Value *float64 `yaml:"value"`
+	Color string   `yaml:"color"`
 }
 
 type DashboardGrid struct {
@@ -72,7 +88,13 @@ type VerifyDashboardOptions struct {
 	ContractPath string
 }
 
-var dashboardVariableNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+var (
+	dashboardVariableNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+	dashboardColorPattern        = regexp.MustCompile(
+		`^(#[0-9A-Fa-f]{6}|transparent|text|` +
+			`(?:(?:super-light|light|semi-dark|dark)-)?(?:red|orange|yellow|green|blue|purple|gray))$`,
+	)
+)
 
 func LoadDashboardContract(path string) (*DashboardContract, error) {
 	content, err := os.ReadFile(path)
@@ -267,7 +289,10 @@ func validateDashboardPanel(path string, panel DashboardPanel, seen map[string]b
 	if err := validateDashboardPanelBasics(panel); err != nil {
 		return err
 	}
-	return validateDashboardPanelSignal(panel)
+	if err := validateDashboardPanelSignal(panel); err != nil {
+		return err
+	}
+	return validateDashboardPanelPresentation(panel)
 }
 
 func validateDashboardPanelBasics(panel DashboardPanel) error {
@@ -300,6 +325,97 @@ func validateDashboardPanelSignal(panel DashboardPanel) error {
 	}
 	if panel.Signal == dashboardSignalLogs && panel.Datasource != dashboardSignalLogs {
 		return fmt.Errorf("dashboard panel %s uses logs signal with datasource %q", panel.ID, panel.Datasource)
+	}
+	return nil
+}
+
+func validateDashboardPanelPresentation(panel DashboardPanel) error {
+	hasStatPresentation := len(panel.ValueMappings) > 0 || len(panel.Thresholds) > 0 ||
+		panel.ColorMode != "" || panel.NoData != ""
+	if panel.Type != dashboardPanelTypeStat {
+		if hasStatPresentation {
+			return fmt.Errorf("dashboard panel %s uses stat presentation fields with type %q", panel.ID, panel.Type)
+		}
+		return nil
+	}
+
+	if err := validateDashboardColorMode(panel); err != nil {
+		return err
+	}
+	if err := validateDashboardValueMappings(panel); err != nil {
+		return err
+	}
+	if err := validateDashboardThresholds(panel); err != nil {
+		return err
+	}
+	if panel.NoData != "" && strings.TrimSpace(panel.NoData) == "" {
+		return fmt.Errorf("dashboard panel %s has an empty noData display", panel.ID)
+	}
+	return nil
+}
+
+func validateDashboardColorMode(panel DashboardPanel) error {
+	if panel.ColorMode == "" {
+		return nil
+	}
+	switch panel.ColorMode {
+	case "none", "value", "background", "background_solid":
+		return nil
+	default:
+		return fmt.Errorf("dashboard panel %s has unsupported colorMode %q", panel.ID, panel.ColorMode)
+	}
+}
+
+func validateDashboardValueMappings(panel DashboardPanel) error {
+	seen := map[string]bool{}
+	for _, mapping := range panel.ValueMappings {
+		if mapping.Value == "" {
+			return fmt.Errorf("dashboard panel %s has a value mapping without a value", panel.ID)
+		}
+		if strings.TrimSpace(mapping.Text) == "" {
+			return fmt.Errorf("dashboard panel %s value mapping %q has no text", panel.ID, mapping.Value)
+		}
+		if seen[mapping.Value] {
+			return fmt.Errorf("dashboard panel %s has duplicate value mapping %q", panel.ID, mapping.Value)
+		}
+		seen[mapping.Value] = true
+		if mapping.Color != "" && !dashboardColorPattern.MatchString(mapping.Color) {
+			return fmt.Errorf(
+				"dashboard panel %s value mapping %q has invalid color %q",
+				panel.ID,
+				mapping.Value,
+				mapping.Color,
+			)
+		}
+	}
+	return nil
+}
+
+func validateDashboardThresholds(panel DashboardPanel) error {
+	if len(panel.Thresholds) == 0 {
+		return nil
+	}
+	for index, threshold := range panel.Thresholds {
+		if !dashboardColorPattern.MatchString(threshold.Color) {
+			return fmt.Errorf(
+				"dashboard panel %s threshold %d has invalid color %q",
+				panel.ID,
+				index,
+				threshold.Color,
+			)
+		}
+		if index == 0 {
+			if threshold.Value != nil {
+				return fmt.Errorf("dashboard panel %s first threshold must not have a value", panel.ID)
+			}
+			continue
+		}
+		if threshold.Value == nil || math.IsNaN(*threshold.Value) || math.IsInf(*threshold.Value, 0) {
+			return fmt.Errorf("dashboard panel %s threshold %d must have a finite value", panel.ID, index)
+		}
+		if index > 1 && *threshold.Value <= *panel.Thresholds[index-1].Value {
+			return fmt.Errorf("dashboard panel %s threshold values must be strictly increasing", panel.ID)
+		}
 	}
 	return nil
 }

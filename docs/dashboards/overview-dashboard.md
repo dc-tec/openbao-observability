@@ -52,6 +52,14 @@ dashboard. Most metric panels use normalized `openbao:` rules instead of raw
 The generated dashboard exposes cluster, Kubernetes namespace, and scrape
 profile selectors. Use them to select one OpenBao deployment.
 
+Prometheus stat panels use instant queries. They show the current evaluation,
+not the last non-null sample from the dashboard time range. Health panels use
+explicit value mappings or thresholds. `Signal missing` means that the query
+returned no current series.
+
+Topology counts such as Raft peers and unsealed nodes use neutral colors. The
+dashboard does not know the expected node count for each deployment.
+
 ## Scrape profile assumptions
 
 The dashboard works best when the scrape profile matches the question you ask.

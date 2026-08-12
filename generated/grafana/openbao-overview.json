@@ -19,6 +19,35 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "Down"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Up"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 2,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -61,8 +90,9 @@
           },
           "expr": "min by (cluster, kubernetes_namespace, scrape_profile) (up{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\",job=\"openbao\"})",
           "format": "time_series",
-          "legendFormat": "Scrape health",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -78,14 +108,56 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "No active node"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "One active node"
+                },
+                "2": {
+                  "color": "red",
+                  "index": 2,
+                  "text": "Multiple active nodes"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 3,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
               }
             ]
           },
@@ -122,8 +194,9 @@
           },
           "expr": "openbao:core_active:sum{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Active nodes",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -141,6 +214,20 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -162,7 +249,7 @@
       },
       "id": 3,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -183,8 +270,9 @@
           },
           "expr": "openbao:core_unsealed:sum{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Unsealed nodes",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -200,14 +288,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
@@ -244,8 +350,9 @@
           },
           "expr": "openbao:audit_log_request_failure:increase5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Audit request failures",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -284,7 +391,7 @@
       },
       "id": 5,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -305,8 +412,9 @@
           },
           "expr": "openbao:core_in_flight_requests:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "In-flight requests",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -345,7 +453,7 @@
       },
       "id": 6,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -366,8 +474,9 @@
           },
           "expr": "openbao:core_handle_request:rate5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Request rate",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -406,7 +515,7 @@
       },
       "id": 7,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -427,8 +536,9 @@
           },
           "expr": "openbao:core_handle_request:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Request latency",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -467,7 +577,7 @@
       },
       "id": 8,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -488,8 +598,9 @@
           },
           "expr": "openbao:core_handle_login_request:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Login latency",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -528,7 +639,7 @@
       },
       "id": 9,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -549,8 +660,9 @@
           },
           "expr": "openbao:core_check_token:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Token check latency",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -568,6 +680,20 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -589,7 +715,7 @@
       },
       "id": 10,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -610,8 +736,9 @@
           },
           "expr": "openbao:raft_peers:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Raft peers",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -629,6 +756,35 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "Unhealthy"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Healthy"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 2,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -671,8 +827,9 @@
           },
           "expr": "openbao:autopilot_healthy:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Autopilot health",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -688,14 +845,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
               }
             ]
           },
@@ -732,8 +907,9 @@
           },
           "expr": "openbao:autopilot_failure_tolerance:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Failure tolerance",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -749,14 +925,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
@@ -793,8 +987,9 @@
           },
           "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (1 - openbao:autopilot_node_healthy:min{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"})",
           "format": "time_series",
-          "legendFormat": "Unhealthy Raft nodes",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -1013,7 +1208,7 @@
       },
       "id": 17,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -1034,8 +1229,9 @@
           },
           "expr": "openbao:barrier_get:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Barrier GET latency",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -1074,7 +1270,7 @@
       },
       "id": 18,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -1095,8 +1291,9 @@
           },
           "expr": "openbao:barrier_put:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Barrier PUT latency",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -1135,7 +1332,7 @@
       },
       "id": 19,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -1156,8 +1353,9 @@
           },
           "expr": "openbao:cache_hit_ratio:ratio5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Cache hit ratio",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -1196,7 +1394,7 @@
       },
       "id": 20,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -1217,8 +1415,9 @@
           },
           "expr": "openbao:runtime_heap_objects:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Heap objects",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -1257,7 +1456,7 @@
       },
       "id": 21,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -1278,8 +1477,9 @@
           },
           "expr": "openbao:runtime_sys_bytes:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "System bytes",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -1318,7 +1518,7 @@
       },
       "id": 22,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -1339,8 +1539,9 @@
           },
           "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:core_mount_table_num_entries:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"})",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Mount table entries",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],

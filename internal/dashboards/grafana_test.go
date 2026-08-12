@@ -70,6 +70,14 @@ func TestBuildGrafanaDashboardUsesStablePanelIDs(t *testing.T) {
 	}
 
 	document := buildGrafanaDashboard(*contract)
+	assertStablePanelIDs(t, document)
+	assertStatPresentation(t, document.Panels[0])
+	assertMetricTargetModes(t, document)
+}
+
+func assertStablePanelIDs(t *testing.T, document grafanaDashboard) {
+	t.Helper()
+
 	if len(document.Panels) != 3 {
 		t.Fatalf("panel count = %d, want 3", len(document.Panels))
 	}
@@ -80,6 +88,107 @@ func TestBuildGrafanaDashboardUsesStablePanelIDs(t *testing.T) {
 			document.Panels[1].ID,
 			document.Panels[2].ID,
 		)
+	}
+}
+
+func assertStatPresentation(t *testing.T, stat grafanaPanel) {
+	t.Helper()
+
+	assertStatTarget(t, stat.Targets[0])
+	assertStatOptions(t, stat.Options)
+	assertStatFieldConfig(t, stat.FieldConfig.Defaults)
+}
+
+func assertStatTarget(t *testing.T, statTarget grafanaTarget) {
+	t.Helper()
+
+	if !statTarget.Instant || statTarget.Range == nil || *statTarget.Range {
+		t.Fatalf("stat target instant = %t and range = %v, want true and false", statTarget.Instant, statTarget.Range)
+	}
+}
+
+func assertStatOptions(t *testing.T, options map[string]any) {
+	t.Helper()
+
+	if got := options["colorMode"]; got != "background" {
+		t.Fatalf("stat colorMode = %v, want background", got)
+	}
+	if got := options["reduceOptions"].(map[string]any)["calcs"].([]string); len(got) != 1 ||
+		got[0] != "lastNotNull" {
+		t.Fatalf("stat reductions = %v, want lastNotNull", got)
+	}
+}
+
+func assertStatFieldConfig(t *testing.T, defaults grafanaFieldDefaults) {
+	t.Helper()
+
+	if got := defaults.Color["mode"]; got != "thresholds" {
+		t.Fatalf("stat field color mode = %q, want thresholds", got)
+	}
+	if len(defaults.Mappings) != 2 {
+		t.Fatalf("stat mapping count = %d, want 2", len(defaults.Mappings))
+	}
+	if len(defaults.Thresholds.Steps) != 3 {
+		t.Fatalf("stat threshold count = %d, want 3", len(defaults.Thresholds.Steps))
+	}
+	assertStatMappings(t, defaults.Mappings)
+	if defaults.NoValue != "No data" {
+		t.Fatalf("no-value display = %q, want No data", defaults.NoValue)
+	}
+}
+
+func assertStatMappings(t *testing.T, mappings []grafanaValueMapping) {
+	t.Helper()
+
+	valueMapping, ok := mappings[0].Options.(map[string]grafanaValueMappingResult)
+	if !ok {
+		t.Fatalf("value mapping options have type %T", mappings[0].Options)
+	}
+	if got := valueMapping["0"]; got.Text != "Down" || got.Color != "red" || got.Index != 0 {
+		t.Fatalf("zero value mapping = %#v", got)
+	}
+	special, ok := mappings[1].Options.(grafanaSpecialValueMappingOptions)
+	if !ok {
+		t.Fatalf("special mapping options have type %T", mappings[1].Options)
+	}
+	if special.Match != "null+nan" || special.Result.Text != "No data" || special.Result.Color != "gray" {
+		t.Fatalf("no-data mapping = %#v", special)
+	}
+}
+
+func assertMetricTargetModes(t *testing.T, document grafanaDashboard) {
+	t.Helper()
+
+	seriesTarget := document.Panels[1].Targets[0]
+	if seriesTarget.Instant || seriesTarget.Range == nil || !*seriesTarget.Range {
+		t.Fatalf(
+			"time-series target instant = %t and range = %v, want false and true",
+			seriesTarget.Instant,
+			seriesTarget.Range,
+		)
+	}
+}
+
+func TestStatPresentationDefaultsAreNeutral(t *testing.T) {
+	panel := contracts.DashboardPanel{Type: "stat"}
+	options := panelOptions(panel)
+	if got := options["colorMode"]; got != "none" {
+		t.Fatalf("default stat colorMode = %v, want none", got)
+	}
+	if got := options["reduceOptions"].(map[string]any)["calcs"].([]string); len(got) != 1 || got[0] != "lastNotNull" {
+		t.Fatalf("default stat reductions = %v, want lastNotNull", got)
+	}
+}
+
+func TestLogStatTargetRemainsRangeQuery(t *testing.T) {
+	panel := contracts.DashboardPanel{
+		Type:       "stat",
+		Signal:     "logs",
+		Expression: `sum(count_over_time({log_stream="openbao.audit"}[$__range]))`,
+	}
+	target := target(panel, grafanaDatasourceRef{Type: "loki", UID: "loki"}, "A")
+	if target.Instant || target.Range != nil || target.QueryType != "range" {
+		t.Fatalf("log stat target = instant %t, range %v, queryType %q", target.Instant, target.Range, target.QueryType)
 	}
 }
 
@@ -117,6 +226,21 @@ panels:
     datasource: metrics
     expression: openbao:core_active:sum
     unit: none
+    valueMappings:
+      - value: "0"
+        text: Down
+        color: red
+      - value: "1"
+        text: Up
+        color: green
+    thresholds:
+      - color: red
+      - value: 1
+        color: yellow
+      - value: 2
+        color: green
+    colorMode: background
+    noData: No data
     grid:
       x: 0
       y: 0

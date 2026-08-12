@@ -19,6 +19,20 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -40,7 +54,7 @@
       },
       "id": 1,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -61,8 +75,9 @@
           },
           "expr": "openbao:raft_peers:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Raft peers",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -80,6 +95,35 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "Unhealthy"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Healthy"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 2,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -122,8 +166,9 @@
           },
           "expr": "openbao:autopilot_healthy:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Autopilot health",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -139,14 +184,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
               }
             ]
           },
@@ -183,8 +246,9 @@
           },
           "expr": "openbao:autopilot_failure_tolerance:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Failure tolerance",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -200,14 +264,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
@@ -244,8 +326,9 @@
           },
           "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (1 - openbao:autopilot_node_healthy:min{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"})",
           "format": "time_series",
-          "legendFormat": "Unhealthy Raft nodes",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -261,14 +344,56 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "No active node"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "One active node"
+                },
+                "2": {
+                  "color": "red",
+                  "index": 2,
+                  "text": "Multiple active nodes"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 3,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
               }
             ]
           },
@@ -305,8 +430,9 @@
           },
           "expr": "openbao:core_active:sum{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Active nodes",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -324,6 +450,20 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -345,7 +485,7 @@
       },
       "id": 6,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -366,8 +506,9 @@
           },
           "expr": "openbao:core_unsealed:sum{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Unsealed nodes",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -385,6 +526,20 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -406,7 +561,7 @@
       },
       "id": 7,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -425,10 +580,11 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (increase(vault_raft_state_leader{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}[30m])) or vector(0)",
+          "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (increase(vault_raft_state_leader{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}[30m]))",
           "format": "time_series",
-          "legendFormat": "Leader transitions",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -446,6 +602,20 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -467,7 +637,7 @@
       },
       "id": 8,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -486,10 +656,11 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (increase(vault_raft_state_candidate{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}[30m])) or vector(0)",
+          "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (increase(vault_raft_state_candidate{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}[30m]))",
           "format": "time_series",
-          "legendFormat": "Candidate transitions",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],

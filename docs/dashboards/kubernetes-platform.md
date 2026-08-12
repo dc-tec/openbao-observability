@@ -53,11 +53,18 @@ The dashboard exposes these variables:
 | Container | `openbao|bao` | Selects OpenBao workload containers. |
 | PVC | `.*(openbao|bao|audit|data).*` | Selects OpenBao audit or data PVCs. |
 | Node | `.*` | Selects Kubernetes nodes. |
-| OpenBao scrape job | `openbao.*` | Selects OpenBao Prometheus scrape targets. |
+| OpenBao scrape job | `openbao` | Selects the canonical OpenBao Prometheus scrape targets. |
 | Collector scrape job | `.*(alloy|grafana-alloy|promtail).*` | Selects log collector scrape targets. |
 
 Use bounded filters in shared dashboards. Do not add workload labels that carry
 tenant, secret path, request path, token, or entity metadata.
+
+Prometheus stat panels use instant queries. Health panels show `Signal
+missing` when the current query returns no series. They do not keep a healthy
+sample from the previous dashboard time range.
+
+The ready-container count uses a neutral color. The dashboard does not know
+the expected container count for each deployment.
 
 ## How to read workload health
 
