@@ -39,6 +39,9 @@ Replace these values before production:
 - `environment`, `region`, and `cluster`: Bounded routing labels for your
   deployment.
 
+Install a `synthetic_probe` [signal expectation](../signal-expectations/) when
+this probe is required and its telemetry must not disappear silently.
+
 ## Validate the result
 
 1. Confirm Prometheus receives probe success.

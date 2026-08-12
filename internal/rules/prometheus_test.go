@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/dc-tec/openbao-observability/internal/contracts"
+	promlabels "github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql/parser"
 )
 
@@ -174,6 +175,262 @@ func TestValidatePromQLRejectsInvalidExpression(t *testing.T) {
 	if !strings.Contains(err.Error(), "openbao:invalid") {
 		t.Fatalf("error does not include rule name: %v", err)
 	}
+}
+
+func TestRequiredScrapeAlertUsesExactAbsenceFallback(t *testing.T) {
+	document := loadGeneratedAlertDocument(t, "critical.yaml")
+	expression := alertExpression(t, document, "OpenBaoUnreachable")
+	expectedMatchers := map[string]matcherExpectation{
+		"job": {value: "openbao", matcherType: promlabels.MatchEqual},
+	}
+	if !hasFunctionSelectorUnderBinaryOp(expression, "absent", "up", expectedMatchers, parser.LOR) {
+		t.Fatalf("OpenBaoUnreachable has no exact absent(up) fallback under OR: %s", expression)
+	}
+	if hasSelectorMatcherType(expression, "up", "job", promlabels.MatchRegexp) {
+		t.Fatalf("OpenBaoUnreachable uses a regular-expression job matcher: %s", expression)
+	}
+}
+
+func TestCoreActiveSignalMissingUsesHealthyTargetInventory(t *testing.T) {
+	document := loadGeneratedAlertDocument(t, "critical.yaml")
+	expression := alertExpression(t, document, "OpenBaoCoreActiveSignalMissing")
+	expectedMatchers := map[string]matcherExpectation{
+		"job": {value: "openbao", matcherType: promlabels.MatchEqual},
+	}
+	if !hasSelectorUnderUnless(expression, "up", expectedMatchers) {
+		t.Fatalf("OpenBaoCoreActiveSignalMissing has no exact healthy target inventory under UNLESS: %s", expression)
+	}
+	if !hasSelectorUnderUnless(expression, "openbao:core_active:sum", nil) {
+		t.Fatalf("OpenBaoCoreActiveSignalMissing has no normalized core_active selector under UNLESS: %s", expression)
+	}
+}
+
+func TestOptionalSignalMissingAlertsUseExpectationGate(t *testing.T) {
+	tests := []struct {
+		contractFile   string
+		alertID        string
+		signal         string
+		optionalMetric string
+	}{
+		{
+			contractFile:   "warning.yaml",
+			alertID:        "OpenBaoKubernetesPodSignalMissing",
+			signal:         "kubernetes_pods",
+			optionalMetric: "kube_pod_container_status_ready",
+		},
+		{
+			contractFile:   "critical.yaml",
+			alertID:        "OpenBaoAuditArchiveSignalMissing",
+			signal:         "audit_archive",
+			optionalMetric: "openbao_audit_archive_enabled",
+		},
+		{
+			contractFile:   "warning.yaml",
+			alertID:        "OpenBaoSyntheticProbeSignalMissing",
+			signal:         "synthetic_probe",
+			optionalMetric: "probe_success",
+		},
+		{
+			contractFile:   "warning.yaml",
+			alertID:        "OpenBaoLogCollectorSignalMissing",
+			signal:         "log_collector",
+			optionalMetric: "up",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.alertID, func(t *testing.T) {
+			document := loadGeneratedAlertDocument(t, test.contractFile)
+			expression := alertExpression(t, document, test.alertID)
+			expectedMatchers := map[string]matcherExpectation{
+				"signal": {value: test.signal, matcherType: promlabels.MatchEqual},
+			}
+			if !hasSelectorUnderUnless(expression, "openbao_observability_signal_expected", expectedMatchers) {
+				t.Fatalf("%s has no expectation selector under UNLESS: %s", test.alertID, expression)
+			}
+			if !hasSelectorUnderUnless(expression, test.optionalMetric, nil) {
+				t.Fatalf("%s has no observed signal selector under UNLESS: %s", test.alertID, expression)
+			}
+		})
+	}
+}
+
+func TestValueAlertsDoNotUseOptionalSignalAbsenceFallbacks(t *testing.T) {
+	tests := []struct {
+		contractFile string
+		alertID      string
+	}{
+		{contractFile: "critical.yaml", alertID: "OpenBaoNoActiveNode"},
+		{contractFile: "critical.yaml", alertID: "OpenBaoAllPodsUnavailable"},
+		{contractFile: "critical.yaml", alertID: "OpenBaoAuditArchiveDegraded"},
+		{contractFile: "warning.yaml", alertID: "OpenBaoSyntheticProbeFailing"},
+		{contractFile: "warning.yaml", alertID: "OpenBaoAvailabilityFastBurn"},
+		{contractFile: "warning.yaml", alertID: "OpenBaoAvailabilitySlowBurn"},
+		{contractFile: "warning.yaml", alertID: "OpenBaoSyntheticProbeLatencyElevated"},
+		{contractFile: "warning.yaml", alertID: "OpenBaoLogCollectorTargetDown"},
+	}
+	for _, test := range tests {
+		t.Run(test.alertID, func(t *testing.T) {
+			document := loadGeneratedAlertDocument(t, test.contractFile)
+			expression := alertExpression(t, document, test.alertID)
+			if hasFunctionCall(expression, "absent") {
+				t.Fatalf("%s uses absent() in a value alert: %s", test.alertID, expression)
+			}
+		})
+	}
+}
+
+func loadGeneratedAlertDocument(t *testing.T, contractFile string) prometheusRule {
+	t.Helper()
+	contractPath := filepath.Join("..", "..", "contracts", "alerts", contractFile)
+	contract, err := contracts.LoadAlertContract(contractPath)
+	if err != nil {
+		t.Fatalf("load alert contract: %v", err)
+	}
+	if err := contract.ValidateExpressions(contract.DefaultSourcePrefix()); err != nil {
+		t.Fatalf("validate contract expressions: %v", err)
+	}
+
+	document := buildAlertPrometheusRule(*contract, contract.DefaultSourcePrefix(), "test-alerts")
+	if err := validatePromQL(document); err != nil {
+		t.Fatalf("validate generated PromQL: %v", err)
+	}
+	return document
+}
+
+func alertExpression(t *testing.T, document prometheusRule, alertID string) string {
+	t.Helper()
+	for _, group := range document.Spec.Groups {
+		for _, rule := range group.Rules {
+			if rule.Alert == alertID {
+				return rule.Expr
+			}
+		}
+	}
+	t.Fatalf("alert %s was not generated", alertID)
+	return ""
+}
+
+type matcherExpectation struct {
+	value       string
+	matcherType promlabels.MatchType
+}
+
+func hasFunctionSelectorUnderBinaryOp(
+	expression, function, metric string,
+	expectedMatchers map[string]matcherExpectation,
+	op parser.ItemType,
+) bool {
+	promQLParser := parser.NewParser(parser.Options{})
+	parsed, err := promQLParser.ParseExpr(expression)
+	if err != nil {
+		return false
+	}
+
+	found := false
+	parser.Inspect(parsed, func(node parser.Node, path []parser.Node) error {
+		call, ok := node.(*parser.Call)
+		if !ok || call.Func.Name != function || len(call.Args) != 1 || !hasBinaryOpAncestor(path, op) {
+			return nil
+		}
+
+		selector, ok := call.Args[0].(*parser.VectorSelector)
+		if !ok || selector.Name != metric || !hasExpectedMatchers(selector, expectedMatchers) {
+			return nil
+		}
+		found = true
+		return nil
+	})
+	return found
+}
+
+func hasFunctionCall(expression, function string) bool {
+	promQLParser := parser.NewParser(parser.Options{})
+	parsed, err := promQLParser.ParseExpr(expression)
+	if err != nil {
+		return false
+	}
+
+	found := false
+	parser.Inspect(parsed, func(node parser.Node, _ []parser.Node) error {
+		call, ok := node.(*parser.Call)
+		if ok && call.Func.Name == function {
+			found = true
+		}
+		return nil
+	})
+	return found
+}
+
+func hasSelectorUnderUnless(
+	expression, metric string,
+	expectedMatchers map[string]matcherExpectation,
+) bool {
+	promQLParser := parser.NewParser(parser.Options{})
+	parsed, err := promQLParser.ParseExpr(expression)
+	if err != nil {
+		return false
+	}
+
+	found := false
+	parser.Inspect(parsed, func(node parser.Node, path []parser.Node) error {
+		selector, ok := node.(*parser.VectorSelector)
+		if ok && selector.Name == metric &&
+			hasExpectedMatchers(selector, expectedMatchers) &&
+			hasBinaryOpAncestor(path, parser.LUNLESS) {
+			found = true
+		}
+		return nil
+	})
+	return found
+}
+
+func hasSelectorMatcherType(expression, metric, matcherName string, matcherType promlabels.MatchType) bool {
+	promQLParser := parser.NewParser(parser.Options{})
+	parsed, err := promQLParser.ParseExpr(expression)
+	if err != nil {
+		return false
+	}
+
+	found := false
+	parser.Inspect(parsed, func(node parser.Node, _ []parser.Node) error {
+		selector, ok := node.(*parser.VectorSelector)
+		if !ok || selector.Name != metric {
+			return nil
+		}
+		for _, matcher := range selector.LabelMatchers {
+			if matcher.Name == matcherName && matcher.Type == matcherType {
+				found = true
+			}
+		}
+		return nil
+	})
+	return found
+}
+
+func hasBinaryOpAncestor(path []parser.Node, op parser.ItemType) bool {
+	for _, node := range path {
+		if binary, ok := node.(*parser.BinaryExpr); ok && binary.Op == op {
+			return true
+		}
+	}
+	return false
+}
+
+func hasExpectedMatchers(selector *parser.VectorSelector, expected map[string]matcherExpectation) bool {
+	for name, expectation := range expected {
+		found := false
+		for _, matcher := range selector.LabelMatchers {
+			if matcher.Name == name && matcher.Value == expectation.value && matcher.Type == expectation.matcherType {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
 func TestRecordingRulesUseNormalizedIdentityGrouping(t *testing.T) {

@@ -137,6 +137,19 @@ func TestPromQLMetricNamesIgnoreIdentityLabels(t *testing.T) {
 	}
 }
 
+func TestRawMetricPrefixCheckAllowsReferenceArchitectureMetrics(t *testing.T) {
+	allowed := []string{
+		"openbao_audit_archive_enabled",
+		"openbao_observability_signal_expected",
+	}
+	if hasDisallowedRawOpenBAOMetric(allowed) {
+		t.Fatalf("reference architecture metrics were treated as OpenBao source metrics: %v", allowed)
+	}
+	if !hasDisallowedRawOpenBAOMetric([]string{"openbao_core_active"}) {
+		t.Fatal("raw OpenBao source metric was allowed under the vault-prefix profile")
+	}
+}
+
 func writeRepositoryTestRepository(t *testing.T, dashboardContract, docsIndex string) string {
 	t.Helper()
 

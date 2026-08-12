@@ -131,6 +131,19 @@ groups:
             description: A synthetic probe for OpenBao has failed for the alert window.
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/slo-availability.md
             summary: OpenBao synthetic probe is failing
+        - alert: OpenBaoSyntheticProbeSignalMissing
+          expr: openbao_observability_signal_expected{signal="synthetic_probe"} == 1 unless on (cluster, job, instance) max by (cluster, job, instance) (probe_success{job=~".*openbao.*"})
+          for: 5m
+          labels:
+            component: availability
+            severity: warning
+            signal: availability
+            source_prefix: vault
+            subsystem: synthetic-probe
+          annotations:
+            description: A required OpenBao synthetic probe has no matching probe success series.
+            runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/slo-availability.md
+            summary: OpenBao synthetic probe signal is missing
         - alert: OpenBaoAvailabilityFastBurn
           expr: ((1 - avg_over_time(probe_success{job=~".*openbao.*"}[5m])) / 0.001 > 14.4) and ((1 - avg_over_time(probe_success{job=~".*openbao.*"}[1h])) / 0.001 > 14.4)
           for: 5m
@@ -183,6 +196,23 @@ groups:
             description: Kubernetes reports an OpenBao workload container as not ready for at least 10 minutes.
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/kubernetes-platform-health.md
             summary: OpenBao Kubernetes pod is not ready
+        - alert: OpenBaoKubernetesPodSignalMissing
+          expr: |-
+            openbao_observability_signal_expected{signal="kubernetes_pods"} == 1 unless on (cluster, kubernetes_namespace) label_replace(
+              sum by (cluster, namespace) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}),
+              "kubernetes_namespace", "$1", "namespace", "(.+)"
+            )
+          for: 10m
+          labels:
+            component: kubernetes
+            severity: warning
+            signal: platform
+            source_prefix: vault
+            subsystem: workload
+          annotations:
+            description: Kubernetes pod telemetry is required for this deployment, but Prometheus has no matching OpenBao pod readiness series.
+            runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/kubernetes-platform-health.md
+            summary: OpenBao Kubernetes pod signal is missing
         - alert: OpenBaoKubernetesPodRestartsIncreasing
           expr: sum by (cluster, namespace, pod) (increase(kube_pod_container_status_restarts_total{pod=~"openbao.*",container=~"openbao|bao"}[15m])) > 0
           for: 5m
@@ -210,7 +240,7 @@ groups:
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/kubernetes-platform-health.md
             summary: Kubernetes node pressure may affect OpenBao
         - alert: OpenBaoLogCollectorTargetDown
-          expr: min_over_time(up{job=~".*(alloy|grafana-alloy|promtail).*"}[10m]) == 0
+          expr: up{job=~".*(alloy|grafana-alloy|promtail).*"} == 0
           for: 10m
           labels:
             component: collector
@@ -222,3 +252,16 @@ groups:
             description: Prometheus reports a log collector scrape target as down, which can break OpenBao log and audit-log exploration.
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/kubernetes-platform-health.md
             summary: OpenBao log collector scrape target is down
+        - alert: OpenBaoLogCollectorSignalMissing
+          expr: openbao_observability_signal_expected{signal="log_collector"} == 1 unless on (cluster, job, instance) max by (cluster, job, instance) (up{job=~".*(alloy|grafana-alloy|promtail).*"})
+          for: 10m
+          labels:
+            component: collector
+            severity: warning
+            signal: platform
+            source_prefix: vault
+            subsystem: logs
+          annotations:
+            description: A required log collector target has no matching Prometheus up series.
+            runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/kubernetes-platform-health.md
+            summary: OpenBao log collector signal is missing

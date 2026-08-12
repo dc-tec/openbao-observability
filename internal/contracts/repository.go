@@ -1304,7 +1304,9 @@ func metricNameHasPrefix(metricNames []string, prefix string) bool {
 
 func hasDisallowedRawOpenBAOMetric(metricNames []string) bool {
 	for _, name := range metricNames {
-		if !strings.HasPrefix(name, "openbao_") || strings.HasPrefix(name, "openbao_audit_archive_") {
+		if !strings.HasPrefix(name, "openbao_") ||
+			strings.HasPrefix(name, "openbao_audit_archive_") ||
+			name == "openbao_observability_signal_expected" {
 			continue
 		}
 		return true
