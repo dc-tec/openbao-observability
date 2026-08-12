@@ -18,7 +18,7 @@ spec:
                 subsystem: transit
               annotations:
                 description: OpenBao audit logs contain Transit response errors over the alert window.
-                runbook_url: docs/runbooks/secret-engine-feature-warnings.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/secret-engine-feature-warnings.md
                 summary: OpenBao Transit operations are returning errors
             - alert: OpenBaoOperationalLogStreamMissing
               expr: absent_over_time({log_stream="openbao.operational"}[10m])
@@ -29,7 +29,7 @@ spec:
                 source_prefix: openbao
               annotations:
                 description: Loki has not received OpenBao operational logs for the alert window.
-                runbook_url: docs/runbooks/operational-log-stream-missing.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/operational-log-stream-missing.md
                 summary: OpenBao operational log stream is missing
             - alert: OpenBaoAuditStreamMissing
               expr: absent_over_time({log_stream="openbao.audit"}[10m])
@@ -40,7 +40,7 @@ spec:
                 source_prefix: openbao
               annotations:
                 description: Loki has not received any OpenBao audit events for the alert window; use the audit canary alert for the production critical signal.
-                runbook_url: docs/runbooks/audit-log-stream-missing.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/audit-log-stream-missing.md
                 summary: OpenBao audit log stream has no events
             - alert: OpenBaoDebugTraceLoggingEnabled
               expr: sum(count_over_time({log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m])) > 0
@@ -51,5 +51,5 @@ spec:
                 source_prefix: openbao
               annotations:
                 description: OpenBao operational logs include debug or trace entries, which can increase cost and expose sensitive metadata.
-                runbook_url: docs/runbooks/debug-logging-enabled.md
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/debug-logging-enabled.md
                 summary: OpenBao debug or trace logging is enabled
