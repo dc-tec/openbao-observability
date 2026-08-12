@@ -59,7 +59,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:raft_peers:max{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:raft_peers:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Raft peers",
           "range": true,
@@ -120,7 +120,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:autopilot_healthy:max{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:autopilot_healthy:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Autopilot health",
           "range": true,
@@ -181,7 +181,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:autopilot_failure_tolerance:max{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:autopilot_failure_tolerance:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Failure tolerance",
           "range": true,
@@ -242,7 +242,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(1 - openbao:autopilot_node_healthy:min{namespace=~\"${openbao_namespace:raw}\"})",
+          "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (1 - openbao:autopilot_node_healthy:min{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"})",
           "format": "time_series",
           "legendFormat": "Unhealthy Raft nodes",
           "range": true,
@@ -303,7 +303,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_active:sum{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:core_active:sum{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Active nodes",
           "range": true,
@@ -364,7 +364,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_unsealed:sum{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:core_unsealed:sum{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Unsealed nodes",
           "range": true,
@@ -425,7 +425,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(vault_raft_state_leader[30m])) or vector(0)",
+          "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (increase(vault_raft_state_leader{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}[30m])) or vector(0)",
           "format": "time_series",
           "legendFormat": "Leader transitions",
           "range": true,
@@ -486,7 +486,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(vault_raft_state_candidate[30m])) or vector(0)",
+          "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (increase(vault_raft_state_candidate{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}[30m])) or vector(0)",
           "format": "time_series",
           "legendFormat": "Candidate transitions",
           "range": true,
@@ -546,9 +546,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:autopilot_node_healthy:min{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:autopilot_node_healthy:min{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "{{node_id}}",
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{node_id}}",
           "range": true,
           "refId": "A"
         }
@@ -606,9 +606,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_commit_index{namespace=~\"${openbao_namespace:raw}\"})",
+          "expr": "max by (cluster, kubernetes_namespace, scrape_profile, instance, peer_id) (vault_raft_storage_stats_commit_index{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"})",
           "format": "time_series",
-          "legendFormat": "{{peer_id}} commit",
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{peer_id}} commit",
           "range": true,
           "refId": "A"
         }
@@ -666,9 +666,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_applied_index{namespace=~\"${openbao_namespace:raw}\"})",
+          "expr": "max by (cluster, kubernetes_namespace, scrape_profile, instance, peer_id) (vault_raft_storage_stats_applied_index{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"})",
           "format": "time_series",
-          "legendFormat": "{{peer_id}} applied",
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{peer_id}} applied",
           "range": true,
           "refId": "A"
         }
@@ -726,9 +726,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_fsm_pending{namespace=~\"${openbao_namespace:raw}\"})",
+          "expr": "max by (cluster, kubernetes_namespace, scrape_profile, instance, peer_id) (vault_raft_storage_stats_fsm_pending{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"})",
           "format": "time_series",
-          "legendFormat": "{{peer_id}}",
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{peer_id}}",
           "range": true,
           "refId": "A"
         }
@@ -786,9 +786,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (instance, peer_id) (vault_raft_storage_stats_term{namespace=~\"${openbao_namespace:raw}\"})",
+          "expr": "max by (cluster, kubernetes_namespace, scrape_profile, instance, peer_id) (vault_raft_storage_stats_term{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"})",
           "format": "time_series",
-          "legendFormat": "{{peer_id}}",
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{peer_id}}",
           "range": true,
           "refId": "A"
         }
@@ -846,9 +846,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (instance) (vault_raft_leader_lastContact{namespace=~\"${openbao_namespace:raw}\",quantile=\"0.99\"})",
+          "expr": "max by (cluster, kubernetes_namespace, scrape_profile, instance) (vault_raft_leader_lastContact{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\",quantile=\"0.99\"})",
           "format": "time_series",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -906,9 +906,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (peer_id) (vault_raft_replication_heartbeat{namespace=~\"${openbao_namespace:raw}\",quantile=\"0.99\"})",
+          "expr": "max by (cluster, kubernetes_namespace, scrape_profile, peer_id) (vault_raft_replication_heartbeat{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\",quantile=\"0.99\"})",
           "format": "time_series",
-          "legendFormat": "{{peer_id}}",
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{peer_id}}",
           "range": true,
           "refId": "A"
         }
@@ -966,9 +966,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (peer_id) (vault_raft_replication_appendEntries_logs{namespace=~\"${openbao_namespace:raw}\"})",
+          "expr": "max by (cluster, kubernetes_namespace, scrape_profile, peer_id) (vault_raft_replication_appendEntries_logs{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"})",
           "format": "time_series",
-          "legendFormat": "{{peer_id}}",
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{peer_id}}",
           "range": true,
           "refId": "A"
         }
@@ -1022,7 +1022,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"} |~ \"(?i)raft|storage|autopilot\"",
+          "expr": "{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.operational\"} |~ \"(?i)raft|storage|autopilot\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -1048,8 +1048,36 @@
           "value": ".*"
         },
         "hide": 0,
+        "label": "Cluster",
+        "name": "cluster",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
         "label": "Kubernetes namespace",
-        "name": "openbao_namespace",
+        "name": "kubernetes_namespace",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Scrape profile",
+        "name": "scrape_profile",
         "options": [],
         "query": ".*",
         "skipUrlSync": false,

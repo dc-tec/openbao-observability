@@ -12,7 +12,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const runbookURLBase = "https://github.com/dc-tec/openbao-observability/blob/main/"
+const (
+	runbookURLBase = "https://github.com/dc-tec/openbao-observability/blob/main/"
+
+	clusterIdentityGrouping = "cluster, kubernetes_namespace, openbao_namespace, scrape_profile"
+	targetIdentityGrouping  = clusterIdentityGrouping + ", pod, instance"
+)
 
 type GenerateOptions struct {
 	ContractPath string
@@ -209,12 +214,17 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 					Rules: []prometheusRuleItem{
 						{
 							Record: recordPrefix + ":core_active:sum",
-							Expr:   "sum by (namespace) (" + metricName(sourcePrefix, "core_active") + ")",
+							Expr:   "sum by (" + clusterGrouping() + ") (" + metricName(sourcePrefix, "core_active") + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":core_unsealed:sum",
-							Expr:   `sum by (namespace) (` + metricName(sourcePrefix, "core_unsealed") + `{cluster!=""})`,
+							Expr:   "sum by (" + clusterGrouping() + ") (" + metricName(sourcePrefix, "core_unsealed") + `{cluster!=""})`,
+							Labels: ruleLabels(sourcePrefix),
+						},
+						{
+							Record: recordPrefix + ":core_unsealed:min",
+							Expr:   "min by (" + targetGrouping() + ") (" + metricName(sourcePrefix, "core_unsealed") + `{cluster!=""})`,
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -249,12 +259,12 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":core_in_flight_requests:max",
-							Expr:   "max by (namespace) (" + metricName(sourcePrefix, "core_in_flight_requests") + ")",
+							Expr:   "max by (" + targetGrouping() + ") (" + metricName(sourcePrefix, "core_in_flight_requests") + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":core_mount_table_num_entries:max",
-							Expr: "max by (namespace, local, type) (" + metricName(
+							Expr: "max by (" + clusterGrouping("local", "type") + ") (" + metricName(
 								sourcePrefix,
 								"core_mount_table_num_entries",
 							) + ")",
@@ -262,7 +272,10 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":core_mount_table_size:max",
-							Expr:   "max by (namespace, local, type) (" + metricName(sourcePrefix, "core_mount_table_size") + ")",
+							Expr: "max by (" + clusterGrouping("local", "type") + ") (" + metricName(
+								sourcePrefix,
+								"core_mount_table_size",
+							) + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -272,17 +285,23 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":autopilot_healthy:max",
-							Expr:   "max by (namespace) (" + metricName(sourcePrefix, "autopilot_healthy") + ")",
+							Expr:   "max by (" + clusterGrouping() + ") (" + metricName(sourcePrefix, "autopilot_healthy") + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":autopilot_failure_tolerance:max",
-							Expr:   "max by (namespace) (" + metricName(sourcePrefix, "autopilot_failure_tolerance") + ")",
+							Expr: "max by (" + clusterGrouping() + ") (" + metricName(
+								sourcePrefix,
+								"autopilot_failure_tolerance",
+							) + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":autopilot_node_healthy:min",
-							Expr:   "min by (namespace, node_id) (" + metricName(sourcePrefix, "autopilot_node_healthy") + ")",
+							Expr: "min by (" + targetGrouping("node_id") + ") (" + metricName(
+								sourcePrefix,
+								"autopilot_node_healthy",
+							) + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -307,12 +326,18 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":audit_log_request_failure:increase5m",
-							Expr:   "sum by (namespace) (increase(" + metricName(sourcePrefix, "audit_log_request_failure") + "[5m]))",
+							Expr: "sum by (" + clusterGrouping() + ") (increase(" + metricName(
+								sourcePrefix,
+								"audit_log_request_failure",
+							) + "[5m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":audit_log_response_failure:increase5m",
-							Expr:   "sum by (namespace) (increase(" + metricName(sourcePrefix, "audit_log_response_failure") + "[5m]))",
+							Expr: "sum by (" + clusterGrouping() + ") (increase(" + metricName(
+								sourcePrefix,
+								"audit_log_response_failure",
+							) + "[5m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -337,12 +362,15 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":expire_num_leases:max",
-							Expr:   "max by (namespace) (" + metricName(sourcePrefix, "expire_num_leases") + ")",
+							Expr:   "max by (" + clusterGrouping() + ") (" + metricName(sourcePrefix, "expire_num_leases") + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":expire_num_irrevocable_leases:max",
-							Expr:   "max by (namespace) (" + metricName(sourcePrefix, "expire_num_irrevocable_leases") + ")",
+							Expr: "max by (" + clusterGrouping() + ") (" + metricName(
+								sourcePrefix,
+								"expire_num_irrevocable_leases",
+							) + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -367,17 +395,20 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":token_count:max30m",
-							Expr:   "max by (namespace) (max_over_time(" + metricName(sourcePrefix, "token_count") + "[30m]))",
+							Expr: "max by (" + clusterGrouping() + ") (max_over_time(" + metricName(
+								sourcePrefix,
+								"token_count",
+							) + "[30m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":token_creation:increase15m",
-							Expr:   "sum by (namespace) (increase(" + metricName(sourcePrefix, "token_creation") + "[15m]))",
+							Expr:   "sum by (" + clusterGrouping() + ") (increase(" + metricName(sourcePrefix, "token_creation") + "[15m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":token_creation_by_auth:increase15m",
-							Expr: "sum by (namespace, auth_method) (increase(" + metricName(
+							Expr: "sum by (" + clusterGrouping("auth_method") + ") (increase(" + metricName(
 								sourcePrefix,
 								"token_creation",
 							) + "[15m]))",
@@ -385,7 +416,7 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":token_creation_by_namespace:increase15m",
-							Expr: "sum by (namespace) (increase(" + metricName(
+							Expr: "sum by (" + clusterGrouping() + ") (increase(" + metricName(
 								sourcePrefix,
 								"token_creation",
 							) + "[15m]))",
@@ -393,7 +424,7 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":token_creation_by_auth_namespace:increase15m",
-							Expr: "sum by (namespace, auth_method) (increase(" + metricName(
+							Expr: "sum by (" + clusterGrouping("auth_method") + ") (increase(" + metricName(
 								sourcePrefix,
 								"token_creation",
 							) + "[15m]))",
@@ -441,22 +472,22 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":runtime_num_goroutines:max",
-							Expr:   "max by (namespace) (" + metricName(sourcePrefix, "runtime_num_goroutines") + ")",
+							Expr:   "max by (" + targetGrouping() + ") (" + metricName(sourcePrefix, "runtime_num_goroutines") + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":runtime_alloc_bytes:max",
-							Expr:   "max by (namespace) (" + metricName(sourcePrefix, "runtime_alloc_bytes") + ")",
+							Expr:   "max by (" + targetGrouping() + ") (" + metricName(sourcePrefix, "runtime_alloc_bytes") + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":runtime_heap_objects:max",
-							Expr:   "max by (namespace) (" + metricName(sourcePrefix, "runtime_heap_objects") + ")",
+							Expr:   "max by (" + targetGrouping() + ") (" + metricName(sourcePrefix, "runtime_heap_objects") + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":runtime_sys_bytes:max",
-							Expr:   "max by (namespace) (" + metricName(sourcePrefix, "runtime_sys_bytes") + ")",
+							Expr:   "max by (" + targetGrouping() + ") (" + metricName(sourcePrefix, "runtime_sys_bytes") + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -466,12 +497,12 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":runtime_total_gc_pause_ns:max",
-							Expr:   "max by (namespace) (" + metricName(sourcePrefix, "runtime_total_gc_pause_ns") + ")",
+							Expr:   "max by (" + targetGrouping() + ") (" + metricName(sourcePrefix, "runtime_total_gc_pause_ns") + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":runtime_total_gc_runs:max",
-							Expr:   "max by (namespace) (" + metricName(sourcePrefix, "runtime_total_gc_runs") + ")",
+							Expr:   "max by (" + targetGrouping() + ") (" + metricName(sourcePrefix, "runtime_total_gc_runs") + ")",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -526,7 +557,7 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":barrier_estimated_encryptions:increase15m",
-							Expr: "sum by (namespace, term) (increase(" + metricName(
+							Expr: "sum by (" + clusterGrouping("term") + ") (increase(" + metricName(
 								sourcePrefix,
 								"barrier_estimated_encryptions",
 							) + "[15m]))",
@@ -534,17 +565,17 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":cache_hit:rate5m",
-							Expr:   "sum by (namespace) (rate(" + metricName(sourcePrefix, "cache_hit") + "[5m]))",
+							Expr:   "sum by (" + clusterGrouping() + ") (rate(" + metricName(sourcePrefix, "cache_hit") + "[5m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":cache_miss:rate5m",
-							Expr:   "sum by (namespace) (rate(" + metricName(sourcePrefix, "cache_miss") + "[5m]))",
+							Expr:   "sum by (" + clusterGrouping() + ") (rate(" + metricName(sourcePrefix, "cache_miss") + "[5m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":cache_write:rate5m",
-							Expr:   "sum by (namespace) (rate(" + metricName(sourcePrefix, "cache_write") + "[5m]))",
+							Expr:   "sum by (" + clusterGrouping() + ") (rate(" + metricName(sourcePrefix, "cache_write") + "[5m]))",
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -554,12 +585,12 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":secret_lease_creation:increase15m",
-							Expr:   "sum by (namespace) (increase(" + metricName(sourcePrefix, "secret_lease_creation") + "[15m]))",
+							Expr:   clusterIncrease15mExpression(sourcePrefix, "secret_lease_creation"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":secret_lease_creation_by_engine:increase15m",
-							Expr: "sum by (namespace, secret_engine) (increase(" + metricName(
+							Expr: "sum by (" + clusterGrouping("secret_engine") + ") (increase(" + metricName(
 								sourcePrefix,
 								"secret_lease_creation",
 							) + "[15m]))",
@@ -567,7 +598,7 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":secret_lease_creation_by_engine_namespace:increase15m",
-							Expr: "sum by (namespace, secret_engine) (increase(" + metricName(
+							Expr: "sum by (" + clusterGrouping("secret_engine") + ") (increase(" + metricName(
 								sourcePrefix,
 								"secret_lease_creation",
 							) + "[15m]))",
@@ -575,18 +606,12 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":secret_kv_count:max30m",
-							Expr: "sum by (namespace) (max by (namespace, mount_point) (max_over_time(" + metricName(
-								sourcePrefix,
-								"secret_kv_count",
-							) + "[30m])))",
+							Expr:   secretKVCountExpression(sourcePrefix),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":secret_kv_count_by_namespace:max30m",
-							Expr: "sum by (namespace) (max by (namespace, mount_point) (max_over_time(" + metricName(
-								sourcePrefix,
-								"secret_kv_count",
-							) + "[30m])))",
+							Expr:   secretKVCountExpression(sourcePrefix),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -691,12 +716,12 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":pki_issue_failure:increase15m",
-							Expr:   "sum by (namespace) (increase(" + metricName(sourcePrefix, "pki_issue_failure") + "[15m]))",
+							Expr:   clusterIncrease15mExpression(sourcePrefix, "pki_issue_failure"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":pki_revoke_failure:increase15m",
-							Expr:   "sum by (namespace) (increase(" + metricName(sourcePrefix, "pki_revoke_failure") + "[15m]))",
+							Expr:   clusterIncrease15mExpression(sourcePrefix, "pki_revoke_failure"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -751,27 +776,27 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 						},
 						{
 							Record: recordPrefix + ":database_initialize_error:increase15m",
-							Expr:   "sum by (namespace) (increase(" + metricName(sourcePrefix, "database_Initialize_error") + "[15m]))",
+							Expr:   clusterIncrease15mExpression(sourcePrefix, "database_Initialize_error"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":database_close_error:increase15m",
-							Expr:   "sum by (namespace) (increase(" + metricName(sourcePrefix, "database_Close_error") + "[15m]))",
+							Expr:   clusterIncrease15mExpression(sourcePrefix, "database_Close_error"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":database_new_user_error:increase15m",
-							Expr:   "sum by (namespace) (increase(" + metricName(sourcePrefix, "database_NewUser_error") + "[15m]))",
+							Expr:   clusterIncrease15mExpression(sourcePrefix, "database_NewUser_error"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":database_update_user_error:increase15m",
-							Expr:   "sum by (namespace) (increase(" + metricName(sourcePrefix, "database_UpdateUser_error") + "[15m]))",
+							Expr:   clusterIncrease15mExpression(sourcePrefix, "database_UpdateUser_error"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
 							Record: recordPrefix + ":database_delete_user_error:increase15m",
-							Expr:   "sum by (namespace) (increase(" + metricName(sourcePrefix, "database_DeleteUser_error") + "[15m]))",
+							Expr:   clusterIncrease15mExpression(sourcePrefix, "database_DeleteUser_error"),
 							Labels: ruleLabels(sourcePrefix),
 						},
 					},
@@ -849,41 +874,67 @@ func metricName(prefix, id string) string {
 	return prefix + "_" + strings.TrimPrefix(id, "_")
 }
 
+func clusterGrouping(extra ...string) string {
+	return appendGrouping(clusterIdentityGrouping, extra...)
+}
+
+func targetGrouping(extra ...string) string {
+	return appendGrouping(targetIdentityGrouping, extra...)
+}
+
+func appendGrouping(base string, extra ...string) string {
+	if len(extra) == 0 {
+		return base
+	}
+	return base + ", " + strings.Join(extra, ", ")
+}
+
 func raftPeerCountExpression(sourcePrefix string) string {
-	rawPeerCount := "max by (namespace) (" + metricName(sourcePrefix, "raft_peers") + ")"
-	autopilotPeerCount := "count by (namespace) (" + metricName(sourcePrefix, "autopilot_node_healthy") + ")"
+	rawPeerCount := "max by (" + clusterGrouping() + ") (" + metricName(sourcePrefix, "raft_peers") + ")"
+	autopilotPeerCount := "count by (" + clusterGrouping() + ") (" +
+		metricName(sourcePrefix, "autopilot_node_healthy") + ")"
 	storageStatsMetric := metricName(sourcePrefix, "raft_storage_stats_commit_index")
-	storageStatsPeerCount := "count by (namespace) (count by (namespace, peer_id) (" + storageStatsMetric + "))"
+	storageStatsPeerCount := "count by (" + clusterGrouping() + ") (count by (" +
+		clusterGrouping("peer_id") + ") (" + storageStatsMetric + "))"
 	return rawPeerCount + " or " + autopilotPeerCount + " or " + storageStatsPeerCount
 }
 
+func clusterIncrease15mExpression(sourcePrefix, id string) string {
+	return "sum by (" + clusterGrouping() + ") (increase(" + metricName(sourcePrefix, id) + "[15m]))"
+}
+
+func secretKVCountExpression(sourcePrefix string) string {
+	return "sum by (" + clusterGrouping() + ") (max by (" + clusterGrouping("mount_point") + ") (max_over_time(" +
+		metricName(sourcePrefix, "secret_kv_count") + "[30m])))"
+}
+
 func raftStorageMaxExpression(sourcePrefix, id string) string {
-	return "max by (namespace, instance, peer_id) (" + metricName(sourcePrefix, id) + ")"
+	return "max by (" + targetGrouping("peer_id") + ") (" + metricName(sourcePrefix, id) + ")"
 }
 
 func raftStorageApplyGapExpression(sourcePrefix string) string {
 	commitIndex := metricName(sourcePrefix, "raft_storage_stats_commit_index")
 	appliedIndex := metricName(sourcePrefix, "raft_storage_stats_applied_index")
-	return "clamp_min(max by (namespace, instance, peer_id) (" + commitIndex + " - " + appliedIndex + "), 0)"
+	return "clamp_min(max by (" + targetGrouping("peer_id") + ") (" + commitIndex + " - " + appliedIndex + "), 0)"
 }
 
 func summaryRateExpression(sourcePrefix, id string) string {
-	return "sum by (namespace) (rate(" + metricName(sourcePrefix, id+"_count") + "[5m]))"
+	return "sum by (" + clusterGrouping() + ") (rate(" + metricName(sourcePrefix, id+"_count") + "[5m]))"
 }
 
 func summaryAverageExpression(sourcePrefix, id string) string {
-	return "sum by (namespace) (rate(" + metricName(
+	return "sum by (" + clusterGrouping() + ") (rate(" + metricName(
 		sourcePrefix,
 		id+"_sum",
-	) + "[5m])) / clamp_min(sum by (namespace) (rate(" + metricName(
+	) + "[5m])) / clamp_min(sum by (" + clusterGrouping() + ") (rate(" + metricName(
 		sourcePrefix,
 		id+"_count",
 	) + "[5m])), 0.001)"
 }
 
 func cacheHitRatioExpression(sourcePrefix string) string {
-	hits := "sum by (namespace) (rate(" + metricName(sourcePrefix, "cache_hit") + "[5m]))"
-	misses := "sum by (namespace) (rate(" + metricName(sourcePrefix, "cache_miss") + "[5m]))"
+	hits := "sum by (" + clusterGrouping() + ") (rate(" + metricName(sourcePrefix, "cache_hit") + "[5m]))"
+	misses := "sum by (" + clusterGrouping() + ") (rate(" + metricName(sourcePrefix, "cache_miss") + "[5m]))"
 	return hits + " / clamp_min(" + hits + " + " + misses + ", 0.001)"
 }
 

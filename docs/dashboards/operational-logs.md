@@ -33,9 +33,8 @@ The generated dashboard expects a Loki data source with UID `loki`. The panels
 query operational logs collected with `log_stream="openbao.operational"` and a
 bounded `node_id` label.
 
-The generated dashboard exposes a Kubernetes namespace selector for
-deployments where multiple OpenBao instances share the same observability
-backend.
+The generated dashboard exposes cluster and Kubernetes namespace selectors.
+Use them to select one OpenBao deployment before you compare log streams.
 
 The dashboard does not need Prometheus for its current panels, even though the
 contract includes the standard metrics data-source definition for consistency

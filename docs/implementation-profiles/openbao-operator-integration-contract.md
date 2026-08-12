@@ -78,12 +78,43 @@ preserve the same labels, target shape, and scrape semantics.
 | Active metrics Service | ClusterIP Service that selects the active OpenBao pod. | Select `openbao-active: "true"` when Kubernetes service registration supplies that label. |
 | All-node metrics Service | Headless Service with `publishNotReadyAddresses: true`. | Select every OpenBao pod that should expose metrics, including sealed or not-yet-ready pods. |
 | ServiceMonitor | `<cluster-name>-metrics` in the `OpenBaoCluster` namespace. | Scrape `/v1/sys/metrics` with `format=prometheus` from the metrics Service. |
-| ServiceMonitor endpoint | Port `https-metrics`, path `/v1/sys/metrics`, and `format=prometheus`. | Include interval, timeout, authorization, TLS, and relabeling based on the operator configuration. |
+| ServiceMonitor endpoint | Port `https-metrics`, path `/v1/sys/metrics`, and `format=prometheus`. | Include interval, timeout, authorization, TLS, and signal-identity relabeling based on the operator configuration. |
+| Target relabeling | Prometheus target labels `cluster`, `kubernetes_namespace`, `pod`, and `scrape_profile`. | Preserve deployment identity without accepting conflicting labels from the scraped endpoint. |
 | All-node relabeling | Prometheus target labels `pod` and `node`. | Preserve pod and node context for HA/Raft, runtime, and read-replica diagnostics. |
+| Metric relabeling | Prometheus metric label `openbao_namespace`. | Copy the OpenBao-generated `namespace` label to `openbao_namespace`, then remove the ambiguous source label. |
 
 Use `ServiceMonitor` when Prometheus Operator is your platform standard. If you
 use plain Prometheus, VictoriaMetrics, Grafana Agent, Grafana Alloy, or another
 collector, preserve the same endpoint, parameters, labels, and target profile.
+
+## Prometheus signal identity
+
+Use one label name for each identity dimension. Do not use `namespace` for both
+Kubernetes placement and an OpenBao logical namespace.
+
+| Prometheus label | Meaning | Source |
+| ---------------- | ------- | ------ |
+| `cluster` | Platform-assigned OpenBao deployment identity. | The `openbao.org/cluster` Service label for operator-managed resources. |
+| `kubernetes_namespace` | Namespace that contains the OpenBao workload. | Kubernetes discovery metadata. |
+| `openbao_namespace` | Logical OpenBao namespace when the source metric includes one. | The OpenBao-generated `namespace` metric label. |
+| `pod` | OpenBao pod identity. | Kubernetes discovery metadata. |
+| `instance` | Prometheus scrape endpoint identity. | The Prometheus default derived from `__address__`. |
+| `scrape_profile` | `active` or `all_nodes`. | The selected operator scrape profile. |
+
+Keep `honorLabels` disabled. The collector must own `cluster`,
+`kubernetes_namespace`, `pod`, `instance`, and `scrape_profile`. OpenBao must not
+replace these labels with values from the metrics endpoint.
+
+OpenBao emits its logical namespace as `namespace` on some metrics. The
+ServiceMonitor must copy that value to `openbao_namespace` through metric
+relabeling. It must then remove the ambiguous `namespace` label. Metrics that do
+not have OpenBao namespace scope must not get a synthetic `openbao_namespace`
+value.
+
+The operator-generated ServiceMonitor must implement this identity contract. If
+your operator release does not render these relabeling rules, use a
+platform-owned equivalent scrape resource. Do not patch an operator-owned
+ServiceMonitor because operator reconciliation can remove the patch.
 
 ## Label contract
 
@@ -99,7 +130,7 @@ accessors, client addresses, or unbounded policy names.
 | `openbao.org/cluster` | `OpenBaoCluster` name. | Operator-managed OpenBao resources. | Provides a stable cluster identity for selectors and dashboards. |
 | `app.kubernetes.io/component` | `metrics` on metrics resources. | Metrics Service and scrape resources. | Distinguishes metrics exposure from API Services. |
 | `openbao.org/component` | `metrics` on metrics resources. | Metrics Service and scrape resources. | Gives operator-owned resources an OpenBao-specific component label. |
-| `openbao.org/scrape-profile` | `Active` or `AllNodes`. | Metrics Service and scrape resources. | Identifies the scrape profile. |
+| `openbao.org/scrape-profile` | `Active` or `AllNodes`. | Metrics Service and scrape resources. | Supplies the source value for the normalized Prometheus `scrape_profile` label. |
 | `openbao.org/workload-pool` | `voter` or `read-replica` when used. | Workload pods and Services. | Separates quorum participants from read-replica pools. |
 | `openbao-active` | `"true"` on the active OpenBao pod. | Active scrape selector. | Lets the active metrics Service target exactly one active pod. |
 
@@ -179,10 +210,10 @@ Use dashboard families that keep control-plane and workload questions distinct.
 | OpenBao workload dashboards | This repository | OpenBao availability, seal state, active node count, request latency, HA/Raft health, runtime pressure, token and lease pressure, audit health, and security investigation. |
 | Platform dashboards | Platform team | Pod readiness, restarts, node pressure, PVC pressure, NetworkPolicy reachability, collector health, and Prometheus target health. Use the generated Kubernetes platform dashboard as the reference workload-context view. |
 
-When you link dashboards together, pass bounded context such as cluster,
-Kubernetes namespace, pod, node, scrape profile, and source prefix. Do not pass
-request paths, secret paths, token accessors, entity identifiers, auth
-accessors, or client addresses as dashboard variables.
+When you link dashboards together, pass bounded context such as `cluster`,
+`kubernetes_namespace`, `openbao_namespace`, `pod`, `node`, `scrape_profile`,
+and source prefix. Do not pass request paths, secret paths, token accessors,
+entity identifiers, auth accessors, or client addresses as dashboard variables.
 
 ## Alert contract
 
@@ -210,6 +241,10 @@ pass:
 - The active scrape exposes exactly one healthy target per cluster.
 - The all-node scrape, when enabled, exposes one target per selected OpenBao
   pod and preserves `pod` and `node` labels.
+- Workload metrics preserve `cluster`, `kubernetes_namespace`, `pod`,
+  `instance`, and `scrape_profile` target identity.
+- OpenBao namespace-scoped metrics use `openbao_namespace`; they do not overload
+  the Kubernetes namespace label.
 - The metrics listener is authenticated, privately reachable, or both.
 - The metrics Service and scrape resource carry stable cluster and scrape
   profile labels.

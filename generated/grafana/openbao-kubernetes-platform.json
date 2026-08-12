@@ -59,7 +59,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(kube_pod_container_status_ready{namespace=~\"${namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"})",
+          "expr": "sum by (cluster, namespace) (kube_pod_container_status_ready{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"})",
           "format": "time_series",
           "legendFormat": "Ready containers",
           "range": true,
@@ -120,7 +120,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(1 - kube_pod_container_status_ready{namespace=~\"${namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"})",
+          "expr": "sum by (cluster, namespace) (1 - kube_pod_container_status_ready{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"})",
           "format": "time_series",
           "legendFormat": "Unready containers",
           "range": true,
@@ -181,7 +181,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=~\"${namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"}[15m]))",
+          "expr": "sum by (cluster, namespace) (increase(kube_pod_container_status_restarts_total{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"}[15m]))",
           "format": "time_series",
           "legendFormat": "Restarts",
           "range": true,
@@ -242,7 +242,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "min(up{namespace=~\"${namespace:raw}\",job=~\"${openbao_job:raw}\"})",
+          "expr": "min by (cluster, kubernetes_namespace) (up{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",job=~\"${openbao_job:raw}\"})",
           "format": "time_series",
           "legendFormat": "OpenBao scrape health",
           "range": true,
@@ -303,7 +303,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "min(up{namespace=~\"${namespace:raw}\",job=~\"${collector_job:raw}\"})",
+          "expr": "min by (cluster, namespace) (up{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",job=~\"${collector_job:raw}\"})",
           "format": "time_series",
           "legendFormat": "Collector scrape health",
           "range": true,
@@ -364,7 +364,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "100 * min(kubelet_volume_stats_available_bytes{namespace=~\"${namespace:raw}\",persistentvolumeclaim=~\"${pvc:raw}\"}) / min(kubelet_volume_stats_capacity_bytes{namespace=~\"${namespace:raw}\",persistentvolumeclaim=~\"${pvc:raw}\"})",
+          "expr": "100 * min by (cluster, namespace) (kubelet_volume_stats_available_bytes{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",persistentvolumeclaim=~\"${pvc:raw}\"}) / min by (cluster, namespace) (kubelet_volume_stats_capacity_bytes{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",persistentvolumeclaim=~\"${pvc:raw}\"})",
           "format": "time_series",
           "legendFormat": "Audit PVC free",
           "range": true,
@@ -424,9 +424,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "min by (namespace, pod) (kube_pod_container_status_ready{namespace=~\"${namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"})",
+          "expr": "min by (cluster, namespace, pod) (kube_pod_container_status_ready{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"})",
           "format": "time_series",
-          "legendFormat": "{{namespace}}/{{pod}}",
+          "legendFormat": "{{cluster}} {{namespace}}/{{pod}}",
           "range": true,
           "refId": "A"
         }
@@ -484,9 +484,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total{namespace=~\"${namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"}[15m]))",
+          "expr": "sum by (cluster, namespace, pod) (increase(kube_pod_container_status_restarts_total{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"}[15m]))",
           "format": "time_series",
-          "legendFormat": "{{namespace}}/{{pod}}",
+          "legendFormat": "{{cluster}} {{namespace}}/{{pod}}",
           "range": true,
           "refId": "A"
         }
@@ -544,9 +544,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (node, condition) (kube_node_status_condition{node=~\"${node:raw}\",condition=~\"DiskPressure|MemoryPressure|PIDPressure\",status=\"true\"})",
+          "expr": "max by (cluster, node, condition) (kube_node_status_condition{cluster=~\"${cluster:raw}\",node=~\"${node:raw}\",condition=~\"DiskPressure|MemoryPressure|PIDPressure\",status=\"true\"})",
           "format": "time_series",
-          "legendFormat": "{{node}} {{condition}}",
+          "legendFormat": "{{cluster}} {{node}} {{condition}}",
           "range": true,
           "refId": "A"
         }
@@ -604,9 +604,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (namespace, pod) (rate(container_cpu_usage_seconds_total{namespace=~\"${namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"}[5m]))",
+          "expr": "sum by (cluster, namespace, pod) (rate(container_cpu_usage_seconds_total{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"}[5m]))",
           "format": "time_series",
-          "legendFormat": "{{namespace}}/{{pod}}",
+          "legendFormat": "{{cluster}} {{namespace}}/{{pod}}",
           "range": true,
           "refId": "A"
         }
@@ -664,9 +664,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (namespace, pod) (container_memory_working_set_bytes{namespace=~\"${namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"})",
+          "expr": "max by (cluster, namespace, pod) (container_memory_working_set_bytes{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",pod=~\"${pod:raw}\",container=~\"${container:raw}\"})",
           "format": "time_series",
-          "legendFormat": "{{namespace}}/{{pod}}",
+          "legendFormat": "{{cluster}} {{namespace}}/{{pod}}",
           "range": true,
           "refId": "A"
         }
@@ -724,9 +724,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "100 * min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes{namespace=~\"${namespace:raw}\",persistentvolumeclaim=~\"${pvc:raw}\"}) / min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{namespace=~\"${namespace:raw}\",persistentvolumeclaim=~\"${pvc:raw}\"})",
+          "expr": "100 * min by (cluster, namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",persistentvolumeclaim=~\"${pvc:raw}\"}) / min by (cluster, namespace, persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{cluster=~\"${cluster:raw}\",namespace=~\"${kubernetes_namespace:raw}\",persistentvolumeclaim=~\"${pvc:raw}\"})",
           "format": "time_series",
-          "legendFormat": "{{namespace}}/{{persistentvolumeclaim}}",
+          "legendFormat": "{{cluster}} {{namespace}}/{{persistentvolumeclaim}}",
           "range": true,
           "refId": "A"
         }
@@ -780,7 +780,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{log_stream=\"platform.kubernetes\", namespace=~\"${namespace:raw}\", pod=~\"${pod:raw}\"} |~ \"(?i)(warning|failed|unhealthy|backoff|evict|pressure|probe)\"",
+          "expr": "{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"platform.kubernetes\", pod=~\"${pod:raw}\"} |~ \"(?i)(warning|failed|unhealthy|backoff|evict|pressure|probe)\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -807,8 +807,22 @@
           "value": ".*"
         },
         "hide": 0,
-        "label": "Namespace",
-        "name": "namespace",
+        "label": "Cluster",
+        "name": "cluster",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Kubernetes namespace",
+        "name": "kubernetes_namespace",
         "options": [],
         "query": ".*",
         "skipUrlSync": false,

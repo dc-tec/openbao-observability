@@ -89,11 +89,7 @@ type rule struct {
 	Record string            `yaml:"record"`
 }
 
-var (
-	recordingRuleReferencePattern = regexp.MustCompile(`\bopenbao:[A-Za-z0-9_:]+\b`)
-	rawOpenBAOMetricPattern       = regexp.MustCompile(`\bopenbao_[A-Za-z0-9_:]+\b`)
-	rawVaultMetricPattern         = regexp.MustCompile(`\bvault_[A-Za-z0-9_:]+\b`)
-)
+var recordingRuleReferencePattern = regexp.MustCompile(`\bopenbao:[A-Za-z0-9_:]+\b`)
 
 func VerifyRepository(opts VerifyRepositoryOptions) error {
 	opts = opts.withDefaults()
@@ -1250,14 +1246,26 @@ func verifyRuleFileSourcePrefix(
 			if err := validateGeneratedRuleLabelSafety(root, filePath, rule, loki, streamContract); err != nil {
 				return err
 			}
-			if expectedPrefix == "openbao" && rawVaultMetricPattern.MatchString(rule.Expr) {
+			var metricNames []string
+			if !loki {
+				metricNames, err = promQLMetricNames(rule.Expr)
+				if err != nil {
+					return fmt.Errorf(
+						"parse generated rule %s in %s: %w",
+						generatedRuleName(rule),
+						relPath(root, filePath),
+						err,
+					)
+				}
+			}
+			if expectedPrefix == "openbao" && metricNameHasPrefix(metricNames, "vault_") {
 				return fmt.Errorf(
 					"generated rule %s in %s uses vault_* metric under openbao-prefix profile",
 					generatedRuleName(rule),
 					relPath(root, filePath),
 				)
 			}
-			if expectedPrefix == defaultSourcePrefix && hasDisallowedRawOpenBAOMetric(rule.Expr) {
+			if expectedPrefix == defaultSourcePrefix && hasDisallowedRawOpenBAOMetric(metricNames) {
 				return fmt.Errorf(
 					"generated rule %s in %s uses openbao_* metric under vault-prefix profile",
 					generatedRuleName(rule),
@@ -1269,9 +1277,34 @@ func verifyRuleFileSourcePrefix(
 	return nil
 }
 
-func hasDisallowedRawOpenBAOMetric(expression string) bool {
-	for _, match := range rawOpenBAOMetricPattern.FindAllString(expression, -1) {
-		if strings.HasPrefix(match, "openbao_audit_archive_") {
+func promQLMetricNames(expression string) ([]string, error) {
+	expr, err := parser.NewParser(parser.Options{}).ParseExpr(expression)
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	parser.Inspect(expr, func(node parser.Node, _ []parser.Node) error {
+		selector, ok := node.(*parser.VectorSelector)
+		if ok && selector.Name != "" {
+			names = append(names, selector.Name)
+		}
+		return nil
+	})
+	return names, nil
+}
+
+func metricNameHasPrefix(metricNames []string, prefix string) bool {
+	for _, name := range metricNames {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasDisallowedRawOpenBAOMetric(metricNames []string) bool {
+	for _, name := range metricNames {
+		if !strings.HasPrefix(name, "openbao_") || strings.HasPrefix(name, "openbao_audit_archive_") {
 			continue
 		}
 		return true

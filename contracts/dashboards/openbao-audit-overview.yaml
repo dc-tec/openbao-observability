@@ -22,8 +22,16 @@ datasources:
     type: loki
     uid: loki
 variables:
-  - name: openbao_namespace
+  - name: cluster
+    label: Cluster
+    type: textbox
+    default: .*
+  - name: kubernetes_namespace
     label: Kubernetes namespace
+    type: textbox
+    default: .*
+  - name: scrape_profile
+    label: Scrape profile
     type: textbox
     default: .*
 panels:
@@ -32,7 +40,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:audit_log_request_failure:increase5m{namespace=~"${openbao_namespace:raw}"}
+    expression: openbao:audit_log_request_failure:increase5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
     unit: none
     description: Shows audit request logging failures over 5 minutes.
     grid:
@@ -45,7 +53,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:audit_log_response_failure:increase5m{namespace=~"${openbao_namespace:raw}"}
+    expression: openbao:audit_log_response_failure:increase5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
     unit: none
     description: Shows audit response logging failures over 5 minutes.
     grid:
@@ -58,7 +66,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:audit_log_request:rate5m{namespace=~"${openbao_namespace:raw}"}
+    expression: openbao:audit_log_request:rate5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
     unit: ops
     description: Shows audited request entries per second over 5 minutes.
     grid:
@@ -71,7 +79,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:audit_log_response:rate5m{namespace=~"${openbao_namespace:raw}"}
+    expression: openbao:audit_log_response:rate5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
     unit: ops
     description: Shows audited response entries per second over 5 minutes.
     grid:
@@ -84,8 +92,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: label_replace(openbao:audit_log_request:avg5m{namespace=~"${openbao_namespace:raw}"}, "audit_phase", "request", "source_prefix", ".*") or label_replace(openbao:audit_log_response:avg5m{namespace=~"${openbao_namespace:raw}"}, "audit_phase", "response", "source_prefix", ".*")
-    legend: "{{audit_phase}}"
+    expression: label_replace(openbao:audit_log_request:avg5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}, "audit_phase", "request", "source_prefix", ".*") or label_replace(openbao:audit_log_response:avg5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}, "audit_phase", "response", "source_prefix", ".*")
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{audit_phase}}"
     unit: ms
     description: Shows average request and response audit logging latency over 5 minutes.
     grid:
@@ -98,8 +106,8 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit"}[5m]))
-    legend: "{{node_id}}"
+    expression: sum by (cluster, kubernetes_namespace, node_id) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit"}[5m]))
+    legend: "{{cluster}} {{kubernetes_namespace}} {{node_id}}"
     unit: short
     description: Shows audit log entries collected by Loki per node over 5 minutes.
     grid:
@@ -112,7 +120,7 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit"} | json | type="request" [10m])) - sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit"} | json | type="response" [10m]))
+    expression: sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit"} | json | type="request" [10m])) - sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit"} | json | type="response" [10m]))
     unit: short
     description: Shows the difference between audited request and response entries over 10 minutes.
     grid:
@@ -125,7 +133,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*"'
     description: Shows audited mutations against high-risk system paths.
     grid:
       x: 12
@@ -137,7 +145,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" [15m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" [15m]))'
     unit: short
     description: Shows audited audit configuration changes over 15 minutes.
     grid:
@@ -150,7 +158,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?" [15m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?" [15m]))'
     unit: short
     description: Shows audited policy, auth method, and mount configuration changes over 15 minutes.
     grid:
@@ -163,7 +171,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_type="response" | audit_error=~"(?s).*permission denied.*" [15m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_type="response" | audit_error=~"(?s).*permission denied.*" [15m]))'
     unit: short
     description: Shows audited permission denied responses over 15 minutes.
     grid:
@@ -176,7 +184,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.completed_requests"}[15m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.completed_requests"}[15m]))'
     unit: short
     description: Shows completed request log entries over 15 minutes.
     grid:
@@ -189,7 +197,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: max(openbao_audit_archive_enabled) or vector(0)
+    expression: max by (cluster) (openbao_audit_archive_enabled{cluster=~"${cluster:raw}"}) or vector(0)
     unit: none
     description: Shows whether durable audit archive delivery is expected in this environment.
     grid:
@@ -202,7 +210,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: min(openbao_audit_archive_delivery_success) or vector(0)
+    expression: min by (cluster) (openbao_audit_archive_delivery_success{cluster=~"${cluster:raw}"}) or vector(0)
     unit: none
     description: Shows whether the archive health exporter reports successful durable audit archive delivery.
     grid:
@@ -215,7 +223,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: time() - max(openbao_audit_archive_last_success_timestamp_seconds)
+    expression: time() - max by (cluster) (openbao_audit_archive_last_success_timestamp_seconds{cluster=~"${cluster:raw}"})
     unit: s
     description: Shows the age of the most recent successful durable audit archive delivery.
     grid:
@@ -228,7 +236,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum(increase(openbao_audit_archive_delivery_failures_total[15m])) or vector(0)
+    expression: sum by (cluster) (increase(openbao_audit_archive_delivery_failures_total{cluster=~"${cluster:raw}"}[15m])) or vector(0)
     unit: short
     description: Shows durable audit archive delivery failures over 15 minutes.
     grid:
@@ -241,7 +249,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum(increase(openbao_audit_archive_dead_letter_records_total[15m])) or vector(0)
+    expression: sum by (cluster) (increase(openbao_audit_archive_dead_letter_records_total{cluster=~"${cluster:raw}"}[15m])) or vector(0)
     unit: short
     description: Shows audit records sent to a dead-letter path instead of the durable archive over 15 minutes.
     grid:
@@ -254,7 +262,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit"}'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit"}'
     description: Shows recent OpenBao audit log entries.
     grid:
       x: 0

@@ -46,7 +46,9 @@ The dashboard exposes these variables:
 
 | Variable | Type | Default | Use |
 | -------- | ---- | ------- | --- |
+| Cluster | Textbox | `.*` | Selects the stable OpenBao cluster identity. |
 | Kubernetes namespace | Textbox | `.*` | Selects the OpenBao workload namespace when multiple OpenBao instances share the same observability backend. |
+| Scrape profile | Textbox | `.*` | Selects the active or all-node metrics profile. |
 | Request ID | Textbox | `.*` | Narrow the stream to one request ID or pattern. |
 | PKI mount path | Textbox | `pki` | Select the PKI secrets engine mount path. |
 | Operation | Custom | `.*` | Filter to `read`, `list`, `create`, `update`, or `delete`. |

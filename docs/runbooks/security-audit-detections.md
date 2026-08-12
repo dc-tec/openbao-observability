@@ -17,7 +17,7 @@ change validation and security review, not automatic proof of compromise.
 1. Check which detection fired.
 
    ```logql
-   {log_stream=~"openbao.audit|openbao.completed_requests"}
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream=~"openbao.audit|openbao.completed_requests"}
    ```
 
 2. Open the `OpenBao audit overview` dashboard and check the security
@@ -34,7 +34,7 @@ change validation and security review, not automatic proof of compromise.
 1. Query audit configuration changes.
 
    ```logql
-   {log_stream="openbao.audit"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?"
    ```
 
 2. Confirm the current audit devices.
@@ -55,7 +55,7 @@ change validation and security review, not automatic proof of compromise.
 1. Query policy, auth method, and mount configuration changes.
 
    ```logql
-   {log_stream="openbao.audit"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?"
    ```
 
 2. Check the current policies.
@@ -78,7 +78,7 @@ change validation and security review, not automatic proof of compromise.
 1. Query high-risk system path activity.
 
    ```logql
-   {log_stream="openbao.audit"} | json request_id="request.id", request_path="request.path" | request_path=~"sys/(raw|plugins|storage/raft|rotate)(/.*)?"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json request_id="request.id", request_path="request.path" | request_path=~"sys/(raw|plugins|storage/raft|rotate)(/.*)?"
    ```
 
 2. Treat `sys/raw` activity as especially sensitive. Raw storage access can
@@ -95,7 +95,7 @@ change validation and security review, not automatic proof of compromise.
 1. Query permission denied responses.
 
    ```logql
-   {log_stream="openbao.audit"} | json audit_type="type", audit_error="error", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error=~"(?s).*permission denied.*"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json audit_type="type", audit_error="error", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error=~"(?s).*permission denied.*"
    ```
 
 2. Use the request path filter to identify whether the denials cluster around
@@ -126,13 +126,13 @@ change validation and security review, not automatic proof of compromise.
    approved activity window.
 
    ```logql
-   {log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"sys/(audit|policies|auth|mounts|raw|plugins|storage/raft|rotate).*"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"sys/(audit|policies|auth|mounts|raw|plugins|storage/raft|rotate).*"
    ```
 
 2. Confirm that audit logs still arrive for the canary request.
 
    ```logql
-   {log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary"
    ```
 
 3. Wait for the alert window to pass and confirm that the security detection

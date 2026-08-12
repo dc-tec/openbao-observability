@@ -14,8 +14,7 @@ metadata:
     app.kubernetes.io/name: openbao
     app.kubernetes.io/instance: openbao
     app.kubernetes.io/component: metrics
-    openbao.observability/job: openbao-all-nodes
-    openbao.observability/scrape-profile: all-node
+    openbao.observability/scrape-profile: all_nodes
 spec:
   clusterIP: None
   publishNotReadyAddresses: true
@@ -39,7 +38,7 @@ metadata:
     app.kubernetes.io/instance: openbao
     release: kube-prometheus-stack
 spec:
-  jobLabel: openbao.observability/job
+  jobLabel: app.kubernetes.io/name
   namespaceSelector:
     matchNames:
       - openbao
@@ -48,7 +47,7 @@ spec:
       app.kubernetes.io/name: openbao
       app.kubernetes.io/instance: openbao
       app.kubernetes.io/component: metrics
-      openbao.observability/scrape-profile: all-node
+      openbao.observability/scrape-profile: all_nodes
   endpoints:
     - port: https-metrics
       path: /v1/sys/metrics
@@ -58,6 +57,7 @@ spec:
       scheme: https
       interval: 30s
       scrapeTimeout: 10s
+      honorLabels: false
       tlsConfig:
         ca:
           configMap:
@@ -66,8 +66,30 @@ spec:
         serverName: openbao-all-node-metrics.openbao.svc
       relabelings:
         - sourceLabels:
+            - __meta_kubernetes_service_label_app_kubernetes_io_instance
+          targetLabel: cluster
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
             - __meta_kubernetes_pod_name
           targetLabel: pod
         - sourceLabels:
             - __meta_kubernetes_pod_node_name
           targetLabel: node
+        - targetLabel: scrape_profile
+          replacement: all_nodes
+        - action: labeldrop
+          regex: namespace
+      metricRelabelings:
+        - sourceLabels:
+            - __name__
+            - exported_cluster
+          regex: (vault|openbao)_core_unsealed;
+          action: drop
+        - sourceLabels:
+            - namespace
+          regex: (.+)
+          targetLabel: openbao_namespace
+        - action: labeldrop
+          regex: namespace|exported_cluster

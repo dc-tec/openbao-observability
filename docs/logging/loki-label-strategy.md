@@ -37,7 +37,7 @@ The stream contract allows these labels:
 | `cluster` | OpenBao or platform cluster identity. |
 | `environment` | Environment such as production or staging. |
 | `region` | Region or location. |
-| `namespace` | Platform namespace when bounded and approved. |
+| `kubernetes_namespace` | Kubernetes workload namespace when bounded and approved. |
 | `app` | Application or workload source. |
 | `component` | Component such as `openbao`. |
 | `log_stream` | Project stream such as `openbao.audit`. |
@@ -49,6 +49,16 @@ The stream contract allows these labels:
 
 Keep the label set small. Do not add a label because one dashboard needs a
 temporary filter.
+
+Do not use the Prometheus `openbao_namespace` or `scrape_profile` labels for
+OpenBao log streams. One audit stream can contain requests for multiple logical
+OpenBao namespaces. The scrape profile describes metrics collection, not log
+collection. Parse OpenBao namespace fields from restricted audit records at
+query time.
+
+Use `kubernetes_namespace` only for workload placement. Do not use the generic
+label `namespace`. The generic name cannot distinguish Kubernetes placement
+from an OpenBao logical namespace.
 
 ## Forbidden labels
 

@@ -49,7 +49,9 @@ The dashboard exposes these variables:
 
 | Variable | Default | Purpose |
 | -------- | ------- | ------- |
+| Cluster | `.*` | Selects the stable OpenBao cluster identity. |
 | Kubernetes namespace | `.*` | Selects the OpenBao workload namespace when multiple OpenBao instances share the same observability backend. |
+| Scrape profile | `.*` | Selects the active or all-node metrics profile. |
 | Synthetic probe job | `.*openbao.*` | Selects synthetic probe scrape jobs. |
 | Synthetic probe target | `.*` | Selects probe targets by `instance`. |
 | OpenBao scrape job | `openbao.*` | Selects OpenBao metrics scrape jobs. |

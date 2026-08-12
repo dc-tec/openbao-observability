@@ -46,7 +46,7 @@ backend or application context behind the secret engine.
 4. Check operational logs around the alert window.
 
    ```logql
-   {log_stream="openbao.operational"} |~ "(?i)(pki|transit|database|plugin|lease|revoke|issuer|certificate|connection|crypto|key|timeout|error|failed)"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.operational"} |~ "(?i)(pki|transit|database|plugin|lease|revoke|issuer|certificate|connection|crypto|key|timeout|error|failed)"
    ```
 
 ## Investigate PKI warnings
@@ -70,7 +70,7 @@ backend or application context behind the secret engine.
 3. Check audited PKI requests.
 
    ```logql
-   {log_stream="openbao.audit"} | json request_path="request.path", audit_error="error" | request_path=~"pki/(roles|issue|issuer|root|cert|tidy|revoke).*"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json request_path="request.path", audit_error="error" | request_path=~"pki/(roles|issue|issuer|root|cert|tidy|revoke).*"
    ```
 
 4. Inspect PKI mount configuration and issuer state.
@@ -95,19 +95,19 @@ backend or application context behind the secret engine.
 1. Check audited Transit response errors.
 
    ```logql
-   {log_stream="openbao.audit"} | json audit_type="type", request_path="request.path", audit_error="error" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json audit_type="type", request_path="request.path", audit_error="error" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*"
    ```
 
 2. Check denied Transit requests.
 
    ```logql
-   {log_stream="openbao.audit"} | json request_path="request.path", audit_error="error" | audit_error=~"(?s).*permission denied.*" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json request_path="request.path", audit_error="error" | audit_error=~"(?s).*permission denied.*" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*"
    ```
 
 3. Check whether errors affect key management or cryptographic operations.
 
    ```logql
-   {log_stream="openbao.audit"} | json audit_type="type", request_path="request.path", request_id="request.id" | audit_type="request" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json audit_type="type", request_path="request.path", request_id="request.id" | audit_type="request" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*"
    ```
 
 4. Inspect Transit mount configuration and key metadata before you change key
@@ -163,7 +163,7 @@ backend or application context behind the secret engine.
 5. Check audited database secrets engine requests.
 
    ```logql
-   {log_stream="openbao.audit"} | json request_path="request.path", audit_error="error" | request_path=~"database/(config|roles|creds|static-roles|static-creds|rotate-root|rotate-role).*"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json request_path="request.path", audit_error="error" | request_path=~"database/(config|roles|creds|static-roles|static-creds|rotate-root|rotate-role).*"
    ```
 
 6. Inspect database secrets engine configuration and roles.
@@ -220,7 +220,7 @@ backend or application context behind the secret engine.
 2. Confirm that Transit audit response errors stop increasing.
 
    ```logql
-   sum(count_over_time({log_stream="openbao.audit"} | json audit_type="type", request_path="request.path", audit_error="error" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*" [5m]))
+   sum(count_over_time({cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json audit_type="type", request_path="request.path", audit_error="error" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*" [5m]))
    ```
 
 3. Confirm that operation latency returns toward baseline.
@@ -238,7 +238,7 @@ backend or application context behind the secret engine.
    errors.
 
    ```logql
-   {log_stream="openbao.operational"} |~ "(?i)(pki|transit|database|plugin|lease|revoke|crypto|key)" |~ "(?i)(error|failed|timeout|denied)"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.operational"} |~ "(?i)(pki|transit|database|plugin|lease|revoke|crypto|key)" |~ "(?i)(error|failed|timeout|denied)"
    ```
 
 5. Wait for the alert window to pass and confirm that the warning resolves.

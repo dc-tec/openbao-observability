@@ -43,6 +43,7 @@ The dashboard exposes these variables:
 
 | Variable | Type | Default | Use |
 | -------- | ---- | ------- | --- |
+| Cluster | Textbox | `.*` | Selects the stable OpenBao cluster identity. |
 | Kubernetes namespace | Textbox | `.*` | Selects the OpenBao workload namespace when multiple OpenBao instances share the same observability backend. |
 | Request ID | Textbox | `.*` | Narrow the stream to one request ID or request ID pattern. |
 | Auth or identity path | Textbox | `.*` | Narrow the stream to an auth, token, or identity path pattern. |

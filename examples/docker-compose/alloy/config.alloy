@@ -11,9 +11,10 @@ loki.source.file "openbao_node0_operational" {
       "component"          = "openbao",
       "deployment_profile" = "docker-compose",
       "environment"        = "local",
-      "job"                = "openbao",
+      "instance"           = "openbao-node0",
       "log_stream"         = "openbao.operational",
       "node_id"            = "node0",
+      "pod"                = "openbao-node0",
     },
   ]
   forward_to = [loki.write.local.receiver]
@@ -32,9 +33,10 @@ loki.source.file "openbao_node0_audit" {
       "component"          = "openbao",
       "deployment_profile" = "docker-compose",
       "environment"        = "local",
-      "job"                = "openbao",
+      "instance"           = "openbao-node0",
       "log_stream"         = "openbao.audit",
       "node_id"            = "node0",
+      "pod"                = "openbao-node0",
     },
   ]
   forward_to = [loki.write.local.receiver]
@@ -53,9 +55,10 @@ loki.source.file "openbao_node1_operational" {
       "component"          = "openbao",
       "deployment_profile" = "docker-compose",
       "environment"        = "local",
-      "job"                = "openbao",
+      "instance"           = "openbao-node1",
       "log_stream"         = "openbao.operational",
       "node_id"            = "node1",
+      "pod"                = "openbao-node1",
     },
   ]
   forward_to = [loki.write.local.receiver]
@@ -74,9 +77,10 @@ loki.source.file "openbao_node1_audit" {
       "component"          = "openbao",
       "deployment_profile" = "docker-compose",
       "environment"        = "local",
-      "job"                = "openbao",
+      "instance"           = "openbao-node1",
       "log_stream"         = "openbao.audit",
       "node_id"            = "node1",
+      "pod"                = "openbao-node1",
     },
   ]
   forward_to = [loki.write.local.receiver]
@@ -95,9 +99,10 @@ loki.source.file "openbao_node2_operational" {
       "component"          = "openbao",
       "deployment_profile" = "docker-compose",
       "environment"        = "local",
-      "job"                = "openbao",
+      "instance"           = "openbao-node2",
       "log_stream"         = "openbao.operational",
       "node_id"            = "node2",
+      "pod"                = "openbao-node2",
     },
   ]
   forward_to = [loki.write.local.receiver]
@@ -116,9 +121,10 @@ loki.source.file "openbao_node2_audit" {
       "component"          = "openbao",
       "deployment_profile" = "docker-compose",
       "environment"        = "local",
-      "job"                = "openbao",
+      "instance"           = "openbao-node2",
       "log_stream"         = "openbao.audit",
       "node_id"            = "node2",
+      "pod"                = "openbao-node2",
     },
   ]
   forward_to = [loki.write.local.receiver]

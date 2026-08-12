@@ -50,10 +50,12 @@ The dashboard exposes these variables:
 
 | Variable | Type | Default | Use |
 | -------- | ---- | ------- | --- |
+| Cluster | Textbox | `.*` | Selects the stable OpenBao cluster identity. |
 | Kubernetes namespace | Textbox | `.*` | Selects the OpenBao workload namespace when multiple OpenBao instances share the same observability backend. |
+| Scrape profile | Textbox | `.*` | Selects the active or all-node metrics profile. |
 | Request ID | Textbox | `.*` | Narrow the stream to one request ID or pattern. |
 | Database mount path | Textbox | `database` | Select the database secrets engine mount path. |
-| OpenBao namespace | Textbox | `.*` | Filter namespace-aware database lease metrics. |
+| OpenBao namespace | Textbox | `.*` | Filters the logical OpenBao namespace. |
 | Operation | Custom | `.*` | Filter to `read`, `list`, `create`, `update`, or `delete`. |
 | Node | Textbox | `.*` | Narrow the stream to one OpenBao node label. |
 

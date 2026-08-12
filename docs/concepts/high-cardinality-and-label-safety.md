@@ -52,11 +52,11 @@ labels can dramatically increase stored data.
 For OpenBao metrics:
 
 - Prefer normalized recording rules for dashboards and alerts.
-- Validate the live label set before grouping by `cluster`, `namespace`,
+- Validate the live label set before grouping by `cluster`, `kubernetes_namespace`,
   `mount_point`, `policy`, `instance`, or `pod`.
 - Avoid grouping overview panels by request path, secret path, token accessor,
   entity ID, or client address.
-- Treat `mount_point`, `namespace`, and `policy` as advanced dimensions because
+- Treat `mount_point`, `openbao_namespace`, and `policy` as advanced dimensions because
   they can encode organizational structure.
 - Keep alert labels concise so alert routing does not leak sensitive values.
 

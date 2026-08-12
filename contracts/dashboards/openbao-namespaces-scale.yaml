@@ -24,11 +24,19 @@ datasources:
     type: loki
     uid: loki
 variables:
-  - name: openbao_namespace
+  - name: cluster
+    label: Cluster
+    type: textbox
+    default: .*
+  - name: kubernetes_namespace
     label: Kubernetes namespace
     type: textbox
     default: .*
-  - name: namespace
+  - name: scrape_profile
+    label: Scrape profile
+    type: textbox
+    default: .*
+  - name: openbao_namespace
     label: OpenBao namespace
     type: textbox
     default: .*
@@ -61,7 +69,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", namespace_id="request.namespace.id" | audit_type="request" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", namespace_id="request.namespace.id" | audit_type="request" | namespace_id=~"${openbao_namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited request entries for the selected OpenBao namespace ID over 5 minutes.
     grid:
@@ -74,7 +82,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", namespace_id="request.namespace.id" | audit_type="response" | audit_error!="" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", namespace_id="request.namespace.id" | audit_type="response" | audit_error!="" | namespace_id=~"${openbao_namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited response entries with error fields for the selected OpenBao namespace ID over 5 minutes.
     grid:
@@ -87,7 +95,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum(openbao:token_creation_by_namespace:increase15m{namespace=~"${namespace:raw}"}) or vector(0)
+    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:token_creation_by_namespace:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",openbao_namespace=~"${openbao_namespace:raw}"}) or vector(0)
     unit: short
     description: Shows token creation events for the selected OpenBao namespace label over 15 minutes.
     grid:
@@ -100,7 +108,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum(openbao:secret_lease_creation_by_engine_namespace:increase15m{namespace=~"${namespace:raw}"}) or vector(0)
+    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:secret_lease_creation_by_engine_namespace:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",openbao_namespace=~"${openbao_namespace:raw}"}) or vector(0)
     unit: short
     description: Shows dynamic secret lease creation events for the selected OpenBao namespace label over 15 minutes.
     grid:
@@ -113,8 +121,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: topk(10, openbao:token_creation_by_namespace:increase15m{namespace=~"${namespace:raw}"})
-    legend: "{{namespace}}"
+    expression: topk by (cluster, kubernetes_namespace, scrape_profile) (10, openbao:token_creation_by_namespace:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",openbao_namespace=~"${openbao_namespace:raw}"})
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{openbao_namespace}}"
     unit: short
     description: Shows token creation events by bounded OpenBao namespace label over 15 minutes.
     grid:
@@ -127,8 +135,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: topk(10, openbao:token_creation_by_auth_namespace:increase15m{namespace=~"${namespace:raw}"})
-    legend: "{{namespace}} {{auth_method}}"
+    expression: topk by (cluster, kubernetes_namespace, scrape_profile) (10, openbao:token_creation_by_auth_namespace:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",openbao_namespace=~"${openbao_namespace:raw}"})
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{openbao_namespace}} {{auth_method}}"
     unit: short
     description: Shows token creation events by OpenBao namespace and bounded auth method label over 15 minutes.
     grid:
@@ -141,8 +149,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: topk(10, openbao:secret_lease_creation_by_engine_namespace:increase15m{namespace=~"${namespace:raw}"})
-    legend: "{{namespace}} {{secret_engine}}"
+    expression: topk by (cluster, kubernetes_namespace, scrape_profile) (10, openbao:secret_lease_creation_by_engine_namespace:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",openbao_namespace=~"${openbao_namespace:raw}"})
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{openbao_namespace}} {{secret_engine}}"
     unit: short
     description: Shows dynamic secret lease creation events by OpenBao namespace and bounded secret engine label.
     grid:
@@ -155,8 +163,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:core_mount_table_num_entries:max{namespace=~"${openbao_namespace:raw}"}
-    legend: "{{type}} local={{local}}"
+    expression: openbao:core_mount_table_num_entries:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{type}} local={{local}}"
     unit: short
     description: Shows mount table entry counts by bounded type and local labels.
     grid:
@@ -169,8 +177,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:core_mount_table_size:max{namespace=~"${openbao_namespace:raw}"}
-    legend: "{{type}} local={{local}}"
+    expression: openbao:core_mount_table_size:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{type}} local={{local}}"
     unit: bytes
     description: Shows mount table size by bounded type and local labels.
     grid:
@@ -183,7 +191,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:raft_peers:max{namespace=~"${openbao_namespace:raw}"}
+    expression: openbao:raft_peers:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
     unit: short
     description: Shows normalized Raft peer count. This includes non-voter read replicas when the source metrics expose them.
     grid:
@@ -196,7 +204,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:autopilot_failure_tolerance:max{namespace=~"${openbao_namespace:raw}"}
+    expression: openbao:autopilot_failure_tolerance:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
     unit: short
     description: Shows voter-oriented Autopilot failure tolerance.
     grid:
@@ -209,7 +217,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum(openbao:autopilot_node_healthy:min{namespace=~"${openbao_namespace:raw}",node_id=~"${node_id:raw}"})
+    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:autopilot_node_healthy:min{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",node_id=~"${node_id:raw}"})
     unit: short
     description: Shows Raft nodes Autopilot currently reports healthy for the selected node filter.
     grid:
@@ -222,7 +230,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum(1 - openbao:autopilot_node_healthy:min{namespace=~"${openbao_namespace:raw}",node_id=~"${node_id:raw}"})
+    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (1 - openbao:autopilot_node_healthy:min{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",node_id=~"${node_id:raw}"})
     unit: short
     description: Shows Raft nodes Autopilot currently reports unhealthy for the selected node filter.
     grid:
@@ -235,8 +243,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:autopilot_node_healthy:min{namespace=~"${openbao_namespace:raw}",node_id=~"${node_id:raw}"}
-    legend: "{{node_id}}"
+    expression: openbao:autopilot_node_healthy:min{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",node_id=~"${node_id:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{node_id}}"
     unit: short
     description: Shows Autopilot health by Raft node ID, including non-voters when exposed by the source metrics.
     grid:
@@ -249,8 +257,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:raft_storage_apply_gap:max{namespace=~"${openbao_namespace:raw}",peer_id=~"${peer_id:raw}"}
-    legend: "{{peer_id}} {{instance}}"
+    expression: openbao:raft_storage_apply_gap:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",peer_id=~"${peer_id:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{peer_id}} {{instance}}"
     unit: short
     description: Shows the derived difference between Raft commit and applied indexes by peer.
     grid:
@@ -263,8 +271,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: openbao:raft_storage_fsm_pending:max{namespace=~"${openbao_namespace:raw}",peer_id=~"${peer_id:raw}"}
-    legend: "{{peer_id}} {{instance}}"
+    expression: openbao:raft_storage_fsm_pending:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",peer_id=~"${peer_id:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{peer_id}} {{instance}}"
     unit: short
     description: Shows pending Raft FSM work by peer for voters and read replicas.
     grid:
@@ -277,7 +285,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path", namespace_id="request.namespace.id" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path", namespace_id="request.namespace.id" | namespace_id=~"${openbao_namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited entries for the selected OpenBao namespace ID, request ID, node, and operation filters.
     grid:
       x: 0
@@ -289,7 +297,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path", namespace_id="request.namespace.id" | audit_type="response" | audit_error!="" | namespace_id=~"${namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path", namespace_id="request.namespace.id" | audit_type="response" | audit_error!="" | namespace_id=~"${openbao_namespace:raw}" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited response entries with errors for the selected namespace and operation filters.
     grid:
       x: 12
@@ -301,7 +309,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.operational", node_id=~"${node_id:raw}"} |~ "(?i)(namespace|raft|autopilot|non-voter|replica|read replica|storage)" |~ "(?i)(warn|error|failed|lag|behind|timeout|unhealthy)"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.operational", node_id=~"${node_id:raw}"} |~ "(?i)(namespace|raft|autopilot|non-voter|replica|read replica|storage)" |~ "(?i)(warn|error|failed|lag|behind|timeout|unhealthy)"'
     description: Shows operational log lines related to namespace, Raft, Autopilot, non-voter, read-replica, or storage symptoms.
     grid:
       x: 0

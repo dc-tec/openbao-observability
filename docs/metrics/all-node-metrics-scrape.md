@@ -118,7 +118,10 @@ controls in the [Kubernetes Network Policies documentation][kubernetes-network-p
 
    The manifest creates a headless Service and `ServiceMonitor`. The Service
    uses `publishNotReadyAddresses: true` so Prometheus can keep targeting pods
-   that are sealed or not ready.
+   that are sealed or not ready. It maps deployment identity to `cluster`,
+   `kubernetes_namespace`, `pod`, `instance`, and
+   `scrape_profile="all_nodes"`. OpenBao namespace-scoped metrics use
+   `openbao_namespace`.
 
 3. Update the Service selector to match your OpenBao server pod labels.
 
@@ -153,10 +156,18 @@ controls in the [Kubernetes Network Policies documentation][kubernetes-network-p
 3. Query Prometheus for scrape health.
 
    ```promql
-   up{job="openbao-all-nodes"}
+   up{job="openbao",scrape_profile="all_nodes"}
    ```
 
    Expected result: one series per OpenBao pod with value `1`.
+
+   Confirm that every target has the canonical deployment labels.
+
+   ```promql
+   count by (cluster, kubernetes_namespace, pod, instance, scrape_profile) (
+     up{job="openbao",scrape_profile="all_nodes"}
+   )
+   ```
 
 4. Query Prometheus for unsealed node count.
 
@@ -195,6 +206,13 @@ available only when unauthenticated metrics access is enabled.
 
 Check the CA certificate and `serverName` in `tlsConfig`. Do not use
 `insecureSkipVerify: true` for this profile.
+
+### Targets have ambiguous namespace or cluster labels
+
+Confirm that the ServiceMonitor relabeling matches the example. Keep
+`honorLabels: false`. Use `kubernetes_namespace` for workload placement and
+`openbao_namespace` for the logical OpenBao namespace. Do not restore the
+generic `namespace` label.
 
 ### OpenBao clients lose access after NetworkPolicy changes
 

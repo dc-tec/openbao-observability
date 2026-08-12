@@ -14,8 +14,11 @@ metricPrefixes:
 normalization:
   recordingRulePrefix: openbao
   notes:
-    - Raw OpenBao metrics do not expose a consistent cluster label across all families.
-    - Recording rules should add or normalize cluster, namespace, pod, job, and instance labels from scrape metadata.
+    - Use cluster for the platform-assigned OpenBao deployment identity, not the OpenBao-generated cluster label.
+    - Use kubernetes_namespace for the Kubernetes workload namespace and openbao_namespace for the logical OpenBao namespace emitted by OpenBao metrics.
+    - Use pod for workload identity, instance for the scrape endpoint, and scrape_profile with the value active or all_nodes.
+    - Keep Prometheus honor_labels disabled so target identity cannot be replaced by labels from the scraped endpoint.
+    - Recording rules should preserve cluster, kubernetes_namespace, openbao_namespace, pod, instance, and scrape_profile when the source signal has those labels.
     - Current fixtures validate root-namespace behavior, the team-a child namespace across several auth and secrets-engine paths, and a Raft topology with three voters plus one non-voter read replica.
     - Database lease behavior inside namespaces, nested namespace behavior, and feature-specific namespace behavior outside the captured scenario must be fixture-tested before dashboards or alerts depend on those dimensions.
 fixtures:
