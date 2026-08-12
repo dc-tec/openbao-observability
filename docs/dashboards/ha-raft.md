@@ -51,9 +51,9 @@ If your deployment emits `openbao_*` source metrics, adapt the dashboard
 contract or add compatible recording rules before you treat the raw Raft panels
 as complete.
 
-The generated dashboard exposes a Kubernetes namespace selector for
-deployments where multiple OpenBao instances share the same observability
-backend.
+The generated dashboard exposes cluster, Kubernetes namespace, and scrape
+profile selectors. Use them to select one OpenBao deployment before you
+compare Raft nodes.
 
 ## How to read quorum health
 

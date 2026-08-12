@@ -47,7 +47,8 @@ The dashboard exposes these variables:
 
 | Variable | Default | Purpose |
 | -------- | ------- | ------- |
-| Namespace | `.*` | Selects Kubernetes namespaces. |
+| Cluster | `.*` | Selects the stable OpenBao cluster identity. |
+| Kubernetes namespace | `.*` | Selects Kubernetes workload namespaces. |
 | Pod | `openbao.*` | Selects OpenBao workload pods. |
 | Container | `openbao|bao` | Selects OpenBao workload containers. |
 | PVC | `.*(openbao|bao|audit|data).*` | Selects OpenBao audit or data PVCs. |

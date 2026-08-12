@@ -95,7 +95,7 @@ Recommended stable labels include:
 - `cluster`
 - `environment`
 - `region`
-- `namespace`
+- `kubernetes_namespace`
 - `app`
 - `component`
 - `log_stream`

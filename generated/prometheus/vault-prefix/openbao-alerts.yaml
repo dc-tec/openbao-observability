@@ -14,7 +14,7 @@ groups:
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/openbao-metrics-scrape-failing.md
             summary: OpenBao metrics scrape is failing
         - alert: OpenBaoSealedUnexpectedly
-          expr: vault_core_unsealed{cluster!=""} == 0
+          expr: openbao:core_unsealed:min == 0
           for: 2m
           labels:
             severity: critical
@@ -47,7 +47,7 @@ groups:
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/multiple-active-nodes.md
             summary: OpenBao has multiple active nodes
         - alert: OpenBaoAllPodsUnavailable
-          expr: sum by (namespace) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
+          expr: sum by (cluster, namespace) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
           for: 5m
           labels:
             component: kubernetes
@@ -60,7 +60,7 @@ groups:
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/kubernetes-platform-health.md
             summary: All OpenBao Kubernetes pods are unavailable
         - alert: OpenBaoAuditPVCPressure
-          expr: 100 * min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) / min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) < 15
+          expr: 100 * min by (cluster, namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) / min by (cluster, namespace, persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) < 15
           for: 10m
           labels:
             component: kubernetes
@@ -124,7 +124,7 @@ groups:
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/raft-autopilot-health.md
             summary: OpenBao Autopilot reports an unhealthy node
         - alert: OpenBaoAuditRequestFailures
-          expr: sum(increase(vault_audit_log_request_failure[5m])) > 0
+          expr: openbao:audit_log_request_failure:increase5m > 0
           for: 0m
           labels:
             severity: critical
@@ -135,7 +135,7 @@ groups:
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/audit-request-response-failures.md
             summary: OpenBao audit request logging failed
         - alert: OpenBaoAuditResponseFailures
-          expr: sum(increase(vault_audit_log_response_failure[5m])) > 0
+          expr: openbao:audit_log_response_failure:increase5m > 0
           for: 0m
           labels:
             severity: critical

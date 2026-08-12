@@ -59,7 +59,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "min(probe_success{namespace=~\"${openbao_namespace:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"})",
+          "expr": "min by (cluster) (probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"})",
           "format": "time_series",
           "legendFormat": "Probe success",
           "range": true,
@@ -120,7 +120,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "avg(avg_over_time(probe_success{namespace=~\"${openbao_namespace:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[30d]))",
+          "expr": "avg by (cluster) (avg_over_time(probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[30d]))",
           "format": "time_series",
           "legendFormat": "Availability 30d",
           "range": true,
@@ -181,7 +181,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "1 - ((1 - avg(avg_over_time(probe_success{namespace=~\"${openbao_namespace:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[30d]))) / (1 - ${slo_target:raw}))",
+          "expr": "1 - ((1 - avg by (cluster) (avg_over_time(probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[30d]))) / (1 - ${slo_target:raw}))",
           "format": "time_series",
           "legendFormat": "Error budget remaining",
           "range": true,
@@ -242,7 +242,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "(1 - avg(avg_over_time(probe_success{namespace=~\"${openbao_namespace:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[5m]))) / (1 - ${slo_target:raw})",
+          "expr": "(1 - avg by (cluster) (avg_over_time(probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[5m]))) / (1 - ${slo_target:raw})",
           "format": "time_series",
           "legendFormat": "Burn rate 5m",
           "range": true,
@@ -303,7 +303,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "(1 - avg(avg_over_time(probe_success{namespace=~\"${openbao_namespace:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[1h]))) / (1 - ${slo_target:raw})",
+          "expr": "(1 - avg by (cluster) (avg_over_time(probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[1h]))) / (1 - ${slo_target:raw})",
           "format": "time_series",
           "legendFormat": "Burn rate 1h",
           "range": true,
@@ -364,7 +364,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "avg(probe_duration_seconds{namespace=~\"${openbao_namespace:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"})",
+          "expr": "avg by (cluster) (probe_duration_seconds{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"})",
           "format": "time_series",
           "legendFormat": "Probe duration",
           "range": true,
@@ -424,9 +424,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "avg by (instance) (avg_over_time(probe_success{namespace=~\"${openbao_namespace:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[1h]))",
+          "expr": "avg by (cluster, instance) (avg_over_time(probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[1h]))",
           "format": "time_series",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "{{cluster}} {{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -484,9 +484,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "avg by (instance) ((1 - avg_over_time(probe_success{namespace=~\"${openbao_namespace:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[5m])) / (1 - ${slo_target:raw}))",
+          "expr": "avg by (cluster, instance) ((1 - avg_over_time(probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[5m])) / (1 - ${slo_target:raw}))",
           "format": "time_series",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "{{cluster}} {{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -544,9 +544,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "avg by (instance) (probe_duration_seconds{namespace=~\"${openbao_namespace:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"})",
+          "expr": "avg by (cluster, instance) (probe_duration_seconds{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"})",
           "format": "time_series",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "{{cluster}} {{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -604,7 +604,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_handle_request:avg5m{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:core_handle_request:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Request latency",
           "range": true,
@@ -664,7 +664,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_handle_login_request:avg5m{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:core_handle_login_request:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Login latency",
           "range": true,
@@ -724,7 +724,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_check_token:avg5m{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:core_check_token:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Token check latency",
           "range": true,
@@ -784,9 +784,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "avg by (job, instance) (avg_over_time(up{namespace=~\"${openbao_namespace:raw}\",job=~\"${openbao_job:raw}\"}[1h]))",
+          "expr": "avg by (cluster, kubernetes_namespace, scrape_profile, job, instance) (avg_over_time(up{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\",job=~\"${openbao_job:raw}\"}[1h]))",
           "format": "time_series",
-          "legendFormat": "{{job}} {{instance}}",
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{job}} {{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -844,7 +844,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:core_active:sum{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:core_active:sum{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Active node context",
           "range": true,
@@ -900,7 +900,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.operational\"} |~ \"(?i)(timeout|unavailable|latency|slow|error|failed|connection refused)\"",
+          "expr": "{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.operational\"} |~ \"(?i)(timeout|unavailable|latency|slow|error|failed|connection refused)\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -927,8 +927,36 @@
           "value": ".*"
         },
         "hide": 0,
+        "label": "Cluster",
+        "name": "cluster",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
         "label": "Kubernetes namespace",
-        "name": "openbao_namespace",
+        "name": "kubernetes_namespace",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Scrape profile",
+        "name": "scrape_profile",
         "options": [],
         "query": ".*",
         "skipUrlSync": false,

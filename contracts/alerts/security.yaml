@@ -12,7 +12,7 @@ alerts:
     severity: warning
     signal: loki
     for: 0m
-    expression: 'sum(count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" [5m])) > 0'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" [5m])) > 0'
     summary: OpenBao audit configuration changed
     description: OpenBao audit logs show create, update, or delete activity against audit configuration paths.
     runbook: docs/runbooks/security-audit-detections.md
@@ -25,7 +25,7 @@ alerts:
     severity: warning
     signal: loki
     for: 0m
-    expression: 'sum(count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/policies/(acl/)?root" [5m])) > 0'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/policies/(acl/)?root" [5m])) > 0'
     summary: OpenBao root policy changed
     description: OpenBao audit logs show create, update, or delete activity against the root policy path.
     runbook: docs/runbooks/security-audit-detections.md
@@ -38,7 +38,7 @@ alerts:
     severity: warning
     signal: loki
     for: 0m
-    expression: 'sum(count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?" [5m])) > 0'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?" [5m])) > 0'
     summary: OpenBao privileged configuration changed
     description: OpenBao audit logs show create, update, or delete activity against policy, auth method, or mount configuration paths.
     runbook: docs/runbooks/security-audit-detections.md
@@ -51,7 +51,7 @@ alerts:
     severity: warning
     signal: loki
     for: 0m
-    expression: 'sum(count_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"sys/(raw|plugins|storage/raft|rotate)(/.*)?" [5m])) > 0'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"sys/(raw|plugins|storage/raft|rotate)(/.*)?" [5m])) > 0'
     summary: OpenBao high-risk system path activity observed
     description: OpenBao audit logs show activity against high-risk system paths such as raw storage, plugins, Raft storage, or rotation endpoints.
     runbook: docs/runbooks/security-audit-detections.md
@@ -64,7 +64,7 @@ alerts:
     severity: warning
     signal: loki
     for: 5m
-    expression: 'sum(count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_type="response" | audit_error=~"(?s).*permission denied.*" [5m])) > 10'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_type="response" | audit_error=~"(?s).*permission denied.*" [5m])) > 10'
     summary: OpenBao permission denied responses increased
     description: OpenBao audit logs show more than ten permission denied responses over 5 minutes.
     runbook: docs/runbooks/security-audit-detections.md
@@ -77,7 +77,7 @@ alerts:
     severity: warning
     signal: loki
     for: 5m
-    expression: 'sum(count_over_time({log_stream="openbao.completed_requests"}[5m])) > 0'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.completed_requests"}[5m])) > 0'
     summary: OpenBao completed request logging is active
     description: Loki has received completed request logs, which should only exist during an approved troubleshooting window.
     runbook: docs/runbooks/completed-request-logging-enabled.md

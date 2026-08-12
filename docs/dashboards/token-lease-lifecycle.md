@@ -46,7 +46,9 @@ The dashboard exposes these variables:
 
 | Variable | Type | Default | Use |
 | -------- | ---- | ------- | --- |
+| Cluster | Textbox | `.*` | Selects the stable OpenBao cluster identity. |
 | Kubernetes namespace | Textbox | `.*` | Selects the OpenBao workload namespace when multiple OpenBao instances share the same observability backend. |
+| Scrape profile | Textbox | `.*` | Selects the active or all-node metrics profile. |
 | Auth method | Textbox | `.*` | Filter token creation metrics by auth method. |
 | Request ID | Textbox | `.*` | Narrow audit panels to one request ID or pattern. |
 | Request path | Textbox | `.*` | Narrow audit panels to token or lease paths. |

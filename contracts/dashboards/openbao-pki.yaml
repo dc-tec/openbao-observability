@@ -24,8 +24,16 @@ datasources:
     type: loki
     uid: loki
 variables:
-  - name: openbao_namespace
+  - name: cluster
+    label: Cluster
+    type: textbox
+    default: .*
+  - name: kubernetes_namespace
     label: Kubernetes namespace
+    type: textbox
+    default: .*
+  - name: scrape_profile
+    label: Scrape profile
     type: textbox
     default: .*
   - name: request_id
@@ -57,7 +65,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:pki_issue:rate5m{namespace=~"${openbao_namespace:raw}"}
+    expression: openbao:pki_issue:rate5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
     unit: ops
     description: Shows certificate issue operations per second over 5 minutes for PKI mounts that expose the normalized pki issue rule.
     grid:
@@ -70,7 +78,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:pki_revoke:rate5m{namespace=~"${openbao_namespace:raw}"}
+    expression: openbao:pki_revoke:rate5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
     unit: ops
     description: Shows certificate revoke operations per second over 5 minutes for PKI mounts that expose the normalized pki revoke rule.
     grid:
@@ -83,7 +91,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:pki_issue_failure:increase15m{namespace=~"${openbao_namespace:raw}"}
+    expression: openbao:pki_issue_failure:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
     unit: short
     description: Shows failed PKI issue operations over 15 minutes when OpenBao emits the failure counter.
     grid:
@@ -96,7 +104,7 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: openbao:pki_revoke_failure:increase15m{namespace=~"${openbao_namespace:raw}"}
+    expression: openbao:pki_revoke_failure:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
     unit: short
     description: Shows failed PKI revoke operations over 15 minutes when OpenBao emits the failure counter.
     grid:
@@ -109,7 +117,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited PKI requests matching the selected filters over 5 minutes.
     grid:
@@ -122,7 +130,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited PKI response entries with error fields over 5 minutes.
     grid:
@@ -135,7 +143,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_error=~"(?s).*permission denied.*" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_error=~"(?s).*permission denied.*" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited PKI requests denied by policy over 5 minutes.
     grid:
@@ -148,7 +156,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(issuer|issuers|root|intermediate)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(issuer|issuers|root|intermediate)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited PKI issuer, root, and intermediate CA requests over 5 minutes.
     grid:
@@ -161,8 +169,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: label_replace(openbao:pki_issue:rate5m{namespace=~"${openbao_namespace:raw}"}, "pki_operation", "issue", "source_prefix", ".*") or label_replace(openbao:pki_revoke:rate5m{namespace=~"${openbao_namespace:raw}"}, "pki_operation", "revoke", "source_prefix", ".*")
-    legend: "{{pki_operation}}"
+    expression: label_replace(openbao:pki_issue:rate5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}, "pki_operation", "issue", "source_prefix", ".*") or label_replace(openbao:pki_revoke:rate5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}, "pki_operation", "revoke", "source_prefix", ".*")
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{pki_operation}}"
     unit: ops
     description: Shows PKI certificate issue and revoke operation rates from normalized recording rules.
     grid:
@@ -175,8 +183,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: label_replace(openbao:pki_issue:avg5m{namespace=~"${openbao_namespace:raw}"}, "pki_operation", "issue", "source_prefix", ".*") or label_replace(openbao:pki_revoke:avg5m{namespace=~"${openbao_namespace:raw}"}, "pki_operation", "revoke", "source_prefix", ".*")
-    legend: "{{pki_operation}}"
+    expression: label_replace(openbao:pki_issue:avg5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}, "pki_operation", "issue", "source_prefix", ".*") or label_replace(openbao:pki_revoke:avg5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}, "pki_operation", "revoke", "source_prefix", ".*")
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{pki_operation}}"
     unit: ms
     description: Shows average PKI issue and revoke latency over 5 minutes from summary sum and count samples.
     grid:
@@ -189,8 +197,8 @@ panels:
     type: timeseries
     signal: metrics
     datasource: metrics
-    expression: label_replace(openbao:pki_issue_failure:increase15m{namespace=~"${openbao_namespace:raw}"}, "pki_operation", "issue", "source_prefix", ".*") or label_replace(openbao:pki_revoke_failure:increase15m{namespace=~"${openbao_namespace:raw}"}, "pki_operation", "revoke", "source_prefix", ".*")
-    legend: "{{pki_operation}}"
+    expression: label_replace(openbao:pki_issue_failure:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}, "pki_operation", "issue", "source_prefix", ".*") or label_replace(openbao:pki_revoke_failure:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}, "pki_operation", "revoke", "source_prefix", ".*")
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{pki_operation}}"
     unit: short
     description: Shows failed PKI issue and revoke operations over 15 minutes.
     grid:
@@ -203,8 +211,8 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
-    legend: "{{node_id}}"
+    expression: 'sum by (cluster, kubernetes_namespace, node_id) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    legend: "{{cluster}} {{kubernetes_namespace}} {{node_id}}"
     unit: short
     description: Shows filtered PKI request volume by OpenBao node over 5 minutes.
     grid:
@@ -217,8 +225,8 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
-    legend: "{{node_id}}"
+    expression: 'sum by (cluster, kubernetes_namespace, node_id) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    legend: "{{cluster}} {{kubernetes_namespace}} {{node_id}}"
     unit: short
     description: Shows audited PKI response errors by OpenBao node over 5 minutes.
     grid:
@@ -231,8 +239,8 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(issue|sign|sign-verbatim|cert|certs|revoke)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
-    legend: "{{node_id}}"
+    expression: 'sum by (cluster, kubernetes_namespace, node_id) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(issue|sign|sign-verbatim|cert|certs|revoke)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}" [5m]))'
+    legend: "{{cluster}} {{kubernetes_namespace}} {{node_id}}"
     unit: short
     description: Shows PKI certificate issue, sign, read, and revoke request volume by OpenBao node over 5 minutes.
     grid:
@@ -245,7 +253,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(issuer|issuers|root|intermediate)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(issuer|issuers|root|intermediate)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited PKI issuer, root, and intermediate CA requests.
     grid:
       x: 0
@@ -257,7 +265,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(roles|config)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(roles|config)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited PKI role and configuration requests.
     grid:
       x: 12
@@ -269,7 +277,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(issue|sign|sign-verbatim|cert|certs|revoke|tidy|crl)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="request" | request_path=~"${pki_path:raw}/(issue|sign|sign-verbatim|cert|certs|revoke|tidy|crl)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited PKI certificate issue, sign, read, revoke, tidy, and CRL requests.
     grid:
       x: 0
@@ -281,7 +289,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?" | request_id=~"${request_id:raw}" | operation=~"${operation:raw}"'
     description: Shows audited PKI response entries that include error fields.
     grid:
       x: 12

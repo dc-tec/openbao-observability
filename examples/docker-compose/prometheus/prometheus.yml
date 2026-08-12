@@ -20,3 +20,23 @@ scrape_configs:
           cluster: compose
           deployment_profile: docker-compose
           environment: local
+          scrape_profile: all_nodes
+    relabel_configs:
+      - source_labels:
+          - __address__
+        regex: "([^:]+):.*"
+        replacement: "$1"
+        target_label: pod
+    metric_relabel_configs:
+      - source_labels:
+          - __name__
+          - exported_cluster
+        regex: "(vault|openbao)_core_unsealed;"
+        action: drop
+      - source_labels:
+          - namespace
+        regex: "(.+)"
+        replacement: "$1"
+        target_label: openbao_namespace
+      - regex: "namespace|exported_cluster"
+        action: labeldrop

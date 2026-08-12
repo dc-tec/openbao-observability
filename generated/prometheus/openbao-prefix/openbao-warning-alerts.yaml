@@ -54,7 +54,7 @@ groups:
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/runtime-storage-warnings.md
             summary: OpenBao runtime memory is projected to grow
         - alert: OpenBaoMountTableGrowth
-          expr: sum(openbao:core_mount_table_num_entries:max) - sum(openbao:core_mount_table_num_entries:max offset 1h) > 5
+          expr: sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:core_mount_table_num_entries:max) - sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:core_mount_table_num_entries:max offset 1h) > 5
           for: 10m
           labels:
             component: core
@@ -171,7 +171,7 @@ groups:
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/slo-availability.md
             summary: OpenBao synthetic probe latency is elevated
         - alert: OpenBaoKubernetesPodNotReady
-          expr: min by (namespace, pod) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
+          expr: min by (cluster, namespace, pod) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
           for: 10m
           labels:
             component: kubernetes
@@ -184,7 +184,7 @@ groups:
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/kubernetes-platform-health.md
             summary: OpenBao Kubernetes pod is not ready
         - alert: OpenBaoKubernetesPodRestartsIncreasing
-          expr: sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total{pod=~"openbao.*",container=~"openbao|bao"}[15m])) > 0
+          expr: sum by (cluster, namespace, pod) (increase(kube_pod_container_status_restarts_total{pod=~"openbao.*",container=~"openbao|bao"}[15m])) > 0
           for: 5m
           labels:
             component: kubernetes
@@ -197,7 +197,7 @@ groups:
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/kubernetes-platform-health.md
             summary: OpenBao Kubernetes pod restarted
         - alert: OpenBaoKubernetesNodePressure
-          expr: max by (node, condition) (kube_node_status_condition{condition=~"DiskPressure|MemoryPressure|PIDPressure",status="true"}) == 1
+          expr: max by (cluster, node, condition) (kube_node_status_condition{condition=~"DiskPressure|MemoryPressure|PIDPressure",status="true"}) == 1
           for: 10m
           labels:
             component: kubernetes

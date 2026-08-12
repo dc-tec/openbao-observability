@@ -8,7 +8,7 @@ spec:
         - name: openbao.loki.alerts
           rules:
             - alert: OpenBaoAuditConfigurationActivity
-              expr: sum(count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" [5m])) > 0
+              expr: sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" [5m])) > 0
               for: 0m
               labels:
                 category: security-detection
@@ -22,7 +22,7 @@ spec:
                 runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
                 summary: OpenBao audit configuration changed
             - alert: OpenBaoRootPolicyMutation
-              expr: sum(count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/policies/(acl/)?root" [5m])) > 0
+              expr: sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/policies/(acl/)?root" [5m])) > 0
               for: 0m
               labels:
                 category: security-detection
@@ -36,7 +36,7 @@ spec:
                 runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
                 summary: OpenBao root policy changed
             - alert: OpenBaoPrivilegedConfigurationMutation
-              expr: sum(count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?" [5m])) > 0
+              expr: sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json operation="request.operation", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?" [5m])) > 0
               for: 0m
               labels:
                 category: security-detection
@@ -50,7 +50,7 @@ spec:
                 runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
                 summary: OpenBao privileged configuration changed
             - alert: OpenBaoHighRiskSystemPathActivity
-              expr: sum(count_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"sys/(raw|plugins|storage/raft|rotate)(/.*)?" [5m])) > 0
+              expr: sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json request_path="request.path" | request_path=~"sys/(raw|plugins|storage/raft|rotate)(/.*)?" [5m])) > 0
               for: 0m
               labels:
                 category: security-detection
@@ -64,7 +64,7 @@ spec:
                 runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
                 summary: OpenBao high-risk system path activity observed
             - alert: OpenBaoPermissionDeniedBurst
-              expr: sum(count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_type="response" | audit_error=~"(?s).*permission denied.*" [5m])) > 10
+              expr: sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_type="response" | audit_error=~"(?s).*permission denied.*" [5m])) > 10
               for: 5m
               labels:
                 category: security-detection
@@ -78,7 +78,7 @@ spec:
                 runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
                 summary: OpenBao permission denied responses increased
             - alert: OpenBaoCompletedRequestLoggingObserved
-              expr: sum(count_over_time({log_stream="openbao.completed_requests"}[5m])) > 0
+              expr: sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.completed_requests"}[5m])) > 0
               for: 5m
               labels:
                 category: security-posture

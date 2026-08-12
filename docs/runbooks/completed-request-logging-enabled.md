@@ -21,20 +21,20 @@ outside an approved window.
 1. Check completed request log volume.
 
    ```logql
-   sum(count_over_time({log_stream="openbao.completed_requests"}[5m]))
+   sum by (cluster, kubernetes_namespace) (count_over_time({cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.completed_requests"}[5m]))
    ```
 
 2. Inspect recent completed request log entries.
 
    ```logql
-   {log_stream="openbao.completed_requests"}
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.completed_requests"}
    ```
 
 3. Check whether one node or all nodes emit the stream.
 
    ```logql
-   sum by (node_id) (
-     count_over_time({log_stream="openbao.completed_requests"}[5m])
+   sum by (cluster, kubernetes_namespace, node_id) (
+     count_over_time({cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.completed_requests"}[5m])
    )
    ```
 
@@ -82,19 +82,19 @@ outside an approved window.
 1. Confirm that completed request log volume stops increasing.
 
    ```logql
-   sum(count_over_time({log_stream="openbao.completed_requests"}[5m]))
+   sum by (cluster, kubernetes_namespace) (count_over_time({cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.completed_requests"}[5m]))
    ```
 
 2. Confirm that normal operational logs still arrive.
 
    ```logql
-   count_over_time({log_stream="openbao.operational"}[5m])
+   count_over_time({cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.operational"}[5m])
    ```
 
 3. Confirm that audit logs still arrive for the canary request.
 
    ```logql
-   {log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json request_path="request.path" | request_path="secret/data/observability/audit-canary"
    ```
 
 4. Wait for the alert window to pass and confirm that

@@ -59,7 +59,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:audit_log_request_failure:increase5m{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:audit_log_request_failure:increase5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Request failures",
           "range": true,
@@ -120,7 +120,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:audit_log_response_failure:increase5m{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:audit_log_response_failure:increase5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Response failures",
           "range": true,
@@ -181,7 +181,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:audit_log_request:rate5m{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:audit_log_request:rate5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Request audit rate",
           "range": true,
@@ -242,7 +242,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "openbao:audit_log_response:rate5m{namespace=~\"${openbao_namespace:raw}\"}",
+          "expr": "openbao:audit_log_response:rate5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
           "legendFormat": "Response audit rate",
           "range": true,
@@ -302,9 +302,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(openbao:audit_log_request:avg5m{namespace=~\"${openbao_namespace:raw}\"}, \"audit_phase\", \"request\", \"source_prefix\", \".*\") or label_replace(openbao:audit_log_response:avg5m{namespace=~\"${openbao_namespace:raw}\"}, \"audit_phase\", \"response\", \"source_prefix\", \".*\")",
+          "expr": "label_replace(openbao:audit_log_request:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"audit_phase\", \"request\", \"source_prefix\", \".*\") or label_replace(openbao:audit_log_response:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"audit_phase\", \"response\", \"source_prefix\", \".*\")",
           "format": "time_series",
-          "legendFormat": "{{audit_phase}}",
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}} {{audit_phase}}",
           "range": true,
           "refId": "A"
         }
@@ -362,7 +362,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (node_id) (count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\"}[5m]))",
+          "expr": "sum by (cluster, kubernetes_namespace, node_id) (count_over_time({cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\"}[5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -420,7 +420,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\"} | json | type=\"request\" [10m])) - sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\"} | json | type=\"response\" [10m]))",
+          "expr": "sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\"} | json | type=\"request\" [10m])) - sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\"} | json | type=\"response\" [10m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -474,7 +474,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\"} | json operation=\"request.operation\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*\"",
+          "expr": "{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\"} | json operation=\"request.operation\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -533,7 +533,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\"} | json operation=\"request.operation\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/audit(/.*)?\" [15m]))",
+          "expr": "sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\"} | json operation=\"request.operation\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/audit(/.*)?\" [15m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -592,7 +592,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\"} | json operation=\"request.operation\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(policies|auth|mounts)(/.*)?\" [15m]))",
+          "expr": "sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\"} | json operation=\"request.operation\", request_path=\"request.path\" | operation=~\"create|update|delete\" | request_path=~\"sys/(policies|auth|mounts)(/.*)?\" [15m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -651,7 +651,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\"} | json audit_type=\"type\", audit_error=\"error\" | audit_type=\"response\" | audit_error=~\"(?s).*permission denied.*\" [15m]))",
+          "expr": "sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\"} | json audit_type=\"type\", audit_error=\"error\" | audit_type=\"response\" | audit_error=~\"(?s).*permission denied.*\" [15m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -710,7 +710,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.completed_requests\"}[15m]))",
+          "expr": "sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.completed_requests\"}[15m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -769,7 +769,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max(openbao_audit_archive_enabled) or vector(0)",
+          "expr": "max by (cluster) (openbao_audit_archive_enabled{cluster=~\"${cluster:raw}\"}) or vector(0)",
           "format": "time_series",
           "legendFormat": "Archive expected",
           "range": true,
@@ -830,7 +830,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "min(openbao_audit_archive_delivery_success) or vector(0)",
+          "expr": "min by (cluster) (openbao_audit_archive_delivery_success{cluster=~\"${cluster:raw}\"}) or vector(0)",
           "format": "time_series",
           "legendFormat": "Archive delivery",
           "range": true,
@@ -891,7 +891,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "time() - max(openbao_audit_archive_last_success_timestamp_seconds)",
+          "expr": "time() - max by (cluster) (openbao_audit_archive_last_success_timestamp_seconds{cluster=~\"${cluster:raw}\"})",
           "format": "time_series",
           "legendFormat": "Archive success age",
           "range": true,
@@ -952,7 +952,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(openbao_audit_archive_delivery_failures_total[15m])) or vector(0)",
+          "expr": "sum by (cluster) (increase(openbao_audit_archive_delivery_failures_total{cluster=~\"${cluster:raw}\"}[15m])) or vector(0)",
           "format": "time_series",
           "legendFormat": "Archive failures",
           "range": true,
@@ -1013,7 +1013,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(openbao_audit_archive_dead_letter_records_total[15m])) or vector(0)",
+          "expr": "sum by (cluster) (increase(openbao_audit_archive_dead_letter_records_total{cluster=~\"${cluster:raw}\"}[15m])) or vector(0)",
           "format": "time_series",
           "legendFormat": "Archive dead letters",
           "range": true,
@@ -1069,7 +1069,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{namespace=~\"${openbao_namespace:raw}\",log_stream=\"openbao.audit\"}",
+          "expr": "{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\"}",
           "queryType": "range",
           "refId": "A"
         }
@@ -1095,8 +1095,36 @@
           "value": ".*"
         },
         "hide": 0,
+        "label": "Cluster",
+        "name": "cluster",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
         "label": "Kubernetes namespace",
-        "name": "openbao_namespace",
+        "name": "kubernetes_namespace",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Scrape profile",
+        "name": "scrape_profile",
         "options": [],
         "query": ".*",
         "skipUrlSync": false,

@@ -188,7 +188,9 @@ activity.
    openbao:barrier_get:avg5m
    openbao:cache_hit_ratio:ratio5m
    openbao:runtime_sys_bytes:max
-   sum(openbao:core_mount_table_num_entries:max)
+   sum by (cluster, kubernetes_namespace, scrape_profile) (
+     openbao:core_mount_table_num_entries:max
+   )
    ```
 
 3. Confirm that operational logs no longer show correlated storage, cache,

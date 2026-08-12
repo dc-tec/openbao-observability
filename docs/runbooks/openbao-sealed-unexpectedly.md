@@ -98,7 +98,11 @@ and verify audit visibility after recovery.
 2. Confirm that metrics show the node as unsealed.
 
    ```promql
-   ${p}_core_unsealed{cluster!=""}
+   openbao:core_unsealed:min{
+     cluster="<cluster>",
+     kubernetes_namespace="<kubernetes_namespace>",
+     scrape_profile="<scrape_profile>"
+   }
    ```
 
    - `${p}`: Metric prefix for your deployment. Use `vault` for the OpenBao

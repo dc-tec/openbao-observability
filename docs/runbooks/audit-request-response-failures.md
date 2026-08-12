@@ -19,24 +19,27 @@ availability risk and an evidence integrity risk.
 
 ## Confirm the failure
 
+Use the `cluster`, `kubernetes_namespace`, and `scrape_profile` alert labels to
+select the affected OpenBao deployment.
+
 1. Check request audit failures.
 
    ```promql
-   sum(
-     increase(${p}_audit_log_request_failure[5m])
-   )
+   openbao:audit_log_request_failure:increase5m{
+     cluster="<cluster>",
+     kubernetes_namespace="<kubernetes_namespace>",
+     scrape_profile="<scrape_profile>"
+   }
    ```
-
-   - `${p}`: Metric prefix for your deployment. Use `vault` for the OpenBao
-     default prefix or `openbao` when you configured
-     `metrics_prefix = "openbao"`.
 
 2. Check response audit failures.
 
    ```promql
-   sum(
-     increase(${p}_audit_log_response_failure[5m])
-   )
+   openbao:audit_log_response_failure:increase5m{
+     cluster="<cluster>",
+     kubernetes_namespace="<kubernetes_namespace>",
+     scrape_profile="<scrape_profile>"
+   }
    ```
 
 3. Identify when the counter first increased. Use that timestamp for log and
@@ -118,15 +121,19 @@ availability risk and an evidence integrity risk.
 3. Confirm that failure counters stop increasing.
 
    ```promql
-   sum(
-     increase(${p}_audit_log_request_failure[5m])
-   )
+   openbao:audit_log_request_failure:increase5m{
+     cluster="<cluster>",
+     kubernetes_namespace="<kubernetes_namespace>",
+     scrape_profile="<scrape_profile>"
+   }
    ```
 
    ```promql
-   sum(
-     increase(${p}_audit_log_response_failure[5m])
-   )
+   openbao:audit_log_response_failure:increase5m{
+     cluster="<cluster>",
+     kubernetes_namespace="<kubernetes_namespace>",
+     scrape_profile="<scrape_profile>"
+   }
    ```
 
 4. Confirm that the audit log collector still sends the audit stream to Loki or

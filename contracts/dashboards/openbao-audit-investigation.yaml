@@ -23,7 +23,11 @@ datasources:
     type: loki
     uid: loki
 variables:
-  - name: openbao_namespace
+  - name: cluster
+    label: Cluster
+    type: textbox
+    default: .*
+  - name: kubernetes_namespace
     label: Kubernetes namespace
     type: textbox
     default: .*
@@ -56,7 +60,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audit events matching the selected investigation filters over 5 minutes.
     grid:
@@ -69,7 +73,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [5m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [5m]))'
     unit: short
     description: Shows audited mutations against high-risk system paths over 5 minutes.
     grid:
@@ -82,7 +86,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/.*|sys/auth/.*)" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/.*|sys/auth/.*)" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited auth method, login, user, and token activity over 5 minutes.
     grid:
@@ -95,7 +99,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}" [5m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}" [5m]))'
     unit: short
     description: Shows audited response entries with error fields over 5 minutes.
     grid:
@@ -108,8 +112,8 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}" [5m]))'
-    legend: "{{node_id}}"
+    expression: 'sum by (cluster, kubernetes_namespace, node_id) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}" [5m]))'
+    legend: "{{cluster}} {{kubernetes_namespace}} {{node_id}}"
     unit: short
     description: Shows filtered audit event volume by OpenBao node over 5 minutes.
     grid:
@@ -122,8 +126,8 @@ panels:
     type: timeseries
     signal: logs
     datasource: logs
-    expression: 'sum by (node_id) (count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [5m]))'
-    legend: "{{node_id}}"
+    expression: 'sum by (cluster, kubernetes_namespace, node_id) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [5m]))'
+    legend: "{{cluster}} {{kubernetes_namespace}} {{node_id}}"
     unit: short
     description: Shows high-risk system path mutation volume by OpenBao node over 5 minutes.
     grid:
@@ -136,7 +140,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
     unit: short
     description: Shows audited audit configuration changes that match the selected filters over 15 minutes.
     grid:
@@ -149,7 +153,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(policies|auth|mounts)(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
     unit: short
     description: Shows audited policy, auth method, and mount configuration changes that match the selected filters over 15 minutes.
     grid:
@@ -162,7 +166,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json request_id="request.id", request_path="request.path" | request_path=~"sys/(raw|plugins|storage/raft|rotate)(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json request_id="request.id", request_path="request.path" | request_path=~"sys/(raw|plugins|storage/raft|rotate)(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
     unit: short
     description: Shows audited high-risk system path activity that matches the selected filters over 15 minutes.
     grid:
@@ -175,7 +179,7 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum(count_over_time({namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error=~"(?s).*permission denied.*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error=~"(?s).*permission denied.*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" [15m]))'
     unit: short
     description: Shows audited permission denied responses that match the selected filters over 15 minutes.
     grid:
@@ -188,7 +192,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}"'
     description: Shows audit entries matching the selected request ID, path, operation, and node filters.
     grid:
       x: 0
@@ -200,7 +204,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate).*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}"'
     description: Shows audited create, update, and delete operations against high-risk system paths.
     grid:
       x: 12
@@ -212,7 +216,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/.*|sys/auth/.*)" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_path=~"(auth/.*|sys/auth/.*)" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}"'
     description: Shows audited auth method, login, user, and token events.
     grid:
       x: 0
@@ -224,7 +228,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", operation="request.operation", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error!="" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}"'
     description: Shows audited response entries that include error fields.
     grid:
       x: 12
@@ -236,7 +240,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | operation=~"create|update|delete" | request_path=~"sys/audit(/.*)?" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}"'
     description: Shows audited audit configuration changes that match the selected investigation filters.
     grid:
       x: 0
@@ -248,7 +252,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error=~"(?s).*permission denied.*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json audit_type="type", audit_error="error", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error=~"(?s).*permission denied.*" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}"'
     description: Shows audited permission denied responses that match the selected investigation filters.
     grid:
       x: 12
@@ -260,7 +264,7 @@ panels:
     type: logs
     signal: logs
     datasource: logs
-    expression: '{namespace=~"${openbao_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}"'
+    expression: '{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit", node_id=~"${node_id:raw}"} | json operation="request.operation", request_id="request.id", request_path="request.path" | request_id=~"${request_id:raw}" | request_path=~"${request_path:raw}" | operation=~"${operation:raw}"'
     description: Shows the full audit stream after applying the selected investigation filters.
     grid:
       x: 0

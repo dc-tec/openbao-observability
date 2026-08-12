@@ -8,7 +8,7 @@ spec:
         - name: openbao.loki.alerts
           rules:
             - alert: OpenBaoTransitOperationErrors
-              expr: sum(count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*" [5m])) > 0
+              expr: sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*" [5m])) > 0
               for: 5m
               labels:
                 component: secret-engines
@@ -43,7 +43,7 @@ spec:
                 runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/audit-log-stream-missing.md
                 summary: OpenBao audit log stream has no events
             - alert: OpenBaoDebugTraceLoggingEnabled
-              expr: sum(count_over_time({log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m])) > 0
+              expr: sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m])) > 0
               for: 5m
               labels:
                 severity: warning

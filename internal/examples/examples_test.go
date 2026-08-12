@@ -2,6 +2,7 @@ package examples
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -51,6 +52,91 @@ func TestKubernetesExamplesAvoidUnsafeDefaults(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("walk Kubernetes examples: %v", err)
+	}
+}
+
+func TestMetricsScrapeExamplesNormalizeSignalIdentity(t *testing.T) {
+	tests := []struct {
+		path      string
+		required  []string
+		forbidden []string
+	}{
+		{
+			path: filepath.Join("..", "..", "examples", "docker-compose", "prometheus", "prometheus.yml"),
+			required: []string{
+				"cluster: compose",
+				"scrape_profile: all_nodes",
+				"target_label: pod",
+				"target_label: openbao_namespace",
+				`regex: "namespace|exported_cluster"`,
+			},
+		},
+		{
+			path: filepath.Join("..", "..", "examples", "kubernetes", "secure-metrics-scrape.yaml"),
+			required: []string{
+				"honorLabels: false",
+				"targetLabel: cluster",
+				"targetLabel: kubernetes_namespace",
+				"targetLabel: pod",
+				"targetLabel: scrape_profile",
+				"targetLabel: openbao_namespace",
+			},
+			forbidden: []string{"honorLabels: true"},
+		},
+		{
+			path: filepath.Join("..", "..", "examples", "kubernetes", "all-node-metrics-scrape.yaml"),
+			required: []string{
+				"honorLabels: false",
+				"targetLabel: cluster",
+				"targetLabel: kubernetes_namespace",
+				"targetLabel: pod",
+				"targetLabel: scrape_profile",
+				"targetLabel: openbao_namespace",
+			},
+			forbidden: []string{"honorLabels: true"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.path, func(t *testing.T) {
+			content, err := os.ReadFile(test.path)
+			if err != nil {
+				t.Fatalf("read example: %v", err)
+			}
+			text := string(content)
+			for _, fragment := range test.required {
+				if !strings.Contains(text, fragment) {
+					t.Errorf("example does not contain %q", fragment)
+				}
+			}
+			for _, fragment := range test.forbidden {
+				if strings.Contains(text, fragment) {
+					t.Errorf("example contains forbidden value %q", fragment)
+				}
+			}
+		})
+	}
+}
+
+func TestComposeAlloyUsesContractLogLabels(t *testing.T) {
+	path := filepath.Join("..", "..", "examples", "docker-compose", "alloy", "config.alloy")
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read Alloy configuration: %v", err)
+	}
+	text := string(content)
+
+	for _, node := range []string{"openbao-node0", "openbao-node1", "openbao-node2"} {
+		for _, label := range []string{"instance", "pod"} {
+			fragment := fmt.Sprintf(`%q`, label)
+			value := fmt.Sprintf(`= %q`, node)
+			if !strings.Contains(text, fragment) || !strings.Contains(text, value) {
+				t.Errorf("Alloy configuration does not contain %s for %s", label, node)
+			}
+		}
+	}
+	if strings.Contains(text, `"job"`) {
+		t.Error("Alloy configuration emits the uncontracted job label")
 	}
 }
 

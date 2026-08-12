@@ -124,6 +124,19 @@ func TestVerifyRepositoryRejectsPrefixVariantDrift(t *testing.T) {
 	}
 }
 
+func TestPromQLMetricNamesIgnoreIdentityLabels(t *testing.T) {
+	names, err := promQLMetricNames(`sum by (cluster, openbao_namespace) (vault_core_active{openbao_namespace="root"})`)
+	if err != nil {
+		t.Fatalf("promQLMetricNames returned error: %v", err)
+	}
+	if len(names) != 1 || names[0] != "vault_core_active" {
+		t.Fatalf("metric names = %v, want [vault_core_active]", names)
+	}
+	if hasDisallowedRawOpenBAOMetric(names) {
+		t.Fatal("openbao_namespace label was treated as an openbao_* metric")
+	}
+}
+
 func writeRepositoryTestRepository(t *testing.T, dashboardContract, docsIndex string) string {
 	t.Helper()
 

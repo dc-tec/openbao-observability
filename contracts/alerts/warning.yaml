@@ -63,7 +63,7 @@ alerts:
     severity: warning
     signal: metrics
     for: 10m
-    expression: sum(openbao:core_mount_table_num_entries:max) - sum(openbao:core_mount_table_num_entries:max offset 1h) > 5
+    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:core_mount_table_num_entries:max) - sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:core_mount_table_num_entries:max offset 1h) > 5
     summary: OpenBao mount table grew quickly
     description: OpenBao reports more than five additional mount table entries compared with one hour ago.
     runbook: docs/runbooks/runtime-storage-warnings.md
@@ -103,7 +103,7 @@ alerts:
     severity: warning
     signal: loki
     for: 5m
-    expression: 'sum(count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*" [5m])) > 0'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error", request_path="request.path" | audit_type="response" | audit_error!="" | request_path=~"transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey).*" [5m])) > 0'
     summary: OpenBao Transit operations are returning errors
     description: OpenBao audit logs contain Transit response errors over the alert window.
     runbook: docs/runbooks/secret-engine-feature-warnings.md
@@ -203,7 +203,7 @@ alerts:
     severity: warning
     signal: platform
     for: 10m
-    expression: min by (namespace, pod) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
+    expression: min by (cluster, namespace, pod) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
     summary: OpenBao Kubernetes pod is not ready
     description: Kubernetes reports an OpenBao workload container as not ready for at least 10 minutes.
     runbook: docs/runbooks/kubernetes-platform-health.md
@@ -215,7 +215,7 @@ alerts:
     severity: warning
     signal: platform
     for: 5m
-    expression: sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total{pod=~"openbao.*",container=~"openbao|bao"}[15m])) > 0
+    expression: sum by (cluster, namespace, pod) (increase(kube_pod_container_status_restarts_total{pod=~"openbao.*",container=~"openbao|bao"}[15m])) > 0
     summary: OpenBao Kubernetes pod restarted
     description: Kubernetes reports OpenBao workload container restarts in the last 15 minutes.
     runbook: docs/runbooks/kubernetes-platform-health.md
@@ -227,7 +227,7 @@ alerts:
     severity: warning
     signal: platform
     for: 10m
-    expression: max by (node, condition) (kube_node_status_condition{condition=~"DiskPressure|MemoryPressure|PIDPressure",status="true"}) == 1
+    expression: max by (cluster, node, condition) (kube_node_status_condition{condition=~"DiskPressure|MemoryPressure|PIDPressure",status="true"}) == 1
     summary: Kubernetes node pressure may affect OpenBao
     description: Kubernetes reports node pressure that can disrupt OpenBao scheduling, storage, or runtime behavior.
     runbook: docs/runbooks/kubernetes-platform-health.md
@@ -269,7 +269,7 @@ alerts:
     severity: warning
     signal: loki
     for: 5m
-    expression: 'sum(count_over_time({log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m])) > 0'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m])) > 0'
     summary: OpenBao debug or trace logging is enabled
     description: OpenBao operational logs include debug or trace entries, which can increase cost and expose sensitive metadata.
     runbook: docs/runbooks/debug-logging-enabled.md

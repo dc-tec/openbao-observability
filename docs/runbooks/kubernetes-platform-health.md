@@ -35,7 +35,7 @@ pressure, or collector scrape health.
 1. Check OpenBao container readiness by pod.
 
    ```promql
-   min by (namespace, pod) (
+   min by (cluster, namespace, pod) (
      kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}
    )
    ```
@@ -49,7 +49,7 @@ pressure, or collector scrape health.
    ```
 
    ```promql
-   sum by (namespace, pod) (
+   sum by (cluster, namespace, pod) (
      increase(kube_pod_container_status_restarts_total{pod=~"openbao.*",container=~"openbao|bao"}[15m])
    )
    ```
@@ -77,11 +77,11 @@ pressure, or collector scrape health.
 
    ```promql
    100 *
-   min by (namespace, persistentvolumeclaim) (
+   min by (cluster, namespace, persistentvolumeclaim) (
      kubelet_volume_stats_available_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}
    )
    /
-   min by (namespace, persistentvolumeclaim) (
+   min by (cluster, namespace, persistentvolumeclaim) (
      kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}
    )
    ```
@@ -189,7 +189,7 @@ pressure, or collector scrape health.
 1. Confirm OpenBao workload containers are ready.
 
    ```promql
-   min by (namespace, pod) (
+   min by (cluster, namespace, pod) (
      kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}
    )
    ```
@@ -197,7 +197,7 @@ pressure, or collector scrape health.
 2. Confirm restart rate returns to zero.
 
    ```promql
-   sum by (namespace, pod) (
+   sum by (cluster, namespace, pod) (
      increase(kube_pod_container_status_restarts_total{pod=~"openbao.*",container=~"openbao|bao"}[15m])
    )
    ```

@@ -8,434 +8,438 @@ spec:
         - name: openbao.recording
           rules:
             - record: openbao:core_active:sum
-              expr: sum by (namespace) (vault_core_active)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (vault_core_active)
               labels:
                 source_prefix: vault
             - record: openbao:core_unsealed:sum
-              expr: sum by (namespace) (vault_core_unsealed{cluster!=""})
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (vault_core_unsealed{cluster!=""})
+              labels:
+                source_prefix: vault
+            - record: openbao:core_unsealed:min
+              expr: min by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (vault_core_unsealed{cluster!=""})
               labels:
                 source_prefix: vault
             - record: openbao:core_handle_request:rate5m
-              expr: sum by (namespace) (rate(vault_core_handle_request_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_core_handle_request_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:core_handle_request:avg5m
-              expr: sum by (namespace) (rate(vault_core_handle_request_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_core_handle_request_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_core_handle_request_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_core_handle_request_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:core_handle_login_request:rate5m
-              expr: sum by (namespace) (rate(vault_core_handle_login_request_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_core_handle_login_request_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:core_handle_login_request:avg5m
-              expr: sum by (namespace) (rate(vault_core_handle_login_request_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_core_handle_login_request_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_core_handle_login_request_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_core_handle_login_request_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:core_check_token:rate5m
-              expr: sum by (namespace) (rate(vault_core_check_token_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_core_check_token_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:core_check_token:avg5m
-              expr: sum by (namespace) (rate(vault_core_check_token_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_core_check_token_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_core_check_token_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_core_check_token_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:core_in_flight_requests:max
-              expr: max by (namespace) (vault_core_in_flight_requests)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (vault_core_in_flight_requests)
               labels:
                 source_prefix: vault
             - record: openbao:core_mount_table_num_entries:max
-              expr: max by (namespace, local, type) (vault_core_mount_table_num_entries)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, local, type) (vault_core_mount_table_num_entries)
               labels:
                 source_prefix: vault
             - record: openbao:core_mount_table_size:max
-              expr: max by (namespace, local, type) (vault_core_mount_table_size)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, local, type) (vault_core_mount_table_size)
               labels:
                 source_prefix: vault
             - record: openbao:raft_peers:max
-              expr: max by (namespace) (vault_raft_peers) or count by (namespace) (vault_autopilot_node_healthy) or count by (namespace) (count by (namespace, peer_id) (vault_raft_storage_stats_commit_index))
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (vault_raft_peers) or count by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (vault_autopilot_node_healthy) or count by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (count by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, peer_id) (vault_raft_storage_stats_commit_index))
               labels:
                 source_prefix: vault
             - record: openbao:autopilot_healthy:max
-              expr: max by (namespace) (vault_autopilot_healthy)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (vault_autopilot_healthy)
               labels:
                 source_prefix: vault
             - record: openbao:autopilot_failure_tolerance:max
-              expr: max by (namespace) (vault_autopilot_failure_tolerance)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (vault_autopilot_failure_tolerance)
               labels:
                 source_prefix: vault
             - record: openbao:autopilot_node_healthy:min
-              expr: min by (namespace, node_id) (vault_autopilot_node_healthy)
+              expr: min by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance, node_id) (vault_autopilot_node_healthy)
               labels:
                 source_prefix: vault
             - record: openbao:raft_storage_commit_index:max
-              expr: max by (namespace, instance, peer_id) (vault_raft_storage_stats_commit_index)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance, peer_id) (vault_raft_storage_stats_commit_index)
               labels:
                 source_prefix: vault
             - record: openbao:raft_storage_applied_index:max
-              expr: max by (namespace, instance, peer_id) (vault_raft_storage_stats_applied_index)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance, peer_id) (vault_raft_storage_stats_applied_index)
               labels:
                 source_prefix: vault
             - record: openbao:raft_storage_apply_gap:max
-              expr: clamp_min(max by (namespace, instance, peer_id) (vault_raft_storage_stats_commit_index - vault_raft_storage_stats_applied_index), 0)
+              expr: clamp_min(max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance, peer_id) (vault_raft_storage_stats_commit_index - vault_raft_storage_stats_applied_index), 0)
               labels:
                 source_prefix: vault
             - record: openbao:raft_storage_fsm_pending:max
-              expr: max by (namespace, instance, peer_id) (vault_raft_storage_stats_fsm_pending)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance, peer_id) (vault_raft_storage_stats_fsm_pending)
               labels:
                 source_prefix: vault
             - record: openbao:audit_log_request_failure:increase5m
-              expr: sum by (namespace) (increase(vault_audit_log_request_failure[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_audit_log_request_failure[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:audit_log_response_failure:increase5m
-              expr: sum by (namespace) (increase(vault_audit_log_response_failure[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_audit_log_response_failure[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:audit_log_request:rate5m
-              expr: sum by (namespace) (rate(vault_audit_log_request_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_audit_log_request_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:audit_log_response:rate5m
-              expr: sum by (namespace) (rate(vault_audit_log_response_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_audit_log_response_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:audit_log_request:avg5m
-              expr: sum by (namespace) (rate(vault_audit_log_request_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_audit_log_request_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_audit_log_request_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_audit_log_request_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:audit_log_response:avg5m
-              expr: sum by (namespace) (rate(vault_audit_log_response_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_audit_log_response_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_audit_log_response_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_audit_log_response_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:expire_num_leases:max
-              expr: max by (namespace) (vault_expire_num_leases)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (vault_expire_num_leases)
               labels:
                 source_prefix: vault
             - record: openbao:expire_num_irrevocable_leases:max
-              expr: max by (namespace) (vault_expire_num_irrevocable_leases)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (vault_expire_num_irrevocable_leases)
               labels:
                 source_prefix: vault
             - record: openbao:expire_revoke:rate5m
-              expr: sum by (namespace) (rate(vault_expire_revoke_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_expire_revoke_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:expire_revoke:avg5m
-              expr: sum by (namespace) (rate(vault_expire_revoke_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_expire_revoke_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_expire_revoke_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_expire_revoke_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:expire_register_auth:rate5m
-              expr: sum by (namespace) (rate(vault_expire_register_auth_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_expire_register_auth_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:expire_register_auth:avg5m
-              expr: sum by (namespace) (rate(vault_expire_register_auth_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_expire_register_auth_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_expire_register_auth_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_expire_register_auth_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:token_count:max30m
-              expr: max by (namespace) (max_over_time(vault_token_count[30m]))
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (max_over_time(vault_token_count[30m]))
               labels:
                 source_prefix: vault
             - record: openbao:token_creation:increase15m
-              expr: sum by (namespace) (increase(vault_token_creation[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_token_creation[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:token_creation_by_auth:increase15m
-              expr: sum by (namespace, auth_method) (increase(vault_token_creation[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, auth_method) (increase(vault_token_creation[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:token_creation_by_namespace:increase15m
-              expr: sum by (namespace) (increase(vault_token_creation[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_token_creation[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:token_creation_by_auth_namespace:increase15m
-              expr: sum by (namespace, auth_method) (increase(vault_token_creation[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, auth_method) (increase(vault_token_creation[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:token_create:rate5m
-              expr: sum by (namespace) (rate(vault_token_create_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_create_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:token_create:avg5m
-              expr: sum by (namespace) (rate(vault_token_create_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_token_create_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_create_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_create_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:token_lookup:rate5m
-              expr: sum by (namespace) (rate(vault_token_lookup_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_lookup_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:token_lookup:avg5m
-              expr: sum by (namespace) (rate(vault_token_lookup_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_token_lookup_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_lookup_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_lookup_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:token_store:rate5m
-              expr: sum by (namespace) (rate(vault_token_store_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_store_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:token_store:avg5m
-              expr: sum by (namespace) (rate(vault_token_store_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_token_store_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_store_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_store_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:token_revoke_tree:rate5m
-              expr: sum by (namespace) (rate(vault_token_revoke_tree_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_revoke_tree_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:token_revoke_tree:avg5m
-              expr: sum by (namespace) (rate(vault_token_revoke_tree_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_token_revoke_tree_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_revoke_tree_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_token_revoke_tree_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:runtime_num_goroutines:max
-              expr: max by (namespace) (vault_runtime_num_goroutines)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (vault_runtime_num_goroutines)
               labels:
                 source_prefix: vault
             - record: openbao:runtime_alloc_bytes:max
-              expr: max by (namespace) (vault_runtime_alloc_bytes)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (vault_runtime_alloc_bytes)
               labels:
                 source_prefix: vault
             - record: openbao:runtime_heap_objects:max
-              expr: max by (namespace) (vault_runtime_heap_objects)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (vault_runtime_heap_objects)
               labels:
                 source_prefix: vault
             - record: openbao:runtime_sys_bytes:max
-              expr: max by (namespace) (vault_runtime_sys_bytes)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (vault_runtime_sys_bytes)
               labels:
                 source_prefix: vault
             - record: openbao:runtime_gc_pause_ns:avg5m
-              expr: sum by (namespace) (rate(vault_runtime_gc_pause_ns_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_runtime_gc_pause_ns_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_runtime_gc_pause_ns_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_runtime_gc_pause_ns_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:runtime_total_gc_pause_ns:max
-              expr: max by (namespace) (vault_runtime_total_gc_pause_ns)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (vault_runtime_total_gc_pause_ns)
               labels:
                 source_prefix: vault
             - record: openbao:runtime_total_gc_runs:max
-              expr: max by (namespace) (vault_runtime_total_gc_runs)
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (vault_runtime_total_gc_runs)
               labels:
                 source_prefix: vault
             - record: openbao:barrier_get:rate5m
-              expr: sum by (namespace) (rate(vault_barrier_get_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_get_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:barrier_get:avg5m
-              expr: sum by (namespace) (rate(vault_barrier_get_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_barrier_get_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_get_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_get_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:barrier_put:rate5m
-              expr: sum by (namespace) (rate(vault_barrier_put_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_put_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:barrier_put:avg5m
-              expr: sum by (namespace) (rate(vault_barrier_put_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_barrier_put_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_put_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_put_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:barrier_list:rate5m
-              expr: sum by (namespace) (rate(vault_barrier_list_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_list_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:barrier_list:avg5m
-              expr: sum by (namespace) (rate(vault_barrier_list_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_barrier_list_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_list_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_list_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:barrier_list_page:rate5m
-              expr: sum by (namespace) (rate(vault_barrier_list_page_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_list_page_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:barrier_list_page:avg5m
-              expr: sum by (namespace) (rate(vault_barrier_list_page_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_barrier_list_page_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_list_page_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_list_page_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:barrier_delete:rate5m
-              expr: sum by (namespace) (rate(vault_barrier_delete_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_delete_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:barrier_delete:avg5m
-              expr: sum by (namespace) (rate(vault_barrier_delete_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_barrier_delete_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_delete_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_barrier_delete_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:barrier_estimated_encryptions:increase15m
-              expr: sum by (namespace, term) (increase(vault_barrier_estimated_encryptions[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, term) (increase(vault_barrier_estimated_encryptions[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:cache_hit:rate5m
-              expr: sum by (namespace) (rate(vault_cache_hit[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_cache_hit[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:cache_miss:rate5m
-              expr: sum by (namespace) (rate(vault_cache_miss[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_cache_miss[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:cache_write:rate5m
-              expr: sum by (namespace) (rate(vault_cache_write[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_cache_write[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:cache_hit_ratio:ratio5m
-              expr: sum by (namespace) (rate(vault_cache_hit[5m])) / clamp_min(sum by (namespace) (rate(vault_cache_hit[5m])) + sum by (namespace) (rate(vault_cache_miss[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_cache_hit[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_cache_hit[5m])) + sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_cache_miss[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:secret_lease_creation:increase15m
-              expr: sum by (namespace) (increase(vault_secret_lease_creation[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_secret_lease_creation[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:secret_lease_creation_by_engine:increase15m
-              expr: sum by (namespace, secret_engine) (increase(vault_secret_lease_creation[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, secret_engine) (increase(vault_secret_lease_creation[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:secret_lease_creation_by_engine_namespace:increase15m
-              expr: sum by (namespace, secret_engine) (increase(vault_secret_lease_creation[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, secret_engine) (increase(vault_secret_lease_creation[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:secret_kv_count:max30m
-              expr: sum by (namespace) (max by (namespace, mount_point) (max_over_time(vault_secret_kv_count[30m])))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, mount_point) (max_over_time(vault_secret_kv_count[30m])))
               labels:
                 source_prefix: vault
             - record: openbao:secret_kv_count_by_namespace:max30m
-              expr: sum by (namespace) (max by (namespace, mount_point) (max_over_time(vault_secret_kv_count[30m])))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, mount_point) (max_over_time(vault_secret_kv_count[30m])))
               labels:
                 source_prefix: vault
             - record: openbao:route_create_kv_v1:rate5m
-              expr: sum by (namespace) (rate(vault_route_create_kv_v1__count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_create_kv_v1__count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:route_create_kv_v1:avg5m
-              expr: sum by (namespace) (rate(vault_route_create_kv_v1__sum[5m])) / clamp_min(sum by (namespace) (rate(vault_route_create_kv_v1__count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_create_kv_v1__sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_create_kv_v1__count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:route_read_kv_v1:rate5m
-              expr: sum by (namespace) (rate(vault_route_read_kv_v1__count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_read_kv_v1__count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:route_read_kv_v1:avg5m
-              expr: sum by (namespace) (rate(vault_route_read_kv_v1__sum[5m])) / clamp_min(sum by (namespace) (rate(vault_route_read_kv_v1__count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_read_kv_v1__sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_read_kv_v1__count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:route_list_kv_v1:rate5m
-              expr: sum by (namespace) (rate(vault_route_list_kv_v1__count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_list_kv_v1__count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:route_list_kv_v1:avg5m
-              expr: sum by (namespace) (rate(vault_route_list_kv_v1__sum[5m])) / clamp_min(sum by (namespace) (rate(vault_route_list_kv_v1__count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_list_kv_v1__sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_list_kv_v1__count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:route_delete_kv_v1:rate5m
-              expr: sum by (namespace) (rate(vault_route_delete_kv_v1__count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_delete_kv_v1__count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:route_delete_kv_v1:avg5m
-              expr: sum by (namespace) (rate(vault_route_delete_kv_v1__sum[5m])) / clamp_min(sum by (namespace) (rate(vault_route_delete_kv_v1__count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_delete_kv_v1__sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_delete_kv_v1__count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:route_create_kv_v2:rate5m
-              expr: sum by (namespace) (rate(vault_route_create_secret__count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_create_secret__count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:route_create_kv_v2:avg5m
-              expr: sum by (namespace) (rate(vault_route_create_secret__sum[5m])) / clamp_min(sum by (namespace) (rate(vault_route_create_secret__count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_create_secret__sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_create_secret__count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:route_read_kv_v2:rate5m
-              expr: sum by (namespace) (rate(vault_route_read_secret__count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_read_secret__count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:route_read_kv_v2:avg5m
-              expr: sum by (namespace) (rate(vault_route_read_secret__sum[5m])) / clamp_min(sum by (namespace) (rate(vault_route_read_secret__count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_read_secret__sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_read_secret__count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:route_list_kv_v2:rate5m
-              expr: sum by (namespace) (rate(vault_route_list_secret__count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_list_secret__count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:route_list_kv_v2:avg5m
-              expr: sum by (namespace) (rate(vault_route_list_secret__sum[5m])) / clamp_min(sum by (namespace) (rate(vault_route_list_secret__count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_list_secret__sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_list_secret__count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:route_delete_kv_v2:rate5m
-              expr: sum by (namespace) (rate(vault_route_delete_secret__count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_delete_secret__count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:route_delete_kv_v2:avg5m
-              expr: sum by (namespace) (rate(vault_route_delete_secret__sum[5m])) / clamp_min(sum by (namespace) (rate(vault_route_delete_secret__count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_delete_secret__sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_route_delete_secret__count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:pki_issue:rate5m
-              expr: sum by (namespace) (rate(vault_pki_issue_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_pki_issue_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:pki_issue:avg5m
-              expr: sum by (namespace) (rate(vault_pki_issue_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_pki_issue_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_pki_issue_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_pki_issue_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:pki_revoke:rate5m
-              expr: sum by (namespace) (rate(vault_pki_revoke_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_pki_revoke_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:pki_revoke:avg5m
-              expr: sum by (namespace) (rate(vault_pki_revoke_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_pki_revoke_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_pki_revoke_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_pki_revoke_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:pki_issue_failure:increase15m
-              expr: sum by (namespace) (increase(vault_pki_issue_failure[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_pki_issue_failure[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:pki_revoke_failure:increase15m
-              expr: sum by (namespace) (increase(vault_pki_revoke_failure[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_pki_revoke_failure[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:database_initialize:rate5m
-              expr: sum by (namespace) (rate(vault_database_Initialize_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_Initialize_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:database_initialize:avg5m
-              expr: sum by (namespace) (rate(vault_database_Initialize_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_database_Initialize_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_Initialize_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_Initialize_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:database_close:rate5m
-              expr: sum by (namespace) (rate(vault_database_Close_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_Close_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:database_close:avg5m
-              expr: sum by (namespace) (rate(vault_database_Close_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_database_Close_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_Close_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_Close_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:database_new_user:rate5m
-              expr: sum by (namespace) (rate(vault_database_NewUser_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_NewUser_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:database_new_user:avg5m
-              expr: sum by (namespace) (rate(vault_database_NewUser_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_database_NewUser_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_NewUser_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_NewUser_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:database_update_user:rate5m
-              expr: sum by (namespace) (rate(vault_database_UpdateUser_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_UpdateUser_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:database_update_user:avg5m
-              expr: sum by (namespace) (rate(vault_database_UpdateUser_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_database_UpdateUser_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_UpdateUser_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_UpdateUser_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:database_delete_user:rate5m
-              expr: sum by (namespace) (rate(vault_database_DeleteUser_count[5m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_DeleteUser_count[5m]))
               labels:
                 source_prefix: vault
             - record: openbao:database_delete_user:avg5m
-              expr: sum by (namespace) (rate(vault_database_DeleteUser_sum[5m])) / clamp_min(sum by (namespace) (rate(vault_database_DeleteUser_count[5m])), 0.001)
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_DeleteUser_sum[5m])) / clamp_min(sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (rate(vault_database_DeleteUser_count[5m])), 0.001)
               labels:
                 source_prefix: vault
             - record: openbao:database_initialize_error:increase15m
-              expr: sum by (namespace) (increase(vault_database_Initialize_error[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_database_Initialize_error[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:database_close_error:increase15m
-              expr: sum by (namespace) (increase(vault_database_Close_error[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_database_Close_error[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:database_new_user_error:increase15m
-              expr: sum by (namespace) (increase(vault_database_NewUser_error[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_database_NewUser_error[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:database_update_user_error:increase15m
-              expr: sum by (namespace) (increase(vault_database_UpdateUser_error[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_database_UpdateUser_error[15m]))
               labels:
                 source_prefix: vault
             - record: openbao:database_delete_user_error:increase15m
-              expr: sum by (namespace) (increase(vault_database_DeleteUser_error[15m]))
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(vault_database_DeleteUser_error[15m]))
               labels:
                 source_prefix: vault

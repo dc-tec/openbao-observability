@@ -48,11 +48,11 @@ The generated recording rules use the `openbao:` namespace even when the source
 metric prefix is `vault`. This keeps Grafana dashboards and alert expressions
 stable across deployments.
 
-Aggregate recording rules preserve the `namespace` label where the backend
-provides it. Kubernetes deployments commonly use that label as the workload
-namespace, which lets one observability backend distinguish multiple OpenBao
-instances such as test and dev clusters. OpenBao logical namespace drilldowns
-remain separate dashboard filters where those signals are available.
+Aggregate recording rules preserve the canonical identity labels that their
+source signals provide. Use `kubernetes_namespace` to distinguish workload
+placement. Use `openbao_namespace` only for OpenBao logical namespace context.
+This separation lets one observability backend distinguish deployments without
+overwriting OpenBao namespace data.
 
 | Signal | Source metric with `vault` prefix | Source metric with `openbao` prefix | Recording rule |
 | ------ | --------------------------------- | ----------------------------------- | -------------- |
@@ -131,13 +131,36 @@ alerts should use direct source metrics or normalized recording rules.
 ## Account for label differences
 
 Raw OpenBao metrics do not expose one uniform label set. Some core metrics
-include an OpenBao `cluster` label, some development and fixture profiles emit
-an empty `cluster=""` series, and some runtime or lease metrics rely on scrape
-labels instead.
+include an OpenBao-generated `cluster` label. Some development and fixture
+profiles also emit an empty `cluster=""` series. Some runtime or lease metrics
+rely on scrape labels instead.
+
+Use these canonical identity labels in collected metrics:
+
+| Label | Meaning |
+| ----- | ------- |
+| `cluster` | Platform-assigned OpenBao deployment identity. |
+| `kubernetes_namespace` | Kubernetes workload namespace. Omit it outside Kubernetes. |
+| `openbao_namespace` | Logical OpenBao namespace when the source metric includes one. |
+| `pod` | Kubernetes pod or equivalent workload identity. |
+| `instance` | Prometheus scrape endpoint identity. |
+| `scrape_profile` | `active` or `all_nodes`. |
+
+Keep `honorLabels` disabled. Target relabeling must set deployment identity.
+Metric relabeling must copy the OpenBao-generated `namespace` label to
+`openbao_namespace` and remove the ambiguous source label. Do not assign a
+synthetic `openbao_namespace` value to cluster-scoped metrics.
+
+When a target label replaces the OpenBao-generated `cluster` label, Prometheus
+preserves the source value as `exported_cluster`. Drop the empty
+`*_core_unsealed` source series before you remove `exported_cluster`. This keeps
+the empty fixture series from becoming a duplicate of the platform-labeled
+series.
 
 Recording rules in this project normalize the signals that dashboards need.
 When you write custom queries, check the live label set before grouping by
-`cluster`, `namespace`, `pod`, or `instance`.
+`cluster`, `kubernetes_namespace`, `openbao_namespace`, `pod`, `instance`, or
+`scrape_profile`.
 
 ## Raft peer count behavior
 

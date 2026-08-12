@@ -16,9 +16,9 @@ can increase log cost and expose sensitive operational metadata.
 1. Query debug and trace log volume.
 
    ```logql
-   sum(
+   sum by (cluster, kubernetes_namespace) (
      count_over_time(
-       {log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m]
+       {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m]
      )
    )
    ```
@@ -26,15 +26,15 @@ can increase log cost and expose sensitive operational metadata.
 2. Inspect recent debug and trace log entries.
 
    ```logql
-   {log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\""
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\""
    ```
 
 3. Confirm whether the logs come from all OpenBao nodes or one node.
 
    ```logql
-   sum by (node_id) (
+   sum by (cluster, kubernetes_namespace, node_id) (
      count_over_time(
-       {log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m]
+       {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m]
      )
    )
    ```
@@ -80,9 +80,9 @@ can increase log cost and expose sensitive operational metadata.
 1. Confirm that debug and trace logs stop increasing.
 
    ```logql
-   sum(
+   sum by (cluster, kubernetes_namespace) (
      count_over_time(
-       {log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m]
+       {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.operational"} |~ "\"@level\":\"(debug|trace)\"" [5m]
      )
    )
    ```
@@ -90,7 +90,7 @@ can increase log cost and expose sensitive operational metadata.
 2. Confirm that normal operational logs still arrive.
 
    ```logql
-   count_over_time({log_stream="openbao.operational"}[5m])
+   count_over_time({cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.operational"}[5m])
    ```
 
 3. Wait for the alert window to pass and confirm that

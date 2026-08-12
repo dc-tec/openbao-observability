@@ -21,7 +21,7 @@ alerts:
     severity: critical
     signal: metrics
     for: 2m
-    expression: ${p}_core_unsealed{cluster!=""} == 0
+    expression: openbao:core_unsealed:min == 0
     summary: OpenBao is sealed
     description: A scraped OpenBao node reports that it is sealed.
     runbook: docs/runbooks/openbao-sealed-unexpectedly.md
@@ -48,7 +48,7 @@ alerts:
     severity: critical
     signal: platform
     for: 5m
-    expression: sum by (namespace) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
+    expression: sum by (cluster, namespace) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}) == 0
     summary: All OpenBao Kubernetes pods are unavailable
     description: Kubernetes reports no ready OpenBao workload containers for the selected platform metrics.
     runbook: docs/runbooks/kubernetes-platform-health.md
@@ -60,7 +60,7 @@ alerts:
     severity: critical
     signal: platform
     for: 10m
-    expression: 100 * min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) / min by (namespace, persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) < 15
+    expression: 100 * min by (cluster, namespace, persistentvolumeclaim) (kubelet_volume_stats_available_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) / min by (cluster, namespace, persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*(openbao|bao|audit|data).*"}) < 15
     summary: OpenBao audit or data PVC free space is low
     description: A matching OpenBao audit or data PVC has less than 15 percent free space.
     runbook: docs/runbooks/kubernetes-platform-health.md
@@ -119,7 +119,7 @@ alerts:
     severity: critical
     signal: metrics
     for: 0m
-    expression: sum(increase(${p}_audit_log_request_failure[5m])) > 0
+    expression: openbao:audit_log_request_failure:increase5m > 0
     summary: OpenBao audit request logging failed
     description: OpenBao reported at least one audit request logging failure.
     runbook: docs/runbooks/audit-request-response-failures.md
@@ -128,7 +128,7 @@ alerts:
     severity: critical
     signal: metrics
     for: 0m
-    expression: sum(increase(${p}_audit_log_response_failure[5m])) > 0
+    expression: openbao:audit_log_response_failure:increase5m > 0
     summary: OpenBao audit response logging failed
     description: OpenBao reported at least one audit response logging failure.
     runbook: docs/runbooks/audit-request-response-failures.md

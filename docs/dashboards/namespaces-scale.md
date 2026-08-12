@@ -55,8 +55,10 @@ The dashboard exposes these variables:
 
 | Variable | Type | Default | Use |
 | -------- | ---- | ------- | --- |
+| Cluster | Textbox | `.*` | Selects the stable OpenBao cluster identity. |
 | Kubernetes namespace | Textbox | `.*` | Selects the OpenBao workload namespace when multiple OpenBao instances share the same observability backend. |
-| OpenBao namespace | Textbox | `.*` | Filters namespace-aware metrics and audit `request.namespace.id`. |
+| Scrape profile | Textbox | `.*` | Selects the active or all-node metrics profile. |
+| OpenBao namespace | Textbox | `.*` | Filters the logical OpenBao namespace in metrics and audit `request.namespace.id`. |
 | Node | Textbox | `.*` | Filters OpenBao node labels in logs and node-aware metrics. |
 | Raft peer | Textbox | `.*` | Filters Raft storage statistics by peer ID. |
 | Request ID | Textbox | `.*` | Narrows audit streams to one request ID or pattern. |

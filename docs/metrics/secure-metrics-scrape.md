@@ -137,7 +137,10 @@ general clients from reaching it.
 
    The manifest creates the active metrics Service and `ServiceMonitor`. It
    references the `openbao-metrics-token` Secret and `openbao-metrics-ca`
-   ConfigMap that you created earlier.
+   ConfigMap that you created earlier. It also maps deployment identity to
+   `cluster`, `kubernetes_namespace`, `pod`, `instance`, and
+   `scrape_profile="active"`. OpenBao namespace-scoped metrics use
+   `openbao_namespace`.
 
 2. Update the selectors to match your OpenBao deployment labels.
 
@@ -172,10 +175,18 @@ general clients from reaching it.
 3. Query Prometheus.
 
    ```promql
-   up{job="openbao"}
+   up{job="openbao",scrape_profile="active"}
    ```
 
    Expected result: one active target with value `1`.
+
+   Confirm that the target has the canonical deployment labels.
+
+   ```promql
+   count by (cluster, kubernetes_namespace, pod, instance, scrape_profile) (
+     up{job="openbao",scrape_profile="active"}
+   )
+   ```
 
 4. Check the active node metric.
 
@@ -213,6 +224,13 @@ credentials in the `ServiceMonitor`.
 
 Check the CA certificate and `serverName` in `tlsConfig`. Do not use
 `insecureSkipVerify: true` for the production profile.
+
+### The target has ambiguous namespace or cluster labels
+
+Confirm that the ServiceMonitor relabeling matches the example. Keep
+`honorLabels: false`. Use `kubernetes_namespace` for workload placement and
+`openbao_namespace` for the logical OpenBao namespace. Do not restore the
+generic `namespace` label.
 
 ### The active Service has no endpoints
 
