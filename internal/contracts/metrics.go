@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/dc-tec/openbao-observability/internal/promtext"
-	"gopkg.in/yaml.v3"
 )
 
 type MetricContract struct {
@@ -71,7 +70,7 @@ func LoadMetricContract(path string) (*MetricContract, error) {
 	}
 
 	var contract MetricContract
-	if err := yaml.Unmarshal(content, &contract); err != nil {
+	if err := decodeContractYAML(content, &contract); err != nil {
 		return nil, fmt.Errorf("parse metric contract %s: %w", path, err)
 	}
 
@@ -129,6 +128,9 @@ func (o VerifyOptions) withDefaults() VerifyOptions {
 }
 
 func (c MetricContract) validateShape(path string) error {
+	if err := validateContractVersion(path, c.Version); err != nil {
+		return err
+	}
 	if err := validateMaturity(path, c.Maturity); err != nil {
 		return err
 	}
@@ -150,17 +152,53 @@ func (c MetricContract) validateMetricContractShapeBasics(path string) error {
 	if c.OpenBAOVersion == "" {
 		return fmt.Errorf("metric contract %s is missing openbaoVersion", path)
 	}
-	if len(c.MetricPrefixes.Supported) == 0 {
-		return fmt.Errorf("metric contract %s has no supported metric prefixes", path)
-	}
-	if c.MetricPrefixes.Default == "" {
-		return fmt.Errorf("metric contract %s is missing metricPrefixes.default", path)
+	if err := c.MetricPrefixes.validate(path); err != nil {
+		return err
 	}
 	if c.Normalization.RecordingRulePrefix == "" {
 		return fmt.Errorf("metric contract %s is missing normalization.recordingRulePrefix", path)
 	}
 	if len(c.Metrics) == 0 {
 		return fmt.Errorf("metric contract %s has no metrics", path)
+	}
+	return nil
+}
+
+func (p MetricPrefixes) validate(path string) error {
+	if len(p.Supported) == 0 {
+		return fmt.Errorf("metric contract %s has no supported metric prefixes", path)
+	}
+
+	seen := map[string]bool{}
+	for _, prefix := range p.Supported {
+		if err := validateMetricSourcePrefix(prefix); err != nil {
+			return fmt.Errorf("metric contract %s has invalid supported prefix: %w", path, err)
+		}
+		if seen[prefix] {
+			return fmt.Errorf("metric contract %s has duplicate supported metric prefix %q", path, prefix)
+		}
+		seen[prefix] = true
+	}
+
+	if p.Default == "" {
+		return fmt.Errorf("metric contract %s is missing metricPrefixes.default", path)
+	}
+	if !seen[p.Default] {
+		return fmt.Errorf(
+			"metric contract %s default metric prefix %q is not listed in metricPrefixes.supported",
+			path,
+			p.Default,
+		)
+	}
+	return nil
+}
+
+func (c MetricContract) ValidateSourcePrefix(prefix string) error {
+	if err := validateMetricSourcePrefix(prefix); err != nil {
+		return err
+	}
+	if !stringSet(c.MetricPrefixes.Supported)[prefix] {
+		return fmt.Errorf("metric source prefix %q is not listed in metricPrefixes.supported", prefix)
 	}
 	return nil
 }

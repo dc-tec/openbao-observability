@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/prometheus/prometheus/promql/parser"
-	"gopkg.in/yaml.v3"
 )
 
 type AlertContract struct {
@@ -47,7 +46,7 @@ func LoadAlertContract(contractPath string) (*AlertContract, error) {
 	}
 
 	var contract AlertContract
-	if err := yaml.Unmarshal(content, &contract); err != nil {
+	if err := decodeContractYAML(content, &contract); err != nil {
 		return nil, fmt.Errorf("parse alert contract %s: %w", contractPath, err)
 	}
 
@@ -104,6 +103,10 @@ func (c AlertContract) DefaultSourcePrefix() string {
 }
 
 func (c AlertContract) ValidateExpressions(sourcePrefix string) error {
+	if err := validateMetricSourcePrefix(sourcePrefix); err != nil {
+		return fmt.Errorf("validate alert source prefix: %w", err)
+	}
+
 	promQLParser := parser.NewParser(parser.Options{})
 	for _, alert := range c.Alerts {
 		expr := c.RenderExpression(alert.Expression, sourcePrefix)
@@ -184,44 +187,74 @@ func isExternalRunbook(runbook string) bool {
 }
 
 func (c AlertContract) validateShape(contractPath string) error {
-	if err := validateMaturity(contractPath, c.Maturity); err != nil {
+	if err := c.validateHeader(contractPath); err != nil {
 		return err
-	}
-	if len(c.Alerts) == 0 {
-		return fmt.Errorf("alert contract %s has no alerts", contractPath)
 	}
 
 	seen := map[string]bool{}
 	for _, alert := range c.Alerts {
-		if alert.ID == "" {
-			return fmt.Errorf("alert contract %s has an alert without an id", contractPath)
-		}
-		if seen[alert.ID] {
-			return fmt.Errorf("alert contract %s has duplicate alert id %q", contractPath, alert.ID)
-		}
-		seen[alert.ID] = true
-		if alert.Type == "" {
-			return fmt.Errorf("alert %s is missing type", alert.ID)
-		}
-		if alert.Severity == "" {
-			return fmt.Errorf("alert %s is missing severity", alert.ID)
-		}
-		if alert.Signal == "" {
-			return fmt.Errorf("alert %s is missing signal", alert.ID)
-		}
-		if alert.Expression == "" {
-			return fmt.Errorf("alert %s is missing expression", alert.ID)
-		}
-		if alert.Summary == "" {
-			return fmt.Errorf("alert %s is missing summary", alert.ID)
-		}
-		if alert.Description == "" {
-			return fmt.Errorf("alert %s is missing description", alert.ID)
-		}
-		if alert.Runbook == "" {
-			return fmt.Errorf("alert %s is missing runbook", alert.ID)
+		if err := validateAlertShape(contractPath, alert, seen); err != nil {
+			return err
 		}
 	}
 
+	return nil
+}
+
+func (c AlertContract) validateHeader(contractPath string) error {
+	if err := validateContractVersion(contractPath, c.Version); err != nil {
+		return err
+	}
+	if err := validateMaturity(contractPath, c.Maturity); err != nil {
+		return err
+	}
+	if err := validateMetricSourcePrefix(c.DefaultSourcePrefix()); err != nil {
+		return fmt.Errorf("alert contract %s has invalid sourcePrefix: %w", contractPath, err)
+	}
+	if len(c.Alerts) == 0 {
+		return fmt.Errorf("alert contract %s has no alerts", contractPath)
+	}
+	return nil
+}
+
+func validateAlertShape(contractPath string, alert Alert, seen map[string]bool) error {
+	if alert.ID == "" {
+		return fmt.Errorf("alert contract %s has an alert without an id", contractPath)
+	}
+	if seen[alert.ID] {
+		return fmt.Errorf("alert contract %s has duplicate alert id %q", contractPath, alert.ID)
+	}
+	seen[alert.ID] = true
+	required := []struct {
+		name  string
+		value string
+	}{
+		{name: "type", value: alert.Type},
+		{name: "severity", value: alert.Severity},
+		{name: "signal", value: alert.Signal},
+		{name: "expression", value: alert.Expression},
+		{name: "summary", value: alert.Summary},
+		{name: "description", value: alert.Description},
+		{name: "runbook", value: alert.Runbook},
+	}
+	for _, field := range required {
+		if field.value == "" {
+			return fmt.Errorf("alert %s is missing %s", alert.ID, field.name)
+		}
+	}
+	return validateAlertMetadataKeys(alert)
+}
+
+func validateAlertMetadataKeys(alert Alert) error {
+	for _, key := range []string{"severity", "signal", "source_prefix"} {
+		if _, ok := alert.Labels[key]; ok {
+			return fmt.Errorf("alert %s uses reserved label %q", alert.ID, key)
+		}
+	}
+	for _, key := range []string{"summary", "description", "runbook_url"} {
+		if _, ok := alert.Annotations[key]; ok {
+			return fmt.Errorf("alert %s uses reserved annotation %q", alert.ID, key)
+		}
+	}
 	return nil
 }

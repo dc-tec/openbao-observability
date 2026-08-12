@@ -23,6 +23,45 @@ func TestLoadStreamContract(t *testing.T) {
 	}
 }
 
+func TestLoadStreamContractRejectsUnknownField(t *testing.T) {
+	content := strings.Replace(baseStreamContract(), "streams:", "unexpected: true\nstreams:", 1)
+	path := writeStreamContract(t, t.TempDir(), content)
+
+	_, err := LoadStreamContract(path)
+	if err == nil {
+		t.Fatal("expected unknown stream contract field to fail")
+	}
+	if !strings.Contains(err.Error(), "field unexpected not found") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoadStreamContractRejectsUnsupportedVersion(t *testing.T) {
+	content := strings.Replace(baseStreamContract(), "version: v0.1", "version: v9", 1)
+	path := writeStreamContract(t, t.TempDir(), content)
+
+	_, err := LoadStreamContract(path)
+	if err == nil {
+		t.Fatal("expected unsupported stream contract version to fail")
+	}
+	if !strings.Contains(err.Error(), `unsupported version "v9"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoadStreamContractRejectsMissingVersion(t *testing.T) {
+	content := strings.TrimPrefix(baseStreamContract(), "version: v0.1\n")
+	path := writeStreamContract(t, t.TempDir(), content)
+
+	_, err := LoadStreamContract(path)
+	if err == nil {
+		t.Fatal("expected missing stream contract version to fail")
+	}
+	if !strings.Contains(err.Error(), "missing version") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestVerifyStreamContract(t *testing.T) {
 	root := writeStreamTestRepository(t, baseStreamContract(), baseAlertContract(), baseDashboardContract())
 

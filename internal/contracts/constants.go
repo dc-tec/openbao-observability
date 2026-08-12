@@ -1,6 +1,7 @@
 package contracts
 
 const (
+	contractSchemaVersion     = "v0.1"
 	defaultSourcePrefix       = "vault"
 	alertTypePrometheus       = "prometheus"
 	alertTypeLoki             = "loki"

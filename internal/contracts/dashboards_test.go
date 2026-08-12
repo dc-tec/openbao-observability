@@ -33,6 +33,50 @@ func TestLoadDashboardContract(t *testing.T) {
 	}
 }
 
+func TestLoadDashboardContractRejectsUnknownField(t *testing.T) {
+	content := strings.Replace(
+		baseDashboardContract(),
+		"title: OpenBao overview",
+		"title: OpenBao overview\nunexpected: true",
+		1,
+	)
+	path := writeDashboardContract(t, t.TempDir(), content)
+
+	_, err := LoadDashboardContract(path)
+	if err == nil {
+		t.Fatal("expected unknown dashboard contract field to fail")
+	}
+	if !strings.Contains(err.Error(), "field unexpected not found") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoadDashboardContractRejectsUnsupportedVersion(t *testing.T) {
+	content := strings.Replace(baseDashboardContract(), "version: v0.1", "version: v9", 1)
+	path := writeDashboardContract(t, t.TempDir(), content)
+
+	_, err := LoadDashboardContract(path)
+	if err == nil {
+		t.Fatal("expected unsupported dashboard contract version to fail")
+	}
+	if !strings.Contains(err.Error(), `unsupported version "v9"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoadDashboardContractRejectsMissingVersion(t *testing.T) {
+	content := strings.TrimPrefix(baseDashboardContract(), "version: v0.1\n")
+	path := writeDashboardContract(t, t.TempDir(), content)
+
+	_, err := LoadDashboardContract(path)
+	if err == nil {
+		t.Fatal("expected missing dashboard contract version to fail")
+	}
+	if !strings.Contains(err.Error(), "missing version") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestVerifyDashboardContract(t *testing.T) {
 	path := writeDashboardContract(t, t.TempDir(), baseDashboardContract())
 

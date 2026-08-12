@@ -134,7 +134,7 @@ func VerifyRepository(opts VerifyRepositoryOptions) error {
 	); err != nil {
 		return err
 	}
-	if err := verifyGeneratedAlerts(root, alertContractPaths, streamContract); err != nil {
+	if err := verifyGeneratedAlerts(root, alertContractPaths, recordingRules, streamContract); err != nil {
 		return err
 	}
 	if err := verifyPrefixVariants(root, streamContract); err != nil {
@@ -638,10 +638,16 @@ func contractDatasource(contract *DashboardContract, name string) (DashboardData
 	}
 }
 
-func verifyGeneratedAlerts(root string, alertContractPaths []string, streamContract *StreamContract) error {
+func verifyGeneratedAlerts(
+	root string,
+	alertContractPaths []string,
+	recordingRules map[string]bool,
+	streamContract *StreamContract,
+) error {
 	expectedPrometheusAlerts, expectedLokiAlerts, err := loadExpectedGeneratedAlerts(
 		root,
 		alertContractPaths,
+		recordingRules,
 		streamContract,
 	)
 	if err != nil {
@@ -653,6 +659,7 @@ func verifyGeneratedAlerts(root string, alertContractPaths []string, streamContr
 func loadExpectedGeneratedAlerts(
 	root string,
 	alertContractPaths []string,
+	recordingRules map[string]bool,
 	streamContract *StreamContract,
 ) (map[string]string, map[string]string, error) {
 	expectedPrometheusAlerts := map[string]string{}
@@ -669,6 +676,15 @@ func loadExpectedGeneratedAlerts(
 			return nil, nil, err
 		}
 		for _, alert := range contract.Alerts {
+			if err := verifyAlertContractRecordingRules(
+				root,
+				contractPath,
+				contract,
+				alert,
+				recordingRules,
+			); err != nil {
+				return nil, nil, err
+			}
 			if err := validateAlertContractLabelSafety(
 				relPath(root, contractPath),
 				contract,
@@ -690,6 +706,30 @@ func loadExpectedGeneratedAlerts(
 		}
 	}
 	return expectedPrometheusAlerts, expectedLokiAlerts, nil
+}
+
+func verifyAlertContractRecordingRules(
+	root, contractPath string,
+	contract *AlertContract,
+	alert Alert,
+	recordingRules map[string]bool,
+) error {
+	if alert.Type != alertTypePrometheus {
+		return nil
+	}
+	expression := contract.RenderExpression(alert.Expression, contract.DefaultSourcePrefix())
+	for _, reference := range recordingRuleReferences(expression) {
+		if recordingRules[reference] {
+			continue
+		}
+		return fmt.Errorf(
+			"alert contract %s alert %s references recording rule %s, but it is not generated",
+			relPath(root, contractPath),
+			alert.ID,
+			reference,
+		)
+	}
+	return nil
 }
 
 func registerExpectedGeneratedAlert(
@@ -1194,6 +1234,209 @@ func verifyPrefixVariants(root string, streamContract *StreamContract) error {
 				streamContract,
 			); err != nil {
 				return err
+			}
+		}
+	}
+	return verifyPrometheusRuleProfiles(root)
+}
+
+func verifyPrometheusRuleProfiles(root string) error {
+	profiles := []string{"", "vault-prefix", "openbao-prefix"}
+	fileNames := []string{
+		"openbao-recording-rules.yaml",
+		"openbao-alerts.yaml",
+		"openbao-warning-alerts.yaml",
+		"openbao-security-alerts.yaml",
+	}
+	alertFileNames := fileNames[1:]
+
+	for _, profile := range profiles {
+		nativeDir := filepath.Join(root, "generated", "prometheus", profile)
+		prometheusRuleDir := filepath.Join(root, "generated", "prometheusrules", profile)
+		for _, fileName := range fileNames {
+			if err := verifyPrometheusRuleParity(
+				root,
+				filepath.Join(nativeDir, fileName),
+				filepath.Join(prometheusRuleDir, fileName),
+			); err != nil {
+				return err
+			}
+		}
+		if err := verifyAlertRecordingRuleReferences(
+			root,
+			filepath.Join(nativeDir, fileNames[0]),
+			nativeDir,
+			alertFileNames,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func verifyPrometheusRuleParity(root, nativePath, prometheusRulePath string) error {
+	nativeGroups, err := loadGenericRuleGroups(nativePath, false)
+	if err != nil {
+		return err
+	}
+	operatorGroups, err := loadGenericRuleGroups(prometheusRulePath, true)
+	if err != nil {
+		return err
+	}
+	if difference := firstSemanticDifference(nativeGroups, operatorGroups, "groups"); difference != "" {
+		return fmt.Errorf(
+			"PrometheusRule %s semantic field %s does not match native rules %s",
+			relPath(root, prometheusRulePath),
+			difference,
+			relPath(root, nativePath),
+		)
+	}
+	return nil
+}
+
+func loadGenericRuleGroups(rulePath string, specGroups bool) (*yaml.Node, error) {
+	content, err := os.ReadFile(rulePath)
+	if err != nil {
+		return nil, fmt.Errorf("read rule file %s: %w", rulePath, err)
+	}
+	var document yaml.Node
+	if err := yaml.Unmarshal(content, &document); err != nil {
+		return nil, fmt.Errorf("parse rule file %s: %w", rulePath, err)
+	}
+	if len(document.Content) != 1 {
+		return nil, fmt.Errorf("rule file %s has no YAML document", rulePath)
+	}
+	container := document.Content[0]
+	if specGroups {
+		spec := yamlMappingValue(container, "spec")
+		if spec == nil {
+			return nil, fmt.Errorf("PrometheusRule %s is missing spec", rulePath)
+		}
+		container = spec
+	}
+	groups := yamlMappingValue(container, "groups")
+	if groups == nil || groups.Kind != yaml.SequenceNode {
+		return nil, fmt.Errorf("rule file %s is missing groups", rulePath)
+	}
+	return groups, nil
+}
+
+func yamlMappingValue(node *yaml.Node, key string) *yaml.Node {
+	if node.Kind != yaml.MappingNode {
+		return nil
+	}
+	for index := 0; index+1 < len(node.Content); index += 2 {
+		if node.Content[index].Value == key {
+			return node.Content[index+1]
+		}
+	}
+	return nil
+}
+
+func firstSemanticDifference(expected, actual *yaml.Node, location string) string {
+	if expected.Kind != actual.Kind || expected.Tag != actual.Tag {
+		return location
+	}
+	switch expected.Kind {
+	case yaml.ScalarNode:
+		if expected.Value != actual.Value {
+			return location
+		}
+		return ""
+	case yaml.SequenceNode:
+		return firstYAMLSequenceDifference(expected, actual, location)
+	case yaml.MappingNode:
+		return firstYAMLMappingDifference(expected, actual, location)
+	default:
+		if expected.Value != actual.Value || len(expected.Content) != len(actual.Content) {
+			return location
+		}
+		return firstYAMLSequenceDifference(expected, actual, location)
+	}
+}
+
+func firstYAMLSequenceDifference(expected, actual *yaml.Node, location string) string {
+	if len(expected.Content) != len(actual.Content) {
+		return location
+	}
+	for index := range expected.Content {
+		childLocation := fmt.Sprintf("%s[%d]", location, index)
+		difference := firstSemanticDifference(expected.Content[index], actual.Content[index], childLocation)
+		if difference != "" {
+			return difference
+		}
+	}
+	return ""
+}
+
+func firstYAMLMappingDifference(expected, actual *yaml.Node, location string) string {
+	expectedValues := yamlMappingValues(expected)
+	actualValues := yamlMappingValues(actual)
+	keys := make([]string, 0, len(expectedValues)+len(actualValues))
+	seen := map[string]bool{}
+	for key := range expectedValues {
+		keys = append(keys, key)
+		seen[key] = true
+	}
+	for key := range actualValues {
+		if !seen[key] {
+			keys = append(keys, key)
+		}
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		expectedChild, expectedOK := expectedValues[key]
+		actualChild, actualOK := actualValues[key]
+		childLocation := location + "." + key
+		if !expectedOK || !actualOK {
+			return childLocation
+		}
+		if difference := firstSemanticDifference(expectedChild, actualChild, childLocation); difference != "" {
+			return difference
+		}
+	}
+	return ""
+}
+
+func yamlMappingValues(node *yaml.Node) map[string]*yaml.Node {
+	values := make(map[string]*yaml.Node, len(node.Content)/2)
+	for index := 0; index+1 < len(node.Content); index += 2 {
+		values[node.Content[index].Value] = node.Content[index+1]
+	}
+	return values
+}
+
+func verifyAlertRecordingRuleReferences(
+	root, recordingRulePath, alertDir string,
+	alertFileNames []string,
+) error {
+	recordingRules, err := loadRecordingRuleNames(recordingRulePath)
+	if err != nil {
+		return err
+	}
+	for _, fileName := range alertFileNames {
+		alertPath := filepath.Join(alertDir, fileName)
+		alertRules, err := loadRuleFile(alertPath)
+		if err != nil {
+			return err
+		}
+		for _, group := range alertRules.Groups {
+			for _, alert := range group.Rules {
+				if alert.Alert == "" {
+					continue
+				}
+				for _, reference := range recordingRuleReferences(alert.Expr) {
+					if recordingRules[reference] {
+						continue
+					}
+					return fmt.Errorf(
+						"generated alert %s in %s references recording rule %s, but it is not generated in %s",
+						alert.Alert,
+						relPath(root, alertPath),
+						reference,
+						relPath(root, recordingRulePath),
+					)
+				}
 			}
 		}
 	}

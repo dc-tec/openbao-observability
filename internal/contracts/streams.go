@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"gopkg.in/yaml.v3"
 )
 
 type StreamContract struct {
@@ -45,7 +43,7 @@ func LoadStreamContract(path string) (*StreamContract, error) {
 	}
 
 	var contract StreamContract
-	if err := yaml.Unmarshal(content, &contract); err != nil {
+	if err := decodeContractYAML(content, &contract); err != nil {
 		return nil, fmt.Errorf("parse stream contract %s: %w", path, err)
 	}
 
@@ -158,6 +156,9 @@ func (c StreamContract) ValidateLogExpression(expression string) error {
 }
 
 func (c StreamContract) validateShape(path string) error {
+	if err := validateContractVersion(path, c.Version); err != nil {
+		return err
+	}
 	if err := c.validateStreamContractHeader(path); err != nil {
 		return err
 	}
