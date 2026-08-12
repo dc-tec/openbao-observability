@@ -27,6 +27,142 @@ func TestLoadAlertContract(t *testing.T) {
 	}
 }
 
+func TestLoadAlertContractRejectsUnknownField(t *testing.T) {
+	content := strings.Replace(baseAlertContract(), "alerts:", "unexpected: true\nalerts:", 1)
+	root := writeAlertTestRepository(t, content, nil)
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
+
+	_, err := LoadAlertContract(path)
+	if err == nil {
+		t.Fatal("expected unknown alert contract field to fail")
+	}
+	if !strings.Contains(err.Error(), "field unexpected not found") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoadAlertContractRejectsUnsupportedVersion(t *testing.T) {
+	content := strings.Replace(baseAlertContract(), "version: v0.1", "version: v9", 1)
+	root := writeAlertTestRepository(t, content, nil)
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
+
+	_, err := LoadAlertContract(path)
+	if err == nil {
+		t.Fatal("expected unsupported alert contract version to fail")
+	}
+	if !strings.Contains(err.Error(), `unsupported version "v9"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoadAlertContractRejectsMissingVersion(t *testing.T) {
+	content := strings.TrimPrefix(baseAlertContract(), "version: v0.1\n")
+	root := writeAlertTestRepository(t, content, nil)
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
+
+	_, err := LoadAlertContract(path)
+	if err == nil {
+		t.Fatal("expected missing alert contract version to fail")
+	}
+	if !strings.Contains(err.Error(), "missing version") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoadAlertContractRejectsInvalidSourcePrefix(t *testing.T) {
+	content := strings.Replace(baseAlertContract(), "sourcePrefix: vault", "sourcePrefix: open-bao", 1)
+	root := writeAlertTestRepository(t, content, nil)
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
+
+	_, err := LoadAlertContract(path)
+	if err == nil {
+		t.Fatal("expected invalid alert source prefix to fail")
+	}
+	if !strings.Contains(err.Error(), "not a valid Prometheus metric prefix") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestVerifyAlertContractRejectsInvalidSourcePrefixOverride(t *testing.T) {
+	root := writeAlertTestRepository(t, baseAlertContract(), nil)
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
+
+	err := VerifyAlertContract(VerifyAlertOptions{
+		ContractPath:   path,
+		SourcePrefix:   "open-bao",
+		RepositoryRoot: root,
+	})
+	if err == nil {
+		t.Fatal("expected invalid alert source prefix override to fail")
+	}
+	if !strings.Contains(err.Error(), "not a valid Prometheus metric prefix") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoadAlertContractRejectsReservedLabels(t *testing.T) {
+	for _, key := range []string{"severity", "signal", "source_prefix"} {
+		t.Run(key, func(t *testing.T) {
+			content := strings.Replace(
+				baseAlertContract(),
+				"    runbook: docs/runbooks/no-active-openbao-leader.md",
+				"    runbook: docs/runbooks/no-active-openbao-leader.md\n    labels:\n      "+key+": overridden",
+				1,
+			)
+			root := writeAlertTestRepository(t, content, nil)
+			path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
+
+			_, err := LoadAlertContract(path)
+			if err == nil {
+				t.Fatal("expected reserved alert label to fail")
+			}
+			if !strings.Contains(err.Error(), `reserved label "`+key+`"`) {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestLoadAlertContractRejectsReservedAnnotations(t *testing.T) {
+	for _, key := range []string{"summary", "description", "runbook_url"} {
+		t.Run(key, func(t *testing.T) {
+			content := strings.Replace(
+				baseAlertContract(),
+				"    runbook: docs/runbooks/no-active-openbao-leader.md",
+				"    runbook: docs/runbooks/no-active-openbao-leader.md\n    annotations:\n      "+key+": overridden",
+				1,
+			)
+			root := writeAlertTestRepository(t, content, nil)
+			path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
+
+			_, err := LoadAlertContract(path)
+			if err == nil {
+				t.Fatal("expected reserved alert annotation to fail")
+			}
+			if !strings.Contains(err.Error(), `reserved annotation "`+key+`"`) {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestLoadAlertContractAllowsCustomMetadata(t *testing.T) {
+	content := strings.Replace(
+		baseAlertContract(),
+		"    runbook: docs/runbooks/no-active-openbao-leader.md",
+		"    runbook: docs/runbooks/no-active-openbao-leader.md\n"+
+			"    labels:\n      component: core\n"+
+			"    annotations:\n      owner: platform",
+		1,
+	)
+	root := writeAlertTestRepository(t, content, nil)
+	path := filepath.Join(root, "contracts", "alerts", "critical.yaml")
+
+	if _, err := LoadAlertContract(path); err != nil {
+		t.Fatalf("LoadAlertContract rejected custom metadata: %v", err)
+	}
+}
+
 func TestVerifyAlertContract(t *testing.T) {
 	root := writeAlertTestRepository(t, baseAlertContract(), []string{
 		"docs/runbooks/no-active-openbao-leader.md",

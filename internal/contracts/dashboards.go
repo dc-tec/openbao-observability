@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/prometheus/prometheus/promql/parser"
-	"gopkg.in/yaml.v3"
 )
 
 type DashboardContract struct {
@@ -103,7 +102,7 @@ func LoadDashboardContract(path string) (*DashboardContract, error) {
 	}
 
 	var contract DashboardContract
-	if err := yaml.Unmarshal(content, &contract); err != nil {
+	if err := decodeContractYAML(content, &contract); err != nil {
 		return nil, fmt.Errorf("parse dashboard contract %s: %w", path, err)
 	}
 
@@ -189,6 +188,9 @@ func (c DashboardContract) variableDefaults() map[string]string {
 }
 
 func (c DashboardContract) validateShape(path string) error {
+	if err := validateContractVersion(path, c.Version); err != nil {
+		return err
+	}
 	if err := c.validateMetadata(path); err != nil {
 		return err
 	}

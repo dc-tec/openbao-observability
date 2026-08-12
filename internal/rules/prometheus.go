@@ -101,6 +101,9 @@ func GeneratePrometheusRules(opts GenerateOptions) error {
 	if sourcePrefix == "" {
 		sourcePrefix = contract.MetricPrefixes.Default
 	}
+	if err := contract.ValidateSourcePrefix(sourcePrefix); err != nil {
+		return err
+	}
 
 	document := buildPrometheusRule(*contract, sourcePrefix)
 	if err := validatePromQL(document); err != nil {

@@ -154,6 +154,62 @@ func TestGeneratePrometheusRules(t *testing.T) {
 	}
 }
 
+func TestGeneratePrometheusRulesAcceptsSupportedSourcePrefixes(t *testing.T) {
+	for _, sourcePrefix := range []string{"vault", "openbao"} {
+		t.Run(sourcePrefix, func(t *testing.T) {
+			dir := t.TempDir()
+			contractPath := filepath.Join(dir, "contract.yaml")
+			outputPath := filepath.Join(dir, "rules.yaml")
+			if err := os.WriteFile(contractPath, []byte(ruleContract()), 0o644); err != nil {
+				t.Fatalf("write contract: %v", err)
+			}
+
+			err := GeneratePrometheusRules(GenerateOptions{
+				ContractPath: contractPath,
+				OutputPath:   outputPath,
+				SourcePrefix: sourcePrefix,
+			})
+			if err != nil {
+				t.Fatalf("GeneratePrometheusRules returned error: %v", err)
+			}
+
+			content, err := os.ReadFile(outputPath)
+			if err != nil {
+				t.Fatalf("read output: %v", err)
+			}
+			if !strings.Contains(string(content), "expr: sum by ("+clusterGrouping()+") ("+sourcePrefix+"_core_active)") {
+				t.Fatalf("generated rules do not use supported prefix %q", sourcePrefix)
+			}
+		})
+	}
+}
+
+func TestGeneratePrometheusRulesRejectsUnsupportedSourcePrefix(t *testing.T) {
+	dir := t.TempDir()
+	contractPath := filepath.Join(dir, "contract.yaml")
+	outputPath := filepath.Join(dir, "rules.yaml")
+	if err := os.WriteFile(contractPath, []byte(ruleContract()), 0o644); err != nil {
+		t.Fatalf("write contract: %v", err)
+	}
+
+	err := GeneratePrometheusRules(GenerateOptions{
+		ContractPath: contractPath,
+		OutputPath:   outputPath,
+		SourcePrefix: "bao",
+	})
+	if err == nil {
+		t.Fatal("expected unsupported source prefix to fail")
+	}
+	for _, fragment := range []string{`metric source prefix "bao"`, "metricPrefixes.supported"} {
+		if !strings.Contains(err.Error(), fragment) {
+			t.Fatalf("error = %q, want text %q", err, fragment)
+		}
+	}
+	if _, statErr := os.Stat(outputPath); !os.IsNotExist(statErr) {
+		t.Fatalf("output was written for unsupported source prefix: %v", statErr)
+	}
+}
+
 func TestValidatePromQLRejectsInvalidExpression(t *testing.T) {
 	document := prometheusRule{
 		Spec: prometheusRuleSpec{

@@ -124,6 +124,118 @@ func TestVerifyRepositoryRejectsPrefixVariantDrift(t *testing.T) {
 	}
 }
 
+func TestVerifyRepositoryRejectsUnknownAlertRecordingRuleReference(t *testing.T) {
+	alertContract := strings.Replace(
+		baseAlertContract(),
+		"sum(${p}_core_active) == 0",
+		"openbao:missing:sum == 0",
+		1,
+	)
+	root := writeRepositoryTestRepository(t, baseDashboardContract(), defaultRepositoryDocsIndex())
+	writeRepositoryTestFile(
+		t,
+		root,
+		"contracts/alerts/critical.yaml",
+		alertContract,
+	)
+
+	err := VerifyRepository(VerifyRepositoryOptions{RepositoryRoot: root})
+	if err == nil {
+		t.Fatal("expected unknown alert recording rule reference to fail")
+	}
+	if !strings.Contains(err.Error(), "contracts/alerts/critical.yaml") ||
+		!strings.Contains(err.Error(), "OpenBaoNoActiveNode") ||
+		!strings.Contains(err.Error(), "openbao:missing:sum") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestVerifyRepositoryRejectsPrometheusRuleParityDrift(t *testing.T) {
+	tests := []struct {
+		name      string
+		fileName  string
+		old       string
+		new       string
+		errorText string
+	}{
+		{
+			name:      "alert expression",
+			fileName:  "openbao-alerts.yaml",
+			old:       "sum(openbao_core_active) == 0",
+			new:       "sum(openbao_core_active) > 0",
+			errorText: ".expr",
+		},
+		{
+			name:      "alert for",
+			fileName:  "openbao-alerts.yaml",
+			old:       "for: 2m",
+			new:       "for: 3m",
+			errorText: "for",
+		},
+		{
+			name:      "alert labels",
+			fileName:  "openbao-alerts.yaml",
+			old:       "severity: critical",
+			new:       "severity: warning",
+			errorText: "labels",
+		},
+		{
+			name:      "alert annotations",
+			fileName:  "openbao-alerts.yaml",
+			old:       "summary: OpenBao has no active node",
+			new:       "summary: OpenBao active node state changed",
+			errorText: "annotations",
+		},
+		{
+			name:      "recording rule expression",
+			fileName:  "openbao-recording-rules.yaml",
+			old:       "expr: sum(openbao_core_active)",
+			new:       "expr: max(openbao_core_active)",
+			errorText: ".expr",
+		},
+		{
+			name:      "future rule field",
+			fileName:  "openbao-alerts.yaml",
+			old:       "for: 2m",
+			new:       "for: 2m\n          keep_firing_for: 1m",
+			errorText: "keep_firing_for",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			root := writeRepositoryTestRepository(t, baseDashboardContract(), defaultRepositoryDocsIndex())
+			path := filepath.Join(
+				root,
+				"generated",
+				"prometheusrules",
+				"openbao-prefix",
+				test.fileName,
+			)
+			content, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("read PrometheusRule: %v", err)
+			}
+			updated := strings.Replace(string(content), test.old, test.new, 1)
+			if updated == string(content) {
+				t.Fatalf("test mutation %q was not applied", test.old)
+			}
+			if err := os.WriteFile(path, []byte(updated), 0o644); err != nil {
+				t.Fatalf("write PrometheusRule: %v", err)
+			}
+
+			err = VerifyRepository(VerifyRepositoryOptions{RepositoryRoot: root})
+			if err == nil {
+				t.Fatal("expected PrometheusRule parity drift to fail")
+			}
+			if !strings.Contains(err.Error(), test.errorText) ||
+				!strings.Contains(err.Error(), "generated/prometheusrules/openbao-prefix/"+test.fileName) {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
 func TestPromQLMetricNamesIgnoreIdentityLabels(t *testing.T) {
 	names, err := promQLMetricNames(`sum by (cluster, openbao_namespace) (vault_core_active{openbao_namespace="root"})`)
 	if err != nil {
@@ -361,8 +473,12 @@ func nativePrometheusAlerts(prefix, metric string) string {
     rules:
       - alert: OpenBaoNoActiveNode
         expr: sum(` + metric + `) == 0
+        for: 2m
         labels:
+          severity: critical
           source_prefix: ` + prefix + `
+        annotations:
+          summary: OpenBao has no active node
 `
 }
 
