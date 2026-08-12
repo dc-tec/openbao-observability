@@ -10,6 +10,8 @@ metadata:
   labels:
     app.kubernetes.io/name: openbao-audit-archive-health
     app.kubernetes.io/component: audit-archive-health
+    openbao.observability/cluster: production-openbao
+    openbao.observability/environment: production
 spec:
   type: ClusterIP
   selector:
@@ -38,3 +40,10 @@ spec:
       path: /metrics
       interval: 30s
       scrapeTimeout: 10s
+      relabelings:
+        - sourceLabels:
+            - __meta_kubernetes_service_label_openbao_observability_cluster
+          targetLabel: cluster
+        - sourceLabels:
+            - __meta_kubernetes_service_label_openbao_observability_environment
+          targetLabel: environment

@@ -18,7 +18,7 @@ or latency symptoms from a selected probe path.
 1. Check which availability alert fired.
 
    ```promql
-   ALERTS{alertstate="firing", alertname=~"OpenBao(SyntheticProbeFailing|AvailabilityFastBurn|AvailabilitySlowBurn|SyntheticProbeLatencyElevated)"}
+   ALERTS{alertstate="firing", alertname=~"OpenBao(SyntheticProbeFailing|SyntheticProbeSignalMissing|AvailabilityFastBurn|AvailabilitySlowBurn|SyntheticProbeLatencyElevated)"}
    ```
 
 2. Open the `OpenBao SLO and availability` dashboard.
@@ -35,6 +35,10 @@ or latency symptoms from a selected probe path.
    probe_duration_seconds{job=~".*openbao.*"}
    ```
 
+If either query returns no series, check whether the deployment installs a
+`synthetic_probe` [signal expectation](../../examples/signal-expectations/).
+`OpenBaoSyntheticProbeSignalMissing` fires only for an expected probe identity.
+
 ## Investigate probe failure
 
 1. Check whether every OpenBao probe target fails or only one target fails.
@@ -46,7 +50,7 @@ or latency symptoms from a selected probe path.
 2. Check whether Prometheus can still scrape OpenBao metrics.
 
    ```promql
-   up{job=~"openbao.*"}
+   up{job="openbao"}
    ```
 
 3. Check OpenBao cluster state.
@@ -176,6 +180,11 @@ or latency symptoms from a selected probe path.
 Confirm that the synthetic probe job exists and that Prometheus scrapes it.
 The generated dashboard and alerts expect `probe_success` and
 `probe_duration_seconds`.
+
+The value-based synthetic alerts stay inactive when probes are not deployed.
+Install a `synthetic_probe` expectation marker when a specific probe is
+required. Use the Prometheus targets page to find a missing probe job or
+exporter.
 
 ### The probe succeeds but users still report failures
 

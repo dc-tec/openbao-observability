@@ -16,7 +16,7 @@ pressure, or collector scrape health.
 1. Check which platform alert fired.
 
    ```promql
-   ALERTS{alertstate="firing", alertname=~"OpenBao(AllPodsUnavailable|AuditPVCPressure|KubernetesPodNotReady|KubernetesPodRestartsIncreasing|KubernetesNodePressure|LogCollectorTargetDown)"}
+   ALERTS{alertstate="firing", alertname=~"OpenBao(AllPodsUnavailable|AuditPVCPressure|KubernetesPodNotReady|KubernetesPodRestartsIncreasing|KubernetesNodePressure|KubernetesPodSignalMissing|LogCollectorTargetDown|LogCollectorSignalMissing)"}
    ```
 
 2. Open the `OpenBao Kubernetes platform` dashboard.
@@ -39,6 +39,11 @@ pressure, or collector scrape health.
      kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}
    )
    ```
+
+   If this query returns no series, check whether the deployment installs a
+   `kubernetes_pods` [signal expectation](../../examples/signal-expectations/).
+   `OpenBaoKubernetesPodSignalMissing` fires only for an expected cluster and
+   Kubernetes namespace.
 
 2. Check pod phase and recent restarts.
 
@@ -142,6 +147,11 @@ pressure, or collector scrape health.
    up{job=~".*(alloy|grafana-alloy|promtail).*"}
    ```
 
+   If this query returns no series, check whether the deployment installs a
+   `log_collector` [signal expectation](../../examples/signal-expectations/).
+   `OpenBaoLogCollectorSignalMissing` fires only for an expected collector
+   target.
+
 2. Check OpenBao operational and audit stream presence.
 
    ```logql
@@ -227,6 +237,11 @@ Confirm that kube-state-metrics, kubelet or cAdvisor metrics, and PVC metrics
 are scraped by the same metrics backend that evaluates the generated rules.
 Some Kubernetes distributions rename jobs, restrict kubelet metrics, or do not
 expose PVC volume stats for every storage driver.
+
+Missing-signal alerts require an explicit expectation marker. If the marker is
+absent, empty optional platform metrics do not fire an alert. Check the
+[signal expectation example](../../examples/signal-expectations/) when the
+deployment requires these signals.
 
 ### The pod selector misses OpenBao pods
 

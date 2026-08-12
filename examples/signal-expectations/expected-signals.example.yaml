@@ -1,0 +1,33 @@
+# Install only the expectations that apply to the deployment.
+# Replace the example identity labels before loading these rules.
+groups:
+  - name: openbao.observability.signal.expectations
+    rules:
+      - record: openbao_observability_signal_expected
+        expr: vector(1)
+        labels:
+          signal: kubernetes_pods
+          cluster: production-openbao
+          kubernetes_namespace: openbao
+      - record: openbao_observability_signal_expected
+        expr: vector(1)
+        labels:
+          signal: synthetic_probe
+          cluster: production-openbao
+          job: openbao-synthetic-probe
+          instance: https://openbao.example.com/v1/sys/health
+      - record: openbao_observability_signal_expected
+        expr: vector(1)
+        labels:
+          signal: log_collector
+          cluster: production-openbao
+          job: grafana-alloy
+          instance: alloy-0:12345
+      - record: openbao_observability_signal_expected
+        expr: vector(1)
+        labels:
+          signal: audit_archive
+          cluster: production-openbao
+          environment: production
+          backend: object-store
+          pipeline: openbao-audit-archive

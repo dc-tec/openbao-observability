@@ -41,7 +41,8 @@ The generated dashboard expects these Grafana data sources:
 Synthetic panels depend on `probe_success` and `probe_duration_seconds`, which
 are commonly exposed by Prometheus blackbox-style probes. If you do not deploy
 synthetic probes, those panels remain empty and synthetic-probe alerts do not
-fire.
+fire. `OpenBaoSyntheticProbeSignalMissing` fires only when you install a
+matching [signal expectation](../../examples/signal-expectations/).
 
 ## Dashboard variables
 

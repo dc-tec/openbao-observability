@@ -44,6 +44,13 @@ changing the implementation profile.
    health signals that help explain why OpenBao cannot serve traffic, write
    audit logs, or expose metrics.
 
+6. Declare required optional signals.
+
+   Install an `openbao_observability_signal_expected` marker for each optional
+   Kubernetes, probe, collector, or audit archive signal that your deployment
+   requires. Use the [signal expectation example](../../examples/signal-expectations/).
+   Do not install a marker for a signal that the deployment does not use.
+
 ## Choose collection profiles
 
 1. Use authenticated active-node metrics scraping as the secure baseline.

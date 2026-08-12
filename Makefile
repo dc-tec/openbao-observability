@@ -396,7 +396,8 @@ validate-generated:
 		/workspace/generated/prometheus/openbao-prefix/openbao-recording-rules.yaml \
 		/workspace/generated/prometheus/openbao-prefix/openbao-alerts.yaml \
 		/workspace/generated/prometheus/openbao-prefix/openbao-warning-alerts.yaml \
-		/workspace/generated/prometheus/openbao-prefix/openbao-security-alerts.yaml
+		/workspace/generated/prometheus/openbao-prefix/openbao-security-alerts.yaml \
+		/workspace/examples/signal-expectations/expected-signals.example.yaml
 
 docs-verify:
 	$(GO) run ./cmd/openbao-observability validate docs \

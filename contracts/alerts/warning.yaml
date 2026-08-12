@@ -156,6 +156,21 @@ alerts:
     labels:
       component: availability
       subsystem: synthetic-probe
+  - id: OpenBaoSyntheticProbeSignalMissing
+    type: prometheus
+    severity: warning
+    signal: availability
+    for: 5m
+    expression: >-
+      openbao_observability_signal_expected{signal="synthetic_probe"} == 1
+      unless on (cluster, job, instance)
+      max by (cluster, job, instance) (probe_success{job=~".*openbao.*"})
+    summary: OpenBao synthetic probe signal is missing
+    description: A required OpenBao synthetic probe has no matching probe success series.
+    runbook: docs/runbooks/slo-availability.md
+    labels:
+      component: availability
+      subsystem: synthetic-probe
   - id: OpenBaoAvailabilityFastBurn
     type: prometheus
     severity: warning
@@ -210,6 +225,24 @@ alerts:
     labels:
       component: kubernetes
       subsystem: workload
+  - id: OpenBaoKubernetesPodSignalMissing
+    type: prometheus
+    severity: warning
+    signal: platform
+    for: 10m
+    expression: >-
+      openbao_observability_signal_expected{signal="kubernetes_pods"} == 1
+      unless on (cluster, kubernetes_namespace)
+      label_replace(
+        sum by (cluster, namespace) (kube_pod_container_status_ready{pod=~"openbao.*",container=~"openbao|bao"}),
+        "kubernetes_namespace", "$1", "namespace", "(.+)"
+      )
+    summary: OpenBao Kubernetes pod signal is missing
+    description: Kubernetes pod telemetry is required for this deployment, but Prometheus has no matching OpenBao pod readiness series.
+    runbook: docs/runbooks/kubernetes-platform-health.md
+    labels:
+      component: kubernetes
+      subsystem: workload
   - id: OpenBaoKubernetesPodRestartsIncreasing
     type: prometheus
     severity: warning
@@ -239,9 +272,24 @@ alerts:
     severity: warning
     signal: platform
     for: 10m
-    expression: min_over_time(up{job=~".*(alloy|grafana-alloy|promtail).*"}[10m]) == 0
+    expression: up{job=~".*(alloy|grafana-alloy|promtail).*"} == 0
     summary: OpenBao log collector scrape target is down
     description: Prometheus reports a log collector scrape target as down, which can break OpenBao log and audit-log exploration.
+    runbook: docs/runbooks/kubernetes-platform-health.md
+    labels:
+      component: collector
+      subsystem: logs
+  - id: OpenBaoLogCollectorSignalMissing
+    type: prometheus
+    severity: warning
+    signal: platform
+    for: 10m
+    expression: >-
+      openbao_observability_signal_expected{signal="log_collector"} == 1
+      unless on (cluster, job, instance)
+      max by (cluster, job, instance) (up{job=~".*(alloy|grafana-alloy|promtail).*"})
+    summary: OpenBao log collector signal is missing
+    description: A required log collector target has no matching Prometheus up series.
     runbook: docs/runbooks/kubernetes-platform-health.md
     labels:
       component: collector

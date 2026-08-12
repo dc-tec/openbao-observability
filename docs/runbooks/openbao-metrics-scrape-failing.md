@@ -18,19 +18,20 @@ an OpenBao health problem from a scrape configuration, network, or token issue.
 1. Query the scrape result for all OpenBao targets.
 
    ```promql
-   up{job=~"openbao.*"}
+   up{job="openbao"}
    ```
 
-2. Check whether the target stayed down for the alert window.
+2. Check which discovered targets are down.
 
    ```promql
-   min_over_time(
-     up{job=~"openbao.*"}[5m]
-   )
+   up{job="openbao"} == 0
    ```
 
-   A value of `0` means Prometheus could not scrape the target during the
-   window.
+   The alert requires a discovered target to stay down for 5 minutes.
+
+   If the first query returns no series, the alert uses an `absent()` fallback.
+   This fallback keeps only the `job="openbao"` label. It cannot identify a
+   missing cluster, pod, or instance.
 
 3. Open the Prometheus targets page and inspect the error for the OpenBao job.
    The target error usually identifies DNS, TCP, TLS, HTTP status, or token
@@ -104,7 +105,7 @@ an OpenBao health problem from a scrape configuration, network, or token issue.
 1. Confirm that Prometheus sees the target as up.
 
    ```promql
-   up{job=~"openbao.*"}
+   up{job="openbao"}
    ```
 
 2. Confirm that OpenBao metrics are present.
@@ -130,7 +131,11 @@ paths while the scraped listener still blocks `/v1/sys/metrics`.
 ### Prometheus target is up but the alert still fires
 
 Check whether another target in the same job remains down. The
-`OpenBaoUnreachable` alert evaluates all `openbao.*` jobs.
+`OpenBaoUnreachable` alert evaluates the canonical `openbao` job.
+
+If the alert has no target identity labels, Prometheus found no matching
+`job="openbao"` target. Check service discovery and scrape configuration before
+you investigate one OpenBao node.
 
 ### Metrics work from your workstation but not Prometheus
 

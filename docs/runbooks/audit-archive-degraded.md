@@ -1,9 +1,9 @@
 # Audit archive degraded
 
-Use this runbook when the `OpenBaoAuditArchiveDegraded` alert fires because the
-durable audit archive path is enabled but missing, stale, failing, or
-dead-lettering records. The steps help you protect audit evidence while you
-restore archive delivery.
+Use this runbook when `OpenBaoAuditArchiveDegraded` or
+`OpenBaoAuditArchiveSignalMissing` fires. These alerts report a degraded
+archive pipeline or a missing required health signal. The steps help you
+protect audit evidence while you restore archive delivery.
 
 ## Before you begin
 
@@ -27,7 +27,7 @@ gateway, SIEM forwarder, object-store writer, or another controlled component.
 
 | Metric | Type | Meaning |
 | ------ | ---- | ------- |
-| `openbao_audit_archive_enabled` | Gauge | Set to `1` only when this environment expects archive delivery. Leave absent or `0` for local and exempt environments. |
+| `openbao_audit_archive_enabled` | Gauge | Set to `1` only when this environment expects archive delivery. Leave absent or set to `0` for local and exempt environments. |
 | `openbao_audit_archive_delivery_success` | Gauge | Set to `1` when the archive path is currently healthy and `0` when delivery is degraded. |
 | `openbao_audit_archive_last_success_timestamp_seconds` | Gauge | Unix timestamp for the last successful archive delivery or acknowledgement. |
 | `openbao_audit_archive_delivery_failures_total` | Counter | Count of failed archive writes, rejected batches, or failed delivery acknowledgements. |
@@ -43,25 +43,36 @@ both a small exporter and a recording-rule mapping pattern.
 1. Confirm that archive delivery is enabled for this environment.
 
    ```promql
-   max(openbao_audit_archive_enabled)
+   max by (cluster, environment, backend, pipeline) (
+     openbao_audit_archive_enabled
+   )
    ```
+
+   If this query returns no series, check whether the deployment installs an
+   `audit_archive` [signal expectation](../../examples/signal-expectations/).
+   `OpenBaoAuditArchiveSignalMissing` fires only for an expected archive
+   pipeline identity.
 
 2. Check the current archive delivery status.
 
    ```promql
-   min(openbao_audit_archive_delivery_success)
+   min by (cluster, environment, backend, pipeline) (
+     openbao_audit_archive_delivery_success
+   )
    ```
 
 3. Check how long it has been since the last successful archive delivery.
 
    ```promql
-   time() - max(openbao_audit_archive_last_success_timestamp_seconds)
+   time() - max by (cluster, environment, backend, pipeline) (
+     openbao_audit_archive_last_success_timestamp_seconds
+   )
    ```
 
 4. Check delivery failures over the alert window.
 
    ```promql
-   sum(
+   sum by (cluster, environment, backend, pipeline) (
      increase(openbao_audit_archive_delivery_failures_total[15m])
    )
    ```
@@ -69,7 +80,7 @@ both a small exporter and a recording-rule mapping pattern.
 5. Check dead-lettered records over the alert window.
 
    ```promql
-   sum(
+   sum by (cluster, environment, backend, pipeline) (
      increase(openbao_audit_archive_dead_letter_records_total[15m])
    )
    ```
@@ -148,25 +159,29 @@ both a small exporter and a recording-rule mapping pattern.
 1. Confirm that the archive path reports healthy delivery.
 
    ```promql
-   min(openbao_audit_archive_delivery_success) == 1
+   min by (cluster, environment, backend, pipeline) (
+     openbao_audit_archive_delivery_success
+   ) == 1
    ```
 
 2. Confirm that the last successful delivery is recent.
 
    ```promql
-   time() - max(openbao_audit_archive_last_success_timestamp_seconds) < 300
+   time() - max by (cluster, environment, backend, pipeline) (
+     openbao_audit_archive_last_success_timestamp_seconds
+   ) < 300
    ```
 
 3. Confirm that delivery failures and dead-lettered records stop increasing.
 
    ```promql
-   sum(
+   sum by (cluster, environment, backend, pipeline) (
      increase(openbao_audit_archive_delivery_failures_total[15m])
    )
    ```
 
    ```promql
-   sum(
+   sum by (cluster, environment, backend, pipeline) (
      increase(openbao_audit_archive_dead_letter_records_total[15m])
    )
    ```
@@ -184,7 +199,16 @@ both a small exporter and a recording-rule mapping pattern.
 ### The alert fires in a local or exempt environment
 
 Do not publish `openbao_audit_archive_enabled=1` for environments that do not
-require durable archive delivery. Use absence or `0` to keep the alert quiet.
+require durable archive delivery. Leave the metric absent or publish `0`. Do
+not install an `audit_archive` expectation marker for an exempt environment.
+
+### The archive health signal is missing
+
+`OpenBaoAuditArchiveSignalMissing` means that an expectation marker has no
+matching `openbao_audit_archive_enabled` series. Check the exporter target,
+scrape configuration, and identity labels. The expectation and observed
+series must have equal `cluster`, `environment`, `backend`, and `pipeline`
+labels.
 
 ### Delivery success is healthy but the timestamp is stale
 

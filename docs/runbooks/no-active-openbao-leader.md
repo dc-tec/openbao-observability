@@ -1,9 +1,9 @@
 # No active OpenBao leader
 
-Use this runbook when the `OpenBaoNoActiveNode` alert fires because Prometheus
-does not see an active OpenBao node. The steps help you determine whether the
-cluster has no leader, Prometheus is missing the active node, or the cluster is
-sealed or partitioned.
+Use this runbook when `OpenBaoNoActiveNode` or
+`OpenBaoCoreActiveSignalMissing` fires. These alerts report no active node or
+a missing required active-node signal. The steps help you identify a leader,
+scrape, recording-rule, seal, or network problem.
 
 ## Before you begin
 
@@ -17,20 +17,22 @@ sealed or partitioned.
 1. Query the active-node metric.
 
    ```promql
-   sum(
-     ${p}_core_active
-   )
+   openbao:core_active:sum
    ```
-
-   - `${p}`: Metric prefix for your deployment. Use `vault` for the OpenBao
-     default prefix or `openbao` when you configured
-     `metrics_prefix = "openbao"`.
 
 2. Check the raw series to identify which nodes Prometheus still scrapes.
 
    ```promql
    ${p}_core_active
    ```
+
+   - `${p}`: Metric prefix for your deployment. Use `vault` for the OpenBao
+     default prefix or `openbao` when you configured
+     `metrics_prefix = "openbao"`.
+
+   If this query returns no series while `up{job="openbao"}` is `1`, the
+   `OpenBaoCoreActiveSignalMissing` alert fires. Check the recording rule and
+   the required raw `core_active` metric.
 
 3. If Prometheus is missing one or more OpenBao targets, switch to
    [OpenBao metrics scrape failing](./openbao-metrics-scrape-failing.md).
@@ -137,6 +139,10 @@ Use these steps when the deployment uses integrated storage.
 
 Prometheus probably does not scrape the active node. Fix service discovery or
 the active node scrape target before changing OpenBao.
+
+If `OpenBaoCoreActiveSignalMissing` fires, Prometheus can scrape OpenBao but
+cannot evaluate the normalized active-node signal. Check the recording rule,
+the selected metric prefix, and the raw `core_active` metric.
 
 ### Nodes are unsealed but no leader is elected
 

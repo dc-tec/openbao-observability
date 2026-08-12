@@ -12,9 +12,9 @@ alerts:
     severity: critical
     signal: metrics
     for: 5m
-    expression: min_over_time(up{job=~"openbao.*"}[5m]) == 0
+    expression: (up{job="openbao"} == 0) or absent(up{job="openbao"})
     summary: OpenBao metrics scrape is failing
-    description: Prometheus cannot scrape OpenBao for at least 5 minutes.
+    description: An OpenBao scrape target is down, or the canonical OpenBao job is missing, for at least 5 minutes.
     runbook: docs/runbooks/openbao-metrics-scrape-failing.md
   - id: OpenBaoSealedUnexpectedly
     type: prometheus
@@ -33,6 +33,18 @@ alerts:
     expression: openbao:core_active:sum == 0
     summary: OpenBao has no active node
     description: No active OpenBao node is visible to Prometheus.
+    runbook: docs/runbooks/no-active-openbao-leader.md
+  - id: OpenBaoCoreActiveSignalMissing
+    type: prometheus
+    severity: critical
+    signal: metrics
+    for: 5m
+    expression: >-
+      max by (cluster, kubernetes_namespace, scrape_profile) (up{job="openbao"} == 1)
+      unless on (cluster, kubernetes_namespace, scrape_profile)
+      openbao:core_active:sum
+    summary: OpenBao active-node signal is missing
+    description: Prometheus can scrape OpenBao, but the required normalized active-node signal is missing.
     runbook: docs/runbooks/no-active-openbao-leader.md
   - id: OpenBaoMultipleActiveNodes
     type: prometheus
@@ -149,17 +161,51 @@ alerts:
     signal: archive
     for: 10m
     expression: >-
-      (max(openbao_audit_archive_enabled) == 1)
-      and (
-        absent(openbao_audit_archive_delivery_success)
-        or min(openbao_audit_archive_delivery_success) == 0
-        or absent(openbao_audit_archive_last_success_timestamp_seconds)
-        or (time() - max(openbao_audit_archive_last_success_timestamp_seconds)) > 900
-        or sum(increase(openbao_audit_archive_delivery_failures_total[15m])) > 0
-        or sum(increase(openbao_audit_archive_dead_letter_records_total[15m])) > 0
+      (max by (cluster, environment, backend, pipeline) (openbao_audit_archive_enabled) == 1)
+      and on (cluster, environment, backend, pipeline)
+      (
+        min by (cluster, environment, backend, pipeline) (openbao_audit_archive_delivery_success) == 0
+        or (
+          (max by (cluster, environment, backend, pipeline) (openbao_audit_archive_enabled) == 1)
+          unless on (cluster, environment, backend, pipeline)
+          min by (cluster, environment, backend, pipeline) (openbao_audit_archive_delivery_success)
+        )
+        or (
+          (max by (cluster, environment, backend, pipeline) (openbao_audit_archive_enabled) == 1)
+          unless on (cluster, environment, backend, pipeline)
+          max by (cluster, environment, backend, pipeline) (openbao_audit_archive_last_success_timestamp_seconds)
+        )
+        or (
+          (max by (cluster, environment, backend, pipeline) (openbao_audit_archive_enabled) == 1)
+          unless on (cluster, environment, backend, pipeline)
+          sum by (cluster, environment, backend, pipeline) (openbao_audit_archive_delivery_failures_total)
+        )
+        or (
+          (max by (cluster, environment, backend, pipeline) (openbao_audit_archive_enabled) == 1)
+          unless on (cluster, environment, backend, pipeline)
+          sum by (cluster, environment, backend, pipeline) (openbao_audit_archive_dead_letter_records_total)
+        )
+        or (time() - max by (cluster, environment, backend, pipeline) (openbao_audit_archive_last_success_timestamp_seconds)) > 900
+        or sum by (cluster, environment, backend, pipeline) (increase(openbao_audit_archive_delivery_failures_total[15m])) > 0
+        or sum by (cluster, environment, backend, pipeline) (increase(openbao_audit_archive_dead_letter_records_total[15m])) > 0
       )
     summary: OpenBao audit archive is degraded
     description: The durable OpenBao audit archive path is enabled but missing, stale, failing, or dead-lettering records.
+    runbook: docs/runbooks/audit-archive-degraded.md
+    labels:
+      component: audit
+      subsystem: archive
+  - id: OpenBaoAuditArchiveSignalMissing
+    type: prometheus
+    severity: critical
+    signal: archive
+    for: 10m
+    expression: >-
+      openbao_observability_signal_expected{signal="audit_archive"} == 1
+      unless on (cluster, environment, backend, pipeline)
+      max by (cluster, environment, backend, pipeline) (openbao_audit_archive_enabled)
+    summary: OpenBao audit archive health signal is missing
+    description: The archive health signal is required for this pipeline, but Prometheus has no matching enabled marker.
     runbook: docs/runbooks/audit-archive-degraded.md
     labels:
       component: audit

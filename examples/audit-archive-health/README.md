@@ -79,6 +79,10 @@ pipeline's current state into the five reference metrics.
 Use the optional Compose profile when you want the local reference stack to
 scrape this exporter and evaluate the generated archive alert.
 
+Install an `audit_archive` [signal expectation](../signal-expectations/) when
+the exporter must not disappear silently. The expectation labels must match
+the exporter target and metric labels.
+
 ```shell
 make compose-audit-archive-up
 ```
@@ -102,6 +106,7 @@ deploys the exporter and you want Prometheus Operator to scrape it.
 Before you apply the example:
 
 - Replace the namespace if your monitoring stack does not use `monitoring`.
+- Replace the example OpenBao cluster and environment labels.
 - Replace the `ServiceMonitor` labels so your Prometheus resource selects it.
 - Deploy the exporter image and make sure its Pod uses the
   `app.kubernetes.io/name=openbao-audit-archive-health` label.
