@@ -40,7 +40,7 @@
       },
       "id": 1,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -61,8 +61,9 @@
           },
           "expr": "openbao:pki_issue:rate5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Certificate issue rate",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -101,7 +102,7 @@
       },
       "id": 2,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -122,8 +123,9 @@
           },
           "expr": "openbao:pki_revoke:rate5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Certificate revoke rate",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -139,14 +141,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
@@ -183,8 +203,9 @@
           },
           "expr": "openbao:pki_issue_failure:increase15m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Issue failures",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -200,14 +221,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
@@ -244,8 +283,9 @@
           },
           "expr": "openbao:pki_revoke_failure:increase15m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Revoke failures",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -284,7 +324,7 @@
       },
       "id": 5,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -343,7 +383,7 @@
       },
       "id": 6,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -402,7 +442,7 @@
       },
       "id": 7,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -461,7 +501,7 @@
       },
       "id": 8,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",

@@ -46,7 +46,7 @@ variables:
   - name: openbao_job
     label: OpenBao scrape job
     type: textbox
-    default: openbao.*
+    default: openbao
   - name: slo_target
     label: Availability SLO target
     type: textbox
@@ -58,8 +58,18 @@ panels:
     signal: metrics
     datasource: metrics
     expression: min by (cluster) (probe_success{cluster=~"${cluster:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"})
+    legend: "{{cluster}}"
     unit: none
     description: Shows whether the selected synthetic OpenBao probes currently succeed.
+    valueMappings:
+      - value: "0"
+        text: Failing
+        color: red
+      - value: "1"
+        text: Passing
+        color: green
+    colorMode: value
+    noData: Probe missing
     grid:
       x: 0
       y: 0
@@ -71,8 +81,10 @@ panels:
     signal: metrics
     datasource: metrics
     expression: avg by (cluster) (avg_over_time(probe_success{cluster=~"${cluster:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[30d]))
+    legend: "{{cluster}}"
     unit: percentunit
     description: Shows synthetic probe availability over 30 days.
+    noData: Probe missing
     grid:
       x: 4
       y: 0
@@ -84,8 +96,15 @@ panels:
     signal: metrics
     datasource: metrics
     expression: 1 - ((1 - avg by (cluster) (avg_over_time(probe_success{cluster=~"${cluster:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[30d]))) / (1 - ${slo_target:raw}))
+    legend: "{{cluster}}"
     unit: percentunit
     description: Shows the approximate remaining 30-day availability error budget for the selected SLO target.
+    thresholds:
+      - color: red
+      - value: 0.000001
+        color: green
+    colorMode: value
+    noData: Probe missing
     grid:
       x: 8
       y: 0
@@ -97,8 +116,17 @@ panels:
     signal: metrics
     datasource: metrics
     expression: (1 - avg by (cluster) (avg_over_time(probe_success{cluster=~"${cluster:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[5m]))) / (1 - ${slo_target:raw})
+    legend: "{{cluster}}"
     unit: none
     description: Shows short-window availability error budget burn rate from synthetic probes.
+    thresholds:
+      - color: green
+      - value: 6
+        color: orange
+      - value: 14.4
+        color: red
+    colorMode: value
+    noData: Probe missing
     grid:
       x: 12
       y: 0
@@ -110,8 +138,17 @@ panels:
     signal: metrics
     datasource: metrics
     expression: (1 - avg by (cluster) (avg_over_time(probe_success{cluster=~"${cluster:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"}[1h]))) / (1 - ${slo_target:raw})
+    legend: "{{cluster}}"
     unit: none
     description: Shows medium-window availability error budget burn rate from synthetic probes.
+    thresholds:
+      - color: green
+      - value: 6
+        color: orange
+      - value: 14.4
+        color: red
+    colorMode: value
+    noData: Probe missing
     grid:
       x: 16
       y: 0
@@ -123,8 +160,10 @@ panels:
     signal: metrics
     datasource: metrics
     expression: avg by (cluster) (probe_duration_seconds{cluster=~"${cluster:raw}",job=~"${probe_job:raw}",instance=~"${probe_target:raw}"})
+    legend: "{{cluster}}"
     unit: s
     description: Shows average synthetic probe duration for the selected targets.
+    noData: Probe missing
     grid:
       x: 20
       y: 0

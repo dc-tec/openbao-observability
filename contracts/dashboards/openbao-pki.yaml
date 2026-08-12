@@ -92,8 +92,15 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:pki_issue_failure:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: short
     description: Shows failed PKI issue operations over 15 minutes when OpenBao emits the failure counter.
+    thresholds:
+      - color: green
+      - value: 1
+        color: red
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 12
       y: 0
@@ -105,8 +112,15 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:pki_revoke_failure:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: short
     description: Shows failed PKI revoke operations over 15 minutes when OpenBao emits the failure counter.
+    thresholds:
+      - color: green
+      - value: 1
+        color: red
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 18
       y: 0

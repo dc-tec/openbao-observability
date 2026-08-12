@@ -55,11 +55,19 @@ The dashboard exposes these variables:
 | Scrape profile | `.*` | Selects the active or all-node metrics profile. |
 | Synthetic probe job | `.*openbao.*` | Selects synthetic probe scrape jobs. |
 | Synthetic probe target | `.*` | Selects probe targets by `instance`. |
-| OpenBao scrape job | `openbao.*` | Selects OpenBao metrics scrape jobs. |
+| OpenBao scrape job | `openbao` | Selects the canonical OpenBao metrics scrape job. |
 | Availability SLO target | `0.999` | Sets the SLO target used for error-budget calculations. |
 
 Keep probe labels bounded. Do not put request paths, secret paths, token
 metadata, entity identifiers, or tenant identifiers into probe labels.
+
+Prometheus stat panels use instant queries. Probe panels show `Probe missing`
+when the current query returns no series. They do not keep a prior successful
+sample from the dashboard time range.
+
+The 30-day availability panel uses a neutral color. Its selected SLO target is
+a variable, and Grafana thresholds cannot follow that variable. Error-budget
+and burn-rate panels calculate their values from the selected target.
 
 ## How to read availability
 

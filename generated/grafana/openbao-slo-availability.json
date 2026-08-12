@@ -19,6 +19,35 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "Failing"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Passing"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 2,
+                  "text": "Probe missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Probe missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -61,8 +90,9 @@
           },
           "expr": "min by (cluster) (probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"})",
           "format": "time_series",
-          "legendFormat": "Probe success",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -80,6 +110,20 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Probe missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Probe missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -101,7 +145,7 @@
       },
       "id": 2,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -122,8 +166,9 @@
           },
           "expr": "avg by (cluster) (avg_over_time(probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[30d]))",
           "format": "time_series",
-          "legendFormat": "Availability 30d",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -139,14 +184,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Probe missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Probe missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "green",
+                "value": 0.000001
               }
             ]
           },
@@ -183,8 +246,9 @@
           },
           "expr": "1 - ((1 - avg by (cluster) (avg_over_time(probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[30d]))) / (1 - ${slo_target:raw}))",
           "format": "time_series",
-          "legendFormat": "Error budget remaining",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -200,14 +264,36 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Probe missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Probe missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "orange",
+                "value": 6
+              },
+              {
+                "color": "red",
+                "value": 14.4
               }
             ]
           },
@@ -244,8 +330,9 @@
           },
           "expr": "(1 - avg by (cluster) (avg_over_time(probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[5m]))) / (1 - ${slo_target:raw})",
           "format": "time_series",
-          "legendFormat": "Burn rate 5m",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -261,14 +348,36 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Probe missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Probe missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "orange",
+                "value": 6
+              },
+              {
+                "color": "red",
+                "value": 14.4
               }
             ]
           },
@@ -305,8 +414,9 @@
           },
           "expr": "(1 - avg by (cluster) (avg_over_time(probe_success{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"}[1h]))) / (1 - ${slo_target:raw})",
           "format": "time_series",
-          "legendFormat": "Burn rate 1h",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -324,6 +434,20 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Probe missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Probe missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -345,7 +469,7 @@
       },
       "id": 6,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -366,8 +490,9 @@
           },
           "expr": "avg by (cluster) (probe_duration_seconds{cluster=~\"${cluster:raw}\",job=~\"${probe_job:raw}\",instance=~\"${probe_target:raw}\"})",
           "format": "time_series",
-          "legendFormat": "Probe duration",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -993,14 +1118,14 @@
       {
         "current": {
           "selected": true,
-          "text": "openbao.*",
-          "value": "openbao.*"
+          "text": "openbao",
+          "value": "openbao"
         },
         "hide": 0,
         "label": "OpenBao scrape job",
         "name": "openbao_job",
         "options": [],
-        "query": "openbao.*",
+        "query": "openbao",
         "skipUrlSync": false,
         "type": "textbox"
       },

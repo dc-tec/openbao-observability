@@ -95,9 +95,11 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:token_creation_by_namespace:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",openbao_namespace=~"${openbao_namespace:raw}"}) or vector(0)
+    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:token_creation_by_namespace:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",openbao_namespace=~"${openbao_namespace:raw}"})
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: short
     description: Shows token creation events for the selected OpenBao namespace label over 15 minutes.
+    noData: Signal missing
     grid:
       x: 12
       y: 0
@@ -108,9 +110,11 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:secret_lease_creation_by_engine_namespace:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",openbao_namespace=~"${openbao_namespace:raw}"}) or vector(0)
+    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:secret_lease_creation_by_engine_namespace:increase15m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",openbao_namespace=~"${openbao_namespace:raw}"})
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: short
     description: Shows dynamic secret lease creation events for the selected OpenBao namespace label over 15 minutes.
+    noData: Signal missing
     grid:
       x: 18
       y: 0

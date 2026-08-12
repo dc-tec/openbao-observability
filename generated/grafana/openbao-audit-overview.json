@@ -17,14 +17,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
@@ -61,8 +79,9 @@
           },
           "expr": "openbao:audit_log_request_failure:increase5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Request failures",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -78,14 +97,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
@@ -122,8 +159,9 @@
           },
           "expr": "openbao:audit_log_response_failure:increase5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
-          "legendFormat": "Response failures",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -162,7 +200,7 @@
       },
       "id": 3,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -183,8 +221,9 @@
           },
           "expr": "openbao:audit_log_request:rate5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Request audit rate",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -223,7 +262,7 @@
       },
       "id": 4,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -244,8 +283,9 @@
           },
           "expr": "openbao:audit_log_response:rate5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Response audit rate",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -514,7 +554,7 @@
       },
       "id": 9,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -573,7 +613,7 @@
       },
       "id": 10,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -632,7 +672,7 @@
       },
       "id": 11,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -691,7 +731,7 @@
       },
       "id": 12,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -729,6 +769,35 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Not required"
+                },
+                "1": {
+                  "color": "blue",
+                  "index": 1,
+                  "text": "Required"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 2,
+                  "text": "Not configured"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Not configured",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -769,10 +838,11 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (cluster) (openbao_audit_archive_enabled{cluster=~\"${cluster:raw}\"}) or vector(0)",
+          "expr": "max by (cluster, environment, backend, pipeline) (openbao_audit_archive_enabled{cluster=~\"${cluster:raw}\",environment=~\"${environment:raw}\",backend=~\"${archive_backend:raw}\",pipeline=~\"${archive_pipeline:raw}\"})",
           "format": "time_series",
-          "legendFormat": "Archive expected",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{environment}} {{backend}} {{pipeline}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -790,6 +860,35 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "Degraded"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Healthy"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 2,
+                  "text": "No archive status"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "No archive status",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -830,10 +929,11 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "min by (cluster) (openbao_audit_archive_delivery_success{cluster=~\"${cluster:raw}\"}) or vector(0)",
+          "expr": "min by (cluster, environment, backend, pipeline) (openbao_audit_archive_delivery_success{cluster=~\"${cluster:raw}\",environment=~\"${environment:raw}\",backend=~\"${archive_backend:raw}\",pipeline=~\"${archive_pipeline:raw}\"})",
           "format": "time_series",
-          "legendFormat": "Archive delivery",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{environment}} {{backend}} {{pipeline}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -849,14 +949,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "No archive status"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "No archive status",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 900
               }
             ]
           },
@@ -891,10 +1009,11 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "time() - max by (cluster) (openbao_audit_archive_last_success_timestamp_seconds{cluster=~\"${cluster:raw}\"})",
+          "expr": "time() - max by (cluster, environment, backend, pipeline) (openbao_audit_archive_last_success_timestamp_seconds{cluster=~\"${cluster:raw}\",environment=~\"${environment:raw}\",backend=~\"${archive_backend:raw}\",pipeline=~\"${archive_pipeline:raw}\"})",
           "format": "time_series",
-          "legendFormat": "Archive success age",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{environment}} {{backend}} {{pipeline}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -910,14 +1029,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "No archive status"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "No archive status",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
@@ -952,10 +1089,11 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (cluster) (increase(openbao_audit_archive_delivery_failures_total{cluster=~\"${cluster:raw}\"}[15m])) or vector(0)",
+          "expr": "sum by (cluster, environment, backend, pipeline) (increase(openbao_audit_archive_delivery_failures_total{cluster=~\"${cluster:raw}\",environment=~\"${environment:raw}\",backend=~\"${archive_backend:raw}\",pipeline=~\"${archive_pipeline:raw}\"}[15m]))",
           "format": "time_series",
-          "legendFormat": "Archive failures",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{environment}} {{backend}} {{pipeline}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -971,14 +1109,32 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "No archive status"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "No archive status",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
@@ -1013,10 +1169,11 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (cluster) (increase(openbao_audit_archive_dead_letter_records_total{cluster=~\"${cluster:raw}\"}[15m])) or vector(0)",
+          "expr": "sum by (cluster, environment, backend, pipeline) (increase(openbao_audit_archive_dead_letter_records_total{cluster=~\"${cluster:raw}\",environment=~\"${environment:raw}\",backend=~\"${archive_backend:raw}\",pipeline=~\"${archive_pipeline:raw}\"}[15m]))",
           "format": "time_series",
-          "legendFormat": "Archive dead letters",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{environment}} {{backend}} {{pipeline}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -1125,6 +1282,48 @@
         "hide": 0,
         "label": "Scrape profile",
         "name": "scrape_profile",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Archive environment",
+        "name": "environment",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Archive backend",
+        "name": "archive_backend",
+        "options": [],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "hide": 0,
+        "label": "Archive pipeline",
+        "name": "archive_pipeline",
         "options": [],
         "query": ".*",
         "skipUrlSync": false,

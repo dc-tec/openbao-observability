@@ -40,7 +40,7 @@
       },
       "id": 1,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -99,7 +99,7 @@
       },
       "id": 2,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -137,6 +137,20 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -158,7 +172,7 @@
       },
       "id": 3,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -177,10 +191,11 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:token_creation_by_namespace:increase15m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\",openbao_namespace=~\"${openbao_namespace:raw}\"}) or vector(0)",
+          "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:token_creation_by_namespace:increase15m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\",openbao_namespace=~\"${openbao_namespace:raw}\"})",
           "format": "time_series",
-          "legendFormat": "Namespace token creations",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -198,6 +213,20 @@
           "color": {
             "mode": "palette-classic"
           },
+          "mappings": [
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "Signal missing"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "Signal missing",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -219,7 +248,7 @@
       },
       "id": 4,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -238,10 +267,11 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:secret_lease_creation_by_engine_namespace:increase15m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\",openbao_namespace=~\"${openbao_namespace:raw}\"}) or vector(0)",
+          "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:secret_lease_creation_by_engine_namespace:increase15m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\",openbao_namespace=~\"${openbao_namespace:raw}\"})",
           "format": "time_series",
-          "legendFormat": "Namespace dynamic leases",
-          "range": true,
+          "instant": true,
+          "legendFormat": "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -580,7 +610,7 @@
       },
       "id": 10,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -601,8 +631,9 @@
           },
           "expr": "openbao:raft_peers:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Raft peers",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -641,7 +672,7 @@
       },
       "id": 11,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -662,8 +693,9 @@
           },
           "expr": "openbao:autopilot_failure_tolerance:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Failure tolerance",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -702,7 +734,7 @@
       },
       "id": 12,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -723,8 +755,9 @@
           },
           "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:autopilot_node_healthy:min{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\",node_id=~\"${node_id:raw}\"})",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Healthy Raft nodes",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -763,7 +796,7 @@
       },
       "id": 13,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -784,8 +817,9 @@
           },
           "expr": "sum by (cluster, kubernetes_namespace, scrape_profile) (1 - openbao:autopilot_node_healthy:min{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\",node_id=~\"${node_id:raw}\"})",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Unhealthy Raft nodes",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],

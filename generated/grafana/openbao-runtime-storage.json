@@ -40,7 +40,7 @@
       },
       "id": 1,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -61,8 +61,9 @@
           },
           "expr": "openbao:core_handle_request:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Request latency",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -101,7 +102,7 @@
       },
       "id": 2,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -122,8 +123,9 @@
           },
           "expr": "openbao:core_check_token:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Token check latency",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -162,7 +164,7 @@
       },
       "id": 3,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -183,8 +185,9 @@
           },
           "expr": "openbao:barrier_get:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Barrier GET latency",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -223,7 +226,7 @@
       },
       "id": 4,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -244,8 +247,9 @@
           },
           "expr": "openbao:barrier_put:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Barrier PUT latency",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -284,7 +288,7 @@
       },
       "id": 5,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -305,8 +309,9 @@
           },
           "expr": "openbao:cache_hit_ratio:ratio5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Cache hit ratio",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -345,7 +350,7 @@
       },
       "id": 6,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -366,8 +371,9 @@
           },
           "expr": "openbao:runtime_num_goroutines:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Goroutines",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],

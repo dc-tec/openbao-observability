@@ -40,7 +40,7 @@
       },
       "id": 1,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -61,8 +61,9 @@
           },
           "expr": "openbao:token_count:max30m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Token count",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -101,7 +102,7 @@
       },
       "id": 2,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -122,8 +123,9 @@
           },
           "expr": "openbao:expire_num_leases:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Lease count",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -162,7 +164,7 @@
       },
       "id": 3,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -183,8 +185,9 @@
           },
           "expr": "openbao:expire_num_irrevocable_leases:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Irrevocable leases",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -223,7 +226,7 @@
       },
       "id": 4,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -244,8 +247,9 @@
           },
           "expr": "openbao:token_creation:increase15m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Token creations",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -284,7 +288,7 @@
       },
       "id": 5,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -305,8 +309,9 @@
           },
           "expr": "openbao:token_create:rate5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Token create rate",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -345,7 +350,7 @@
       },
       "id": 6,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -366,8 +371,9 @@
           },
           "expr": "openbao:token_lookup:rate5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Token lookup rate",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -406,7 +412,7 @@
       },
       "id": 7,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -427,8 +433,9 @@
           },
           "expr": "openbao:token_store:rate5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Token store rate",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -467,7 +474,7 @@
       },
       "id": 8,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -488,8 +495,9 @@
           },
           "expr": "openbao:token_revoke_tree:rate5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
           "format": "time_series",
+          "instant": true,
           "legendFormat": "Token revoke-tree rate",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],

@@ -34,6 +34,18 @@ variables:
     label: Scrape profile
     type: textbox
     default: .*
+  - name: environment
+    label: Archive environment
+    type: textbox
+    default: .*
+  - name: archive_backend
+    label: Archive backend
+    type: textbox
+    default: .*
+  - name: archive_pipeline
+    label: Archive pipeline
+    type: textbox
+    default: .*
 panels:
   - id: audit-request-failures
     title: Request failures
@@ -41,8 +53,15 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:audit_log_request_failure:increase5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows audit request logging failures over 5 minutes.
+    thresholds:
+      - color: green
+      - value: 1
+        color: red
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 0
       y: 0
@@ -54,8 +73,15 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:audit_log_response_failure:increase5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows audit response logging failures over 5 minutes.
+    thresholds:
+      - color: green
+      - value: 1
+        color: red
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 6
       y: 0
@@ -197,9 +223,19 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: max by (cluster) (openbao_audit_archive_enabled{cluster=~"${cluster:raw}"}) or vector(0)
+    expression: max by (cluster, environment, backend, pipeline) (openbao_audit_archive_enabled{cluster=~"${cluster:raw}",environment=~"${environment:raw}",backend=~"${archive_backend:raw}",pipeline=~"${archive_pipeline:raw}"})
+    legend: "{{cluster}} {{environment}} {{backend}} {{pipeline}}"
     unit: none
     description: Shows whether durable audit archive delivery is expected in this environment.
+    valueMappings:
+      - value: "0"
+        text: Not required
+        color: gray
+      - value: "1"
+        text: Required
+        color: blue
+    colorMode: value
+    noData: Not configured
     grid:
       x: 0
       y: 24
@@ -210,9 +246,19 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: min by (cluster) (openbao_audit_archive_delivery_success{cluster=~"${cluster:raw}"}) or vector(0)
+    expression: min by (cluster, environment, backend, pipeline) (openbao_audit_archive_delivery_success{cluster=~"${cluster:raw}",environment=~"${environment:raw}",backend=~"${archive_backend:raw}",pipeline=~"${archive_pipeline:raw}"})
+    legend: "{{cluster}} {{environment}} {{backend}} {{pipeline}}"
     unit: none
     description: Shows whether the archive health exporter reports successful durable audit archive delivery.
+    valueMappings:
+      - value: "0"
+        text: Degraded
+        color: red
+      - value: "1"
+        text: Healthy
+        color: green
+    colorMode: value
+    noData: No archive status
     grid:
       x: 4
       y: 24
@@ -223,9 +269,16 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: time() - max by (cluster) (openbao_audit_archive_last_success_timestamp_seconds{cluster=~"${cluster:raw}"})
+    expression: time() - max by (cluster, environment, backend, pipeline) (openbao_audit_archive_last_success_timestamp_seconds{cluster=~"${cluster:raw}",environment=~"${environment:raw}",backend=~"${archive_backend:raw}",pipeline=~"${archive_pipeline:raw}"})
+    legend: "{{cluster}} {{environment}} {{backend}} {{pipeline}}"
     unit: s
     description: Shows the age of the most recent successful durable audit archive delivery.
+    thresholds:
+      - color: green
+      - value: 900
+        color: red
+    colorMode: value
+    noData: No archive status
     grid:
       x: 9
       y: 24
@@ -236,9 +289,16 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum by (cluster) (increase(openbao_audit_archive_delivery_failures_total{cluster=~"${cluster:raw}"}[15m])) or vector(0)
+    expression: sum by (cluster, environment, backend, pipeline) (increase(openbao_audit_archive_delivery_failures_total{cluster=~"${cluster:raw}",environment=~"${environment:raw}",backend=~"${archive_backend:raw}",pipeline=~"${archive_pipeline:raw}"}[15m]))
+    legend: "{{cluster}} {{environment}} {{backend}} {{pipeline}}"
     unit: short
     description: Shows durable audit archive delivery failures over 15 minutes.
+    thresholds:
+      - color: green
+      - value: 1
+        color: red
+    colorMode: value
+    noData: No archive status
     grid:
       x: 14
       y: 24
@@ -249,9 +309,16 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum by (cluster) (increase(openbao_audit_archive_dead_letter_records_total{cluster=~"${cluster:raw}"}[15m])) or vector(0)
+    expression: sum by (cluster, environment, backend, pipeline) (increase(openbao_audit_archive_dead_letter_records_total{cluster=~"${cluster:raw}",environment=~"${environment:raw}",backend=~"${archive_backend:raw}",pipeline=~"${archive_pipeline:raw}"}[15m]))
+    legend: "{{cluster}} {{environment}} {{backend}} {{pipeline}}"
     unit: short
     description: Shows audit records sent to a dead-letter path instead of the durable archive over 15 minutes.
+    thresholds:
+      - color: green
+      - value: 1
+        color: red
+    colorMode: value
+    noData: No archive status
     grid:
       x: 19
       y: 24

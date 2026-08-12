@@ -41,8 +41,10 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:raft_peers:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows the normalized Raft peer count.
+    noData: Signal missing
     grid:
       x: 0
       y: 0
@@ -54,8 +56,18 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:autopilot_healthy:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows whether OpenBao Autopilot reports the Raft cluster as healthy.
+    valueMappings:
+      - value: "0"
+        text: Unhealthy
+        color: red
+      - value: "1"
+        text: Healthy
+        color: green
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 6
       y: 0
@@ -67,8 +79,15 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:autopilot_failure_tolerance:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows the number of voter failures Autopilot reports the cluster can tolerate.
+    thresholds:
+      - color: red
+      - value: 1
+        color: green
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 12
       y: 0
@@ -80,8 +99,15 @@ panels:
     signal: metrics
     datasource: metrics
     expression: sum by (cluster, kubernetes_namespace, scrape_profile) (1 - openbao:autopilot_node_healthy:min{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"})
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows the number of Raft nodes Autopilot reports as unhealthy.
+    thresholds:
+      - color: green
+      - value: 1
+        color: red
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 18
       y: 0
@@ -93,8 +119,27 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:core_active:sum{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows the number of active OpenBao nodes.
+    valueMappings:
+      - value: "0"
+        text: No active node
+        color: red
+      - value: "1"
+        text: One active node
+        color: green
+      - value: "2"
+        text: Multiple active nodes
+        color: red
+    thresholds:
+      - color: red
+      - value: 1
+        color: green
+      - value: 2
+        color: red
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 0
       y: 4
@@ -106,8 +151,10 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:core_unsealed:sum{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows the number of unsealed OpenBao nodes.
+    noData: Signal missing
     grid:
       x: 6
       y: 4
@@ -118,9 +165,11 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (increase(vault_raft_state_leader{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}[30m])) or vector(0)
+    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (increase(vault_raft_state_leader{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}[30m]))
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows Raft leader transitions over the last 30 minutes.
+    noData: Signal missing
     grid:
       x: 12
       y: 4
@@ -131,9 +180,11 @@ panels:
     type: stat
     signal: metrics
     datasource: metrics
-    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (increase(vault_raft_state_candidate{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}[30m])) or vector(0)
+    expression: sum by (cluster, kubernetes_namespace, scrape_profile) (increase(vault_raft_state_candidate{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}[30m]))
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows Raft candidate transitions over the last 30 minutes.
+    noData: Signal missing
     grid:
       x: 18
       y: 4

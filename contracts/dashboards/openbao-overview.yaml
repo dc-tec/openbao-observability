@@ -40,8 +40,18 @@ panels:
     signal: metrics
     datasource: metrics
     expression: min by (cluster, kubernetes_namespace, scrape_profile) (up{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}",job="openbao"})
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows whether Prometheus can scrape OpenBao.
+    valueMappings:
+      - value: "0"
+        text: Down
+        color: red
+      - value: "1"
+        text: Up
+        color: green
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 0
       y: 0
@@ -53,8 +63,27 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:core_active:sum{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows the number of active OpenBao nodes.
+    valueMappings:
+      - value: "0"
+        text: No active node
+        color: red
+      - value: "1"
+        text: One active node
+        color: green
+      - value: "2"
+        text: Multiple active nodes
+        color: red
+    thresholds:
+      - color: red
+      - value: 1
+        color: green
+      - value: 2
+        color: red
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 6
       y: 0
@@ -66,8 +95,10 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:core_unsealed:sum{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows the number of unsealed OpenBao nodes.
+    noData: Signal missing
     grid:
       x: 12
       y: 0
@@ -79,8 +110,15 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:audit_log_request_failure:increase5m{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows audit request logging failures over 5 minutes.
+    thresholds:
+      - color: green
+      - value: 1
+        color: red
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 18
       y: 0
@@ -157,8 +195,10 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:raft_peers:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows the maximum observed Raft peer count.
+    noData: Signal missing
     grid:
       x: 0
       y: 8
@@ -170,8 +210,18 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:autopilot_healthy:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows whether OpenBao Autopilot reports the Raft cluster as healthy.
+    valueMappings:
+      - value: "0"
+        text: Unhealthy
+        color: red
+      - value: "1"
+        text: Healthy
+        color: green
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 6
       y: 8
@@ -183,8 +233,15 @@ panels:
     signal: metrics
     datasource: metrics
     expression: openbao:autopilot_failure_tolerance:max{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"}
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows the number of voter failures Autopilot reports the cluster can tolerate.
+    thresholds:
+      - color: red
+      - value: 1
+        color: green
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 12
       y: 8
@@ -196,8 +253,15 @@ panels:
     signal: metrics
     datasource: metrics
     expression: sum by (cluster, kubernetes_namespace, scrape_profile) (1 - openbao:autopilot_node_healthy:min{cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",scrape_profile=~"${scrape_profile:raw}"})
+    legend: "{{cluster}} {{kubernetes_namespace}} {{scrape_profile}}"
     unit: none
     description: Shows the number of Raft nodes Autopilot reports as unhealthy.
+    thresholds:
+      - color: green
+      - value: 1
+        color: red
+    colorMode: value
+    noData: Signal missing
     grid:
       x: 18
       y: 8
