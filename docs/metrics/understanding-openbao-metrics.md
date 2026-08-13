@@ -11,9 +11,9 @@ OpenBao metrics are the fastest way to detect health, rate, latency,
 saturation, runtime pressure, audit-device failures, token pressure, lease
 pressure, and HA/Raft state.
 
-They are also easy to misread. Raw source metrics can use historical `vault`
-naming, labels vary by metric family, some gauges update slowly, and scrape
-profile determines which nodes Prometheus can see.
+Interpret raw source metrics with care. They can use historical `vault` naming,
+labels vary by metric family, some gauges update slowly, and the scrape profile
+determines which nodes Prometheus can see.
 
 ## Mental model
 
@@ -146,7 +146,7 @@ make verify
 - Writing dashboards directly against source metrics when a normalized rule
   exists.
 
-## What's next
+## Related pages
 
 - Use [Active-node and all-node observability](../concepts/active-node-vs-all-node-observability.md)
   to choose the right scrape profile.

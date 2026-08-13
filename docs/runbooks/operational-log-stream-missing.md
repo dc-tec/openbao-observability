@@ -122,7 +122,7 @@ Check whether the alert window is too short for your environment. Keep the
 stream alert conservative enough to catch collector outages without paging on a
 quiet but healthy server.
 
-## What's next
+## Related pages
 
 - Use [Run the Docker Compose stack](../docker-compose.md) to inspect the local
   Alloy, Loki, and OpenBao operational log wiring.

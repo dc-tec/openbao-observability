@@ -134,7 +134,7 @@ depends on unauthenticated metrics access.
 - Alerting on raw peer IDs without reviewing label cardinality and metadata
   exposure.
 
-## What's next
+## Related pages
 
 - Use [OpenBao HA/Raft observability](../concepts/openbao-ha-raft-observability.md)
   for the operational mental model.

@@ -135,7 +135,7 @@ credentials or resources that outlive the intended lifecycle.
 | Design decision | This project combines metrics for inventory, rate, and latency with query-time audit filters for request context. |
 | To validate | Auth method mix, token TTL policy, dynamic-secret backends, lease cleanup behavior, and retention windows in your deployment. |
 
-## What's next
+## Related pages
 
 - Use [OpenBao token and lease lifecycle dashboard](../dashboards/token-lease-lifecycle.md)
   to inspect the generated token and lease view.

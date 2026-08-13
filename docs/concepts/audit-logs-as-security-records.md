@@ -176,7 +176,7 @@ Parse them at query time in restricted dashboards instead.
 | Design decision | This project treats audit logs as restricted security records and uses canary-backed missing-audit alerts. |
 | To validate | Archive retention, SIEM forwarding, access controls, tenant boundaries, and failure behavior in your deployment. |
 
-## What's next
+## Related pages
 
 - Use [Configure declarative audit devices](../audit/declarative-audit.md) to
   configure repeatable audit devices.

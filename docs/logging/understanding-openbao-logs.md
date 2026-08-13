@@ -120,7 +120,7 @@ and user names.
 - Treating Loki as an audit archive without retention and access approval.
 - Treating Kubernetes platform events as OpenBao audit records.
 
-## What's next
+## Related pages
 
 - Use [Loki label strategy for OpenBao](./loki-label-strategy.md) before you
   change log labels.
@@ -142,8 +142,8 @@ Source: OpenBao documents server log settings in the
 documents completed request logging in the
 [OpenBao completed request logging documentation][openbao-log-requests].
 OpenBao documents audit devices in the
-[OpenBao audit device documentation][openbao-audit]. This page also reflects
-the repository stream contract in `contracts/streams/log-streams.yaml`.
+[OpenBao audit device documentation][openbao-audit]. The stream model also
+follows `contracts/streams/log-streams.yaml`.
 
 [openbao-audit]: https://openbao.org/docs/audit/
 [openbao-configuration]: https://openbao.org/docs/configuration/

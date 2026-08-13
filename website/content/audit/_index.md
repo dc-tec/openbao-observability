@@ -15,8 +15,8 @@ browse:
 
 # Audit
 
-Use this section to configure and reason about OpenBao audit devices, audit log
-pipelines, archive health, and audit-related security detections.
+Audit guidance covers audit devices, restricted log pipelines, archive health,
+and audit-related security detections.
 
 ## Topics
 

@@ -1,6 +1,7 @@
 # Fixtures
 
-This directory contains captured OpenBao metrics and log fixtures.
+Captured OpenBao metrics and log fixtures validate contracts and generated
+artifacts against observed OpenBao behavior.
 
 Generated captures live under `fixtures/captured/` and are ignored by Git by
 default because they contain timestamps, generated cluster IDs, and local

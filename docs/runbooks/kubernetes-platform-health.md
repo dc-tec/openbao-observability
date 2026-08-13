@@ -260,7 +260,7 @@ Treat data PVC pressure as a storage and availability issue. Treat audit PVC
 pressure as both a security and availability issue because audit-device write
 failures can affect OpenBao requests.
 
-## What's next
+## Related pages
 
 - Use [OpenBao Kubernetes platform dashboard](../dashboards/kubernetes-platform.md)
   to inspect platform context.

@@ -1,6 +1,6 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+## Supported versions
 
 Security fixes target `main` and the latest tagged minor release. Older minor
 release lines do not receive backports unless maintainers explicitly announce a
@@ -12,7 +12,7 @@ backport window.
 | Latest tagged minor | Security fixes after publication. |
 | Older tagged minors | Not supported unless explicitly announced. |
 
-## Reporting a Vulnerability
+## Report a vulnerability
 
 Do not report vulnerabilities, leaked secrets, unsafe audit-log examples, or
 credential exposure through a public issue.
@@ -40,7 +40,7 @@ Docker Compose, Kubernetes examples, and generated packaging artifacts.
 The local Docker Compose stack uses deterministic credentials and HTTP for
 local evaluation only. Do not treat those values as production guidance.
 
-## Known Dependency Caveats
+## Known dependency caveats
 
 `make vulncheck` uses `.govulnignore` for reviewed vulnerability IDs that are
 not reachable through this repository's shipped or documented behavior. Keep

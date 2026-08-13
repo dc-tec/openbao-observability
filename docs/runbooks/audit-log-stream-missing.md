@@ -139,7 +139,7 @@ Restore the contract label. Dashboards and alerts expect
 Treat this as a security incident unless the environment is explicitly exempt.
 Enable or restore audit devices through the approved security change process.
 
-## What's next
+## Related pages
 
 - Use [Audit request and response failures](./audit-request-response-failures.md)
   if OpenBao reports audit write failures.

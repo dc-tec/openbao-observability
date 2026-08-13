@@ -11,8 +11,8 @@ browse:
 
 # Logging
 
-Use this section to design OpenBao operational log and audit log pipelines
-without turning sensitive request metadata into unsafe labels or broad access.
+Logging guidance separates operational logs from restricted audit records and
+keeps sensitive request metadata out of labels and broad access paths.
 
 ## Topics
 

@@ -238,7 +238,7 @@ Check that Kubernetes service registration is enabled and that OpenBao can
 patch its pod labels. The OpenBao service account needs permissions to get,
 update, and patch its pod.
 
-## What's next
+## Related pages
 
 - Use [OpenBao observability model](../concepts/openbao-observability-model.md)
   to understand how metrics fit with logs, audit logs, and platform signals.

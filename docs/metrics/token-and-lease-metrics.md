@@ -85,7 +85,7 @@ secret-engine behavior, and recent changes.
 - Looking only at token creation while ignoring lookup, store, and revoke-tree
   latency.
 
-## What's next
+## Related pages
 
 - Use [Token and lease observability](../concepts/token-and-lease-observability.md)
   for the operational mental model.
@@ -100,8 +100,8 @@ Source: OpenBao documents leases in the
 [OpenBao lease documentation][openbao-lease]. OpenBao documents tokens in the
 [OpenBao token documentation][openbao-tokens]. OpenBao documents telemetry
 metric types, labels, and `usage_gauge_period` behavior in the
-[OpenBao telemetry metrics overview][openbao-telemetry-metrics]. This page
-also reflects the repository metric contract in
+[OpenBao telemetry metrics overview][openbao-telemetry-metrics]. The metric
+model also follows
 `contracts/metrics/openbao-core.yaml`.
 
 [openbao-lease]: https://openbao.org/docs/concepts/lease/

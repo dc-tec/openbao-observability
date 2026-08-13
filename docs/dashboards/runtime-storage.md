@@ -135,7 +135,7 @@ Operational logs are troubleshooting context. They are not audit records.
 - Runtime panels show Go process pressure, not container or node limits.
 - Operational logs depend on `log_stream="openbao.operational"`.
 
-## What's next
+## Related pages
 
 - Use [OpenBao overview dashboard](./overview-dashboard.md) when you need the
   first triage view.
@@ -155,8 +155,8 @@ Operational logs are troubleshooting context. They are not audit records.
   before you add mount, path, policy, or identity dimensions.
 
 Source: OpenBao documents telemetry metric behavior in the
-[OpenBao telemetry metrics overview][openbao-telemetry-metrics]. This page
-describes the generated dashboard contract in
+[OpenBao telemetry metrics overview][openbao-telemetry-metrics]. The generated
+dashboard contract is
 `contracts/dashboards/openbao-runtime-storage.yaml`.
 
 [openbao-telemetry-metrics]: https://openbao.org/docs/internals/telemetry/metrics/

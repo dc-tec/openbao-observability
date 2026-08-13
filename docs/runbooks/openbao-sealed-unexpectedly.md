@@ -134,7 +134,7 @@ Check whether Prometheus still scrapes a stale or sealed target. Then use
 [OpenBao metrics scrape failing](./openbao-metrics-scrape-failing.md) to
 restore target health.
 
-## What's next
+## Related pages
 
 - Use [No active OpenBao leader](./no-active-openbao-leader.md) if nodes are
   unsealed but no active node is elected.

@@ -132,7 +132,7 @@ secret.
 Recreate the canary secret at `secret/data/observability/audit-canary`. Do not
 store production secrets in this path.
 
-## What's next
+## Related pages
 
 - Use [Audit log stream missing](./audit-log-stream-missing.md) when the full
   audit stream is missing.

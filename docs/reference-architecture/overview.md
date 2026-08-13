@@ -110,7 +110,7 @@ match observed OpenBao behavior. It does not prove that your production
 retention, access control, alert routing, archive, or network design is
 complete.
 
-## What's next
+## Related pages
 
 - Use [Project status and maturity](./project-status.md) to understand what the
   repository validates today and what remains your production responsibility.

@@ -157,7 +157,7 @@ connection but never completes writes can block OpenBao requests.
 Keep the incident open until you identify the failed sink and confirm audit
 coverage. A single failed audit write still creates an evidence gap.
 
-## What's next
+## Related pages
 
 - Use [Audit log stream missing](./audit-log-stream-missing.md) if metrics
   recover but Loki or the log backend has no audit stream.

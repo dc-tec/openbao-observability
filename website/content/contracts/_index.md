@@ -8,8 +8,8 @@ browse:
 
 # Contracts
 
-Use this section to understand the source contracts that drive generated
-Prometheus, Loki, Grafana, and reference artifacts.
+Source contracts define the Prometheus, Loki, Grafana, and reference artifacts
+that this repository generates.
 
 ## Topics
 

@@ -25,8 +25,8 @@ browse:
 
 # Runbooks
 
-Use this section when a generated alert fires or when you need a structured
-response path for an OpenBao observability condition.
+Runbooks provide ordered investigation, recovery, and verification steps for
+generated alerts and OpenBao observability conditions.
 
 ## Topics
 

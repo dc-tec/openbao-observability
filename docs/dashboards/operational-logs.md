@@ -111,7 +111,7 @@ an audit-log replacement.
 - Completed request logs appear only when enabled in OpenBao configuration.
 - Operational logs do not cover every audited API detail.
 
-## What's next
+## Related pages
 
 - Use [Metrics, logs, and audit logs](../concepts/metrics-vs-logs-vs-audit-logs.md)
   to choose between operational logs and audit logs.

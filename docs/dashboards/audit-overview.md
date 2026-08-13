@@ -161,7 +161,7 @@ have an owner, change record, or incident context.
 - Request/response balance is directional and depends on the selected time
   window.
 
-## What's next
+## Related pages
 
 - Use [OpenBao audit investigation dashboard](./audit-investigation.md) for
   request ID, path, operation, or node drilldown.
@@ -185,8 +185,8 @@ have an owner, change record, or incident context.
 Source: OpenBao documents audit-device behavior, unaudited paths, and HMAC
 limits in the [OpenBao audit device documentation][openbao-audit]. OpenBao
 documents audit telemetry metrics in the
-[OpenBao audit telemetry documentation][openbao-audit-telemetry]. This page
-describes the generated dashboard contract in
+[OpenBao audit telemetry documentation][openbao-audit-telemetry]. The generated
+dashboard contract is
 `contracts/dashboards/openbao-audit-overview.yaml`.
 
 [openbao-audit]: https://openbao.org/docs/audit/

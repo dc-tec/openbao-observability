@@ -133,8 +133,8 @@ split-brain incident until you prove that the signal is a scrape artifact.
 
 ### Two Prometheus series point to the same node
 
-Fix relabeling, federation, or duplicate scrape jobs. The alert should only
-count each OpenBao node once.
+Fix relabeling, federation, or duplicate scrape jobs so the alert counts each
+OpenBao node once.
 
 ### The alert fires after a restart
 
@@ -147,7 +147,7 @@ freshness or alert deduplication rather than changing OpenBao.
 Treat the incident as split brain. Isolate nodes through your incident process
 and preserve evidence before remediation.
 
-## What's next
+## Related pages
 
 - Use [No active OpenBao leader](./no-active-openbao-leader.md) if remediation
   leaves the cluster without an active node.

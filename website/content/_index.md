@@ -10,8 +10,9 @@ hero_image_path: "docs/assets/grafana-dashboards.png"
 hero_image_alt: "Grafana dashboard collage showing OpenBao overview, HA/Raft, audit, and feature-specific observability panels."
 ---
 
-Use this site to understand OpenBao observability, run the local validation
-profile, adopt generated artifacts, read dashboards, and respond to alerts.
+OpenBao Observability defines portable signal, dashboard, alert, and runbook
+contracts. The documentation explains how to run the local validation profile
+and adapt the generated artifacts to another observability platform.
 
 The architecture starts from verified OpenBao behavior and source contracts,
 then publishes a tested Prometheus, Loki, Grafana, and Grafana Alloy profile

@@ -120,7 +120,7 @@ Operational logs are troubleshooting context. They are not audit records.
 - Operational logs depend on `log_stream="openbao.operational"`.
 - The dashboard does not replace OpenBao storage recovery procedures.
 
-## What's next
+## Related pages
 
 - Use [Configure an all-node metrics scrape](../metrics/all-node-metrics-scrape.md)
   when you need standby and follower visibility.

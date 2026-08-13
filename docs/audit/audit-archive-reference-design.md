@@ -201,7 +201,7 @@ Use this checklist before you rely on the archive path:
 | Design decision | This project separates `openbao.audit` exploration from `openbao.audit_archive` evidence delivery and recommends a local file replay source for production. |
 | To validate | SIEM acknowledgement, object-store retention settings, legal hold, dead-letter handling, replay behavior, and archive alert expressions in your environment. |
 
-## What's next
+## Related pages
 
 - Use [Configure declarative audit devices](./declarative-audit.md) to
   configure repeatable audit devices.

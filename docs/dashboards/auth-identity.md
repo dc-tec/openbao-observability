@@ -116,7 +116,7 @@ approves the security and cardinality tradeoff.
 - Token backend activity does not always carry identity information.
 - It interprets fields based on the current audit JSON shape.
 
-## What's next
+## Related pages
 
 - Use [OpenBao audit investigation dashboard](./audit-investigation.md) for
   request ID and path drilldown across all audit paths.
@@ -130,8 +130,8 @@ approves the security and cardinality tradeoff.
 Source: OpenBao documents authentication behavior in the
 [OpenBao authentication documentation][openbao-auth]. OpenBao documents
 identity entities, aliases, groups, and identity auditing in the
-[OpenBao identity documentation][openbao-identity]. This page describes the
-generated dashboard contract in
+[OpenBao identity documentation][openbao-identity]. The generated dashboard
+contract is
 `contracts/dashboards/openbao-auth-identity.yaml`.
 
 [openbao-auth]: https://openbao.org/docs/concepts/auth/

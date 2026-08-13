@@ -544,7 +544,7 @@ docker compose --project-directory examples/docker-compose \
   --profile audit-archive logs audit-archive-status-writer audit-archive-health
 ```
 
-## What's next
+## Related pages
 
 - Inspect generated rule files in `generated/prometheus/`.
 - Inspect prefix-specific rule variants in

@@ -268,7 +268,7 @@ deployment mounts Transit elsewhere, copy the alert and replace the
 Treat the warning as early pressure. Check storage, Raft, external database,
 and client workload changes before you change secret engine configuration.
 
-## What's next
+## Related pages
 
 - Use [OpenBao secret engines and mounts dashboard](../dashboards/secret-engines-mounts.md)
   to inspect feature metrics and audit context together.

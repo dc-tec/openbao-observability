@@ -2,8 +2,8 @@
 
 Use this runbook when the `OpenBaoCompletedRequestLoggingObserved` alert fires
 because Loki has received OpenBao completed request logs. Completed request
-logging is a temporary troubleshooting stream and should not remain enabled
-outside an approved window.
+logging is a temporary troubleshooting stream. Do not leave it enabled outside
+an approved window.
 
 ## Before you begin
 
@@ -124,7 +124,7 @@ Check the alert evaluation window and Loki query time range. The alert clears
 after the configured `for` period and query window no longer contain completed
 request entries.
 
-## What's next
+## Related pages
 
 - Use [OpenBao operational logs dashboard](../dashboards/operational-logs.md)
   to inspect completed request stream context.

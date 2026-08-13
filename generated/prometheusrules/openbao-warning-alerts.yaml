@@ -70,7 +70,7 @@ spec:
               annotations:
                 description: OpenBao reports more than five additional mount table entries compared with one hour ago.
                 runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/runtime-storage-warnings.md
-                summary: OpenBao mount table grew quickly
+                summary: OpenBao mount table grew by more than five entries
             - alert: OpenBaoPKIOperationFailures
               expr: (openbao:pki_issue_failure:increase15m > 0) or (openbao:pki_revoke_failure:increase15m > 0)
               for: 5m

@@ -142,7 +142,7 @@ you investigate one OpenBao node.
 Run the same request from the Prometheus network path. Scrape failures often
 come from service discovery, NetworkPolicy, or TLS trust differences.
 
-## What's next
+## Related pages
 
 - Use [Run the Docker Compose stack](../docker-compose.md) to reproduce the
   local reference stack.

@@ -161,7 +161,7 @@ the secure active-node baseline.
 | Design decision | This project treats active-node scraping as the secure baseline and all-node scraping as an elevated HA/Raft diagnostics profile. |
 | To validate | Kubernetes service labels, scrape identities, listener isolation, namespace label policy for your feature set, operator-managed read replicas, and production read-capacity thresholds. |
 
-## What's next
+## Related pages
 
 - Use [Configure a secure metrics scrape](../metrics/secure-metrics-scrape.md)
   for the authenticated active-node baseline.

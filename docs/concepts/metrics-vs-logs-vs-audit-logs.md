@@ -123,7 +123,7 @@ records, and platform events as the evidence behind the decision.
 | Design decision | This project treats audit logs as security records, keeps them in a dedicated Loki stream, and uses audit canaries to distinguish quiet clusters from broken audit pipelines. |
 | To validate | Retention, access control, SIEM forwarding, and platform-event coverage in your deployment environment. |
 
-## What's next
+## Related pages
 
 - Use [OpenBao observability model](./openbao-observability-model.md) to see
   how source signals become dashboards and alerts.

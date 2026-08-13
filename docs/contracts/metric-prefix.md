@@ -215,7 +215,7 @@ make verify-live
 | `contracts/alerts/critical.yaml` | Alert contract that maps critical alerts to runbooks. |
 | `contracts/alerts/warning.yaml` | Alert contract that maps warning alerts to runbooks. |
 
-## What's next
+## Related pages
 
 - Use [OpenBao observability model](../concepts/openbao-observability-model.md)
   to understand why the project separates source and derived signals.

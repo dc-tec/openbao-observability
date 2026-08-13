@@ -77,7 +77,7 @@ Use the bring-your-own-backend pattern when your organization already has a
 standard observability platform. Port the architecture, not the local demo
 stack.
 
-## What's next
+## Related pages
 
 - Use [Reference architecture overview](../reference-architecture/overview.md)
   to understand what stays portable across profiles.

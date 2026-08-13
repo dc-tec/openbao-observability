@@ -7,8 +7,8 @@ contract that lets the operator and this repository stay complementary.
 
 ## Contract scope
 
-This page defines the contract for observing OpenBao workloads that the
-operator creates. It does not define the operator control-plane metrics,
+This contract covers observability for OpenBao workloads that the operator
+creates. It does not cover operator control-plane metrics,
 controller dashboards, backup controller alerts, restore workflows, upgrade
 workflows, or tenant admission signals.
 
@@ -76,7 +76,7 @@ preserve the same labels, target shape, and scrape semantics.
 | -------- | -------------- | ----------------- |
 | Metrics Service | `<cluster-name>-metrics` in the `OpenBaoCluster` namespace. | Expose port `https-metrics` and select the correct pods for the chosen scrape profile. |
 | Active metrics Service | ClusterIP Service that selects the active OpenBao pod. | Select `openbao-active: "true"` when Kubernetes service registration supplies that label. |
-| All-node metrics Service | Headless Service with `publishNotReadyAddresses: true`. | Select every OpenBao pod that should expose metrics, including sealed or not-yet-ready pods. |
+| All-node metrics Service | Headless Service with `publishNotReadyAddresses: true`. | Select every OpenBao pod configured to expose metrics, including sealed or not-yet-ready pods. |
 | ServiceMonitor | `<cluster-name>-metrics` in the `OpenBaoCluster` namespace. | Scrape `/v1/sys/metrics` with `format=prometheus` from the metrics Service. |
 | ServiceMonitor endpoint | Port `https-metrics`, path `/v1/sys/metrics`, and `format=prometheus`. | Include interval, timeout, authorization, TLS, and signal-identity relabeling based on the operator configuration. |
 | Target relabeling | Prometheus target labels `cluster`, `kubernetes_namespace`, `pod`, and `scrape_profile`. | Preserve deployment identity without accepting conflicting labels from the scraped endpoint. |
@@ -228,7 +228,7 @@ operator and the OpenBao workload.
 | Platform alerts | Platform team. | Is Kubernetes, storage, network, DNS, or collection infrastructure preventing either layer from working? |
 
 Runbooks can link across ownership boundaries, but the alert name and primary
-owner should not change. This keeps paging, escalation, and post-incident
+owner must not change. This keeps paging, escalation, and post-incident
 review clear.
 
 ## Minimum acceptance checklist
@@ -272,7 +272,7 @@ validation before you page on operator-specific role labels. Use all-node
 scraping for diagnosis, then keep quorum alerts separate from read-capacity
 alerts.
 
-## What's next
+## Related pages
 
 - Use [OpenBao Operator companion profile](./openbao-operator.md) to understand
   the high-level companion model.

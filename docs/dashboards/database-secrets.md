@@ -147,7 +147,7 @@ paths can reveal application architecture.
   grouping.
 - The dashboard depends on Loki retention for `log_stream="openbao.audit"`.
 
-## What's next
+## Related pages
 
 - Use [Secret engine feature warnings](../runbooks/secret-engine-feature-warnings.md)
   when database warnings fire.
@@ -161,8 +161,8 @@ paths can reveal application architecture.
 Source: OpenBao documents database secrets engine behavior in the
 [OpenBao database secrets engine documentation][openbao-database]. OpenBao
 documents database telemetry in the
-[OpenBao database telemetry documentation][openbao-database-metrics]. This page
-describes the generated dashboard contract in
+[OpenBao database telemetry documentation][openbao-database-metrics]. The
+generated dashboard contract is
 `contracts/dashboards/openbao-database-secrets.yaml`.
 
 [openbao-database]: https://openbao.org/docs/secrets/databases/
