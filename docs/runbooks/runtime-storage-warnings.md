@@ -225,7 +225,7 @@ the warning as a leak.
 The alert requires active cache traffic. If it fires in a quiet cluster, check
 recording rule freshness and scrape timestamps.
 
-## What's next
+## Related pages
 
 - Use [OpenBao runtime and storage dashboard](../dashboards/runtime-storage.md)
   to inspect the correlated signals.

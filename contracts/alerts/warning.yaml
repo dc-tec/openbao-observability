@@ -64,7 +64,7 @@ alerts:
     signal: metrics
     for: 10m
     expression: sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:core_mount_table_num_entries:max) - sum by (cluster, kubernetes_namespace, scrape_profile) (openbao:core_mount_table_num_entries:max offset 1h) > 5
-    summary: OpenBao mount table grew quickly
+    summary: OpenBao mount table grew by more than five entries
     description: OpenBao reports more than five additional mount table entries compared with one hour ago.
     runbook: docs/runbooks/runtime-storage-warnings.md
     labels:

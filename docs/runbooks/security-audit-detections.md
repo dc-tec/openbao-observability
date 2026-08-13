@@ -156,7 +156,7 @@ and response entries with operational logs and change records.
 Fix the application policy or request path if the denials are recurring. Use a
 silence only for an approved migration or test window.
 
-## What's next
+## Related pages
 
 - Use [OpenBao audit overview dashboard](../dashboards/audit-overview.md) for
   security detection summary panels.

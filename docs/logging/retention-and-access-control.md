@@ -111,7 +111,7 @@ If a dashboard mixes operational and audit data, use the audit access boundary.
 | Design decision | This project separates operational logs, completed request logs, audit logs, audit archives, and platform events into different streams and access boundaries. |
 | To validate | Your Loki tenant model, archive backend, legal retention, object-store lifecycle policy, and Grafana folder permissions. |
 
-## What's next
+## Related pages
 
 - Use [Understanding OpenBao logs](./understanding-openbao-logs.md) to choose
   the right log stream.
@@ -129,8 +129,8 @@ Source: Loki documents retention in the
 completed request logging in the
 [OpenBao completed request logging documentation][openbao-log-requests].
 OpenBao documents audit-device behavior in the
-[OpenBao audit device documentation][openbao-audit]. This page also reflects
-the repository stream contract in `contracts/streams/log-streams.yaml`.
+[OpenBao audit device documentation][openbao-audit]. The retention model also
+follows `contracts/streams/log-streams.yaml`.
 
 [loki-retention]: https://grafana.com/docs/loki/latest/operations/storage/retention/
 [openbao-audit]: https://openbao.org/docs/audit/

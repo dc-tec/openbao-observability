@@ -164,7 +164,7 @@ For production operator-managed clusters:
 - Keep operator compatibility, OpenBao compatibility, and observability fixture
   compatibility visible in release notes.
 
-## What's next
+## Related pages
 
 - Use [Reference architecture overview](../reference-architecture/overview.md)
   to understand the portable signal model.

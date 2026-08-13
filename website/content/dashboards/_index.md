@@ -15,14 +15,15 @@ browse:
   - "/dashboards/pki"
   - "/dashboards/secret-engines-mounts"
   - "/dashboards/runtime-storage"
+  - "/dashboards/namespaces-scale"
   - "/dashboards/kubernetes-platform"
   - "/dashboards/slo-availability"
 ---
 
 # Dashboards
 
-Use this section to understand what each generated Grafana dashboard is for,
-which data sources it expects, and how to interpret the panels.
+Dashboard guides define each generated Grafana dashboard's purpose, required
+data sources, and panel interpretation.
 
 ## Topics
 
@@ -32,3 +33,5 @@ which data sources it expects, and how to interpret the panels.
   Raft health, Autopilot, and peer state.
 - [OpenBao audit investigation dashboard](/dashboards/audit-investigation/)
   supports request ID drilldown, risky paths, and auth activity.
+- [OpenBao namespaces and scale dashboard](/dashboards/namespaces-scale/)
+  shows namespace activity, Raft voters, and read-replica signals.

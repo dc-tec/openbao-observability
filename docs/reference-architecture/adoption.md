@@ -139,7 +139,7 @@ Your adopted profile is ready for review when these checks pass:
   sealed state, no active node, audit write failure, audit stream missing, and
   collector failure.
 
-## What's next
+## Related pages
 
 - Use [Implementation profiles](../implementation-profiles/README.md) to choose
   the closest starting profile.

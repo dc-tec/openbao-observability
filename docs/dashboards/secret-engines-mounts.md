@@ -172,7 +172,7 @@ cardinality and metadata exposure tradeoff.
   cover the reference `kv-v1/` and default `secret/` mounts, not every
   possible KV mount name.
 
-## What's next
+## Related pages
 
 - Use [OpenBao audit investigation dashboard](./audit-investigation.md) for
   broader request ID, path, operation, and node drilldown.
@@ -197,8 +197,7 @@ database, Transit, and PKI behavior in the
 [OpenBao KV documentation][openbao-kv],
 [OpenBao database secrets engine documentation][openbao-database],
 [OpenBao Transit documentation][openbao-transit], and
-[OpenBao PKI documentation][openbao-pki]. This page describes the generated
-dashboard contract in
+[OpenBao PKI documentation][openbao-pki]. The generated dashboard contract is
 `contracts/dashboards/openbao-secret-engines-mounts.yaml`.
 
 [openbao-database]: https://openbao.org/docs/secrets/databases/

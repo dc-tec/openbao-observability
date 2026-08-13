@@ -9,12 +9,13 @@ browse:
   - "/metrics/compatibility-matrix"
   - "/metrics/ha-raft-metrics"
   - "/metrics/token-and-lease-metrics"
+  - "/metrics/secret-engine-metrics"
 ---
 
 # Metrics
 
-Use this section to configure OpenBao metrics collection and understand how the
-reference architecture normalizes source metrics into stable derived signals.
+Metrics guidance covers collection profiles and the normalization of OpenBao
+source metrics into stable derived signals.
 
 ## Topics
 
@@ -24,3 +25,5 @@ reference architecture normalizes source metrics into stable derived signals.
   authenticated active-node scraping.
 - [All-node metrics scrape](/metrics/all-node-metrics-scrape/) configures
   private per-node visibility for HA and Raft diagnostics.
+- [OpenBao secret engine metrics](/metrics/secret-engine-metrics/) describes
+  aggregate and feature-specific secret engine signals.

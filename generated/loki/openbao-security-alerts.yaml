@@ -88,6 +88,6 @@ spec:
                 signal: loki
                 source_prefix: vault
               annotations:
-                description: Loki has received completed request logs, which should only exist during an approved troubleshooting window.
+                description: Loki has received completed request logs. Allow these logs only during an approved troubleshooting window.
                 runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/completed-request-logging-enabled.md
                 summary: OpenBao completed request logging is active

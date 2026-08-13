@@ -142,7 +142,7 @@ Restore the external backend or plugin first. If the external credential no
 longer exists, record that evidence and follow your local security cleanup
 process before forcing OpenBao-side lease cleanup.
 
-## What's next
+## Related pages
 
 - Use [Run the Docker Compose stack](../docker-compose.md) to inspect the
   `OpenBao token and lease lifecycle` dashboard locally.

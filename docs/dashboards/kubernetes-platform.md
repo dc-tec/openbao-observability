@@ -134,7 +134,7 @@ Do not treat Kubernetes events as audit evidence.
 - The default selectors are conservative and may need adjustment for a
   platform that does not name the OpenBao container `openbao` or `bao`.
 
-## What's next
+## Related pages
 
 - Use [Kubernetes platform health](../runbooks/kubernetes-platform-health.md)
   when a platform alert fires.
@@ -155,8 +155,8 @@ kube-state-metrics project documents `kube_pod_container_status_ready`,
 `kube_node_status_condition` in its [pod][kube-state-metrics-pod] and
 [node][kube-state-metrics-node] metric references. Kubernetes documents kubelet
 node, pod, container, and volume metrics in [Node metrics
-data][kubernetes-node-metrics]. This page describes the generated dashboard
-contract in `contracts/dashboards/openbao-kubernetes-platform.yaml`.
+data][kubernetes-node-metrics]. The generated dashboard contract is
+`contracts/dashboards/openbao-kubernetes-platform.yaml`.
 
 [kubernetes-ksm]: https://kubernetes.io/docs/concepts/cluster-administration/kube-state-metrics/
 [kubernetes-node-metrics]: https://kubernetes.io/docs/reference/instrumentation/node-metrics/

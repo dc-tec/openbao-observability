@@ -152,7 +152,7 @@ organizational structure.
 - Namespace paths are deliberately not labels, so path-level namespace
   investigation remains a restricted audit-log workflow.
 
-## What's next
+## Related pages
 
 - Use [Namespaces and scale observability](../concepts/namespaces-and-scale-observability.md)
   to understand the topology model behind this dashboard.
@@ -169,5 +169,5 @@ organizational structure.
 
 Source: OpenBao namespace and Raft scale behavior are discussed in
 [Namespaces and scale observability](../concepts/namespaces-and-scale-observability.md).
-This page describes the generated dashboard contract in
+The generated dashboard contract is
 `contracts/dashboards/openbao-namespaces-scale.yaml`.

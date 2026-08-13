@@ -202,7 +202,7 @@ alert contract when your approved target is different.
 Investigate network, DNS, TLS, load balancer, proxy, and probe-location
 dependencies before changing OpenBao.
 
-## What's next
+## Related pages
 
 - Use [OpenBao SLO and availability dashboard](../dashboards/slo-availability.md)
   to inspect availability, burn rate, and latency context.

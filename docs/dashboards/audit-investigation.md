@@ -147,7 +147,7 @@ restricted query-time filters, not ingestion labels.
 - It cannot show OpenBao paths that bypass the audit system.
 - It interprets fields based on the current audit JSON shape.
 
-## What's next
+## Related pages
 
 - Use [OpenBao audit overview dashboard](./audit-overview.md) when you need
   audit-health and volume context before drilling down.
@@ -171,8 +171,8 @@ restricted query-time filters, not ingestion labels.
 Source: OpenBao documents audit-device behavior, unaudited paths, and HMAC
 limits in the [OpenBao audit device documentation][openbao-audit]. Loki
 documents low-cardinality label guidance in the
-[Grafana Loki label documentation][loki-labels]. This page describes the
-generated dashboard contract in
+[Grafana Loki label documentation][loki-labels]. The generated dashboard
+contract is
 `contracts/dashboards/openbao-audit-investigation.yaml`.
 
 [loki-labels]: https://grafana.com/docs/loki/latest/get-started/labels/

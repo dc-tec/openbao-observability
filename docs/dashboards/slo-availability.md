@@ -147,7 +147,7 @@ SLO dashboard is complete.
 - The dashboard does not define incident severity policy. Your organization
   owns paging thresholds and error-budget policy.
 
-## What's next
+## Related pages
 
 - Use [SLO and availability](../runbooks/slo-availability.md) when synthetic
   probe or burn-rate alerts fire.
@@ -164,8 +164,8 @@ Source: Prometheus documents blackbox-style multi-target probes with
 `probe_success` and `probe_duration_seconds` in the
 [Prometheus multi-target exporter guide][prometheus-blackbox]. Prometheus
 documents alerting rules and the `for` clause in the
-[Prometheus alerting rules documentation][prometheus-alerting]. This page
-describes the generated dashboard contract in
+[Prometheus alerting rules documentation][prometheus-alerting]. The generated
+dashboard contract is
 `contracts/dashboards/openbao-slo-availability.yaml`.
 
 [prometheus-alerting]: https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/

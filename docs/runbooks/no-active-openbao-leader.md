@@ -155,7 +155,7 @@ Switch to [Multiple active OpenBao nodes](./multiple-active-nodes.md). Treat the
 incident as possible split brain until you prove the signal is a scrape
 artifact.
 
-## What's next
+## Related pages
 
 - Use [OpenBao metrics scrape failing](./openbao-metrics-scrape-failing.md) if
   Prometheus is missing the active node.

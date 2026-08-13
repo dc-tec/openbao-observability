@@ -114,7 +114,7 @@ policies, and client addresses as labels.
 - Looking only at operation rate while ignoring latency, errors, and audit
   context.
 
-## What's next
+## Related pages
 
 - Use [OpenBao secret engines and mounts dashboard](../dashboards/secret-engines-mounts.md)
   to combine aggregate metrics with restricted audit investigation.
@@ -129,8 +129,8 @@ Source: OpenBao documents secret engine telemetry, including
 `vault.secret.kv.count`, in the
 [OpenBao secrets telemetry documentation][openbao-secrets-telemetry]. OpenBao
 documents metric types and `usage_gauge_period` behavior in the
-[OpenBao telemetry metrics overview][openbao-telemetry-metrics]. This page
-also reflects the repository metric contract in
+[OpenBao telemetry metrics overview][openbao-telemetry-metrics]. The metric
+model also follows
 `contracts/metrics/openbao-core.yaml`.
 
 [openbao-secrets-telemetry]: https://openbao.org/docs/internals/telemetry/metrics/secrets/

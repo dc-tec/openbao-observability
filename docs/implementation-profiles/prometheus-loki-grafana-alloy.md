@@ -149,7 +149,7 @@ You can replace one layer of the profile without replacing the architecture.
 | Alloy with another collector. | Source separation, least privilege, delivery health, and audit archive delivery. |
 | PrometheusRule with another alerting engine. | Alert names, severities, runbook links, and response expectations. |
 
-## What's next
+## Related pages
 
 - Use [Run the Docker Compose stack](../docker-compose.md) to start the local
   profile.

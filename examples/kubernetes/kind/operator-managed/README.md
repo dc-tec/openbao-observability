@@ -184,7 +184,7 @@ Delete the kind cluster when you finish validation:
 make kind-operator-down
 ```
 
-## What's next
+## Related pages
 
 - Use [Operator-managed OpenBao examples](../../operator-managed/) when you
   adapt active scrape, all-node scrape, and audit patches to an existing

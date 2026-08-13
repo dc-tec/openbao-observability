@@ -125,7 +125,7 @@ storage, policy, application behavior, or cleanup behavior.
   Loki.
 - Auth method grouping is useful for trend analysis, not full attribution.
 
-## What's next
+## Related pages
 
 - Use [Irrevocable leases present](../runbooks/irrevocable-leases.md) when
   OpenBao reports irrevocable leases.
@@ -147,8 +147,8 @@ storage, policy, application behavior, or cleanup behavior.
 Source: OpenBao documents leases, renewal, and revocation in the
 [OpenBao lease documentation][openbao-lease]. OpenBao documents telemetry
 metric types, labels, and `usage_gauge_period` behavior in the
-[OpenBao telemetry metrics overview][openbao-telemetry-metrics]. This page
-describes the generated dashboard contract in
+[OpenBao telemetry metrics overview][openbao-telemetry-metrics]. The generated
+dashboard contract is
 `contracts/dashboards/openbao-token-lease-lifecycle.yaml`.
 
 [openbao-lease]: https://openbao.org/docs/concepts/lease/

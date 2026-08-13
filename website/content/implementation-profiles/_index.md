@@ -13,9 +13,8 @@ browse:
 
 # Profiles
 
-Use this section when you want to run the included stack, deploy generated
-artifacts, or apply the reference architecture to an operator-managed OpenBao
-cluster.
+Implementation profiles apply the reference architecture to the included stack,
+generated artifacts, Kubernetes, and operator-managed OpenBao clusters.
 
 ## Topics
 

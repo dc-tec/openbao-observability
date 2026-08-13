@@ -94,12 +94,12 @@ sealed-node diagnostics, standby nodes, read replicas, or runtime pressure.
 
 ## Configure declarative audit devices
 
-Use `declarative-audit-openbaocluster-patch.yaml` when the operator should
+Use `declarative-audit-openbaocluster-patch.yaml` when you want the operator to
 configure audit devices as part of the workload baseline.
 
-Before you apply the patch, make sure the OpenBao pods have the volume mounts
-and permissions required for the configured file paths. This requirement is for
-audit files, not ordinary OpenBao operational logs. The platform still owns
+Before you apply the patch, configure the OpenBao pods with the volume mounts
+and permissions required for the file paths. This requirement applies to audit
+files, not ordinary OpenBao operational logs. The platform still owns
 collection, archive delivery, retention, and access control for audit logs.
 
 ```shell
@@ -150,7 +150,7 @@ these checks pass:
   durable archive delivery.
 - Grafana can load the generated dashboards.
 
-## What's next
+## Related pages
 
 - Use [OpenBao Operator companion profile](../../../docs/implementation-profiles/openbao-operator.md)
   to understand the ownership boundary.

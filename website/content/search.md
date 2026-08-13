@@ -6,7 +6,6 @@ layout: "search"
 
 # Search
 
-Use this page when you know the question but not the section name.
-
-Search spans architecture explainers, implementation profiles, metrics and
-logging references, dashboard docs, and alert runbooks.
+Search by signal, dashboard, alert, runbook, or deployment profile. Results span
+architecture explainers, implementation profiles, metrics and logging
+references, dashboard guides, and alert runbooks.

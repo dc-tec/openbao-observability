@@ -15,8 +15,8 @@ browse:
 
 # Concepts
 
-Use this section when you need the mental model behind OpenBao observability
-signals, dashboard panels, and alert rules.
+These concepts explain how OpenBao signals become dashboard panels, alert
+rules, and operator decisions.
 
 ## Topics
 

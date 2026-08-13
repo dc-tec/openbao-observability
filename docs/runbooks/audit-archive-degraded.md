@@ -232,7 +232,7 @@ the durable archive path.
 Silence the alert only when the security owner confirms the maintenance window,
 local backlog capacity, replay plan, and evidence handling.
 
-## What's next
+## Related pages
 
 - Use [Audit archive reference design](../audit/audit-archive-reference-design.md)
   to validate the archive pattern and failure modes.

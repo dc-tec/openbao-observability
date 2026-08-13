@@ -120,7 +120,7 @@ you only need cluster-level health.
 | Design decision | This project normalizes source metrics into `openbao:` recording rules and keeps audit fields out of Loki labels. |
 | To validate | Deployment-specific labels, scrape identities, retention controls, and OpenBao versions outside the validated fixture set. |
 
-## What's next
+## Related pages
 
 - Use [Metrics, logs, and audit logs](./metrics-vs-logs-vs-audit-logs.md) to
   choose the right signal for a question.

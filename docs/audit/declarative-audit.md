@@ -29,7 +29,7 @@ keeps audit changes under normal configuration review.
 
 Use declarative audit configuration as the baseline. OpenBao creates and
 removes declarative audit devices on the active node during restart and
-`SIGHUP` handling, and the same configuration should exist on every server.
+`SIGHUP` handling. The same configuration must exist on every server.
 
 ## Configure a file audit device
 
@@ -241,7 +241,7 @@ you disable or move an audit device.
 Check the collector file target, read permissions, positions file, and labels.
 The reference dashboards and alerts expect `log_stream="openbao.audit"`.
 
-## What's next
+## Related pages
 
 - Use [Metrics, logs, and audit logs](../concepts/metrics-vs-logs-vs-audit-logs.md)
   to choose the right signal for troubleshooting or investigation.

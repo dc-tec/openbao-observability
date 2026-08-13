@@ -108,7 +108,7 @@ Before you apply the example:
 - Replace the namespace if your monitoring stack does not use `monitoring`.
 - Replace the example OpenBao cluster and environment labels.
 - Replace the `ServiceMonitor` labels so your Prometheus resource selects it.
-- Deploy the exporter image and make sure its Pod uses the
+- Deploy the exporter image. Configure its Pod with the
   `app.kubernetes.io/name=openbao-audit-archive-health` label.
 
 ## Status file contract
@@ -154,7 +154,7 @@ When the exporter is not enabled and the status file does not enable archive
 delivery, it emits only `openbao_audit_archive_enabled` as `0`. This keeps local
 and exempt environments quiet.
 
-## What's next
+## Related pages
 
 - Use [Audit archive reference design](../../docs/audit/audit-archive-reference-design.md)
   to choose the archive pattern and failure tests.

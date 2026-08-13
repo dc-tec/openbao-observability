@@ -127,7 +127,7 @@ or store it in a restricted backend designed for investigation.
 | Design decision | This project treats request paths, IDs, entity IDs, token accessors, auth accessors, and client addresses as investigation fields instead of labels. |
 | To validate | Your production cardinality, tenant boundaries, retention windows, and access-control requirements. |
 
-## What's next
+## Related pages
 
 - Use [OpenBao observability model](./openbao-observability-model.md) to see
   where labels fit in the signal pipeline.

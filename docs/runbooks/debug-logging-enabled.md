@@ -114,7 +114,7 @@ Add a maintenance annotation or silence in your alerting system for the
 approved troubleshooting window. Do not change the dashboard or alert contract
 to hide the signal.
 
-## What's next
+## Related pages
 
 - Use [Operational log stream missing](./operational-log-stream-missing.md) if
   operational logs disappear after a logging change.

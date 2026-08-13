@@ -170,7 +170,7 @@ Check the node's cluster address, persistent storage, clock synchronization,
 resource pressure, and snapshot transfer logs. A node that can reach the API
 address can still fail Raft replication on the cluster address.
 
-## What's next
+## Related pages
 
 - Use [No active OpenBao leader](./no-active-openbao-leader.md) if Raft health
   issues remove the active node.

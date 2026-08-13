@@ -163,7 +163,7 @@ operational logs as audit evidence.
 - Inventory-style gauges can update on `usage_gauge_period` rather than every
   scrape.
 
-## What's next
+## Related pages
 
 - Use [OpenBao observability model](../concepts/openbao-observability-model.md)
   to understand the source and derived signals behind the dashboard.
@@ -185,8 +185,8 @@ operational logs as audit evidence.
 Source: OpenBao documents telemetry behavior in the
 [OpenBao telemetry metrics overview][openbao-telemetry-metrics]. OpenBao
 documents audit-device behavior and unaudited paths in the
-[OpenBao audit device documentation][openbao-audit]. This page describes the
-generated dashboard contract in
+[OpenBao audit device documentation][openbao-audit]. The generated dashboard
+contract is
 `contracts/dashboards/openbao-overview.yaml`.
 
 [openbao-audit]: https://openbao.org/docs/audit/

@@ -6,9 +6,9 @@ sensitive or high-cardinality audit fields.
 
 ## Why this matters
 
-Loki indexes labels, not full log line content. Good labels make log streams
-easy to route and query. Poor labels create too many streams, make queries
-expensive, and expose metadata that belongs in restricted investigation views.
+Loki indexes labels, not full log line content. Good labels support log routing
+and queries. Poor labels create too many streams, make queries expensive, and
+expose metadata that belongs in restricted investigation views.
 
 OpenBao audit logs are especially sensitive because paths, request IDs,
 identity fields, token metadata, and client metadata can reveal how the
@@ -132,7 +132,7 @@ If any condition fails, keep the value out of labels.
 - Forgetting that labels can leak metadata even when audit values are HMACed.
 - Mixing audit and operational logs in the same `log_stream`.
 
-## What's next
+## Related pages
 
 - Use [High-cardinality and label safety](../concepts/high-cardinality-and-label-safety.md)
   for the broader Prometheus and Loki label model.
@@ -146,7 +146,7 @@ If any condition fails, keep the value out of labels.
 Source: Loki documents labels and low-cardinality guidance in the
 [Grafana Loki label documentation][loki-labels]. Loki documents structured
 metadata in the [Grafana Loki structured metadata documentation][loki-structured-metadata].
-This page also reflects the repository stream contract in
+The label strategy also follows the repository stream contract in
 `contracts/streams/log-streams.yaml`.
 
 [loki-labels]: https://grafana.com/docs/loki/latest/get-started/labels/

@@ -124,7 +124,7 @@ lifecycle patterns.
 - The dashboard does not replace certificate expiry monitoring or CRL
   validation.
 
-## What's next
+## Related pages
 
 - Use [Secret engine feature warnings](../runbooks/secret-engine-feature-warnings.md)
   when PKI warnings fire.
@@ -140,7 +140,7 @@ lifecycle patterns.
 Source: OpenBao documents PKI behavior in the
 [OpenBao PKI documentation][openbao-pki]. OpenBao documents telemetry metric
 behavior in the [OpenBao telemetry metrics overview][openbao-telemetry].
-This page describes the generated dashboard contract in
+The generated dashboard contract is
 `contracts/dashboards/openbao-pki.yaml`.
 
 [openbao-pki]: https://openbao.org/docs/secrets/pki/

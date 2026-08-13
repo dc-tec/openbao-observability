@@ -220,7 +220,7 @@ Your NetworkPolicy selected the OpenBao pods and omitted required API or
 cluster traffic. Restore the previous policy, then reapply a policy that covers
 API clients, OpenBao peer traffic, and the metrics collector.
 
-## What's next
+## Related pages
 
 - Use [OpenBao observability model](../concepts/openbao-observability-model.md)
   to understand the active-node and all-node scrape tradeoff.

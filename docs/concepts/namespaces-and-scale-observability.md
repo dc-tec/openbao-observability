@@ -128,7 +128,7 @@ leaving a path for deeper production profiles.
 | Design decision | This project treats namespace and read-replica coverage as explicit topology extensions, not default assumptions. |
 | To validate | Broader nested namespace feature behavior, operator-managed read-replica behavior, and production alert thresholds. |
 
-## What's next
+## Related pages
 
 - Use [Active-node and all-node observability](./active-node-vs-all-node-observability.md)
   to choose the scrape profile for HA and read-replica diagnostics.

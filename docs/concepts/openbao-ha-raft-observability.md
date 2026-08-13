@@ -127,7 +127,7 @@ the metrics exposure surface.
 | Design decision | This project separates HA/Raft dashboard interpretation from recovery procedures and treats all-node scraping as the richer diagnostics profile. |
 | To validate | Production Raft labels, storage latency, network policy, node replacement procedures, and alert thresholds. |
 
-## What's next
+## Related pages
 
 - Use [Active-node and all-node observability](./active-node-vs-all-node-observability.md)
   to choose the right scrape profile.

@@ -58,7 +58,7 @@ this probe is required and its telemetry must not disappear silently.
 
 3. Open the `OpenBao SLO and availability` dashboard.
 
-## What's next
+## Related pages
 
 - Use [OpenBao SLO and availability dashboard](../../docs/dashboards/slo-availability.md)
   to read the generated SLO view.

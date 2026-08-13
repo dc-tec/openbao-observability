@@ -115,7 +115,7 @@ can reveal application boundaries and cryptographic workflows.
 - Audit logs show OpenBao request and response records, not client-side
   cryptographic success.
 
-## What's next
+## Related pages
 
 - Use [Secret engine feature warnings](../runbooks/secret-engine-feature-warnings.md)
   when the Transit warning alert fires.
@@ -129,7 +129,7 @@ can reveal application boundaries and cryptographic workflows.
   before you add Transit key names or paths to labels.
 
 Source: OpenBao documents Transit behavior in the
-[OpenBao Transit documentation][openbao-transit]. This page describes the
-generated dashboard contract in `contracts/dashboards/openbao-transit.yaml`.
+[OpenBao Transit documentation][openbao-transit]. The generated dashboard
+contract is `contracts/dashboards/openbao-transit.yaml`.
 
 [openbao-transit]: https://openbao.org/docs/secrets/transit/
