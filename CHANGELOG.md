@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.1](https://github.com/dc-tec/openbao-observability/compare/0.2.0...0.2.1) (2026-08-14)
+
+
+### Bug fixes
+
+* **alerts:** detect missing required signals ([#47](https://github.com/dc-tec/openbao-observability/issues/47)) ([51a6d25](https://github.com/dc-tec/openbao-observability/commit/51a6d25c024870707ec57a80c46fcaf707ddc2e0))
+* **alerts:** scope OpenBao HA rules per namespace ([#44](https://github.com/dc-tec/openbao-observability/issues/44)) ([6048791](https://github.com/dc-tec/openbao-observability/commit/6048791aae8f8c630b0e8c2258b551a978f9dec2))
+* **contracts:** enforce source authority ([#49](https://github.com/dc-tec/openbao-observability/issues/49)) ([9674c65](https://github.com/dc-tec/openbao-observability/commit/9674c65464149cf8bc938f4e7b522c19f3463a68))
+* **dashboards:** show current signal state ([#48](https://github.com/dc-tec/openbao-observability/issues/48)) ([c0b1d12](https://github.com/dc-tec/openbao-observability/commit/c0b1d1205eb5b39f1d1c985c64d310739f461b34))
+* **observability:** preserve signal identity ([#46](https://github.com/dc-tec/openbao-observability/issues/46)) ([14b9af8](https://github.com/dc-tec/openbao-observability/commit/14b9af85145c3fdf5ac8c52baca1dc716a7c2909))
+
+
+### Documentation
+
+* align documentation with writing guidelines ([#51](https://github.com/dc-tec/openbao-observability/issues/51)) ([e02f929](https://github.com/dc-tec/openbao-observability/commit/e02f929dbb22d0a00159b5e78e9ebeeb6fdce3a0))
+
 ## [0.2.0](https://github.com/dc-tec/openbao-observability/compare/0.1.0...0.2.0) (2026-07-05)
 
 
