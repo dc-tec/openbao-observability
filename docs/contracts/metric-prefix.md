@@ -152,10 +152,17 @@ Metric relabeling must copy the OpenBao-generated `namespace` label to
 synthetic `openbao_namespace` value to cluster-scoped metrics.
 
 When a target label replaces the OpenBao-generated `cluster` label, Prometheus
-preserves the source value as `exported_cluster`. Drop the empty
-`*_core_unsealed` source series before you remove `exported_cluster`. This keeps
-the empty fixture series from becoming a duplicate of the platform-labeled
-series.
+preserves the source value as `exported_cluster`. For `*_core_unsealed`, map
+that value to the bounded `seal_state_source` label before removing
+`exported_cluster`: use `startup` when empty and `cluster` otherwise. Keep both
+series. The recording rules prefer the cluster source for each target and use
+the startup source only when the cluster source is absent. This preserves a
+sealed startup zero without counting it alongside the later unsealed series.
+
+Apply the updated scrape relabeling and recording rules together. An adapter
+that still drops the startup series cannot provide sealed startup visibility.
+The normalized records remove `seal_state_source` after selecting one state
+per target. A missing signal remains unknown; it does not become a zero.
 
 Recording rules in this project normalize the signals that dashboards need.
 When you write custom queries, check the live label set before grouping by
@@ -169,7 +176,7 @@ The HA/Raft dashboard uses `openbao:raft_peers:max` instead of raw
 OpenBao exposes it and falls back to counting
 `*_raft_storage_stats_commit_index` by `peer_id` in all-node scrape profiles.
 
-This fallback exists because the current OpenBao 2.6.0 HA/Raft fixture
+This fallback exists because the current OpenBao 2.7.0 HA/Raft fixture
 observed `vault_raft_peers` on the active node, while the live Docker Compose
 all-node scrape exposed Raft storage stats without `vault_raft_peers`.
 

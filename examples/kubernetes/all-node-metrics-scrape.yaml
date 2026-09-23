@@ -82,11 +82,14 @@ spec:
         - action: labeldrop
           regex: namespace
       metricRelabelings:
-        - sourceLabels:
-            - __name__
-            - exported_cluster
-          regex: (vault|openbao)_core_unsealed;
-          action: drop
+        - sourceLabels: [__name__]
+          regex: "(vault|openbao)_core_unsealed"
+          targetLabel: seal_state_source
+          replacement: startup
+        - sourceLabels: [__name__, exported_cluster]
+          regex: "(vault|openbao)_core_unsealed;.+"
+          targetLabel: seal_state_source
+          replacement: cluster
         - sourceLabels:
             - namespace
           regex: (.+)

@@ -172,12 +172,13 @@ controls in the [Kubernetes Network Policies documentation][kubernetes-network-p
 4. Query Prometheus for unsealed node count.
 
    ```promql
-   sum(${p}_core_unsealed{cluster!=""})
+   openbao:core_unsealed:sum{cluster="<cluster>",scrape_profile="all_nodes"}
    ```
 
-   - `${p}`: Metric prefix for your deployment. Use `vault` for the OpenBao
-     default prefix or `openbao` when you configured
-     `metrics_prefix = "openbao"`.
+   - `<cluster>`: Platform-assigned OpenBao deployment identity.
+
+   Install the generated recording rules that match the source metric prefix.
+   They select one seal-state series per target before counting unsealed nodes.
 
    Expected result: the number of unsealed OpenBao pods in the cluster.
 
@@ -187,7 +188,19 @@ controls in the [Kubernetes Network Policies documentation][kubernetes-network-p
    sum(${p}_core_active)
    ```
 
-   Expected result: `1`.
+   Expected result: `1`. Replace `${p}` with `vault` or the configured
+   `openbao` source prefix.
+
+## Seal-state coverage
+
+OpenBao 2.7.0 refreshes `core_unsealed` while sealed. The scrape relabeling keeps
+the empty-cluster startup series so the recording rules can use it before the
+node unseals. OpenBao 2.6.3 can stop emitting this gauge while sealed. In that
+case, `OpenBaoCoreUnsealedSignalMissing` reports the missing signal. Check
+`/v1/sys/seal-status` to determine the node state.
+
+These semantics require the private unauthenticated metrics listener. They do
+not make the authenticated metrics endpoint available while sealed.
 
 ## Troubleshooting
 

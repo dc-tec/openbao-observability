@@ -74,6 +74,9 @@ func Capture(ctx context.Context, opts CaptureOptions) error {
 	if err := run.captureRaft(ctx, "vault", opts.PortBase+20); err != nil {
 		return err
 	}
+	if err := run.captureSealLifecycle(ctx); err != nil {
+		return err
+	}
 
 	fmt.Printf("captured OpenBao fixtures in %s\n", opts.OutputDir)
 	return nil
@@ -81,7 +84,7 @@ func Capture(ctx context.Context, opts CaptureOptions) error {
 
 func (o CaptureOptions) withDefaults() CaptureOptions {
 	if o.Version == "" {
-		o.Version = "2.6.0"
+		o.Version = "2.7.0"
 	}
 	if o.Image == "" {
 		o.Image = "quay.io/openbao/openbao:" + o.Version
@@ -162,6 +165,9 @@ func (r *captureRun) capturePrefix(ctx context.Context, prefix string, port int)
 	if err := r.exerciseOpenBao(ctx, name, prefix); err != nil {
 		return err
 	}
+	if err := r.exerciseReleaseAudit(ctx, port); err != nil {
+		return fmt.Errorf("release audit scenario: %w", err)
+	}
 	if err := waitForUsageGaugeCollection(ctx); err != nil {
 		return err
 	}
@@ -205,6 +211,9 @@ func (r *captureRun) captureRaft(ctx context.Context, prefix string, portBase in
 		return err
 	}
 	if err := r.runRaftWorkload(ctx, voters[0], readReplicas, prefix, postgresContainer); err != nil {
+		return err
+	}
+	if err := r.captureConsistency(ctx, voters[0], readReplicas[0], prefix); err != nil {
 		return err
 	}
 	return r.captureRaftOutputs(ctx, nodes, prefix)

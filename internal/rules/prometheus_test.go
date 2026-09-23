@@ -44,9 +44,9 @@ func TestGeneratePrometheusRules(t *testing.T) {
 		"record: openbao:core_active:sum",
 		"expr: sum by (" + cluster + ") (openbao_core_active)",
 		"record: openbao:core_unsealed:sum",
-		"expr: sum by (" + cluster + ") (openbao_core_unsealed{cluster!=\"\"})",
+		"expr: sum by (" + cluster + ") (openbao:core_unsealed:min{source_prefix=\"openbao\"})",
 		"record: openbao:core_unsealed:min",
-		"expr: min by (" + target + ") (openbao_core_unsealed{cluster!=\"\"})",
+		"expr: min by (" + target + ") (openbao_core_unsealed{cluster!=\"\",seal_state_source!=\"startup\"}) or ",
 		"record: openbao:core_handle_request:rate5m",
 		"expr: sum by (" + cluster + ") (rate(openbao_core_handle_request_count[5m]))",
 		"record: openbao:core_handle_login_request:avg5m",
@@ -568,20 +568,6 @@ func TestRecordingRuleExpressionsPreserveSignalIdentity(t *testing.T) {
 		clusterIdentityKey(allNodeA0): 1,
 		clusterIdentityKey(activeA0):  1,
 		clusterIdentityKey(allNodeB0): 2,
-	})
-
-	assertAggregateResults(t, recordingExpression(t, document, "openbao:core_unsealed:min"), []recordingSample{
-		{labels: allNodeA0, value: 1},
-		{labels: allNodeA1, value: 0},
-		{labels: activeA0, value: 1},
-		{labels: allNodeB0, value: 1},
-		{labels: allNodeB1, value: 1},
-	}, map[string]float64{
-		targetIdentityKey(allNodeA0): 1,
-		targetIdentityKey(allNodeA1): 0,
-		targetIdentityKey(activeA0):  1,
-		targetIdentityKey(allNodeB0): 1,
-		targetIdentityKey(allNodeB1): 1,
 	})
 
 	rootA := signalLabels("cluster-a", "root", "active", "a-0", "10.0.0.1:8200")

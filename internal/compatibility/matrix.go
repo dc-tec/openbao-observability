@@ -17,6 +17,7 @@ type MatrixOptions struct {
 	ContractPath string
 	FixtureDir   string
 	OutputPath   string
+	Version      string
 }
 
 type fixtureProfile struct {
@@ -62,6 +63,14 @@ func GenerateMatrix(opts MatrixOptions) error {
 	if err != nil {
 		return err
 	}
+	version, err := contract.FixtureVersion(opts.Version)
+	if err != nil {
+		return err
+	}
+	contract.OpenBAOVersion = version
+	if opts.FixtureDir == "" {
+		opts.FixtureDir = filepath.Join("fixtures", "captured", "openbao-"+version)
+	}
 
 	profiles, err := fixtureProfiles(opts.FixtureDir, contract)
 	if err != nil {
@@ -92,9 +101,6 @@ func GenerateMatrix(opts MatrixOptions) error {
 func (o MatrixOptions) withDefaults() MatrixOptions {
 	if o.ContractPath == "" {
 		o.ContractPath = filepath.Join("contracts", "metrics", "openbao-core.yaml")
-	}
-	if o.FixtureDir == "" {
-		o.FixtureDir = filepath.Join("fixtures", "captured", "openbao-2.6.0")
 	}
 	if o.OutputPath == "" {
 		o.OutputPath = filepath.Join("generated", "docs", "metric-compatibility-matrix.md")

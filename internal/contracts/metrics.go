@@ -4,20 +4,22 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/dc-tec/openbao-observability/internal/promtext"
 )
 
 type MetricContract struct {
-	Version          string            `yaml:"version"`
-	Maturity         Maturity          `yaml:"maturity"`
-	OpenBAOVersion   string            `yaml:"openbaoVersion"`
-	MetricPrefixes   MetricPrefixes    `yaml:"metricPrefixes"`
-	Normalization    Normalization     `yaml:"normalization"`
-	Fixtures         Fixtures          `yaml:"fixtures"`
-	CoverageProfiles []CoverageProfile `yaml:"coverageProfiles"`
-	Metrics          []Metric          `yaml:"metrics"`
+	Version              string            `yaml:"version"`
+	Maturity             Maturity          `yaml:"maturity"`
+	OpenBAOVersion       string            `yaml:"openbaoVersion"`
+	VerificationVersions []string          `yaml:"verificationVersions"`
+	MetricPrefixes       MetricPrefixes    `yaml:"metricPrefixes"`
+	Normalization        Normalization     `yaml:"normalization"`
+	Fixtures             Fixtures          `yaml:"fixtures"`
+	CoverageProfiles     []CoverageProfile `yaml:"coverageProfiles"`
+	Metrics              []Metric          `yaml:"metrics"`
 }
 
 type MetricPrefixes struct {
@@ -61,6 +63,7 @@ type Metric struct {
 type VerifyOptions struct {
 	ContractPath string
 	FixtureDir   string
+	Version      string
 }
 
 func LoadMetricContract(path string) (*MetricContract, error) {
@@ -89,14 +92,24 @@ func VerifyMetricContract(opts VerifyOptions) error {
 		return err
 	}
 
+	version, err := contract.FixtureVersion(opts.Version)
+	if err != nil {
+		return err
+	}
+	if opts.FixtureDir == "" {
+		opts.FixtureDir = filepath.Join("fixtures", "captured", "openbao-"+version)
+	}
 	for _, fixture := range contract.Fixtures.Required {
+		if strings.Contains(fixture, "${version}") {
+			fixture = filepath.Join(opts.FixtureDir, strings.ReplaceAll(fixture, "${version}", version))
+		}
 		if _, err := os.Stat(fixture); err != nil {
 			return fmt.Errorf("required fixture %s is not readable: %w", fixture, err)
 		}
 	}
 
 	for _, prefix := range contract.MetricPrefixes.Supported {
-		fixturePath := metricFixturePath(opts.FixtureDir, contract.OpenBAOVersion, prefix)
+		fixturePath := metricFixturePath(opts.FixtureDir, version, prefix)
 		families, err := promtext.LoadFamilies(fixturePath)
 		if err != nil {
 			return err
@@ -121,10 +134,18 @@ func (o VerifyOptions) withDefaults() VerifyOptions {
 	if o.ContractPath == "" {
 		o.ContractPath = filepath.Join("contracts", "metrics", "openbao-core.yaml")
 	}
-	if o.FixtureDir == "" {
-		o.FixtureDir = filepath.Join("fixtures", "captured", "openbao-2.6.0")
-	}
 	return o
+}
+
+// FixtureVersion selects a declared verification target, defaulting to the reference version.
+func (c MetricContract) FixtureVersion(requested string) (string, error) {
+	if requested == "" {
+		return c.OpenBAOVersion, nil
+	}
+	if requested == c.OpenBAOVersion || slices.Contains(c.VerificationVersions, requested) {
+		return requested, nil
+	}
+	return "", fmt.Errorf("OpenBao version %q is not a declared verification target", requested)
 }
 
 func (c MetricContract) validateShape(path string) error {
@@ -151,6 +172,18 @@ func (c MetricContract) validateShape(path string) error {
 func (c MetricContract) validateMetricContractShapeBasics(path string) error {
 	if c.OpenBAOVersion == "" {
 		return fmt.Errorf("metric contract %s is missing openbaoVersion", path)
+	}
+	if len(c.VerificationVersions) > 0 {
+		if !slices.Contains(c.VerificationVersions, c.OpenBAOVersion) {
+			return fmt.Errorf("metric contract %s verificationVersions must include openbaoVersion", path)
+		}
+		seen := map[string]bool{}
+		for _, version := range c.VerificationVersions {
+			if version == "" || seen[version] || strings.ContainsAny(version, "/\\") {
+				return fmt.Errorf("metric contract %s has invalid or duplicate verification version %q", path, version)
+			}
+			seen[version] = true
+		}
 	}
 	if err := c.MetricPrefixes.validate(path); err != nil {
 		return err

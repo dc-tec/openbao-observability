@@ -1,0 +1,105 @@
+rule_files:
+  - ../../../generated/prometheus/openbao-prefix/openbao-recording-rules.yaml
+  - ../../../generated/prometheus/openbao-prefix/openbao-alerts.yaml
+evaluation_interval: 1m
+group_eval_order:
+  - openbao.recording
+  - openbao.alerts
+tests:
+  - name: startup, unseal overlap, reseal, restart, recovery and missing signal
+    interval: 1m
+    input_series:
+      - series: openbao_core_unsealed{cluster="alpha",kubernetes_namespace="bao",scrape_profile="all_nodes",pod="a-0",instance="a-0:8200",seal_state_source="startup"}
+        values: 0x11 stale
+      - series: openbao_core_unsealed{cluster="alpha",kubernetes_namespace="bao",scrape_profile="all_nodes",pod="a-0",instance="a-0:8200",seal_state_source="cluster"}
+        values: _ _ _ 1 1 0 0 0 stale _ 1 1 stale
+      - series: up{cluster="alpha",kubernetes_namespace="bao",scrape_profile="all_nodes",pod="a-0",instance="a-0:8200",job="openbao"}
+        values: 1x20
+      - series: openbao_core_unsealed{cluster="beta",kubernetes_namespace="bao",scrape_profile="all_nodes",pod="b-0",instance="b-0:8200"}
+        values: 1x20
+      - series: up{cluster="beta",kubernetes_namespace="bao",scrape_profile="all_nodes",pod="b-0",instance="b-0:8200",job="openbao"}
+        values: 1x20
+    promql_expr_test:
+      - expr: sum(openbao:core_unsealed:min{cluster="alpha"})
+        eval_time: 2m
+        exp_samples:
+          - labels: '{}'
+            value: 0
+      - expr: openbao:core_unsealed:sum{cluster="beta"}
+        eval_time: 2m
+        exp_samples:
+          - labels: '{__name__="openbao:core_unsealed:sum",cluster="beta",kubernetes_namespace="bao",scrape_profile="all_nodes",source_prefix="openbao"}'
+            value: 1
+      - expr: sum(openbao:core_unsealed:min{cluster="alpha"})
+        eval_time: 3m
+        exp_samples:
+          - labels: '{}'
+            value: 1
+      - expr: openbao:core_unsealed:sum{cluster="beta"}
+        eval_time: 3m
+        exp_samples:
+          - labels: '{__name__="openbao:core_unsealed:sum",cluster="beta",kubernetes_namespace="bao",scrape_profile="all_nodes",source_prefix="openbao"}'
+            value: 1
+      - expr: sum(openbao:core_unsealed:min{cluster="alpha"})
+        eval_time: 7m
+        exp_samples:
+          - labels: '{}'
+            value: 0
+      - expr: openbao:core_unsealed:sum{cluster="beta"}
+        eval_time: 7m
+        exp_samples:
+          - labels: '{__name__="openbao:core_unsealed:sum",cluster="beta",kubernetes_namespace="bao",scrape_profile="all_nodes",source_prefix="openbao"}'
+            value: 1
+      - expr: sum(openbao:core_unsealed:min{cluster="alpha"})
+        eval_time: 8m
+        exp_samples:
+          - labels: '{}'
+            value: 0
+      - expr: openbao:core_unsealed:sum{cluster="beta"}
+        eval_time: 8m
+        exp_samples:
+          - labels: '{__name__="openbao:core_unsealed:sum",cluster="beta",kubernetes_namespace="bao",scrape_profile="all_nodes",source_prefix="openbao"}'
+            value: 1
+      - expr: sum(openbao:core_unsealed:min{cluster="alpha"})
+        eval_time: 10m
+        exp_samples:
+          - labels: '{}'
+            value: 1
+      - expr: openbao:core_unsealed:sum{cluster="beta"}
+        eval_time: 10m
+        exp_samples:
+          - labels: '{__name__="openbao:core_unsealed:sum",cluster="beta",kubernetes_namespace="bao",scrape_profile="all_nodes",source_prefix="openbao"}'
+            value: 1
+      - expr: count(ALERTS{alertname="OpenBaoSealedUnexpectedly",alertstate="firing",cluster="alpha"})
+        eval_time: 1m
+        exp_samples: []
+      - expr: count(ALERTS{alertname="OpenBaoSealedUnexpectedly",alertstate="firing",cluster="alpha"})
+        eval_time: 2m
+        exp_samples:
+          - labels: '{}'
+            value: 1
+      - expr: count(ALERTS{alertname="OpenBaoSealedUnexpectedly",alertstate="firing",cluster="alpha"})
+        eval_time: 3m
+        exp_samples: []
+      - expr: count(ALERTS{alertname="OpenBaoSealedUnexpectedly",alertstate="firing",cluster="alpha"})
+        eval_time: 7m
+        exp_samples:
+          - labels: '{}'
+            value: 1
+      - expr: count(ALERTS{alertname="OpenBaoSealedUnexpectedly",alertstate="firing",cluster="alpha"})
+        eval_time: 10m
+        exp_samples: []
+      - expr: count(ALERTS{alertname="OpenBaoSealedUnexpectedly",alertstate="firing",cluster="alpha"})
+        eval_time: 13m
+        exp_samples: []
+      - expr: openbao:core_unsealed:min{cluster="alpha"}
+        eval_time: 13m
+        exp_samples: []
+      - expr: count(ALERTS{alertname="OpenBaoCoreUnsealedSignalMissing",alertstate="firing",cluster="alpha"})
+        eval_time: 18m
+        exp_samples:
+          - labels: '{}'
+            value: 1
+      - expr: count(ALERTS{alertname="OpenBaoCoreUnsealedSignalMissing",alertstate="firing",cluster="beta"})
+        eval_time: 18m
+        exp_samples: []

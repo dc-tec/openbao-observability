@@ -542,7 +542,7 @@
         "type": "loki",
         "uid": "loki"
       },
-      "description": "Shows audited permission denied responses that match the selected filters over 15 minutes.",
+      "description": "Shows audited denial events that match the selected filters over 15 minutes.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -588,7 +588,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error=~\"(?s).*permission denied.*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [15m]))",
+          "expr": "sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", request_id=\"request.id\", request_path=\"request.path\" | audit_error=~\"(?is).*(permission denied|forbidden).*\" | audit_type=\"response\" or (audit_type=\"request\" and audit_error=~\"(?i)^forbidden$\") | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\" [15m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -871,7 +871,7 @@
         "type": "loki",
         "uid": "loki"
       },
-      "description": "Shows audited permission denied responses that match the selected investigation filters.",
+      "description": "Shows audited denial events that match the selected investigation filters.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -912,7 +912,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", request_id=\"request.id\", request_path=\"request.path\" | audit_type=\"response\" | audit_error=~\"(?s).*permission denied.*\" | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\"",
+          "expr": "{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", request_id=\"request.id\", request_path=\"request.path\" | audit_error=~\"(?is).*(permission denied|forbidden).*\" | audit_type=\"response\" or (audit_type=\"request\" and audit_error=~\"(?i)^forbidden$\") | request_id=~\"${request_id:raw}\" | request_path=~\"${request_path:raw}\"",
           "queryType": "range",
           "refId": "A"
         }

@@ -30,6 +30,10 @@ func Verify(opts VerifyOptions) error {
 		if err := checkAuditJSON(opts, prefix); err != nil {
 			return err
 		}
+		captureOpts := CaptureOptions{Version: opts.Version, OutputDir: opts.FixtureDir}
+		if err := checkReleaseAudit(auditPath(captureOpts, prefix)); err != nil {
+			return err
+		}
 	}
 	if err := checkRaftMetrics(opts, "vault"); err != nil {
 		return err
@@ -43,6 +47,20 @@ func Verify(opts VerifyOptions) error {
 	if err := checkRaftAuditJSON(opts, "vault"); err != nil {
 		return err
 	}
+	if err := checkSealLifecycle(opts); err != nil {
+		return err
+	}
+	if !strings.HasPrefix(opts.Version, "2.6.") {
+		captureOpts := CaptureOptions{Version: opts.Version, OutputDir: opts.FixtureDir}
+		path := raftClusterMetadataPath(captureOpts, "vault", "consistency.txt")
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		if string(data) != "read-after-write=200\nfail=429\nawait-state=429\nforward-active-node=200\n" {
+			return fmt.Errorf("incomplete consistency fixture %s", path)
+		}
+	}
 
 	fmt.Printf("fixture checks passed for %s\n", opts.FixtureDir)
 	return nil
@@ -50,7 +68,7 @@ func Verify(opts VerifyOptions) error {
 
 func (o VerifyOptions) withDefaults() VerifyOptions {
 	if o.Version == "" {
-		o.Version = "2.6.0"
+		o.Version = "2.7.0"
 	}
 	if o.FixtureDir == "" {
 		o.FixtureDir = filepath.Join("fixtures", "captured", "openbao-"+o.Version)

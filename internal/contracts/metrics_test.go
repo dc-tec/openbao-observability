@@ -26,6 +26,36 @@ func TestLoadMetricContract(t *testing.T) {
 	}
 }
 
+func TestVerifyMetricContractSelectsDeclaredVersion(t *testing.T) {
+	dir := t.TempDir()
+	for _, prefix := range []string{"vault", "openbao"} {
+		writeMetricFixture(t, dir, prefix)
+		old := filepath.Join(dir, "metrics", "openbao-2.6.0-"+prefix+"-prefix.prom")
+		newPath := filepath.Join(dir, "metrics", "openbao-2.7.0-"+prefix+"-prefix.prom")
+		if err := os.Rename(old, newPath); err != nil {
+			t.Fatal(err)
+		}
+	}
+	content := strings.Replace(baseContract([]string{"metrics/openbao-${version}-vault-prefix.prom"}),
+		`openbaoVersion: "2.6.0"`, "openbaoVersion: \"2.6.0\"\nverificationVersions: [\"2.6.0\", \"2.7.0\"]", 1)
+	path := filepath.Join(dir, "contract.yaml")
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	opts := VerifyOptions{ContractPath: path, FixtureDir: dir, Version: "2.7.0"}
+	if err := VerifyMetricContract(opts); err != nil {
+		t.Fatal(err)
+	}
+	opts.Version = "2.6.0"
+	if err := VerifyMetricContract(opts); err == nil {
+		t.Fatal("accepted fixtures from a different version")
+	}
+	opts.Version = "2.8.0"
+	if err := VerifyMetricContract(opts); err == nil || !strings.Contains(err.Error(), "not a declared") {
+		t.Fatalf("accepted undeclared version: %v", err)
+	}
+}
+
 func TestLoadMetricContractRejectsInvalidSchema(t *testing.T) {
 	base := baseContract(nil)
 	tests := []struct {

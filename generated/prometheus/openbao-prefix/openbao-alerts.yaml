@@ -24,6 +24,17 @@ groups:
             description: A scraped OpenBao node reports that it is sealed.
             runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/openbao-sealed-unexpectedly.md
             summary: OpenBao is sealed
+        - alert: OpenBaoCoreUnsealedSignalMissing
+          expr: max by (cluster, kubernetes_namespace, scrape_profile, pod, instance) (up{job="openbao"} == 1) unless on (cluster, kubernetes_namespace, scrape_profile, pod, instance) openbao:core_unsealed:min
+          for: 5m
+          labels:
+            severity: critical
+            signal: metrics
+            source_prefix: openbao
+          annotations:
+            description: Prometheus can scrape an OpenBao node, but its normalized seal-state signal is missing. Confirm seal state directly.
+            runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/openbao-sealed-unexpectedly.md
+            summary: OpenBao seal-state signal is missing
         - alert: OpenBaoNoActiveNode
           expr: openbao:core_active:sum == 0
           for: 2m

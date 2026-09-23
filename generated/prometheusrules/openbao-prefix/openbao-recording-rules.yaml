@@ -11,12 +11,12 @@ spec:
               expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (openbao_core_active)
               labels:
                 source_prefix: openbao
-            - record: openbao:core_unsealed:sum
-              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (openbao_core_unsealed{cluster!=""})
+            - record: openbao:core_unsealed:min
+              expr: min by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (openbao_core_unsealed{cluster!="",seal_state_source!="startup"}) or min by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (openbao_core_unsealed{cluster!="",seal_state_source="startup"})
               labels:
                 source_prefix: openbao
-            - record: openbao:core_unsealed:min
-              expr: min by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (openbao_core_unsealed{cluster!=""})
+            - record: openbao:core_unsealed:sum
+              expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (openbao:core_unsealed:min{source_prefix="openbao"})
               labels:
                 source_prefix: openbao
             - record: openbao:core_handle_request:rate5m

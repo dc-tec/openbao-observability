@@ -15,7 +15,13 @@ concurrency:
 
 jobs:
   test:
-    name: Test
+    name: Test (${{ matrix.openbao }})
+    strategy:
+      fail-fast: false
+      matrix:
+        openbao: ["2.6.3", "2.7.0"]
+    env:
+      OPENBAO_VERSION: ${{ matrix.openbao }}
     runs-on: ubuntu-24.04
     timeout-minutes: 35
 
@@ -35,13 +41,19 @@ jobs:
           docker version
 
       - name: Install quality tools
+        if: matrix.openbao == '2.7.0'
         run: make install-go-tools
 
       - name: Capture OpenBao fixtures
         run: make fixtures-openbao
 
       - name: Verify repository
+        if: matrix.openbao == '2.7.0'
         run: make verify
+
+      - name: Verify compatibility fixtures and contracts
+        if: matrix.openbao != '2.7.0'
+        run: make test-fixtures contracts-verify
 
       - name: Check whitespace
         run: git diff --check

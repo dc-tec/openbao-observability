@@ -197,9 +197,9 @@ panels:
     type: stat
     signal: logs
     datasource: logs
-    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_type="response" | audit_error=~"(?s).*permission denied.*" [15m]))'
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~"${cluster:raw}",kubernetes_namespace=~"${kubernetes_namespace:raw}",log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_error=~"(?is).*(permission denied|forbidden).*" | audit_type="response" or (audit_type="request" and audit_error=~"(?i)^forbidden$") [15m]))'
     unit: short
-    description: Shows audited permission denied responses over 15 minutes.
+    description: Shows audited denial events over 15 minutes.
     grid:
       x: 12
       y: 20
