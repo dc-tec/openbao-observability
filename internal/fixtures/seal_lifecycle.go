@@ -27,9 +27,14 @@ var sealPhases = []sealPhase{
 	{"recovered", true, false},
 }
 
-func (r *captureRun) captureSealLifecycle(ctx context.Context) error {
+func (r *captureRun) captureSealLifecycle(ctx context.Context) (retErr error) {
 	fmt.Printf("capturing seal lifecycle for OpenBao %s\n", r.options.Version)
 	name := "openbao-observability-seal-" + strings.ReplaceAll(r.options.Version, ".", "-")
+	defer func() {
+		if retErr != nil {
+			retErr = fmt.Errorf("%w%s", retErr, dockerDiagnostics(ctx, name))
+		}
+	}()
 	port := r.options.PortBase + 40
 	if err := r.startSealFixture(ctx, name, port); err != nil {
 		return err
@@ -195,7 +200,7 @@ const sealLifecycleConfig = `disable_mlock = true
 api_addr = "http://127.0.0.1:8200"
 cluster_addr = "http://127.0.0.1:8201"
 storage "raft" {
-  path = "/bao/data"
+  path = "/tmp/openbao-seal-data"
   node_id = "seal-fixture"
 }
 listener "tcp" {
@@ -217,18 +222,16 @@ func (r *captureRun) startSealFixture(ctx context.Context, name string, port int
 		return err
 	}
 	r.tempDirs = append(r.tempDirs, dir)
-	dataDir := filepath.Join(dir, "data")
-	if err := os.Mkdir(dataDir, 0o700); err != nil {
-		return err
-	}
 	config := filepath.Join(dir, "config.hcl")
 	if err := writeFile(config, []byte(sealLifecycleConfig)); err != nil {
 		return err
 	}
 	r.containers = append(r.containers, name)
-	_, _, err = dockerCombined(ctx, "run", "--detach", "--name", name, "--user", "0",
+	// Container-local storage survives docker restart and uses the image user's ownership.
+	// A host-owned 0700 bind mount prevents the unprivileged server from starting on Linux.
+	_, _, err = dockerCombined(ctx, "run", "--detach", "--name", name,
 		"--publish", fmt.Sprintf("127.0.0.1:%d:8200", port),
-		"--volume", config+":/bao/config/config.hcl:ro", "--volume", dataDir+":/bao/data",
+		"--volume", config+":/bao/config/config.hcl:ro",
 		r.options.Image, "server", "-config=/bao/config/config.hcl")
 	if err != nil {
 		return fmt.Errorf("start seal lifecycle fixture: %w", err)
