@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/dc-tec/openbao-observability/compare/0.2.1...0.2.2) (2026-09-23)
+
+
+### Bug fixes
+
+* qualify OpenBao 2.7 observability and 2.6.3 compatibility ([#62](https://github.com/dc-tec/openbao-observability/issues/62)) ([c0bf612](https://github.com/dc-tec/openbao-observability/commit/c0bf61292689551b549fdbb3d347829f8e2322e9))
+
 ## [0.2.1](https://github.com/dc-tec/openbao-observability/compare/0.2.0...0.2.1) (2026-08-14)
 
 
