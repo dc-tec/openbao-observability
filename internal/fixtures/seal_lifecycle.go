@@ -200,7 +200,7 @@ const sealLifecycleConfig = `disable_mlock = true
 api_addr = "http://127.0.0.1:8200"
 cluster_addr = "http://127.0.0.1:8201"
 storage "raft" {
-  path = "/tmp/openbao-seal-data"
+  path = "/openbao/file"
   node_id = "seal-fixture"
 }
 listener "tcp" {
@@ -227,7 +227,8 @@ func (r *captureRun) startSealFixture(ctx context.Context, name string, port int
 		return err
 	}
 	r.containers = append(r.containers, name)
-	// Container-local storage survives docker restart and uses the image user's ownership.
+	// Both images provide /openbao/file with the image user's ownership.
+	// Container-local storage survives docker restart without retaining data after cleanup.
 	// A host-owned 0700 bind mount prevents the unprivileged server from starting on Linux.
 	_, _, err = dockerCombined(ctx, "run", "--detach", "--name", name,
 		"--publish", fmt.Sprintf("127.0.0.1:%d:8200", port),
