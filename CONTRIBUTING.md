@@ -157,6 +157,18 @@ Release PRs are managed by release-please from Conventional Commits. Release
 artifacts are draft by default until maintainers intentionally publish them.
 Tag-triggered release automation builds a deterministic reference artifact
 bundle and SHA256 checksums, then attaches them to the draft GitHub release.
+Tags created with the workflow's `GITHUB_TOKEN` do not trigger another workflow.
+After release-please creates the tag and draft release, start the artifact
+workflow manually:
+
+```shell
+gh workflow run release.yml --ref main -f tag=0.2.2
+```
+
+Replace `0.2.2` with the release tag. The workflow checks out that tag, captures
+fresh fixtures, runs verification, and uploads the bundle and checksums.
+Verify the workflow result and release assets before publishing the draft.
+
 Use the same target locally when validating release contents:
 
 ```shell
