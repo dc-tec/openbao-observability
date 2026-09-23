@@ -1,6 +1,12 @@
 name: Release
 
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to validate and package, without a leading v.
+        required: true
+        type: string
   push:
     tags:
       - "[0-9]*.[0-9]*.[0-9]*"
@@ -10,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref_name }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -19,12 +25,15 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     if: ${{ !github.event.repository.fork }}
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -38,9 +47,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          version="${GITHUB_REF_NAME}"
+          version="${RELEASE_TAG}"
           if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
             echo "Tag ${version} is not SemVer without a leading v." >&2
+            exit 1
+          fi
+
+          if [[ "$(git rev-parse HEAD)" != "$(git rev-parse "refs/tags/${version}^{commit}")" ]]; then
+            echo "Checkout does not match release tag ${version}." >&2
             exit 1
           fi
 
