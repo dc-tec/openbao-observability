@@ -6,12 +6,12 @@ groups:
           expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (vault_core_active)
           labels:
             source_prefix: vault
-        - record: openbao:core_unsealed:sum
-          expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (vault_core_unsealed{cluster!=""})
+        - record: openbao:core_unsealed:min
+          expr: min by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (vault_core_unsealed{cluster!="",seal_state_source!="startup"}) or min by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (vault_core_unsealed{cluster!="",seal_state_source="startup"})
           labels:
             source_prefix: vault
-        - record: openbao:core_unsealed:min
-          expr: min by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (vault_core_unsealed{cluster!=""})
+        - record: openbao:core_unsealed:sum
+          expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (openbao:core_unsealed:min{source_prefix="vault"})
           labels:
             source_prefix: vault
         - record: openbao:core_handle_request:rate5m

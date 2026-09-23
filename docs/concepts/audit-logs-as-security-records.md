@@ -81,6 +81,16 @@ integers and booleans pass through in plaintext.
 Do not enable raw audit logging for the reference profile. Raw audit logging
 can expose values that OpenBao normally protects.
 
+Malformed input can also reach audit errors before normal field protection.
+OpenBao 2.6.3 and 2.7.0 fix plaintext leakage from malformed `TypeKVPairs` and
+`TypeHeader` fields in built-in plugins. External plugins need builds using a
+patched SDK; the advisory lists SDK versions 2.6.3 and 2.7.1. An upgrade does
+not sanitize records already stored in a log backend or archive.
+
+The fixture suite checks malformed identity metadata with a non-sensitive marker.
+It does not qualify every external plugin or malformed header shape. See the
+[upstream audit leakage advisory](https://github.com/openbao/openbao/security/advisories/GHSA-8xxq-mq9m-xmhw).
+
 ## Audit metrics
 
 Audit metrics are the health layer for audit logging.
@@ -172,7 +182,7 @@ Parse them at query time in restricted dashboards instead.
 | Classification | Meaning in this project |
 | -------------- | ----------------------- |
 | Confirmed OpenBao docs behavior | OpenBao documents audited request and response entries, unaudited paths, HMAC behavior, multiple audit devices, and audit failure behavior. |
-| Observed fixture behavior | The OpenBao 2.6.0 fixture emits audit JSON lines and audit telemetry metrics, and the demo stack separates audit logs from operational logs. |
+| Observed fixture behavior | The OpenBao 2.7.0 fixture emits audit JSON lines and audit telemetry metrics, and the demo stack separates audit logs from operational logs. |
 | Design decision | This project treats audit logs as restricted security records and uses canary-backed missing-audit alerts. |
 | To validate | Archive retention, SIEM forwarding, access controls, tenant boundaries, and failure behavior in your deployment. |
 

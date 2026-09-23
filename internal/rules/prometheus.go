@@ -221,13 +221,14 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
-							Record: recordPrefix + ":core_unsealed:sum",
-							Expr:   "sum by (" + clusterGrouping() + ") (" + metricName(sourcePrefix, "core_unsealed") + `{cluster!=""})`,
+							Record: recordPrefix + ":core_unsealed:min",
+							Expr:   unsealedStateExpression(sourcePrefix),
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
-							Record: recordPrefix + ":core_unsealed:min",
-							Expr:   "min by (" + targetGrouping() + ") (" + metricName(sourcePrefix, "core_unsealed") + `{cluster!=""})`,
+							Record: recordPrefix + ":core_unsealed:sum",
+							Expr: "sum by (" + clusterGrouping() + ") (" + recordPrefix +
+								`:core_unsealed:min{source_prefix="` + sourcePrefix + `"})`,
 							Labels: ruleLabels(sourcePrefix),
 						},
 						{
@@ -955,6 +956,15 @@ func validatePromQL(document prometheusRule) error {
 		}
 	}
 	return nil
+}
+
+func unsealedStateExpression(sourcePrefix string) string {
+	metric := metricName(sourcePrefix, "core_unsealed")
+	group := "min by (" + targetGrouping() + ") ("
+	// Keep startup zeros only when the same target has no cluster-labelled signal.
+	// An unmarked source remains compatible with existing normalized integrations.
+	return group + metric + `{cluster!="",seal_state_source!="startup"}) or ` +
+		group + metric + `{cluster!="",seal_state_source="startup"})`
 }
 
 func ruleLabels(sourcePrefix string) map[string]string {

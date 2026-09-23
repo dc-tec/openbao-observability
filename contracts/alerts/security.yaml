@@ -64,9 +64,9 @@ alerts:
     severity: warning
     signal: loki
     for: 5m
-    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_type="response" | audit_error=~"(?s).*permission denied.*" [5m])) > 10'
-    summary: OpenBao permission denied responses increased
-    description: OpenBao audit logs show more than ten permission denied responses over 5 minutes.
+    expression: 'sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_error=~"(?is).*(permission denied|forbidden).*" | audit_type="response" or (audit_type="request" and audit_error=~"(?i)^forbidden$") [5m])) > 10'
+    summary: OpenBao authorization denials increased
+    description: OpenBao audit logs show more than ten audited denial events over 5 minutes.
     runbook: docs/runbooks/security-audit-detections.md
     labels:
       component: audit

@@ -4,6 +4,38 @@ This reference explains how to use the generated metric compatibility matrix.
 Use it to see which captured OpenBao fixture profiles expose each contracted
 metric, source prefix, metric type, and label set.
 
+## Verified release profiles
+
+The default reference profile uses OpenBao 2.7.0. CI captures and verifies
+OpenBao 2.6.3 and 2.7.0 independently. The metric contract declares these targets
+in `verificationVersions`; `openbaoVersion` selects the default reference.
+This is fixture coverage, not a production support commitment.
+
+| Check | 2.6.3 | 2.7.0 |
+| ----- | ----- | ----- |
+| Both metric prefixes and HA/Raft workload | Required | Required |
+| Malformed identity metadata stays out of audit errors | Required | Required |
+| Canonical policy paths and authorization error forms | Required | Required |
+| Unseal, reseal, sealed restart, and recovery | Required | Required |
+| Sealed gauge after telemetry retention expires | Absent | Zero |
+| Raft consistency headers, retry response, and forwarding | Not available | Required |
+
+Run the checks for either declared version:
+
+```shell
+make fixtures-openbao OPENBAO_VERSION=2.6.3
+make test-fixtures contracts-verify OPENBAO_VERSION=2.6.3
+```
+
+The generated matrix describes the selected capture version. To generate a
+2.6.3 matrix without replacing the reference artifact, run:
+
+```shell
+go run ./cmd/openbao-observability generate compatibility-matrix \
+  --version 2.6.3 --fixtures fixtures/captured/openbao-2.6.3 \
+  --output tmp/metric-compatibility-2.6.3.md
+```
+
 ## Matrix artifact
 
 The generated matrix lives at
@@ -20,7 +52,7 @@ promise for every OpenBao deployment shape.
 
 | Field | Meaning |
 | ----- | ------- |
-| OpenBao version | Version declared by the metric contract. |
+| OpenBao version | Selected verification version declared by the metric contract. |
 | Profile | Captured fixture profile, such as prefix fixtures or HA/Raft node fixtures. |
 | Profile class | Contracted fixture role, such as prefix smoke, HA/Raft active, HA/Raft standby, or HA/Raft read replica. |
 | Prefix | Raw source prefix used by the fixture, such as `vault` or `openbao`. |

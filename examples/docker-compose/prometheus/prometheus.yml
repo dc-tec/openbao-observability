@@ -28,11 +28,14 @@ scrape_configs:
         replacement: "$1"
         target_label: pod
     metric_relabel_configs:
-      - source_labels:
-          - __name__
-          - exported_cluster
-        regex: "(vault|openbao)_core_unsealed;"
-        action: drop
+      - source_labels: [__name__]
+        regex: "(vault|openbao)_core_unsealed"
+        target_label: seal_state_source
+        replacement: startup
+      - source_labels: [__name__, exported_cluster]
+        regex: "(vault|openbao)_core_unsealed;.+"
+        target_label: seal_state_source
+        replacement: cluster
       - source_labels:
           - namespace
         regex: "(.+)"

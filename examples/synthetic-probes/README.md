@@ -26,6 +26,20 @@ The health endpoint proves that the selected network path can reach OpenBao and
 that OpenBao reports a service state. It does not prove that every auth method,
 secret engine, policy, namespace, or client path works.
 
+## Consistency-aware application probes
+
+OpenBao 2.7.0 can return HTTP 429 when a standby has not reached the state
+identified by `X-Vault-Index`. `X-Vault-Inconsistent` selects failure, forwarding,
+or waiting behavior. A consistency retry is not evidence of rate limiting.
+Measure retries and end-to-end latency according to the application's SLO.
+The health probe above does not test read-after-write consistency.
+
+The Raft fixture writes a non-sensitive value and reads it through a standby
+using the returned index. It also sends a deliberately future index to verify
+429 with `Retry-After`, waiting fallback, and forwarding. This checks protocol
+behavior; it does not measure replication lag or qualify a production SLO.
+See the [OpenBao 2.7.0 release notes](https://github.com/openbao/openbao/releases/tag/v2.7.0).
+
 ## Scrape example
 
 Use [blackbox-scrape.example.yaml](./blackbox-scrape.example.yaml) as the

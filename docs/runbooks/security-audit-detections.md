@@ -92,10 +92,10 @@ change validation and security review, not automatic proof of compromise.
 
 ## Investigate permission denied bursts
 
-1. Query permission denied responses.
+1. Query authorization denial events.
 
    ```logql
-   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json audit_type="type", audit_error="error", request_id="request.id", request_path="request.path" | audit_type="response" | audit_error=~"(?s).*permission denied.*"
+   {cluster="<cluster>",kubernetes_namespace="<kubernetes_namespace>",log_stream="openbao.audit"} | json audit_type="type", audit_error="error", request_id="request.id", request_path="request.path" | audit_error=~"(?is).*(permission denied|forbidden).*" | audit_type="response" or (audit_type="request" and audit_error=~"(?i)^forbidden$")
    ```
 
 2. Use the request path filter to identify whether the denials cluster around
@@ -178,3 +178,14 @@ documents completed request logging in the
 
 [openbao-audit]: https://openbao.org/docs/audit/
 [openbao-log-requests]: https://openbao.org/docs/configuration/log-requests-level/
+
+## Authorization error matching
+
+The denial queries count response entries with `permission denied` or
+`Forbidden`, plus request entries whose error is `Forbidden`, without case
+sensitivity. In the 2.6.3 and 2.7.0 fixtures, a rejected identity policy template
+puts `Forbidden` on the request audit entry. Its response entry contains
+`invalid request`, and its HTTP status is 400. Ordinary ACL denial appears on
+both entries; the queries count only its response entry to avoid duplication.
+Do not classify authorization failures by HTTP 403 alone. The fixtures also
+verify canonical lowercase policy API paths.

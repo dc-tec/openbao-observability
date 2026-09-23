@@ -14,7 +14,7 @@ control, routing, packaging, and release process.
 
 | Area | Current evidence | You still verify |
 | ---- | ---------------- | ---------------- |
-| Metrics contracts | Generated from source contracts and validated against OpenBao `2.6.0` fixtures. | Your OpenBao version, metric prefix, scrape labels, and topology. |
+| Metrics contracts | Generated from source contracts and validated against OpenBao `2.7.0` and `2.6.3` fixtures. | Your OpenBao version, metric prefix, scrape labels, and topology. |
 | Metric prefix variants | Generated for `vault_*` and `openbao_*` source metrics. | The prefix that your OpenBao telemetry configuration emits. |
 | Prometheus recording rules | Generated for native Prometheus and Prometheus Operator manifests. | Rule load, evaluation cost, retention, and label policy in your metrics backend. |
 | Prometheus alert rules | Generated from alert contracts with runbook links. | Alert routing, paging policy, inhibition, and environment-specific thresholds. |
@@ -99,7 +99,7 @@ keeping production responsibilities explicit.
 
 ### Compatibility and validation
 
-- Track OpenBao version compatibility, starting with OpenBao `2.6.0`.
+- Track OpenBao version compatibility, starting with OpenBao `2.7.0`.
 - Add compatibility notes for relevant OpenBao Operator releases.
 - Expand fixture coverage for namespaces, read replicas, HA/Raft, and
   feature-specific secret engines.

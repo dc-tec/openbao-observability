@@ -177,3 +177,14 @@ contract is
 
 [loki-labels]: https://grafana.com/docs/loki/latest/get-started/labels/
 [openbao-audit]: https://openbao.org/docs/audit/
+
+## Authorization error matching
+
+The denial queries count response entries with `permission denied` or
+`Forbidden`, plus request entries whose error is `Forbidden`, without case
+sensitivity. In the 2.6.3 and 2.7.0 fixtures, a rejected identity policy template
+puts `Forbidden` on the request audit entry. Its response entry contains
+`invalid request`, and its HTTP status is 400. Ordinary ACL denial appears on
+both entries; the queries count only its response entry to avoid duplication.
+Do not classify authorization failures by HTTP 403 alone. The fixtures also
+verify canonical lowercase policy API paths.

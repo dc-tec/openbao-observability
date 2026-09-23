@@ -1,4 +1,4 @@
-OPENBAO_VERSION ?= 2.6.0
+OPENBAO_VERSION ?= 2.7.0
 OPENBAO_IMAGE ?= quay.io/openbao/openbao:$(OPENBAO_VERSION)
 POSTGRES_IMAGE ?= postgres:17-alpine
 PROMETHEUS_IMAGE ?= prom/prometheus:v3.11.2
@@ -115,6 +115,7 @@ kind-operator-down:
 contracts-verify:
 	$(GO) run ./cmd/openbao-observability contracts verify \
 		--contract "contracts/metrics/openbao-core.yaml" \
+		--version "$(OPENBAO_VERSION)" \
 		--fixtures "$(FIXTURE_DIR)"
 	$(GO) run ./cmd/openbao-observability contracts verify-alerts \
 		--contract "contracts/alerts/critical.yaml" \
@@ -195,6 +196,7 @@ generate:
 		--rule-output "generated/prometheus/openbao-prefix/openbao-recording-rules.yaml"
 	$(GO) run ./cmd/openbao-observability generate compatibility-matrix \
 		--contract "contracts/metrics/openbao-core.yaml" \
+		--version "$(OPENBAO_VERSION)" \
 		--fixtures "$(FIXTURE_DIR)" \
 		--output "generated/docs/metric-compatibility-matrix.md"
 	$(GO) run ./cmd/openbao-observability generate alert-rules \
@@ -398,6 +400,8 @@ validate-generated:
 		/workspace/generated/prometheus/openbao-prefix/openbao-warning-alerts.yaml \
 		/workspace/generated/prometheus/openbao-prefix/openbao-security-alerts.yaml \
 		/workspace/examples/signal-expectations/expected-signals.example.yaml
+	$(PROMTOOL) test rules /workspace/internal/rules/testdata/seal-state.test.yaml \
+		/workspace/internal/rules/testdata/seal-state-openbao.test.yaml
 
 docs-verify:
 	$(GO) run ./cmd/openbao-observability validate docs \

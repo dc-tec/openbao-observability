@@ -15,6 +15,10 @@ and Grafana. The stack is for local evaluation and contract validation.
 - Run commands from the repository root.
 - Generate the latest rule artifacts before you start the stack.
 - Reset the Compose volumes when you switch from an older single-node stack.
+- The PostgreSQL 18 image stores data under `/var/lib/postgresql/18/docker`.
+  The volume mounts at `/var/lib/postgresql`. An older PostgreSQL data volume
+  requires migration or a reset of disposable evaluation data. A reset deletes
+  all data in the Compose volumes.
 
 ## Start the stack
 
@@ -188,7 +192,7 @@ every 30 seconds. The exporter exposes the reference
    {
      "initialized": true,
      "sealed": false,
-     "version": "2.6.0"
+     "version": "2.7.0"
    }
    ```
 

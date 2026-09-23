@@ -5,6 +5,12 @@ scraped OpenBao node reports `core_unsealed` as `0`. The steps help you confirm
 whether the seal is planned, restore service through the approved unseal path,
 and verify audit visibility after recovery.
 
+The `OpenBaoCoreUnsealedSignalMissing` alert uses this runbook when scraping
+succeeds but the seal-state metric is absent. Absence does not prove that a
+node is sealed. OpenBao 2.6.3 can stop emitting the gauge while sealed; 2.7.0
+refreshes it throughout process lifetime. Check the API state and the scrape
+relabeling before changing the server.
+
 ## Before you begin
 
 - Get access to the OpenBao node or pod that reports sealed.

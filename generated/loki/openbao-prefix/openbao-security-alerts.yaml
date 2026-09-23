@@ -64,7 +64,7 @@ spec:
                 runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
                 summary: OpenBao high-risk system path activity observed
             - alert: OpenBaoPermissionDeniedBurst
-              expr: sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_type="response" | audit_error=~"(?s).*permission denied.*" [5m])) > 10
+              expr: sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.audit"} | json audit_type="type", audit_error="error" | audit_error=~"(?is).*(permission denied|forbidden).*" | audit_type="response" or (audit_type="request" and audit_error=~"(?i)^forbidden$") [5m])) > 10
               for: 5m
               labels:
                 category: security-detection
@@ -74,9 +74,9 @@ spec:
                 signal: loki
                 source_prefix: openbao
               annotations:
-                description: OpenBao audit logs show more than ten permission denied responses over 5 minutes.
+                description: OpenBao audit logs show more than ten audited denial events over 5 minutes.
                 runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/security-audit-detections.md
-                summary: OpenBao permission denied responses increased
+                summary: OpenBao authorization denials increased
             - alert: OpenBaoCompletedRequestLoggingObserved
               expr: sum by (cluster, kubernetes_namespace) (count_over_time({log_stream="openbao.completed_requests"}[5m])) > 0
               for: 5m

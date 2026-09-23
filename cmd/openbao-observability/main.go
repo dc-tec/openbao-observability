@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	defaultOpenBAOVersion = "2.6.0"
+	defaultOpenBAOVersion = "2.7.0"
 	helpFlag              = "--help"
 	helpCommand           = "help"
 )
@@ -156,7 +156,6 @@ func runValidate(ctx context.Context, args []string) error {
 
 func runContractsVerify(args []string) error {
 	version := envString("OPENBAO_VERSION", defaultOpenBAOVersion)
-	defaultFixtureDir := filepath.Join("fixtures", "captured", "openbao-"+version)
 
 	fs := flag.NewFlagSet("contracts verify", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -167,7 +166,8 @@ func runContractsVerify(args []string) error {
 		filepath.Join("contracts", "metrics", "openbao-core.yaml"),
 		"metric contract path",
 	)
-	fs.StringVar(&opts.FixtureDir, "fixtures", envString("FIXTURE_DIR", defaultFixtureDir), "fixture directory")
+	fs.StringVar(&opts.FixtureDir, "fixtures", envString("FIXTURE_DIR", ""), "fixture directory")
+	fs.StringVar(&opts.Version, "version", version, "OpenBao verification version")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -429,7 +429,6 @@ func runGenerateAlertRules(args []string) error {
 
 func runGenerateCompatibilityMatrix(args []string) error {
 	version := envString("OPENBAO_VERSION", defaultOpenBAOVersion)
-	defaultFixtureDir := filepath.Join("fixtures", "captured", "openbao-"+version)
 
 	fs := flag.NewFlagSet("generate compatibility-matrix", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -440,7 +439,8 @@ func runGenerateCompatibilityMatrix(args []string) error {
 		filepath.Join("contracts", "metrics", "openbao-core.yaml"),
 		"metric contract path",
 	)
-	fs.StringVar(&opts.FixtureDir, "fixtures", envString("FIXTURE_DIR", defaultFixtureDir), "fixture directory")
+	fs.StringVar(&opts.FixtureDir, "fixtures", envString("FIXTURE_DIR", ""), "fixture directory")
+	fs.StringVar(&opts.Version, "version", version, "OpenBao verification version")
 	fs.StringVar(
 		&opts.OutputPath,
 		"output",

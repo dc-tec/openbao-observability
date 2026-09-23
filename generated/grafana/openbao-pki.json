@@ -461,7 +461,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_error=~\"(?s).*permission denied.*\" | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
+          "expr": "sum by (cluster, kubernetes_namespace) (count_over_time({cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",log_stream=\"openbao.audit\", node_id=~\"${node_id:raw}\"} | json audit_type=\"type\", audit_error=\"error\", operation=\"request.operation\", request_id=\"request.id\", request_path=\"request.path\" | audit_error=~\"(?is).*(permission denied|forbidden).*\" | audit_type=\"response\" or (audit_type=\"request\" and audit_error=~\"(?i)^forbidden$\") | request_path=~\"${pki_path:raw}/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/.*)?\" | request_id=~\"${request_id:raw}\" | operation=~\"${operation:raw}\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }

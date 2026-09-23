@@ -75,7 +75,7 @@ database connection limits, database locks, slow credential-management
 statements, or plugin behavior.
 
 OpenBao database telemetry describes create, renew, and revoke user operations.
-The OpenBao `2.6.0` Prometheus fixture emits the generic operation families as
+The OpenBao `2.7.0` Prometheus fixture emits the generic operation families as
 `database_NewUser`, `database_UpdateUser`, and `database_DeleteUser`. The
 generated recording rules expose those as create, renew, and revoke dashboard
 signals.
