@@ -43,6 +43,11 @@ linters:
           msg: broad interface{} is not allowed without a reviewed boundary adapter
     gocyclo:
       min-complexity: 15
+    goconst:
+      # Preserve the existing scope when goconst adds composite literal checks.
+      exclude-types:
+        - call
+        - compositelit
     lll:
       line-length: 120
       tab-width: 1
