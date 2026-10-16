@@ -321,9 +321,9 @@ func validatePrometheusQuery(
 	var err error
 	switch query.Mode {
 	case dashboardQueryModeInstant:
-		_, warnings, err = api.Query(ctx, query.Expression, now, v1.WithTimeout(timeout))
+		_, warnings, _, err = api.Query(ctx, query.Expression, now, v1.WithTimeout(timeout))
 	case dashboardQueryModeRange:
-		_, warnings, err = api.QueryRange(ctx, query.Expression, window, v1.WithTimeout(timeout))
+		_, warnings, _, err = api.QueryRange(ctx, query.Expression, window, v1.WithTimeout(timeout))
 	default:
 		return fmt.Errorf("query %s has unsupported mode %q", query.describe(), query.Mode)
 	}

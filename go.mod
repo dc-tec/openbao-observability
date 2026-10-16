@@ -1,6 +1,6 @@
 module github.com/dc-tec/openbao-observability
 
-go 1.26.6
+go 1.27.2
 
 require (
 	github.com/openbao/openbao/api/v2 v2.7.1
