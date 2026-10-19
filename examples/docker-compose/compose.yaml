@@ -190,7 +190,7 @@ services:
         done
 
   grafana:
-    image: ${GRAFANA_IMAGE:-grafana/grafana:13.2.3}
+    image: ${GRAFANA_IMAGE:-grafana/grafana:13.2.4}
     depends_on:
       - prometheus
       - loki
