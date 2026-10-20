@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/dc-tec/openbao-observability/compare/0.2.2...0.2.3) (2026-10-20)
+
+
+### Bug fixes
+
+* **deps:** update Prometheus client and upgrade to Go 1.27.2 ([#66](https://github.com/dc-tec/openbao-observability/issues/66)) ([3f30e36](https://github.com/dc-tec/openbao-observability/commit/3f30e36d787a11f5cb42fc2647d185eedacdb863))
+* **security:** reject compromised CA keys with Go 1.27.3 ([#70](https://github.com/dc-tec/openbao-observability/issues/70)) ([e40cea2](https://github.com/dc-tec/openbao-observability/commit/e40cea2be6a938f8bd0b8782f9171853c7c55a3e))
+
 ## [0.2.2](https://github.com/dc-tec/openbao-observability/compare/0.2.1...0.2.2) (2026-09-23)
 
 
