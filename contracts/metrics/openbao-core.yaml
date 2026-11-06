@@ -152,6 +152,52 @@ metrics:
     notes:
       - Observed in the OpenBao 2.7.0 HA/Raft fixture.
       - Used as a node-level Raft apply pressure signal for voters and non-voter read replicas.
+  - id: raft_storage_put
+    docsName: vault.raft-storage.put
+    prometheusName: ${p}_raft_storage_put
+    required: false
+    overview: false
+    notes:
+      - Raft backend PUT duration is a summary in milliseconds, including permit waits and local application completion.
+      - Preserve target identity; this is not the latency of one disk write.
+  - id: raft_storage_delete
+    docsName: vault.raft-storage.delete
+    prometheusName: ${p}_raft_storage_delete
+    required: false
+    overview: false
+    notes:
+      - Raft backend DELETE duration is a summary in milliseconds, including shared-resource waits.
+  - id: raft_commit_time
+    docsName: vault.raft.commitTime
+    prometheusName: ${p}_raft_commitTime
+    required: false
+    overview: false
+    notes:
+      - Leader quorum commit duration is a summary in milliseconds.
+      - Compare with backend duration and local FSM application; these timers have different operation boundaries.
+  - id: raft_fsm_apply_batch
+    docsName: vault.raft.fsm.applyBatch
+    prometheusName: ${p}_raft_fsm_applyBatch
+    required: false
+    overview: false
+    notes:
+      - Local finite-state-machine batch application duration is a summary in milliseconds.
+      - Available on Raft nodes that apply committed logs.
+  - id: raft_fsm_apply_batch_logs
+    docsName: vault.raft.fsm.applyBatchNum
+    prometheusName: ${p}_raft_fsm_applyBatchNum
+    required: false
+    overview: false
+    notes:
+      - Summary observations count logs per applied batch, not milliseconds or a completed-request rate.
+  - id: raft_thread_fsm_saturation
+    docsName: vault.raft.thread.fsm.saturation
+    prometheusName: ${p}_raft_thread_fsm_saturation
+    required: false
+    overview: false
+    notes:
+      - Summary observations are busy-wall-time fractions from zero to one, not host CPU utilization.
+      - The normalized ratio uses the observation sum divided by the observation count.
   - id: autopilot_healthy
     docsName: vault.autopilot.healthy
     prometheusName: ${p}_autopilot_healthy
@@ -209,6 +255,34 @@ metrics:
     overview: false
     notes:
       - Device name local-file is sanitized as local_file.
+  - id: expire_job_manager_total_jobs
+    docsName: vault.expire.job_manager.total_jobs
+    prometheusName: ${p}_expire_job_manager_total_jobs
+    required: false
+    overview: false
+    notes:
+      - Event-driven gauge of waiting expiration jobs; it decreases on dispatch, before completion.
+      - Normalization selects the current active node and preserves target identity to avoid stale standby gauges.
+      - Missing samples mean unknown or inactive telemetry; do not replace them with zero.
+  - id: expire_job_manager_queue_length
+    docsName: vault.expire.job_manager.queue_length
+    prometheusName: ${p}_expire_job_manager_queue_length
+    required: false
+    overview: false
+    notes:
+      - Event-driven gauge with queue_id identifying a mount accessor, not a token or a lease revocation prefix.
+      - The special mount-accessor-not-found queue groups jobs whose mount accessor could not be resolved.
+      - This advanced dimension is bounded by mounts; review mount churn and label exposure before enabling the drilldown.
+      - A removed mount can leave an old zero-valued queue series until retention expires.
+  - id: expire_lease_expiration_time_in_queue
+    docsName: vault.expire.lease_expiration.time_in_queue
+    prometheusName: ${p}_expire_lease_expiration_time_in_queue
+    required: false
+    overview: false
+    notes:
+      - Summary in milliseconds measured when an expiration job starts executing, with a namespace label.
+      - Describes dispatched jobs, not the age of the oldest waiting job or remaining drain time.
+      - No observations during an idle interval do not establish zero wait time.
   - id: expire_num_leases
     docsName: vault.expire.num_leases
     prometheusName: ${p}_expire_num_leases

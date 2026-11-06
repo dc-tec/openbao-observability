@@ -29,6 +29,27 @@ when you configure `metrics_prefix = "openbao"`.
 Use inventory metrics for trends and thresholds. Do not use them as exact
 request-time state.
 
+## Expiration scheduler metrics
+
+| Source metric | Recording rule | Interpretation |
+| ------------- | -------------- | -------------- |
+| `${p}_expire_job_manager_total_jobs` | `openbao:expire_job_manager_total_jobs:max` | Waiting jobs on the current active target. Decreases before execution completes. |
+| `${p}_expire_job_manager_queue_length` | `openbao:expire_job_manager_queue_length:max` | Waiting jobs by mount-accessor `queue_id`. |
+| `${p}_expire_lease_expiration_time_in_queue` | `openbao:expire_lease_expiration_time_in_queue:avg5m` | Mean wait in milliseconds for jobs that start execution in the window. |
+
+`openbao:expire_job_manager_backlog:net_change_per_second5m` applies `deriv`
+to the pending-job gauge. It reports net growth or decline, not completed
+revocations. It can change during restarts and leader transitions. Gauges are
+selected from the current active node; absent gauges remain absent.
+
+The dispatch-wait summary is not an oldest-job-age gauge. Its rate-based mean
+is absent when the window contains no new observations. Queue IDs represent
+mount accessors and require a cardinality and metadata review. They are not
+token accessors or workload identities.
+
+Tracked leases minus waiting jobs is not a count of valid tokens. See
+[Expiration backlog and slow requests](../runbooks/expiration-backlog.md).
+
 ## Token operation metrics
 
 | Source metric | Recording rule | Interpretation |

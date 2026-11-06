@@ -91,6 +91,7 @@ Use these runbooks when the generated alert rules fire:
 - [Debug logging enabled](./runbooks/debug-logging-enabled.md)
 - [Completed request logging enabled](./runbooks/completed-request-logging-enabled.md)
 - [Irrevocable leases present](./runbooks/irrevocable-leases.md)
+- [Expiration backlog and slow requests](./runbooks/expiration-backlog.md)
 - [Runtime and storage warnings](./runbooks/runtime-storage-warnings.md)
 - [Secret engine feature warnings](./runbooks/secret-engine-feature-warnings.md)
 - [Kubernetes platform health](./runbooks/kubernetes-platform-health.md)

@@ -18,6 +18,36 @@ alerts:
     runbook: docs/runbooks/irrevocable-leases.md
     labels:
       component: leases
+  - id: OpenBaoExpirationBacklogGrowing
+    type: prometheus
+    severity: warning
+    signal: metrics
+    for: 15m
+    expression: >-
+      (openbao:expire_job_manager_total_jobs:max > 0)
+      and (openbao:expire_job_manager_backlog:net_change_per_second5m > 0)
+    summary: OpenBao expiration backlog is growing
+    description: Waiting expiration jobs have a positive five-minute net growth rate for at least 15 minutes. Check issuance, cleanup, leadership changes, and application latency.
+    runbook: docs/runbooks/expiration-backlog.md
+    labels:
+      component: leases
+      subsystem: expiration
+  - id: OpenBaoExpirationBacklogWithHighLatency
+    type: prometheus
+    severity: warning
+    signal: metrics
+    for: 15m
+    expression: >-
+      (openbao:expire_job_manager_total_jobs:max > 0)
+      and on (cluster, kubernetes_namespace, scrape_profile, pod, instance, source_prefix)
+      ((openbao:core_handle_request_by_target:avg5m > 1000)
+      or (openbao:core_handle_login_request_by_target:avg5m > 1000))
+    summary: OpenBao expiration backlog coincides with high request latency
+    description: Waiting expiration jobs coincide with mean regular or login handler latency above the reference limit of 1000 milliseconds for at least 15 minutes. This can persist while the queue drains; correlation does not establish the cause or LDAP-specific latency.
+    runbook: docs/runbooks/expiration-backlog.md
+    labels:
+      component: leases
+      subsystem: expiration
   - id: OpenBaoStorageBarrierLatencyElevated
     type: prometheus
     severity: warning

@@ -38,6 +38,11 @@ activity.
 
 ## Investigate barrier latency
 
+For concurrent authentication and write delays, also use
+[Expiration backlog and slow requests](./expiration-backlog.md). The runtime
+and storage dashboard's write-path panels separate quorum commitment, local
+application, and outer backend latency while preserving node identity.
+
 1. Check barrier operation latency.
 
    ```promql

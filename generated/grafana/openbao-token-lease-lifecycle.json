@@ -866,6 +866,246 @@
     },
     {
       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Waiting jobs on the active node. Jobs leave this gauge before execution completes. Missing data is not zero.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:expire_job_manager_total_jobs:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
+          "format": "time_series",
+          "legendFormat": "{{cluster}} {{scrape_profile}} {{instance}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Waiting expiration jobs",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Five-minute gauge slope: positive means growth and negative means net draining. This is not successful revocation throughput. Ignore transitions around restarts and leadership changes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:expire_job_manager_backlog:net_change_per_second5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
+          "format": "time_series",
+          "legendFormat": "{{cluster}} {{scrape_profile}} {{instance}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Net expiration backlog change",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Mount-accessor queue IDs are not token IDs or revocation prefixes. This advanced drilldown does not identify an individual consumer.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:expire_job_manager_queue_length:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
+          "format": "time_series",
+          "legendFormat": "{{cluster}} {{scrape_profile}} {{instance}} {{queue_id}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Waiting jobs by mount queue",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Mean time spent waiting by jobs that started execution during the window, by node and logical namespace. This is not oldest-job age or remaining drain time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:expire_lease_expiration_time_in_queue:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
+          "format": "time_series",
+          "legendFormat": "{{cluster}} {{scrape_profile}} {{instance}} {{openbao_namespace}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Dispatched expiration job wait",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
         "type": "loki",
         "uid": "loki"
       },
@@ -892,9 +1132,9 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 32
+        "y": 48
       },
-      "id": 15,
+      "id": 19,
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,
@@ -946,9 +1186,9 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 32
+        "y": 48
       },
-      "id": 16,
+      "id": 20,
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,
@@ -1000,9 +1240,9 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 41
+        "y": 57
       },
-      "id": 17,
+      "id": 21,
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,

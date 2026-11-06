@@ -204,7 +204,7 @@ func buildPrometheusRuleFile(document prometheusRule) prometheusRuleFile {
 func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string) prometheusRule {
 	recordPrefix := contract.Normalization.RecordingRulePrefix
 
-	return prometheusRule{
+	document := prometheusRule{
 		APIVersion: "monitoring.coreos.com/v1",
 		Kind:       "PrometheusRule",
 		Metadata: map[string]string{
@@ -808,6 +808,11 @@ func buildPrometheusRule(contract contracts.MetricContract, sourcePrefix string)
 			},
 		},
 	}
+	document.Spec.Groups[0].Rules = append(
+		document.Spec.Groups[0].Rules,
+		storagePressureRules(recordPrefix, sourcePrefix)...,
+	)
+	return document
 }
 
 func buildAlertPrometheusRule(contract contracts.AlertContract, sourcePrefix, name string) prometheusRule {

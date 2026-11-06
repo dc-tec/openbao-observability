@@ -443,3 +443,51 @@ spec:
               expr: sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile) (increase(openbao_database_DeleteUser_error[15m]))
               labels:
                 source_prefix: openbao
+            - record: openbao:expire_job_manager_total_jobs:max
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (openbao_expire_job_manager_total_jobs and on (cluster, kubernetes_namespace, scrape_profile, pod, instance) (openbao_core_active == 1))
+              labels:
+                source_prefix: openbao
+            - record: openbao:expire_job_manager_queue_length:max
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance, queue_id) (openbao_expire_job_manager_queue_length and on (cluster, kubernetes_namespace, scrape_profile, pod, instance) (openbao_core_active == 1))
+              labels:
+                source_prefix: openbao
+            - record: openbao:expire_job_manager_backlog:net_change_per_second5m
+              expr: max by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (deriv(openbao:expire_job_manager_total_jobs:max{source_prefix="openbao"}[5m]))
+              labels:
+                source_prefix: openbao
+            - record: openbao:expire_lease_expiration_time_in_queue:avg5m
+              expr: (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_expire_lease_expiration_time_in_queue_sum[5m])) / sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_expire_lease_expiration_time_in_queue_count[5m]))) and (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_expire_lease_expiration_time_in_queue_count[5m])) > 0)
+              labels:
+                source_prefix: openbao
+            - record: openbao:raft_storage_put:avg5m
+              expr: (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_storage_put_sum[5m])) / sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_storage_put_count[5m]))) and (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_storage_put_count[5m])) > 0)
+              labels:
+                source_prefix: openbao
+            - record: openbao:raft_storage_delete:avg5m
+              expr: (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_storage_delete_sum[5m])) / sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_storage_delete_count[5m]))) and (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_storage_delete_count[5m])) > 0)
+              labels:
+                source_prefix: openbao
+            - record: openbao:raft_commit_time:avg5m
+              expr: (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_commitTime_sum[5m])) / sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_commitTime_count[5m]))) and (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_commitTime_count[5m])) > 0)
+              labels:
+                source_prefix: openbao
+            - record: openbao:raft_fsm_apply_batch:avg5m
+              expr: (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_fsm_applyBatch_sum[5m])) / sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_fsm_applyBatch_count[5m]))) and (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_fsm_applyBatch_count[5m])) > 0)
+              labels:
+                source_prefix: openbao
+            - record: openbao:raft_fsm_apply_batch_logs:avg5m
+              expr: (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_fsm_applyBatchNum_sum[5m])) / sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_fsm_applyBatchNum_count[5m]))) and (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_fsm_applyBatchNum_count[5m])) > 0)
+              labels:
+                source_prefix: openbao
+            - record: openbao:core_handle_request_by_target:avg5m
+              expr: (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_core_handle_request_sum[5m])) / sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_core_handle_request_count[5m]))) and (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_core_handle_request_count[5m])) > 0)
+              labels:
+                source_prefix: openbao
+            - record: openbao:core_handle_login_request_by_target:avg5m
+              expr: (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_core_handle_login_request_sum[5m])) / sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_core_handle_login_request_count[5m]))) and (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_core_handle_login_request_count[5m])) > 0)
+              labels:
+                source_prefix: openbao
+            - record: openbao:raft_thread_fsm_saturation:ratio5m
+              expr: (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_thread_fsm_saturation_sum[5m])) / sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_thread_fsm_saturation_count[5m]))) and (sum by (cluster, kubernetes_namespace, openbao_namespace, scrape_profile, pod, instance) (rate(openbao_raft_thread_fsm_saturation_count[5m])) > 0)
+              labels:
+                source_prefix: openbao

@@ -250,6 +250,62 @@ panels:
       y: 24
       w: 12
       h: 8
+  - id: "expiration-pending-jobs"
+    title: "Waiting expiration jobs"
+    type: "timeseries"
+    signal: "metrics"
+    datasource: "metrics"
+    expression: "openbao:expire_job_manager_total_jobs:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}"
+    legend: "{{cluster}} {{scrape_profile}} {{instance}}"
+    unit: "short"
+    description: "Waiting jobs on the active node. Jobs leave this gauge before execution completes. Missing data is not zero."
+    grid:
+      x: 0
+      y: 32
+      w: 12
+      h: 8
+  - id: "expiration-backlog-change"
+    title: "Net expiration backlog change"
+    type: "timeseries"
+    signal: "metrics"
+    datasource: "metrics"
+    expression: "openbao:expire_job_manager_backlog:net_change_per_second5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}"
+    legend: "{{cluster}} {{scrape_profile}} {{instance}}"
+    unit: "ops"
+    description: "Five-minute gauge slope: positive means growth and negative means net draining. This is not successful revocation throughput. Ignore transitions around restarts and leadership changes."
+    grid:
+      x: 12
+      y: 32
+      w: 12
+      h: 8
+  - id: "expiration-queue-length"
+    title: "Waiting jobs by mount queue"
+    type: "timeseries"
+    signal: "metrics"
+    datasource: "metrics"
+    expression: "openbao:expire_job_manager_queue_length:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}"
+    legend: "{{cluster}} {{scrape_profile}} {{instance}} {{queue_id}}"
+    unit: "short"
+    description: "Mount-accessor queue IDs are not token IDs or revocation prefixes. This advanced drilldown does not identify an individual consumer."
+    grid:
+      x: 0
+      y: 40
+      w: 12
+      h: 8
+  - id: "expiration-dispatch-wait"
+    title: "Dispatched expiration job wait"
+    type: "timeseries"
+    signal: "metrics"
+    datasource: "metrics"
+    expression: "openbao:expire_lease_expiration_time_in_queue:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}"
+    legend: "{{cluster}} {{scrape_profile}} {{instance}} {{openbao_namespace}}"
+    unit: "ms"
+    description: "Mean time spent waiting by jobs that started execution during the window, by node and logical namespace. This is not oldest-job age or remaining drain time."
+    grid:
+      x: 12
+      y: 40
+      w: 12
+      h: 8
   - id: token-lifecycle-audit-events
     title: Token lifecycle audit events
     type: logs
@@ -259,7 +315,7 @@ panels:
     description: Shows audited token lifecycle requests after applying the selected filters.
     grid:
       x: 0
-      y: 32
+      y: 48
       w: 12
       h: 9
   - id: lease-management-audit-events
@@ -271,7 +327,7 @@ panels:
     description: Shows audited lease lookup, revoke, and tidy requests after applying the selected filters.
     grid:
       x: 12
-      y: 32
+      y: 48
       w: 12
       h: 9
   - id: filtered-token-lease-stream
@@ -283,6 +339,6 @@ panels:
     description: Shows the full token and lease audit stream after applying the selected filters.
     grid:
       x: 0
-      y: 41
+      y: 57
       w: 24
       h: 9

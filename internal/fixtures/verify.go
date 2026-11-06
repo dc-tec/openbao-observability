@@ -229,6 +229,15 @@ func raftRequiredNodeMetrics(prefix string) []string {
 
 func checkRaftLeaderMetricInventory(leaderMetrics promtext.Families, prefix string) error {
 	for _, metric := range []string{
+		prefix + "_expire_job_manager_total_jobs",
+		prefix + "_expire_job_manager_queue_length",
+		prefix + "_expire_lease_expiration_time_in_queue",
+		prefix + "_raft_storage_put",
+		prefix + "_raft_storage_delete",
+		prefix + "_raft_commitTime",
+		prefix + "_raft_fsm_applyBatch",
+		prefix + "_raft_fsm_applyBatchNum",
+		prefix + "_raft_thread_fsm_saturation",
 		prefix + "_autopilot_failure_tolerance",
 		prefix + "_autopilot_healthy",
 		prefix + "_autopilot_node_healthy",
@@ -244,6 +253,20 @@ func checkRaftLeaderMetricInventory(leaderMetrics promtext.Families, prefix stri
 		if !leaderMetrics.HasMetric(metric) {
 			return fmt.Errorf("missing expected Raft leader metric: %s", metric)
 		}
+	}
+	if !leaderMetrics.HasMetricWithLabelName(prefix+"_expire_job_manager_queue_length", "queue_id") {
+		return fmt.Errorf("missing queue_id label on expiration queue fixture")
+	}
+	wait := leaderMetrics[prefix+"_expire_lease_expiration_time_in_queue"]
+	if wait.GetType().String() != "SUMMARY" || !leaderMetrics.HasMetricWithLabelName(wait.GetName(), "namespace") {
+		return fmt.Errorf("expiration wait fixture must be a summary with namespace labels")
+	}
+	var dispatched uint64
+	for _, sample := range wait.GetMetric() {
+		dispatched += sample.GetSummary().GetSampleCount()
+	}
+	if dispatched == 0 {
+		return fmt.Errorf("expiration wait fixture has no dispatched-job observations")
 	}
 	return nil
 }

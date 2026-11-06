@@ -78,6 +78,26 @@ metric contract does not normalize every Raft detail series.
 If your deployment emits `openbao_*` source metrics, update these raw panels or
 add additional normalized recording rules before you rely on them.
 
+## Write-path contention
+
+The runtime and storage dashboard adds normalized, per-target means for these
+Raft summaries. Both source prefixes are supported.
+
+| Source metric | Recording rule | Unit |
+| ------------- | -------------- | ---- |
+| `${p}_raft_storage_put` | `openbao:raft_storage_put:avg5m` | Milliseconds, including shared-resource waits and application completion. |
+| `${p}_raft_storage_delete` | `openbao:raft_storage_delete:avg5m` | Milliseconds, including shared-resource waits. |
+| `${p}_raft_commitTime` | `openbao:raft_commit_time:avg5m` | Milliseconds for quorum commitment. |
+| `${p}_raft_fsm_applyBatch` | `openbao:raft_fsm_apply_batch:avg5m` | Milliseconds for local batch application. |
+| `${p}_raft_fsm_applyBatchNum` | `openbao:raft_fsm_apply_batch_logs:avg5m` | Logs per applied batch. |
+| `${p}_raft_thread_fsm_saturation` | `openbao:raft_thread_fsm_saturation:ratio5m` | Busy-wall-time fraction, not CPU utilization. |
+
+Means use summary sum and count rates from the same target. Idle windows with
+no observations remain absent. Do not average node quantiles or add and
+subtract these different operation boundaries to infer exact queueing time.
+Local application can stay busy while provisioned IOPS and bandwidth remain
+available. Compare with pending FSM work and foreground request latency.
+
 ## Read replicas and non-voters
 
 OpenBao documents Raft non-voters as nodes that receive the data replication
