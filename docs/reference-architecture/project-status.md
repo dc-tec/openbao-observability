@@ -14,12 +14,12 @@ control, routing, packaging, and release process.
 
 | Area | Current evidence | You still verify |
 | ---- | ---------------- | ---------------- |
-| Metrics contracts | Generated from source contracts and validated against OpenBao `2.7.0` and `2.6.3` fixtures. | Your OpenBao version, metric prefix, scrape labels, and topology. |
+| Metrics contracts | Generated from source contracts and validated against OpenBao `2.6.3`, `2.7.0`, and `2.7.2` fixtures. | Your OpenBao version, metric prefix, scrape labels, and topology. |
 | Metric prefix variants | Generated for `vault_*` and `openbao_*` source metrics. | The prefix that your OpenBao telemetry configuration emits. |
 | Prometheus recording rules | Generated for native Prometheus and Prometheus Operator manifests. | Rule load, evaluation cost, retention, and label policy in your metrics backend. |
 | Prometheus alert rules | Generated from alert contracts with runbook links. | Alert routing, paging policy, inhibition, and environment-specific thresholds. |
 | Loki alert references | Generated reference artifacts for log and audit detections. | Your Loki ruler setup, log volume, retention, and alert routing. |
-| Grafana dashboards | Generated from dashboard contracts and validated for syntax and query structure. | Data-source UIDs, live query results, dashboard permissions, and production label shape. |
+| Grafana dashboards | Generated from dashboard contracts, checked for syntax and query structure, and provisioned in the Compose Grafana image by CI. | Data-source UIDs, live query results, dashboard permissions, and production label shape. |
 | Docker Compose profile | Implemented local profile with OpenBao HA, PostgreSQL, Prometheus, Loki, Alloy, Grafana, and fixture scenarios. | Production hardening, TLS, credentials, network isolation, storage, and secrets. |
 | Kubernetes scrape examples | Implemented examples for secure active-node and private all-node scraping. | Service discovery labels, NetworkPolicy, TLS, RBAC, and Prometheus Operator conventions. |
 | OpenBao Operator companion profile | Implemented companion profile and integration contract. | Compatibility with the operator release and your `OpenBaoCluster` configuration. |

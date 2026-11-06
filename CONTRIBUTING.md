@@ -137,8 +137,10 @@ make verify
 ## Publishing readiness
 
 CI captures fresh OpenBao fixtures, runs the full repository verification, and
-checks whitespace. Before publishing a release candidate or making the
-repository public, run or verify the same gates locally:
+checks whitespace. A separate Compose job validates both configurations,
+checks service configuration with the selected images, and verifies Grafana
+dashboard and data source provisioning. Before publishing a release candidate
+or making the repository public, run or verify the same gates locally:
 
 ```shell
 make fixtures-openbao

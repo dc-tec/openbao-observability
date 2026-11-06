@@ -9,6 +9,7 @@ openbaoVersion: "2.7.0"
 verificationVersions:
   - "2.6.3"
   - "2.7.0"
+  - "2.7.2"
 metricPrefixes:
   supported:
     - vault
