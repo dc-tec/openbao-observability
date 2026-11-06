@@ -36,6 +36,90 @@ variables:
     type: textbox
     default: .*
 panels:
+  - id: "expiration-backlog"
+    title: "Waiting expiration jobs"
+    type: "timeseries"
+    signal: "metrics"
+    datasource: "metrics"
+    expression: "openbao:expire_job_manager_total_jobs:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}"
+    legend: "{{cluster}} {{scrape_profile}} {{instance}}"
+    unit: "short"
+    description: "Waiting expiration jobs on the active node, excluding work already dispatched. A shrinking backlog can still keep storage busy."
+    grid:
+      x: 0
+      y: 0
+      w: 12
+      h: 8
+  - id: "foreground-latency-by-target"
+    title: "Application handler latency by node"
+    type: "timeseries"
+    signal: "metrics"
+    datasource: "metrics"
+    expression: "label_replace(openbao:core_handle_request_by_target:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"handler\", \"regular request\", \"source_prefix\", \".*\") or label_replace(openbao:core_handle_login_request_by_target:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"handler\", \"login request\", \"source_prefix\", \".*\")"
+    legend: "{{cluster}} {{scrape_profile}} {{instance}} {{handler}} {{openbao_namespace}}"
+    unit: "ms"
+    description: "Per-target means preserve a busy leader. Generic login handling includes multiple auth methods and helper requests; this is not an LDAP-specific measurement."
+    grid:
+      x: 12
+      y: 0
+      w: 12
+      h: 8
+  - id: "raft-write-stages"
+    title: "Raft write and apply latency"
+    type: "timeseries"
+    signal: "metrics"
+    datasource: "metrics"
+    expression: "label_replace(openbao:raft_storage_put:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"storage_stage\", \"backend PUT\", \"source_prefix\", \".*\") or label_replace(openbao:raft_storage_delete:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"storage_stage\", \"backend DELETE\", \"source_prefix\", \".*\") or label_replace(openbao:raft_commit_time:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"storage_stage\", \"quorum commit\", \"source_prefix\", \".*\") or label_replace(openbao:raft_fsm_apply_batch:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"storage_stage\", \"local batch apply\", \"source_prefix\", \".*\")"
+    legend: "{{cluster}} {{scrape_profile}} {{instance}} {{storage_stage}}"
+    unit: "ms"
+    description: "Compare backend waits, quorum commit, and local batch application by target. Timers cover different operation boundaries and must not be added or subtracted to calculate exact wait time."
+    grid:
+      x: 0
+      y: 8
+      w: 12
+      h: 8
+  - id: "raft-fsm-busy"
+    title: "Raft FSM busy wall time"
+    type: "timeseries"
+    signal: "metrics"
+    datasource: "metrics"
+    expression: "openbao:raft_thread_fsm_saturation:ratio5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}"
+    legend: "{{cluster}} {{scrape_profile}} {{instance}}"
+    unit: "percentunit"
+    description: "Mean fraction of FSM thread wall time spent busy. This is not CPU utilization or a disk capacity percentage."
+    grid:
+      x: 12
+      y: 8
+      w: 12
+      h: 8
+  - id: "raft-fsm-pending"
+    title: "Pending Raft apply work"
+    type: "timeseries"
+    signal: "metrics"
+    datasource: "metrics"
+    expression: "openbao:raft_storage_fsm_pending:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}"
+    legend: "{{cluster}} {{scrape_profile}} {{instance}} {{peer_id}}"
+    unit: "short"
+    description: "Pending local finite-state-machine work by target and peer. Correlate with write latency and FSM busy wall time."
+    grid:
+      x: 0
+      y: 16
+      w: 12
+      h: 8
+  - id: "raft-batch-size"
+    title: "Logs per applied Raft batch"
+    type: "timeseries"
+    signal: "metrics"
+    datasource: "metrics"
+    expression: "openbao:raft_fsm_apply_batch_logs:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}"
+    legend: "{{cluster}} {{scrape_profile}} {{instance}}"
+    unit: "short"
+    description: "Mean logs per local apply batch. A batch near one log does not establish a configuration error or predict an upgrade speedup."
+    grid:
+      x: 12
+      y: 16
+      w: 12
+      h: 8
   - id: request-latency
     title: Request latency
     type: stat
@@ -46,7 +130,7 @@ panels:
     description: Shows average regular OpenBao request handling latency over 5 minutes.
     grid:
       x: 0
-      y: 0
+      y: 24
       w: 4
       h: 4
   - id: token-check-latency
@@ -59,7 +143,7 @@ panels:
     description: Shows average token check latency over 5 minutes.
     grid:
       x: 4
-      y: 0
+      y: 24
       w: 4
       h: 4
   - id: barrier-get-latency
@@ -72,7 +156,7 @@ panels:
     description: Shows average storage barrier GET latency over 5 minutes.
     grid:
       x: 8
-      y: 0
+      y: 24
       w: 4
       h: 4
   - id: barrier-put-latency
@@ -85,7 +169,7 @@ panels:
     description: Shows average storage barrier PUT latency over 5 minutes.
     grid:
       x: 12
-      y: 0
+      y: 24
       w: 4
       h: 4
   - id: cache-hit-ratio
@@ -98,7 +182,7 @@ panels:
     description: Shows the storage cache hit ratio over 5 minutes.
     grid:
       x: 16
-      y: 0
+      y: 24
       w: 4
       h: 4
   - id: goroutines
@@ -111,7 +195,7 @@ panels:
     description: Shows the maximum observed Go goroutine count.
     grid:
       x: 20
-      y: 0
+      y: 24
       w: 4
       h: 4
   - id: barrier-get-rate
@@ -124,7 +208,7 @@ panels:
     description: Shows storage barrier GET operations per second over 5 minutes.
     grid:
       x: 0
-      y: 4
+      y: 28
       w: 6
       h: 7
   - id: barrier-put-rate
@@ -137,7 +221,7 @@ panels:
     description: Shows storage barrier PUT operations per second over 5 minutes.
     grid:
       x: 6
-      y: 4
+      y: 28
       w: 6
       h: 7
   - id: barrier-list-rate
@@ -150,7 +234,7 @@ panels:
     description: Shows storage barrier LIST operations per second over 5 minutes.
     grid:
       x: 12
-      y: 4
+      y: 28
       w: 6
       h: 7
   - id: barrier-delete-rate
@@ -163,7 +247,7 @@ panels:
     description: Shows storage barrier DELETE operations per second over 5 minutes.
     grid:
       x: 18
-      y: 4
+      y: 28
       w: 6
       h: 7
   - id: barrier-get-latency-trend
@@ -176,7 +260,7 @@ panels:
     description: Shows average storage barrier GET latency over time.
     grid:
       x: 0
-      y: 11
+      y: 35
       w: 6
       h: 7
   - id: barrier-put-latency-trend
@@ -189,7 +273,7 @@ panels:
     description: Shows average storage barrier PUT latency over time.
     grid:
       x: 6
-      y: 11
+      y: 35
       w: 6
       h: 7
   - id: barrier-list-latency
@@ -202,7 +286,7 @@ panels:
     description: Shows average storage barrier LIST latency over time.
     grid:
       x: 12
-      y: 11
+      y: 35
       w: 6
       h: 7
   - id: barrier-delete-latency
@@ -215,7 +299,7 @@ panels:
     description: Shows average storage barrier DELETE latency over time.
     grid:
       x: 18
-      y: 11
+      y: 35
       w: 6
       h: 7
   - id: cache-hit-rate
@@ -228,7 +312,7 @@ panels:
     description: Shows storage cache hits per second over 5 minutes.
     grid:
       x: 0
-      y: 18
+      y: 42
       w: 6
       h: 7
   - id: cache-miss-rate
@@ -241,7 +325,7 @@ panels:
     description: Shows storage cache misses per second over 5 minutes.
     grid:
       x: 6
-      y: 18
+      y: 42
       w: 6
       h: 7
   - id: cache-write-rate
@@ -254,7 +338,7 @@ panels:
     description: Shows storage cache writes per second over 5 minutes.
     grid:
       x: 12
-      y: 18
+      y: 42
       w: 6
       h: 7
   - id: cache-hit-ratio-trend
@@ -267,7 +351,7 @@ panels:
     description: Shows storage cache hit ratio over time.
     grid:
       x: 18
-      y: 18
+      y: 42
       w: 6
       h: 7
   - id: runtime-alloc-bytes
@@ -280,7 +364,7 @@ panels:
     description: Shows the maximum observed Go runtime allocated memory.
     grid:
       x: 0
-      y: 25
+      y: 49
       w: 6
       h: 7
   - id: runtime-sys-bytes
@@ -293,7 +377,7 @@ panels:
     description: Shows the maximum observed Go runtime system memory.
     grid:
       x: 6
-      y: 25
+      y: 49
       w: 6
       h: 7
   - id: runtime-heap-objects
@@ -306,7 +390,7 @@ panels:
     description: Shows the maximum observed Go heap object count.
     grid:
       x: 12
-      y: 25
+      y: 49
       w: 6
       h: 7
   - id: runtime-gc-pause
@@ -319,7 +403,7 @@ panels:
     description: Shows average Go GC pause duration over 5 minutes.
     grid:
       x: 18
-      y: 25
+      y: 49
       w: 6
       h: 7
   - id: runtime-total-gc-pause
@@ -332,7 +416,7 @@ panels:
     description: Shows the maximum observed total Go GC pause time.
     grid:
       x: 0
-      y: 32
+      y: 56
       w: 8
       h: 7
   - id: runtime-total-gc-runs
@@ -345,7 +429,7 @@ panels:
     description: Shows the maximum observed total Go GC run count.
     grid:
       x: 8
-      y: 32
+      y: 56
       w: 8
       h: 7
   - id: barrier-encryptions
@@ -359,7 +443,7 @@ panels:
     description: Shows estimated barrier encryptions by barrier term over 15 minutes.
     grid:
       x: 16
-      y: 32
+      y: 56
       w: 8
       h: 7
   - id: mount-table-entries
@@ -373,7 +457,7 @@ panels:
     description: Shows auth and logical mount table entries by bounded labels.
     grid:
       x: 0
-      y: 39
+      y: 63
       w: 12
       h: 7
   - id: mount-table-size
@@ -387,7 +471,7 @@ panels:
     description: Shows auth and logical mount table size by bounded labels.
     grid:
       x: 12
-      y: 39
+      y: 63
       w: 12
       h: 7
   - id: runtime-storage-logs
@@ -399,6 +483,6 @@ panels:
     description: Shows OpenBao operational logs related to storage, cache, runtime, and memory.
     grid:
       x: 0
-      y: 46
+      y: 70
       w: 24
       h: 9

@@ -135,6 +135,22 @@ Operational logs are troubleshooting context. They are not audit records.
 - Runtime panels show Go process pressure, not container or node limits.
 - Operational logs depend on `log_stream="openbao.operational"`.
 
+## Read the storage contention panels
+
+The first panels connect waiting expiration jobs with per-node application
+handler latency, backend PUT and DELETE duration, quorum commit duration,
+local batch application, FSM busy wall time, pending work, and batch size.
+
+Retaining node identity prevents idle followers from concealing a busy leader.
+Generic login handling is not an LDAP-specific timer. The Raft timers cover
+different operation boundaries; do not add or subtract their means to derive
+exact wait time. FSM busy wall time is a fraction, not CPU utilization.
+
+No-data panels can mean idle or unavailable telemetry. They do not establish
+zero latency or an empty expiration queue. Use
+[Expiration backlog and slow requests](../runbooks/expiration-backlog.md)
+for interpretation, mitigation tradeoffs, and recovery checks.
+
 ## Related pages
 
 - Use [OpenBao overview dashboard](./overview-dashboard.md) when you need the

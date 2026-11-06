@@ -19,6 +19,32 @@ spec:
                 description: OpenBao reports one or more leases that it cannot automatically revoke.
                 runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/irrevocable-leases.md
                 summary: OpenBao reports irrevocable leases
+            - alert: OpenBaoExpirationBacklogGrowing
+              expr: (openbao:expire_job_manager_total_jobs:max > 0) and (openbao:expire_job_manager_backlog:net_change_per_second5m > 0)
+              for: 15m
+              labels:
+                component: leases
+                severity: warning
+                signal: metrics
+                source_prefix: openbao
+                subsystem: expiration
+              annotations:
+                description: Waiting expiration jobs have a positive five-minute net growth rate for at least 15 minutes. Check issuance, cleanup, leadership changes, and application latency.
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/expiration-backlog.md
+                summary: OpenBao expiration backlog is growing
+            - alert: OpenBaoExpirationBacklogWithHighLatency
+              expr: (openbao:expire_job_manager_total_jobs:max > 0) and on (cluster, kubernetes_namespace, scrape_profile, pod, instance, source_prefix) ((openbao:core_handle_request_by_target:avg5m > 1000) or (openbao:core_handle_login_request_by_target:avg5m > 1000))
+              for: 15m
+              labels:
+                component: leases
+                severity: warning
+                signal: metrics
+                source_prefix: openbao
+                subsystem: expiration
+              annotations:
+                description: Waiting expiration jobs coincide with mean regular or login handler latency above the reference limit of 1000 milliseconds for at least 15 minutes. This can persist while the queue drains; correlation does not establish the cause or LDAP-specific latency.
+                runbook_url: https://github.com/dc-tec/openbao-observability/blob/main/docs/runbooks/expiration-backlog.md
+                summary: OpenBao expiration backlog coincides with high request latency
             - alert: OpenBaoStorageBarrierLatencyElevated
               expr: (openbao:barrier_get:avg5m > 3 * clamp_min(avg_over_time(openbao:barrier_get:avg5m[1h]), 0.001)) or (openbao:barrier_put:avg5m > 3 * clamp_min(avg_over_time(openbao:barrier_put:avg5m[1h]), 0.001)) or (openbao:barrier_list:avg5m > 3 * clamp_min(avg_over_time(openbao:barrier_list:avg5m[1h]), 0.001)) or (openbao:barrier_delete:avg5m > 3 * clamp_min(avg_over_time(openbao:barrier_delete:avg5m[1h]), 0.001))
               for: 15m

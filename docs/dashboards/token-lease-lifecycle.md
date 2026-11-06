@@ -69,6 +69,27 @@ missing slow gauge updates. Do not read it as a per-scrape real-time value.
 Irrevocable leases need attention because OpenBao reports that it cannot
 automatically revoke them. Use the runbook when this value is nonzero.
 
+## How to read expiration backlog panels
+
+Waiting expiration jobs and mount queue lengths measure pending scheduler
+work, excluding jobs already dispatched. The net backlog change is a gauge
+slope: positive means growth and negative means net draining. It is not the
+successful revocation rate. Exclude restart and leadership transitions when
+interpreting the slope.
+
+Dispatched expiration job wait reports the mean wait of jobs that started
+execution in the window, by target and logical namespace. It is not the oldest
+waiting job's age or an estimate of remaining drain time. Missing event-driven
+gauges remain missing; the panels do not turn absent telemetry into zero.
+
+Queue IDs identify mount accessors, not individual tokens or consumers. Use
+this advanced drilldown only after reviewing mount cardinality and metadata
+exposure. Resolve workload identity through restricted audit records.
+
+Use [Expiration backlog and slow requests](../runbooks/expiration-backlog.md)
+to distinguish queued work, executing cleanup, tracked leases, and irrevocable
+leases. A falling count can coexist with persistent request latency.
+
 ## How to read token operation panels
 
 Token create, lookup, store, and revoke-tree panels show rates and latency.

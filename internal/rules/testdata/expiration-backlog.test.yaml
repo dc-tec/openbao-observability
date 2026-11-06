@@ -1,0 +1,213 @@
+# Synthetic workloads; no production audit data or identifiers.
+rule_files:
+  - "../../../generated/prometheus/openbao-recording-rules.yaml"
+  - "../../../generated/prometheus/openbao-warning-alerts.yaml"
+evaluation_interval: "1m"
+fuzzy_compare: true
+group_eval_order:
+  - "openbao.recording"
+  - "openbao.alerts"
+tests:
+  - name: "growth, draining with persistent latency, zero and missing telemetry"
+    interval: "1m"
+    input_series:
+      - series: "vault_core_active{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "1x80"
+      - series: "vault_expire_job_manager_total_jobs{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "6000 6600 7200 7800 8400 9000 9600 10200 10800 11400 12000 12600 13200 13800 14400 15000 15600 16200 16800 17400 18000 17100 16200 15300 14400 13500 12600 11700 10800 9900 9000 8100 7200 6300 5400 4500 3600 2700 1800 900 0 0 0 0 0 0 0 0 0 0 0 stale"
+      - series: "vault_expire_job_manager_queue_length{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\",queue_id=\"auth_token_fixture\"}"
+        values: "6000 6600 7200 7800 8400 9000 9600 10200 10800 11400 12000 12600 13200 13800 14400 15000 15600 16200 16800 17400 18000 17100 16200 15300 14400 13500 12600 11700 10800 9900 9000 8100 7200 6300 5400 4500 3600 2700 1800 900 0 0 0 0 0 0 0 0 0 0 0 stale"
+      - series: "vault_core_handle_request_sum{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+20000x80"
+      - series: "vault_core_handle_request_count{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+10x80"
+    promql_expr_test:
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogGrowing\",alertstate=\"firing\"})"
+        eval_time: "10m"
+        exp_samples: []
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogGrowing\",alertstate=\"firing\"})"
+        eval_time: "20m"
+        exp_samples:
+          - labels: "{}"
+            value: 1
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogGrowing\",alertstate=\"firing\"})"
+        eval_time: "30m"
+        exp_samples: []
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogWithHighLatency\",alertstate=\"firing\"})"
+        eval_time: "30m"
+        exp_samples:
+          - labels: "{}"
+            value: 1
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogWithHighLatency\",alertstate=\"firing\"})"
+        eval_time: "39m"
+        exp_samples:
+          - labels: "{}"
+            value: 1
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogWithHighLatency\",alertstate=\"firing\"})"
+        eval_time: "40m"
+        exp_samples: []
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogGrowing\",alertstate=\"firing\"})"
+        eval_time: "45m"
+        exp_samples: []
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogWithHighLatency\",alertstate=\"firing\"})"
+        eval_time: "60m"
+        exp_samples: []
+      - expr: "sum(openbao:expire_job_manager_total_jobs:max)"
+        eval_time: "40m"
+        exp_samples:
+          - labels: "{}"
+            value: 0
+      - expr: "sum(openbao:expire_job_manager_total_jobs:max)"
+        eval_time: "51m"
+        exp_samples: []
+      - expr: "sum(openbao:expire_job_manager_backlog:net_change_per_second5m)"
+        eval_time: "10m"
+        exp_samples:
+          - labels: "{}"
+            value: 10
+      - expr: "sum(openbao:expire_job_manager_backlog:net_change_per_second5m)"
+        eval_time: "30m"
+        exp_samples:
+          - labels: "{}"
+            value: -15
+  - name: "stalled backlog and prolonged slow requests stay visible without a rolling baseline"
+    interval: "1m"
+    input_series:
+      - series: "vault_core_active{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "1x90"
+      - series: "vault_expire_job_manager_total_jobs{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "5000x90"
+      - series: "vault_core_handle_login_request_sum{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+20000x90"
+      - series: "vault_core_handle_login_request_count{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+10x90"
+    promql_expr_test:
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogGrowing\",alertstate=\"firing\"})"
+        eval_time: "75m"
+        exp_samples: []
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogWithHighLatency\",alertstate=\"firing\"})"
+        eval_time: "20m"
+        exp_samples:
+          - labels: "{}"
+            value: 1
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogWithHighLatency\",alertstate=\"firing\"})"
+        eval_time: "75m"
+        exp_samples:
+          - labels: "{}"
+            value: 1
+  - name: "healthy leader and slow follower are not averaged or cross-matched"
+    interval: "1m"
+    input_series:
+      - series: "vault_core_active{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "1x30"
+      - series: "vault_core_active{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-1\",instance=\"a-1:8200\"}"
+        values: "0x30"
+      - series: "vault_expire_job_manager_total_jobs{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "5000x30"
+      - series: "vault_expire_job_manager_total_jobs{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-1\",instance=\"a-1:8200\"}"
+        values: "900000x30"
+      - series: "vault_core_handle_request_sum{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+1000x30"
+      - series: "vault_core_handle_request_count{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+10x30"
+      - series: "vault_core_handle_request_sum{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-1\",instance=\"a-1:8200\"}"
+        values: "0+20000x30"
+      - series: "vault_core_handle_request_count{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-1\",instance=\"a-1:8200\"}"
+        values: "0+10x30"
+    promql_expr_test:
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogWithHighLatency\",alertstate=\"firing\"})"
+        eval_time: "25m"
+        exp_samples: []
+      - expr: "sum(openbao:expire_job_manager_total_jobs:max)"
+        eval_time: "25m"
+        exp_samples:
+          - labels: "{}"
+            value: 5000
+      - expr: "sum(openbao:core_handle_request_by_target:avg5m{instance=\"a-0:8200\"})"
+        eval_time: "25m"
+        exp_samples:
+          - labels: "{}"
+            value: 100
+      - expr: "sum(openbao:core_handle_request_by_target:avg5m{instance=\"a-1:8200\"})"
+        eval_time: "25m"
+        exp_samples:
+          - labels: "{}"
+            value: 2000
+  - name: "leadership transition excludes a stale queue on the old leader"
+    interval: "1m"
+    input_series:
+      - series: "vault_core_active{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "1x9 0x30"
+      - series: "vault_core_active{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-1\",instance=\"a-1:8200\"}"
+        values: "0x9 1x30"
+      - series: "vault_expire_job_manager_total_jobs{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "9000x40"
+      - series: "vault_expire_job_manager_total_jobs{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-1\",instance=\"a-1:8200\"}"
+        values: "3x40"
+    promql_expr_test:
+      - expr: "sum(openbao:expire_job_manager_total_jobs:max)"
+        eval_time: "5m"
+        exp_samples:
+          - labels: "{}"
+            value: 9000
+      - expr: "sum(openbao:expire_job_manager_total_jobs:max)"
+        eval_time: "10m"
+        exp_samples:
+          - labels: "{}"
+            value: 3
+      - expr: "count(openbao:expire_job_manager_total_jobs:max)"
+        eval_time: "10m"
+        exp_samples:
+          - labels: "{}"
+            value: 1
+      - expr: "count(ALERTS{alertname=\"OpenBaoExpirationBacklogGrowing\",alertstate=\"firing\"})"
+        eval_time: "30m"
+        exp_samples: []
+  - name: "summary units, counter resets, namespace retention and idle windows"
+    interval: "1m"
+    input_series:
+      - series: "vault_raft_storage_put_sum{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+1000x10 0+1000x10 10000x10"
+      - series: "vault_raft_storage_put_count{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+2x10 0+2x10 20x10"
+      - series: "vault_raft_thread_fsm_saturation_sum{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+0.5x30"
+      - series: "vault_raft_thread_fsm_saturation_count{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+1x30"
+      - series: "vault_raft_fsm_applyBatchNum_sum{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+2x30"
+      - series: "vault_raft_fsm_applyBatchNum_count{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\"}"
+        values: "0+1x30"
+      - series: "vault_expire_lease_expiration_time_in_queue_sum{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\",openbao_namespace=\"team-a\"}"
+        values: "0+60000x30"
+      - series: "vault_expire_lease_expiration_time_in_queue_count{cluster=\"alpha\",kubernetes_namespace=\"bao\",scrape_profile=\"all_nodes\",pod=\"a-0\",instance=\"a-0:8200\",openbao_namespace=\"team-a\"}"
+        values: "0+1x30"
+    promql_expr_test:
+      - expr: "sum(openbao:raft_storage_put:avg5m)"
+        eval_time: "5m"
+        exp_samples:
+          - labels: "{}"
+            value: 500
+      - expr: "sum(openbao:raft_storage_put:avg5m)"
+        eval_time: "16m"
+        exp_samples:
+          - labels: "{}"
+            value: 500
+      - expr: "sum(openbao:raft_storage_put:avg5m)"
+        eval_time: "28m"
+        exp_samples: []
+      - expr: "sum(openbao:raft_thread_fsm_saturation:ratio5m)"
+        eval_time: "20m"
+        exp_samples:
+          - labels: "{}"
+            value: 0.5
+      - expr: "sum(openbao:raft_fsm_apply_batch_logs:avg5m)"
+        eval_time: "20m"
+        exp_samples:
+          - labels: "{}"
+            value: 2
+      - expr: "sum(openbao:expire_lease_expiration_time_in_queue:avg5m{openbao_namespace=\"team-a\"})"
+        eval_time: "20m"
+        exp_samples:
+          - labels: "{}"
+            value: 60000

@@ -401,7 +401,9 @@ validate-generated:
 		/workspace/generated/prometheus/openbao-prefix/openbao-security-alerts.yaml \
 		/workspace/examples/signal-expectations/expected-signals.example.yaml
 	$(PROMTOOL) test rules /workspace/internal/rules/testdata/seal-state.test.yaml \
-		/workspace/internal/rules/testdata/seal-state-openbao.test.yaml
+		/workspace/internal/rules/testdata/seal-state-openbao.test.yaml \
+		/workspace/internal/rules/testdata/expiration-backlog.test.yaml \
+		/workspace/internal/rules/testdata/expiration-backlog-openbao.test.yaml
 
 docs-verify:
 	$(GO) run ./cmd/openbao-observability validate docs \

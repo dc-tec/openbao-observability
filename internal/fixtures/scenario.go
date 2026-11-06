@@ -971,6 +971,14 @@ func (r *scenarioRunner) loginAppRole(ctx context.Context) error {
 }
 
 func (r *scenarioRunner) exerciseTokenLifecycle(ctx context.Context) error {
+	// Let a short-lived token expire naturally so the capture exercises the
+	// expiration job manager, not only synchronous token revocation.
+	if err := r.runOperation(ctx, scenarioOperation{
+		name: "create-expiring-token", path: "auth/token/create", operation: "write",
+		data: map[string]any{"policies": []string{"scenario-app"}, "ttl": "1s", "explicit_max_ttl": "1s", "renewable": false},
+	}); err != nil {
+		return err
+	}
 	secret, err := r.client.Logical().WriteWithContext(ctx, "auth/token/create", map[string]any{
 		"display_name": "scenario-token",
 		"policies":     []string{"scenario-app"},

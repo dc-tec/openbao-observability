@@ -13,6 +13,366 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
+      "description": "Waiting expiration jobs on the active node, excluding work already dispatched. A shrinking backlog can still keep storage busy.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:expire_job_manager_total_jobs:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
+          "format": "time_series",
+          "legendFormat": "{{cluster}} {{scrape_profile}} {{instance}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Waiting expiration jobs",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Per-target means preserve a busy leader. Generic login handling includes multiple auth methods and helper requests; this is not an LDAP-specific measurement.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(openbao:core_handle_request_by_target:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"handler\", \"regular request\", \"source_prefix\", \".*\") or label_replace(openbao:core_handle_login_request_by_target:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"handler\", \"login request\", \"source_prefix\", \".*\")",
+          "format": "time_series",
+          "legendFormat": "{{cluster}} {{scrape_profile}} {{instance}} {{handler}} {{openbao_namespace}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Application handler latency by node",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Compare backend waits, quorum commit, and local batch application by target. Timers cover different operation boundaries and must not be added or subtracted to calculate exact wait time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(openbao:raft_storage_put:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"storage_stage\", \"backend PUT\", \"source_prefix\", \".*\") or label_replace(openbao:raft_storage_delete:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"storage_stage\", \"backend DELETE\", \"source_prefix\", \".*\") or label_replace(openbao:raft_commit_time:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"storage_stage\", \"quorum commit\", \"source_prefix\", \".*\") or label_replace(openbao:raft_fsm_apply_batch:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}, \"storage_stage\", \"local batch apply\", \"source_prefix\", \".*\")",
+          "format": "time_series",
+          "legendFormat": "{{cluster}} {{scrape_profile}} {{instance}} {{storage_stage}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Raft write and apply latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Mean fraction of FSM thread wall time spent busy. This is not CPU utilization or a disk capacity percentage.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:raft_thread_fsm_saturation:ratio5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
+          "format": "time_series",
+          "legendFormat": "{{cluster}} {{scrape_profile}} {{instance}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Raft FSM busy wall time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Pending local finite-state-machine work by target and peer. Correlate with write latency and FSM busy wall time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:raft_storage_fsm_pending:max{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
+          "format": "time_series",
+          "legendFormat": "{{cluster}} {{scrape_profile}} {{instance}} {{peer_id}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Pending Raft apply work",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Mean logs per local apply batch. A batch near one log does not establish a configuration error or predict an upgrade speedup.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "openbao:raft_fsm_apply_batch_logs:avg5m{cluster=~\"${cluster:raw}\",kubernetes_namespace=~\"${kubernetes_namespace:raw}\",scrape_profile=~\"${scrape_profile:raw}\"}",
+          "format": "time_series",
+          "legendFormat": "{{cluster}} {{scrape_profile}} {{instance}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Logs per applied Raft batch",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "description": "Shows average regular OpenBao request handling latency over 5 minutes.",
       "fieldConfig": {
         "defaults": {
@@ -36,9 +396,9 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 0
+        "y": 24
       },
-      "id": 1,
+      "id": 7,
       "options": {
         "colorMode": "none",
         "graphMode": "none",
@@ -98,9 +458,9 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 0
+        "y": 24
       },
-      "id": 2,
+      "id": 8,
       "options": {
         "colorMode": "none",
         "graphMode": "none",
@@ -160,9 +520,9 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 0
+        "y": 24
       },
-      "id": 3,
+      "id": 9,
       "options": {
         "colorMode": "none",
         "graphMode": "none",
@@ -222,9 +582,9 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 0
+        "y": 24
       },
-      "id": 4,
+      "id": 10,
       "options": {
         "colorMode": "none",
         "graphMode": "none",
@@ -284,9 +644,9 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 0
+        "y": 24
       },
-      "id": 5,
+      "id": 11,
       "options": {
         "colorMode": "none",
         "graphMode": "none",
@@ -346,9 +706,9 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 0
+        "y": 24
       },
-      "id": 6,
+      "id": 12,
       "options": {
         "colorMode": "none",
         "graphMode": "none",
@@ -408,9 +768,9 @@
         "h": 7,
         "w": 6,
         "x": 0,
-        "y": 4
+        "y": 28
       },
-      "id": 7,
+      "id": 13,
       "options": {
         "legend": {
           "calcs": [],
@@ -468,9 +828,9 @@
         "h": 7,
         "w": 6,
         "x": 6,
-        "y": 4
+        "y": 28
       },
-      "id": 8,
+      "id": 14,
       "options": {
         "legend": {
           "calcs": [],
@@ -528,9 +888,9 @@
         "h": 7,
         "w": 6,
         "x": 12,
-        "y": 4
+        "y": 28
       },
-      "id": 9,
+      "id": 15,
       "options": {
         "legend": {
           "calcs": [],
@@ -588,9 +948,9 @@
         "h": 7,
         "w": 6,
         "x": 18,
-        "y": 4
+        "y": 28
       },
-      "id": 10,
+      "id": 16,
       "options": {
         "legend": {
           "calcs": [],
@@ -648,9 +1008,9 @@
         "h": 7,
         "w": 6,
         "x": 0,
-        "y": 11
+        "y": 35
       },
-      "id": 11,
+      "id": 17,
       "options": {
         "legend": {
           "calcs": [],
@@ -708,9 +1068,9 @@
         "h": 7,
         "w": 6,
         "x": 6,
-        "y": 11
+        "y": 35
       },
-      "id": 12,
+      "id": 18,
       "options": {
         "legend": {
           "calcs": [],
@@ -768,9 +1128,9 @@
         "h": 7,
         "w": 6,
         "x": 12,
-        "y": 11
+        "y": 35
       },
-      "id": 13,
+      "id": 19,
       "options": {
         "legend": {
           "calcs": [],
@@ -828,9 +1188,9 @@
         "h": 7,
         "w": 6,
         "x": 18,
-        "y": 11
+        "y": 35
       },
-      "id": 14,
+      "id": 20,
       "options": {
         "legend": {
           "calcs": [],
@@ -888,9 +1248,9 @@
         "h": 7,
         "w": 6,
         "x": 0,
-        "y": 18
+        "y": 42
       },
-      "id": 15,
+      "id": 21,
       "options": {
         "legend": {
           "calcs": [],
@@ -948,9 +1308,9 @@
         "h": 7,
         "w": 6,
         "x": 6,
-        "y": 18
+        "y": 42
       },
-      "id": 16,
+      "id": 22,
       "options": {
         "legend": {
           "calcs": [],
@@ -1008,9 +1368,9 @@
         "h": 7,
         "w": 6,
         "x": 12,
-        "y": 18
+        "y": 42
       },
-      "id": 17,
+      "id": 23,
       "options": {
         "legend": {
           "calcs": [],
@@ -1068,9 +1428,9 @@
         "h": 7,
         "w": 6,
         "x": 18,
-        "y": 18
+        "y": 42
       },
-      "id": 18,
+      "id": 24,
       "options": {
         "legend": {
           "calcs": [],
@@ -1128,9 +1488,9 @@
         "h": 7,
         "w": 6,
         "x": 0,
-        "y": 25
+        "y": 49
       },
-      "id": 19,
+      "id": 25,
       "options": {
         "legend": {
           "calcs": [],
@@ -1188,9 +1548,9 @@
         "h": 7,
         "w": 6,
         "x": 6,
-        "y": 25
+        "y": 49
       },
-      "id": 20,
+      "id": 26,
       "options": {
         "legend": {
           "calcs": [],
@@ -1248,9 +1608,9 @@
         "h": 7,
         "w": 6,
         "x": 12,
-        "y": 25
+        "y": 49
       },
-      "id": 21,
+      "id": 27,
       "options": {
         "legend": {
           "calcs": [],
@@ -1308,9 +1668,9 @@
         "h": 7,
         "w": 6,
         "x": 18,
-        "y": 25
+        "y": 49
       },
-      "id": 22,
+      "id": 28,
       "options": {
         "legend": {
           "calcs": [],
@@ -1368,9 +1728,9 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 32
+        "y": 56
       },
-      "id": 23,
+      "id": 29,
       "options": {
         "legend": {
           "calcs": [],
@@ -1428,9 +1788,9 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 32
+        "y": 56
       },
-      "id": 24,
+      "id": 30,
       "options": {
         "legend": {
           "calcs": [],
@@ -1488,9 +1848,9 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 32
+        "y": 56
       },
-      "id": 25,
+      "id": 31,
       "options": {
         "legend": {
           "calcs": [],
@@ -1548,9 +1908,9 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 39
+        "y": 63
       },
-      "id": 26,
+      "id": 32,
       "options": {
         "legend": {
           "calcs": [],
@@ -1608,9 +1968,9 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 39
+        "y": 63
       },
-      "id": 27,
+      "id": 33,
       "options": {
         "legend": {
           "calcs": [],
@@ -1668,9 +2028,9 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 46
+        "y": 70
       },
-      "id": 28,
+      "id": 34,
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,
