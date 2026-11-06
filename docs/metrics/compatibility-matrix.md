@@ -7,20 +7,21 @@ metric, source prefix, metric type, and label set.
 ## Verified release profiles
 
 The default reference profile uses OpenBao 2.7.0. CI captures and verifies
-OpenBao 2.6.3 and 2.7.0 independently. The metric contract declares these targets
-in `verificationVersions`; `openbaoVersion` selects the default reference.
+OpenBao 2.6.3, 2.7.0, and 2.7.2 independently. The metric contract declares
+these targets in `verificationVersions`; `openbaoVersion` selects the default
+reference.
 This is fixture coverage, not a production support commitment.
 
-| Check | 2.6.3 | 2.7.0 |
-| ----- | ----- | ----- |
-| Both metric prefixes and HA/Raft workload | Required | Required |
-| Malformed identity metadata stays out of audit errors | Required | Required |
-| Canonical policy paths and authorization error forms | Required | Required |
-| Unseal, reseal, sealed restart, and recovery | Required | Required |
-| Sealed gauge after telemetry retention expires | Absent | Zero |
-| Raft consistency headers, retry response, and forwarding | Not available | Required |
+| Check | 2.6.3 | 2.7.0 | 2.7.2 |
+| ----- | ----- | ----- | ----- |
+| Both metric prefixes and HA/Raft workload | Required | Required | Required |
+| Malformed identity metadata stays out of audit errors | Required | Required | Required |
+| Canonical policy paths and authorization error forms | Required | Required | Required |
+| Unseal, reseal, sealed restart, and recovery | Required | Required | Required |
+| Sealed gauge after telemetry retention expires | Absent | Zero | Zero |
+| Raft consistency headers, retry response, and forwarding | Not available | Required | Required |
 
-Run the checks for either declared version:
+Run the checks for a declared version:
 
 ```shell
 make fixtures-openbao OPENBAO_VERSION=2.6.3

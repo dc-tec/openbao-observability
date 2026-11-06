@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openbao: ["2.6.3", "2.7.0"]
+        openbao: ["2.6.3", "2.7.0", "2.7.2"]
     env:
       OPENBAO_VERSION: ${{ matrix.openbao }}
     runs-on: ubuntu-24.04
@@ -57,3 +57,94 @@ jobs:
 
       - name: Check whitespace
         run: git diff --check
+
+  compose:
+    name: Compose validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      COMPOSE_PROJECT_NAME: ci-compose-${{ github.run_id }}-${{ github.run_attempt }}
+      GRAFANA_ADMIN_USER: ci
+      GRAFANA_ADMIN_PASSWORD: ci-test-only
+      GRAFANA_PORT: "13000"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate Compose configurations
+        run: make compose-config compose-audit-archive-config >/dev/null
+
+      - name: Validate configurations with the Compose images
+        run: |
+          compose=(docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml)
+          "${compose[@]}" run --rm --no-deps -T --entrypoint /bin/promtool prometheus check config /etc/prometheus/prometheus.yml
+          PROMETHEUS_CONFIG=./prometheus/prometheus.audit-archive.yml \
+            "${compose[@]}" run --rm --no-deps -T --entrypoint /bin/promtool prometheus check config /etc/prometheus/prometheus.yml
+          "${compose[@]}" run --rm --no-deps -T loki -config.file=/etc/loki/loki.yaml -verify-config=true
+          "${compose[@]}" run --rm --no-deps -T alloy validate /etc/alloy/config.alloy
+
+      - name: Verify Grafana provisioning
+        run: |
+          docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml up --detach --no-deps grafana
+          curl --fail --max-time 5 --retry 30 --retry-connrefused --retry-delay 2 --retry-max-time 90 \
+            http://127.0.0.1:13000/api/health
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          from pathlib import Path
+          import time
+          from urllib.error import URLError
+          from urllib.request import Request, urlopen
+
+          credentials = f"{os.environ['GRAFANA_ADMIN_USER']}:{os.environ['GRAFANA_ADMIN_PASSWORD']}"
+          authorization = "Basic " + base64.b64encode(credentials.encode()).decode()
+
+          def read_api(path):
+              request = Request("http://127.0.0.1:13000" + path, headers={"Authorization": authorization})
+              with urlopen(request, timeout=5) as response:
+                  return json.load(response)
+
+          expected = {}
+          for path in Path("generated/grafana").glob("*.json"):
+              dashboard = json.loads(path.read_text())
+              expected[dashboard["uid"]] = dashboard
+          if not expected:
+              raise SystemExit("No generated dashboards found")
+
+          missing = set(expected)
+          for attempt in range(30):
+              try:
+                  imported = {item["uid"] for item in read_api("/api/search?type=dash-db&limit=1000")}
+                  missing = set(expected) - imported
+                  if not missing:
+                      break
+              except URLError:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit(f"Grafana did not provision dashboards: {sorted(missing)}")
+
+          for uid, source in expected.items():
+              result = read_api("/api/dashboards/uid/" + uid)
+              dashboard = result["dashboard"]
+              if not result["meta"]["provisioned"] or dashboard["title"] != source["title"]:
+                  raise SystemExit(f"Grafana provisioning mismatch for {uid}")
+              if len(dashboard["panels"]) != len(source["panels"]):
+                  raise SystemExit(f"Grafana panel count changed for {uid}")
+
+          datasources = {item["uid"]: item["type"] for item in read_api("/api/datasources")}
+          for uid in ("prometheus", "loki"):
+              if datasources.get(uid) != uid:
+                  raise SystemExit(f"Grafana did not provision the {uid} data source")
+          print(f"Verified {len(expected)} provisioned dashboards and both data sources")
+          PY
+
+      - name: Show Compose diagnostics
+        if: failure()
+        run: docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml logs --no-color
+
+      - name: Remove validation containers and volumes
+        if: always()
+        run: docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml down --volumes --remove-orphans
