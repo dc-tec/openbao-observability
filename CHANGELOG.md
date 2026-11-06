@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/dc-tec/openbao-observability/compare/0.2.3...0.3.0) (2026-11-06)
+
+
+### Features
+
+* expose expiration backlog and storage contention ([#75](https://github.com/dc-tec/openbao-observability/issues/75)) ([dce7e32](https://github.com/dc-tec/openbao-observability/commit/dce7e32d874569957137d44d20064f4e44262ae1))
+
 ## [0.2.3](https://github.com/dc-tec/openbao-observability/compare/0.2.2...0.2.3) (2026-10-20)
 
 
