@@ -87,7 +87,7 @@ jobs:
       - name: Verify Grafana provisioning
         run: |
           docker compose --project-directory examples/docker-compose -f examples/docker-compose/compose.yaml up --detach --no-deps grafana
-          curl --fail --max-time 5 --retry 30 --retry-connrefused --retry-delay 2 --retry-max-time 90 \
+          curl --fail --max-time 5 --retry 30 --retry-all-errors --retry-delay 2 --retry-max-time 90 \
             http://127.0.0.1:13000/api/health
           python3 - <<'PY'
           import base64
