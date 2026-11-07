@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.0](https://github.com/dc-tec/openbao-observability/compare/0.2.3...0.3.0) (2026-11-07)
+
+
+### Features
+
+* add native Splunk alerts and clean-install qualification ([#80](https://github.com/dc-tec/openbao-observability/issues/80)) ([7bb253f](https://github.com/dc-tec/openbao-observability/commit/7bb253fd7e1b554194fe61507e165ccecc350d5a))
+* add native Splunk observability profile ([#77](https://github.com/dc-tec/openbao-observability/issues/77)) ([0584941](https://github.com/dc-tec/openbao-observability/commit/058494112b208ac9cc4970ef26f6fdc8e7d8cff8))
+* expose expiration backlog and storage contention ([#75](https://github.com/dc-tec/openbao-observability/issues/75)) ([dce7e32](https://github.com/dc-tec/openbao-observability/commit/dce7e32d874569957137d44d20064f4e44262ae1))
+* promote Splunk profile to reference maturity ([#81](https://github.com/dc-tec/openbao-observability/issues/81)) ([82558a0](https://github.com/dc-tec/openbao-observability/commit/82558a077f3cb7da3f8348c85fa8a6c23bba20cc))
+
 ## [0.2.3](https://github.com/dc-tec/openbao-observability/compare/0.2.2...0.2.3) (2026-10-20)
 
 
