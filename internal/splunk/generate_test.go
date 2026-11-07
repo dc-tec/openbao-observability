@@ -127,6 +127,27 @@ func TestCoverageTracksUnavailablePanels(t *testing.T) {
 	}
 }
 
+func TestCoverageStatusFollowsProfileLifecycle(t *testing.T) {
+	opts := testOptions(t)
+	profile, err := contracts.LoadSplunkProfile(opts.ContractPath, opts.RepositoryRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, lifecycle := range []string{"draft", "reference", "stable", "deprecated"} {
+		t.Run(lifecycle, func(t *testing.T) {
+			candidate := *profile
+			candidate.Maturity.Lifecycle = lifecycle
+			report, err := buildCoverage(opts.RepositoryRoot, candidate)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if report.Status != lifecycle {
+				t.Fatalf("coverage status = %q, want contract lifecycle %q", report.Status, lifecycle)
+			}
+		})
+	}
+}
+
 func TestProfileOverridesIndexAndJSONPaths(t *testing.T) {
 	profile := contracts.SplunkProfileContract{
 		AuditIndex: "test_audit", AuditSourcetype: "test:audit",

@@ -1,9 +1,25 @@
 # Splunk Enterprise and Cloud Platform
 
-Use this draft profile to evaluate OpenBao dashboards in Splunk Enterprise or
-Splunk Cloud Platform with Dashboard Studio.
+Use this reference implementation to run OpenBao dashboards and native alerts
+in Splunk Enterprise with Dashboard Studio. The app also targets Splunk Cloud
+Platform; Cloud deployment requires separate qualification.
 It targets the Dashboard Studio 9.4 definition format. It uses native SPL and
 Splunk metrics indexes; it does not require Splunk Observability Cloud.
+
+## Tested scope
+
+| Component | Qualification |
+| --------- | ------------- |
+| Splunk Enterprise 10.4.5 | Clean app installation, collection, native searches, dashboard rendering, restricted access, and a scheduled alert firing/recovery check. |
+| OpenBao 2.7.2 | Three-node Raft fixture with synthetic authentication and secret workloads. |
+| Dashboard Studio 9.4 definition format | Generated JSON and XML views accepted and rendered on Enterprise 10.4.5. |
+| Splunk Cloud Platform | Deployment and platform vetting remain unqualified. |
+
+The profile has `reference` lifecycle and `profile-validated` evidence. This
+status records the implemented, tested scope. Other versions, production
+capacity, and external alert routing require deployment-specific validation.
+See the [validation record](./splunk-enterprise-validation.md) for the checks
+and remaining boundaries.
 
 ## Coverage and evidence
 

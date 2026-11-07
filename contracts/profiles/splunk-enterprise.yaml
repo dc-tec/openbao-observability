@@ -1,11 +1,12 @@
 ---
 version: v0.1
 maturity:
-  lifecycle: draft
+  lifecycle: reference
   evidence:
   - documented
   - fixture-validated
   - generated-validated
+  - profile-validated
 appID: openbao_observability
 title: OpenBao observability
 metricsIndex: openbao_metrics

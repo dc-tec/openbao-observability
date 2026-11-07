@@ -1,6 +1,6 @@
 {
   "profile": "openbao_observability",
-  "status": "draft",
+  "status": "reference",
   "validation": "Generated parity is checked offline. Runtime evidence is documented per tested Splunk version; SPL execution and Studio rendering require separate validation.",
   "semantics": "Mapped means a native search binding exists, not that its data source is present or qualified. Audit counts use the selected range; metric windows are described per panel. Focused native alert coverage is listed separately in alert-coverage.json.",
   "dashboards": [

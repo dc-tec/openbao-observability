@@ -202,7 +202,7 @@ func build(opts Options) (map[string][]byte, error) {
 	app := "app/" + profile.AppID + "/"
 	artifacts[app+"default/app.conf"] = []byte("# Generated; edit the Splunk profile contract.\n" +
 		"[install]\nis_configured = 0\n[ui]\nis_visible = 1\nlabel = " + profile.Title +
-		"\n[launcher]\nauthor = OpenBao observability contributors\ndescription = Draft OpenBao observability profile" +
+		"\n[launcher]\nauthor = OpenBao observability contributors\ndescription = OpenBao dashboards and alerts for Splunk" +
 		"\nversion = 0.0.0-dev\n[id]\nname = " + profile.AppID +
 		"\nversion = 0.0.0-dev\n[package]\ncheck_for_updates = false\nid = " + profile.AppID + "\n")
 	artifacts[app+"metadata/default.meta"] = []byte("[]\n" +
@@ -504,7 +504,7 @@ func platformNormalization() string {
 
 func buildCoverage(root string, profile contracts.SplunkProfileContract) (coverage, error) {
 	report := coverage{
-		Profile: profile.AppID, Status: "draft",
+		Profile: profile.AppID, Status: profile.Maturity.Lifecycle,
 		Validation: "Generated parity is checked offline. Runtime evidence is documented per tested Splunk version; " +
 			"SPL execution and Studio rendering require separate validation.",
 		Semantics: "Mapped means a native search binding exists, not that its data source is present or qualified. " +
