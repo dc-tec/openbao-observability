@@ -185,7 +185,54 @@ workload data first when you need numeric latency comparisons rather than idle
 windows. Read the [validation record](../../docs/implementation-profiles/splunk-enterprise-validation.md)
 for the tested platform and remaining limits. The helper also checks full-window
 history guards and live external-source samples. Cloud vetting and native
-alerts remain outside these checks.
+scheduled execution remain outside that command. Use the clean installation
+check below to qualify the packaged alerts.
+
+## Test a clean release installation
+
+Build a versioned archive, then run this command on the licensed test host:
+
+```shell
+make generate-splunk release-splunk-app VERSION=0.0.0-dev \
+  SPLUNK_APP_PACKAGE=tmp/openbao_observability_clean.spl
+python3 hack/splunk/local.py clean-install --engine podman \
+  --package tmp/openbao_observability_clean.spl
+```
+
+Use `--engine docker` on a supported workstation. The test reuses the accepted
+trial terms from `.env`, creates a separate container and network with random
+credentials, and publishes only management and HEC ports on random loopback
+ports. It leaves the existing trial instance running.
+
+The test verifies that the app is absent, installs only the `.spl` archive
+through the app-installation API, creates the five reference indexes, ingests
+representative data, and executes all 289 panel searches. It checks that all
+17 packaged alerts install disabled without outbound actions. Native fixtures
+exercise failure, recovery, persistence, missing inputs, target separation,
+security-window expiry, and expected-target inventory.
+
+One packaged sealed-node alert is temporarily enabled with a one-minute
+schedule in this disposable instance. Controlled HEC samples must produce a
+native Triggered Alert, then a completed scheduled search with zero firing
+rows after recovery. The test restores the five-minute schedule and disables
+the alert. It does not test email, webhooks, paging, or resolved notifications.
+
+The test removes its container, anonymous volumes, network, and credential
+files on success or failure. It retains a private report or startup log under
+`.runtime/`. Use `--keep` only to diagnose a failure; it also retains the
+container and mode-0600 `private.json` and `credentials.env`. Remove those
+resources after diagnosis. Do not publish these files or raw startup logs.
+
+For predicate-only checks against an installed test app, run:
+
+```shell
+python3 hack/splunk/local.py synthetic-alerts
+```
+
+This command executes source queries and in-memory histories. It does not
+enable scheduled searches or change the expected-target inventory. Review the
+[native alert configuration](../../docs/implementation-profiles/splunk-alerts.md)
+before enabling alerts on another deployment.
 
 ## Qualify collection and restricted access
 

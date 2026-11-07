@@ -1,9 +1,9 @@
 <dashboard version="2">
   <label>OpenBao SLO and availability</label>
-  <description>OpenBao SLO and availability. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.</description>
+  <description>OpenBao SLO and availability. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.</description>
   <definition><![CDATA[{
   "title": "OpenBao SLO and availability",
-  "description": "OpenBao SLO and availability. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "description": "OpenBao SLO and availability. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.",
   "inputs": {
     "input_cluster": {
       "type": "input.text",

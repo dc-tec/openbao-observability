@@ -38,6 +38,15 @@ func SplunkApp(opts SplunkAppOptions) error {
 	if err != nil {
 		return err
 	}
+	if _, err := os.Stat(filepath.Join(appRoot, "lookups")); err == nil {
+		lookups, err := collectBundleEntries(appRoot, []string{"lookups"})
+		if err != nil {
+			return err
+		}
+		entries = append(entries, lookups...)
+	} else if !os.IsNotExist(err) {
+		return err
+	}
 	foundVersion := false
 	for i := range entries {
 		if entries[i].RelativePath != "default/app.conf" {

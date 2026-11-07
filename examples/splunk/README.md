@@ -15,6 +15,8 @@ The app contains knowledge objects, not collector services or credentials.
    operational records. Configure verified TLS and a dedicated HEC credential.
 5. Apply your app and index permissions, then run the
    [browser review](../../docs/implementation-profiles/splunk-browser-review.md).
+6. Configure the [native alert scope and execution owner](../../docs/implementation-profiles/splunk-alerts.md).
+   The 17 packaged alerts install disabled and have no outbound actions.
 
 The files in this directory configure a disposable Compose evaluation profile.
 They use local HTTP endpoints, fixture credentials, and short retention. Adapt

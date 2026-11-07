@@ -122,22 +122,49 @@ behavior or reproduce a large production expiration backlog.
 
 ## Release packaging and tool checks
 
+A fresh Splunk Enterprise 10.4.5 container has no app before installation. The
+clean-install check installs only the versioned `0.3.0-dev` `.spl` archive through
+the native app-installation API, without app or index seed mounts. It creates
+the five reference indexes separately. All 15 views, 289 panels, macros,
+navigation, 17 disabled alerts, and administrator ACLs are present. Representative
+HEC metrics and audit data produce one active-node result and one audit event;
+all 289 panel searches execute. Empty results for other panels are expected
+because this isolated instance has only controlled data.
+
+The 17 native alert source searches execute. Fifty-seven in-memory SPL checks
+cover firing and recovery for every binding, missing inputs, incomplete hold
+periods, healthy resets, sample gaps, stale data, target separation, and expiry
+of security activity outside five minutes. Three lookup checks cover missing
+expected targets, healthy expected targets, and deployment isolation. The lookup
+returns to its empty packaged state after the checks.
+
+The clean instance temporarily enables the packaged sealed-node alert with a
+one-minute schedule and an administrator execution owner. Controlled HEC samples
+produce a native Triggered Alert. Healthy samples then produce a completed
+scheduled search with zero firing rows. The test disables the alert and restores
+its five-minute default. This qualifies scheduled execution for one packaged
+binding; it does not establish external notification delivery or resolved
+notifications. The test removes its container, anonymous volumes, network, and
+credential files. The existing trial instance remains running.
+
 The reference archive excludes `.env`, `.runtime`, and Python cache files without
 depending on Git metadata. A regression fixture checks these exclusions using
 synthetic private state. The installable `.spl` archive contains the 15 generated
-views, macros, navigation, app metadata, and license. It stamps both app-version
+views, macros, navigation, 17 disabled native alerts, an empty expected-target
+lookup, app metadata, and license. It stamps both app-version
 fields without changing generated source files; repeated packaging with the
 same version and timestamp produces identical bytes.
 
-Local AppInspect 4.4.0 precert checks report 90 successes, 163 not-applicable
+Local AppInspect 4.4.0 precert checks report 101 successes, 152 not-applicable
 checks, one skipped check, and zero errors, failures, future failures, or
 warnings. The skipped check requires an optional `app.manifest`; this app uses
 `app.conf` identity metadata. This result is a local package check, not Cloud
 vetting. The CI and release workflows repeat the pinned package check.
 
 The development tools live under `hack/splunk/` and are excluded from release
-archives. Eleven offline tests cover credentials, API boundaries, ACL rollback,
-readiness, archive readback, and shared image pins. They pass with Python 3.10
+archives. Thirteen offline tests cover credentials, API boundaries, ACL rollback,
+readiness, archive readback, shared image pins, disposable cleanup failures, and
+endpoint restoration. They pass with Python 3.10
 and the workstation interpreter. Ruff and ShellCheck also pass. The app itself
 has no Python or Bash installation dependency.
 
@@ -158,8 +185,9 @@ These areas remain unqualified:
 - Other browsers, viewport sizes, time-picker and mount-filter combinations,
   and the intended deployment's non-admin roles and search quotas.
 - Splunk Cloud app vetting and platform-specific deployment.
-- Native Splunk alerts. Alert generation is not implemented; firing, recovery,
-  routing, and paging cannot be qualified by the dashboard checks.
+- The other 32 canonical alerts, external notification delivery, resolved
+  notifications, production execution roles, and incident search capacity.
+  The focused set's scheduled test does not qualify routing or paging.
 - Live Kubernetes exporter and Event collection. Recorded Event ingestion and
   synthetic metric calculations do not qualify a cluster deployment.
 - Remote archive delivery, immutable retention, completeness, and recovery.

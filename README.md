@@ -5,17 +5,14 @@
 Use this repository to design, test, and adapt OpenBao observability across
 metrics, operational logs, audit logs, dashboards, alerts, and runbooks.
 
-The project is contract-first: source contracts describe portable OpenBao
-signal intent, and generated artifacts provide one tested Prometheus, Loki,
-Grafana, and Grafana Alloy implementation profile. It starts from verified
-OpenBao behavior instead of copied Vault dashboard assumptions. A draft Splunk
-Enterprise / Cloud Platform profile maps all 289 panels across 15 dashboard
-families to native SPL. Enterprise trial checks include collection, restricted
-roles, and Brave rendering. Native alert parity remains unmapped.
+Source contracts define OpenBao signals, dashboards, and alerts. Generated
+artifacts implement these contracts for Prometheus, Loki, Grafana, and Grafana
+Alloy. A draft Splunk Enterprise / Cloud Platform profile provides Dashboard
+Studio dashboards and a focused set of native alerts from the same contracts.
 
-This is a reference architecture, not a drop-in production monitoring
-distribution. You still own retention, access control, alert routing, platform
-sizing, release packaging, and audit archive controls.
+Adapt retention, access control, alert routing, capacity, and audit archive
+controls to your deployment. The implementation profiles document their tested
+behavior and remaining qualification work.
 
 ![Grafana dashboard collage showing OpenBao overview, HA/Raft, audit, and feature-specific observability panels](docs/assets/grafana-dashboards.png)
 
@@ -25,7 +22,7 @@ sizing, release packaging, and audit archive controls.
 
 - Source contracts for OpenBao metrics, log streams, alerts, and dashboards.
 - Generated Prometheus, Loki, and Grafana artifacts.
-- Draft Dashboard Studio audit and metrics artifacts with native SPL and trial validation.
+- Draft Splunk Dashboard Studio dashboards and native alerts with SPL searches.
 - Grafana Alloy examples for operational logs, audit logs, and collection
   pipelines.
 - Runnable Docker Compose and Kubernetes examples.
@@ -79,9 +76,9 @@ under `contracts/`. Edit contracts first, then regenerate artifacts with:
 make generate
 ```
 
-The main outputs are native Prometheus rules, Prometheus Operator
-`PrometheusRule` manifests, Loki alert references, Grafana dashboards, and
-generated reference docs.
+The main outputs are Prometheus rules, Prometheus Operator `PrometheusRule`
+manifests, Loki alert references, Grafana dashboards, a Splunk app with native
+searches, and generated reference docs.
 
 ## Repository layout
 
@@ -89,7 +86,7 @@ generated reference docs.
 | ---- | ------- |
 | `contracts/` | Source contracts for metrics, log streams, alerts, and dashboards. |
 | `generated/` | Generated artifacts produced from contracts. |
-| `docs/` | User-facing documentation, dashboards guides, and runbooks. |
+| `docs/` | User-facing documentation, dashboard guides, and runbooks. |
 | `examples/` | Runnable local and deployment examples. |
 | `fixtures/` | Captured metrics and log fixtures used by tests. |
 | `cmd/` and `internal/` | Go tooling for generation, fixture capture, and validation. |

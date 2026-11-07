@@ -1,9 +1,9 @@
 <dashboard version="2">
   <label>OpenBao token and lease lifecycle</label>
-  <description>OpenBao token and lease lifecycle. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.</description>
+  <description>OpenBao token and lease lifecycle. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.</description>
   <definition><![CDATA[{
   "title": "OpenBao token and lease lifecycle",
-  "description": "OpenBao token and lease lifecycle. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "description": "OpenBao token and lease lifecycle. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.",
   "inputs": {
     "input_cluster": {
       "type": "input.text",

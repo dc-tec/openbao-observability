@@ -518,6 +518,7 @@ def main():
     commands.add_parser("parity")
     commands.add_parser("synthetic-topology")
     commands.add_parser("synthetic-families")
+    commands.add_parser("synthetic-alerts")
     collect = commands.add_parser("collector")
     collect.add_argument("--engine", choices=("docker", "podman"), default="docker")
     logs = commands.add_parser("log-delivery")
@@ -530,6 +531,10 @@ def main():
     stop.add_argument("--engine", choices=("docker", "podman"), default="docker")
     commands.add_parser("verify-external")
     commands.add_parser("history")
+    clean = commands.add_parser("clean-install")
+    clean.add_argument("--engine", choices=("docker", "podman"), default="docker")
+    clean.add_argument("--package", type=Path, required=True)
+    clean.add_argument("--keep", action="store_true")
     query = commands.add_parser("search")
     query.add_argument("query")
     args = parser.parse_args()
@@ -564,6 +569,10 @@ def main():
         from family_checks import run
 
         run(ROOT, search)
+    elif args.command == "synthetic-alerts":
+        import alert_checks
+
+        alert_checks.run(sys.modules[__name__])
     elif args.command == "parity":
         parity()
     elif args.command == "workload":
@@ -596,6 +605,10 @@ def main():
         import history_checks
 
         history_checks.run(sys.modules[__name__])
+    elif args.command == "clean-install":
+        import clean_install
+
+        clean_install.run(sys.modules[__name__], args.engine, args.package.resolve(), args.keep)
     elif args.command == "search":
         print(json.dumps(search(args.query), indent=2))
 

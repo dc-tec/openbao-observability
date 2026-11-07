@@ -15,6 +15,7 @@ from unittest.mock import Mock, patch
 
 import access_checks
 import archive_status
+import clean_install
 import local
 from support import write_private
 
@@ -66,6 +67,34 @@ class StateTests(unittest.TestCase):
             result = archive_status.observe(root)
             self.assertTrue(result["delivery_success"])
             self.assertEqual(result["last_success_timestamp_seconds"], archive.stat().st_mtime)
+
+
+class CleanInstallTests(unittest.TestCase):
+    def test_failed_cleanup_retains_recovery_credentials(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ("credentials.env", "private.json"):
+                write_private(root / name, "fixture")
+            results = [SimpleNamespace(returncode=0)] * 4
+            with patch.object(clean_install.subprocess, "run", side_effect=results):
+                with self.assertRaisesRegex(RuntimeError, "recovery files are retained"):
+                    clean_install.cleanup("podman", "fixture-container", "fixture-network", root)
+            self.assertTrue((root / "credentials.env").exists())
+            self.assertTrue((root / "private.json").exists())
+
+    def test_disposable_client_restores_original_endpoint_on_failure(self):
+        def original_environment():
+            return {"original": True}
+
+        fake = SimpleNamespace(API="https://original:8089", environment=original_environment)
+        state = {"api": "https://disposable:8089", "environment": {"fixture": True}}
+        with self.assertRaises(RuntimeError):
+            with clean_install.client(fake, state):
+                self.assertEqual(fake.API, state["api"])
+                self.assertEqual(fake.environment(), state["environment"])
+                raise RuntimeError("fixture failure")
+        self.assertEqual(fake.API, "https://original:8089")
+        self.assertIs(fake.environment, original_environment)
 
 
 class APITests(unittest.TestCase):

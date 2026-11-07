@@ -18,6 +18,8 @@ func TestSplunkAppIsInstallableVersionedAndDeterministic(t *testing.T) {
 		"[package]\nid = openbao_observability\n"
 	mustWriteFile(t, filepath.Join(app, "default/app.conf"), conf)
 	mustWriteFile(t, filepath.Join(app, "default/macros.conf"), "[source]\n")
+	mustWriteFile(t, filepath.Join(app, "default/savedsearches.conf"), "[fixture]\ndisabled = 1\n")
+	mustWriteFile(t, filepath.Join(app, "lookups/openbao_alert_targets.csv"), "cluster,instance\n")
 	mustWriteFile(t, filepath.Join(app, "default/data/ui/views/overview.xml"), "<dashboard/>\n")
 	mustWriteFile(t, filepath.Join(app, "metadata/default.meta"), "[]\naccess = read : [ admin ]\n")
 	mustWriteFile(t, filepath.Join(app, "local/macros.conf"), "private install override")
@@ -43,8 +45,12 @@ func TestSplunkAppIsInstallableVersionedAndDeterministic(t *testing.T) {
 		t.Fatal("packaging changed generated input", err)
 	}
 	entries := readSplunkApp(t, first)
-	if len(entries) != 6 || strings.Count(entries["openbao_observability/default/app.conf"], "version = 1.2.3") != 2 {
+	if len(entries) != 8 || strings.Count(entries["openbao_observability/default/app.conf"], "version = 1.2.3") != 2 {
 		t.Fatal("app package has unexpected contents or version", entries)
+	}
+	if entries["openbao_observability/lookups/openbao_alert_targets.csv"] != "cluster,instance\n" ||
+		!strings.Contains(entries["openbao_observability/default/savedsearches.conf"], "disabled = 1") {
+		t.Fatal("app package omitted native alert objects")
 	}
 }
 
