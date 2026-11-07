@@ -1,6 +1,6 @@
 # Configure native Splunk alerts
 
-The draft Splunk profile includes 17 native scheduled alerts for core health,
+The Splunk profile includes 17 native scheduled alerts for core health,
 audit delivery failures, expiration backlog, and security investigation.
 The [alert coverage manifest](../../generated/splunk/alert-coverage.json) accounts
 for all 49 canonical alerts. The other 32 are unmapped.

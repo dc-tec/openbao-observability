@@ -20,7 +20,7 @@ control, routing, packaging, and release process.
 | Prometheus alert rules | Generated from alert contracts with runbook links. | Alert routing, paging policy, inhibition, and environment-specific thresholds. |
 | Loki alert references | Generated reference artifacts for log and audit detections. | Your Loki ruler setup, log volume, retention, and alert routing. |
 | Grafana dashboards | Generated from dashboard contracts, checked for syntax and query structure, and provisioned in the Compose Grafana image by CI. | Data-source UIDs, live query results, dashboard permissions, and production label shape. |
-| Splunk profile | Draft native SPL bindings for all 289 panels across 15 families and a focused set of 17 native alerts. Enterprise trial checks cover collection, restricted roles, and Brave rendering. | Your Splunk version, Cloud deployment, live Kubernetes sources, remote archive storage, full-window history, production scale, alert routing, and the other 32 canonical alerts. |
+| Splunk profile | Reference implementation with native SPL bindings for all 289 panels across 15 families and 17 native alerts. Enterprise 10.4.5 checks cover clean installation, collection, restricted roles, rendering, and scheduled firing/recovery. | Your Splunk version, Cloud deployment, live Kubernetes sources, remote archive storage, full-window history, production scale, alert routing, and the other 32 canonical alerts. |
 | Docker Compose profile | Implemented local profile with OpenBao HA, PostgreSQL, Prometheus, Loki, Alloy, Grafana, and fixture scenarios. | Production hardening, TLS, credentials, network isolation, storage, and secrets. |
 | Kubernetes scrape examples | Implemented examples for secure active-node and private all-node scraping. | Service discovery labels, NetworkPolicy, TLS, RBAC, and Prometheus Operator conventions. |
 | OpenBao Operator companion profile | Implemented companion profile and integration contract. | Compatibility with the operator release and your `OpenBaoCluster` configuration. |
@@ -35,7 +35,7 @@ Choose the path that matches the way you operate OpenBao.
 | You use | Start with | Consume |
 | ------- | ---------- | ------- |
 | Prometheus and Grafana | [Prometheus, Loki, Grafana, and Alloy profile](../implementation-profiles/prometheus-loki-grafana-alloy.md) | `generated/prometheus/`, `generated/prometheusrules/`, `generated/loki/`, and `generated/grafana/`. |
-| Splunk Enterprise / Cloud Platform | [Draft Splunk profile](../implementation-profiles/splunk-enterprise.md) | `generated/splunk/` and optional synthetic query validation. |
+| Splunk Enterprise / Cloud Platform | [Splunk implementation profile](../implementation-profiles/splunk-enterprise.md) | `generated/splunk/` and the installable `.spl` app. |
 | Kubernetes with Prometheus Operator | [Secure metrics scrape](../metrics/secure-metrics-scrape.md) and [all-node metrics scrape](../metrics/all-node-metrics-scrape.md) | PrometheusRule manifests, ServiceMonitor examples, and Kubernetes examples. |
 | The OpenBao Operator | [OpenBao Operator companion profile](../implementation-profiles/openbao-operator.md) | Operator-managed examples and the integration contract. |
 | Another observability backend | [Adopt the reference architecture](./adoption.md) | Signal contracts, alert intent, dashboard questions, and runbook structure. |

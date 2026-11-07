@@ -7,8 +7,8 @@ metrics, operational logs, audit logs, dashboards, alerts, and runbooks.
 
 Source contracts define OpenBao signals, dashboards, and alerts. Generated
 artifacts implement these contracts for Prometheus, Loki, Grafana, and Grafana
-Alloy. A draft Splunk Enterprise / Cloud Platform profile provides Dashboard
-Studio dashboards and a focused set of native alerts from the same contracts.
+Alloy. The Splunk implementation profile provides Dashboard Studio dashboards
+and a focused set of native alerts from the same contracts.
 
 Adapt retention, access control, alert routing, capacity, and audit archive
 controls to your deployment. The implementation profiles document their tested
@@ -22,7 +22,7 @@ behavior and remaining qualification work.
 
 - Source contracts for OpenBao metrics, log streams, alerts, and dashboards.
 - Generated Prometheus, Loki, and Grafana artifacts.
-- Draft Splunk Dashboard Studio dashboards and native alerts with SPL searches.
+- Splunk Dashboard Studio dashboards and native alerts with SPL searches.
 - Grafana Alloy examples for operational logs, audit logs, and collection
   pipelines.
 - Runnable Docker Compose and Kubernetes examples.
@@ -62,7 +62,7 @@ make compose-down
 | Check maturity and boundaries | [Project status and maturity](docs/reference-architecture/project-status.md) |
 | Adopt the design on your platform | [Adopt the reference architecture](docs/reference-architecture/adoption.md) |
 | Use the Prometheus, Loki, Grafana, and Alloy profile | [Implementation profile](docs/implementation-profiles/prometheus-loki-grafana-alloy.md) |
-| Evaluate the Splunk profile | [Draft Splunk profile](docs/implementation-profiles/splunk-enterprise.md) |
+| Use the Splunk profile | [Splunk implementation profile](docs/implementation-profiles/splunk-enterprise.md) |
 | Use this with the OpenBao Operator | [OpenBao Operator companion profile](docs/implementation-profiles/openbao-operator.md) |
 | Browse all docs and runbooks | [Documentation index](docs/README.md) |
 | Contribute changes | [Contributing](CONTRIBUTING.md) |

@@ -1,8 +1,8 @@
 # Splunk Enterprise trial validation
 
-This record covers the draft Splunk profile tested on 6–7 November 2026. It is
-an interface and calculation qualification for a disposable fixture, not a
-production benchmark or a Splunk Cloud certification.
+This record covers the Splunk reference implementation tested on 6–7 November
+2026. It is an interface and calculation qualification for a disposable fixture,
+not a production benchmark or a Splunk Cloud certification.
 
 ## Tested environment
 

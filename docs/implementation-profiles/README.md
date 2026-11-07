@@ -24,7 +24,7 @@ tools and delivery mechanisms.
 | Profile | Status | Use it for | Main entrypoint |
 | ------- | ------ | ---------- | --------------- |
 | Prometheus, Loki, Grafana, and Alloy | Implemented | Generated artifacts, local validation, and direct adoption by teams already using this stack. | [Prometheus, Loki, Grafana, and Alloy profile](./prometheus-loki-grafana-alloy.md) |
-| Splunk Enterprise / Cloud Platform | Draft profile | Native SPL bindings for 15 dashboard families, 17 native alerts, Dashboard Studio generation, and trial validation. The other 32 canonical alerts remain unmapped. | [Splunk profile](./splunk-enterprise.md) |
+| Splunk Enterprise / Cloud Platform | Reference implementation | Native SPL bindings for 15 dashboard families and 17 native alerts, validated on Enterprise 10.4.5. The other 32 canonical alerts remain unmapped; Cloud deployment remains unqualified. | [Splunk profile](./splunk-enterprise.md) |
 | Docker Compose | Implemented local profile | Evaluation, screenshots, dashboard review, fixture scenarios, and live query validation. | [Run the Docker Compose stack](../docker-compose.md) |
 | Kubernetes secure active-node scrape | Implemented example | Production-oriented authenticated metrics collection from the active OpenBao node. | [Secure metrics scrape](../metrics/secure-metrics-scrape.md) |
 | Kubernetes private all-node scrape | Implemented example | Per-node HA, Raft, standby, sealed-node, and runtime visibility. | [All-node metrics scrape](../metrics/all-node-metrics-scrape.md) |
@@ -52,8 +52,8 @@ Use the Prometheus, Loki, Grafana, and Alloy profile when your platform already
 uses that stack or when you want generated artifacts that can move into GitOps,
 Helm, Terraform, or another delivery system.
 
-Use the Splunk profile to evaluate the 15 dashboard families in Splunk. Check its coverage manifest before
-replacing existing monitoring.
+Use the Splunk profile for Dashboard Studio dashboards and native alerts.
+Check its tested scope and coverage manifests before replacing existing monitoring.
 
 Use the secure active-node scrape as the metrics baseline when you need the
 lowest-risk production starting point.
