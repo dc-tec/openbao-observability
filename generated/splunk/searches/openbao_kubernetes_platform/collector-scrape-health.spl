@@ -1,0 +1,8 @@
+| `openbao_metric_samples("up")`
+| where metric_name="up"
+| search job=$collector_job|s$
+| `openbao_metric_fresh`
+| stats latest(value) AS value BY _timeseries
+| stats min(value) AS value count AS contributing_series
+| where contributing_series>0
+| fields - contributing_series

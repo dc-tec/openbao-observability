@@ -1,0 +1,8 @@
+| `openbao_metric_samples("kubelet_volume_stats_*")`
+| where metric_name="kubelet_volume_stats_available_bytes" OR metric_name="kubelet_volume_stats_capacity_bytes"
+| search persistentvolumeclaim=$pvc|s$
+| stats min(eval(if(metric_name="kubelet_volume_stats_available_bytes",value,null()))) AS available min(eval(if(metric_name="kubelet_volume_stats_capacity_bytes",value,null()))) AS capacity BY bucket_time cluster kubernetes_namespace persistentvolumeclaim
+| where isnotnull(available) AND capacity>0
+| eval value=100*available/capacity, series=persistentvolumeclaim ." | ".kubernetes_namespace ." | ".cluster, scrape_profile="external"
+| eval _time=bucket_time
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

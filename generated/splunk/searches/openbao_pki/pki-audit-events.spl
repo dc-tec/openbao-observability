@@ -1,0 +1,4 @@
+`openbao_audit_events`
+| search request_path=$mount_path|s$
+| where audit_type="request" AND match(request_path,"^.+/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/|$)")
+| stats count AS value

@@ -1,0 +1,3 @@
+`openbao_audit_events`
+| where match(request_path,"^sys/mounts(/|$)")
+| stats count AS value

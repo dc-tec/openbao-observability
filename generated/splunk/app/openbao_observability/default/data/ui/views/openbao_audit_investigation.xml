@@ -1,0 +1,586 @@
+<dashboard version="2">
+  <label>OpenBao audit investigation</label>
+  <description>OpenBao audit investigation. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.</description>
+  <definition><![CDATA[{
+  "title": "OpenBao audit investigation",
+  "description": "OpenBao audit investigation. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "inputs": {
+    "input_host": {
+      "type": "input.text",
+      "title": "host (wildcard)",
+      "options": {
+        "token": "host",
+        "defaultValue": "*"
+      }
+    },
+    "input_logical_namespace": {
+      "type": "input.text",
+      "title": "logical namespace (wildcard)",
+      "options": {
+        "token": "logical_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_operation": {
+      "type": "input.text",
+      "title": "operation (wildcard)",
+      "options": {
+        "token": "operation",
+        "defaultValue": "*"
+      }
+    },
+    "input_request_id": {
+      "type": "input.text",
+      "title": "request id (wildcard)",
+      "options": {
+        "token": "request_id",
+        "defaultValue": "*"
+      }
+    },
+    "input_request_path": {
+      "type": "input.text",
+      "title": "request path (wildcard)",
+      "options": {
+        "token": "request_path",
+        "defaultValue": "*"
+      }
+    },
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time range",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-1h@h,now"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_audit_configuration_activity": {
+      "type": "ds.search",
+      "name": "Audit config changes",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(operation,\"^(create|update|delete)$\") AND match(request_path,\"^sys/audit(/|$)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_audit_configuration_events": {
+      "type": "ds.search",
+      "name": "Audit config events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(operation,\"^(create|update|delete)$\") AND match(request_path,\"^sys/audit(/|$)\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_audit_error_events": {
+      "type": "ds.search",
+      "name": "Response error events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where audit_type=\"response\" AND len(mvjoin(audit_error,\"\"))\u003e0\n| sort 100 - _time\n| table _time host request_id logical_namespace request_path operation caller audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_audit_response_errors": {
+      "type": "ds.search",
+      "name": "Response errors",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where audit_type=\"response\" AND len(mvjoin(audit_error,\"\"))\u003e0\n| stats count AS response_errors",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_auth_activity": {
+      "type": "ds.search",
+      "name": "Auth activity",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^(auth/|sys/auth/)\")\n| stats count AS audit_events",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_auth_activity_events": {
+      "type": "ds.search",
+      "name": "Auth activity events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^(auth/|sys/auth/)\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_filtered_audit_events": {
+      "type": "ds.search",
+      "name": "Filtered audit events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| stats count AS audit_events",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_filtered_audit_events_by_node": {
+      "type": "ds.search",
+      "name": "Filtered events by node",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_filtered_audit_stream": {
+      "type": "ds.search",
+      "name": "Filtered audit stream",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_high_risk_system_path_activity": {
+      "type": "ds.search",
+      "name": "High-risk sys paths",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_permission_denied_events": {
+      "type": "ds.search",
+      "name": "Permission denied events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(mvjoin(audit_error,\" \"),\"(?is)(permission denied|forbidden)\") AND (audit_type=\"response\" OR (audit_type=\"request\" AND match(mvjoin(audit_error,\" \"),\"(?i)^forbidden$\")))\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_permission_denied_responses": {
+      "type": "ds.search",
+      "name": "Permission denied",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(mvjoin(audit_error,\" \"),\"(?is)(permission denied|forbidden)\") AND (audit_type=\"response\" OR (audit_type=\"request\" AND match(mvjoin(audit_error,\" \"),\"(?i)^forbidden$\")))\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_privileged_configuration_mutations": {
+      "type": "ds.search",
+      "name": "Privileged config changes",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(operation,\"^(create|update|delete)$\") AND match(request_path,\"^sys/(policies|auth|mounts)(/|$)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_request_id_drilldown": {
+      "type": "ds.search",
+      "name": "Request ID drilldown",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_risky_system_activity_by_node": {
+      "type": "ds.search",
+      "name": "Risky sys activity by node",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(operation,\"^(create|update|delete)$\") AND match(request_path,\"^sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate)\")\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_risky_system_events": {
+      "type": "ds.search",
+      "name": "Risky sys events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(operation,\"^(create|update|delete)$\") AND match(request_path,\"^sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate)\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_risky_system_mutations": {
+      "type": "ds.search",
+      "name": "Risky sys mutations",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(operation,\"^(create|update|delete)$\") AND match(request_path,\"^sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate)\")\n| stats count AS audit_events",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_audit_configuration_activity": {
+      "type": "splunk.singlevalue",
+      "title": "Audit config changes",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_audit_configuration_activity"
+      }
+    },
+    "viz_audit_configuration_events": {
+      "type": "splunk.table",
+      "title": "Audit config events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_audit_configuration_events"
+      }
+    },
+    "viz_audit_error_events": {
+      "type": "splunk.table",
+      "title": "Response error events",
+      "description": "Recent response errors, with only allowlisted metadata. OpenBao audit error text can be HMAC-protected; this is not a complete operational error log.",
+      "dataSources": {
+        "primary": "ds_audit_error_events"
+      }
+    },
+    "viz_audit_response_errors": {
+      "type": "splunk.singlevalue",
+      "title": "Response errors",
+      "description": "Response entries with a nonempty top-level error in the selected time range. Does not infer an HTTP status from the audit payload.",
+      "dataSources": {
+        "primary": "ds_audit_response_errors"
+      }
+    },
+    "viz_auth_activity": {
+      "type": "splunk.singlevalue",
+      "title": "Auth activity",
+      "description": "Audit entries for authentication and token paths in the selected time range. Includes request and response entries.",
+      "dataSources": {
+        "primary": "ds_auth_activity"
+      }
+    },
+    "viz_auth_activity_events": {
+      "type": "splunk.table",
+      "title": "Auth activity events",
+      "description": "Recent authentication and token metadata. Missing caller names do not imply anonymous access; wrapping requests can omit these fields.",
+      "dataSources": {
+        "primary": "ds_auth_activity_events"
+      }
+    },
+    "viz_filtered_audit_events": {
+      "type": "splunk.singlevalue",
+      "title": "Filtered audit events",
+      "description": "Audit entries in the selected time range. Request and response entries are separate events; this is not a unique API request count.",
+      "dataSources": {
+        "primary": "ds_filtered_audit_events"
+      }
+    },
+    "viz_filtered_audit_events_by_node": {
+      "type": "splunk.line",
+      "title": "Filtered events by node",
+      "description": "Audit event volume by Splunk host in the selected time range. Configure host as the emitting OpenBao node during ingestion.",
+      "dataSources": {
+        "primary": "ds_filtered_audit_events_by_node"
+      }
+    },
+    "viz_filtered_audit_stream": {
+      "type": "splunk.table",
+      "title": "Filtered audit stream",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_filtered_audit_stream"
+      }
+    },
+    "viz_high_risk_system_path_activity": {
+      "type": "splunk.singlevalue",
+      "title": "High-risk sys paths",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_high_risk_system_path_activity"
+      }
+    },
+    "viz_permission_denied_events": {
+      "type": "splunk.table",
+      "title": "Permission denied events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_permission_denied_events"
+      }
+    },
+    "viz_permission_denied_responses": {
+      "type": "splunk.singlevalue",
+      "title": "Permission denied",
+      "description": "Audit entries whose visible error text matches permission denied or forbidden. HMAC-protected errors cannot be classified by this query. This is not an HTTP status count.",
+      "dataSources": {
+        "primary": "ds_permission_denied_responses"
+      }
+    },
+    "viz_privileged_configuration_mutations": {
+      "type": "splunk.singlevalue",
+      "title": "Privileged config changes",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_privileged_configuration_mutations"
+      }
+    },
+    "viz_request_id_drilldown": {
+      "type": "splunk.table",
+      "title": "Request ID drilldown",
+      "description": "Recent allowlisted request metadata. Use the request ID filter for correlation; matching entries do not establish end-to-end request duration. Credential and secret payload fields are omitted.",
+      "dataSources": {
+        "primary": "ds_request_id_drilldown"
+      }
+    },
+    "viz_risky_system_activity_by_node": {
+      "type": "splunk.line",
+      "title": "Risky sys activity by node",
+      "description": "High-risk system mutation entries by emitting host in the selected time range.",
+      "dataSources": {
+        "primary": "ds_risky_system_activity_by_node"
+      }
+    },
+    "viz_risky_system_events": {
+      "type": "splunk.table",
+      "title": "Risky sys events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_risky_system_events"
+      }
+    },
+    "viz_risky_system_mutations": {
+      "type": "splunk.singlevalue",
+      "title": "Risky sys mutations",
+      "description": "Audit entries for create, update, or delete operations on high-risk system paths in the selected time range. Activity is not proof of unauthorized behavior.",
+      "dataSources": {
+        "primary": "ds_risky_system_mutations"
+      }
+    }
+  },
+  "layout": {
+    "globalInputs": [
+      "input_time",
+      "input_request_id",
+      "input_request_path",
+      "input_logical_namespace",
+      "input_operation",
+      "input_host"
+    ],
+    "layoutDefinitions": {
+      "layout_audit": {
+        "type": "absolute",
+        "options": {
+          "width": 1200,
+          "height": 2820,
+          "display": "auto-scale"
+        },
+        "structure": [
+          {
+            "item": "viz_filtered_audit_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_risky_system_mutations",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_auth_activity",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_audit_response_errors",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_filtered_audit_events_by_node",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 140,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_risky_system_activity_by_node",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 140,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_audit_configuration_activity",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 420,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_privileged_configuration_mutations",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 420,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_high_risk_system_path_activity",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 420,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_permission_denied_responses",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 420,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_request_id_drilldown",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 560,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_risky_system_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 880,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_auth_activity_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1200,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_audit_error_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1520,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_audit_configuration_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1840,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_permission_denied_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 2160,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_filtered_audit_stream",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 2480,
+              "w": 1200,
+              "h": 300
+            }
+          }
+        ]
+      }
+    },
+    "tabs": {
+      "items": [
+        {
+          "label": "OpenBao audit investigation",
+          "layoutId": "layout_audit"
+        }
+      ]
+    }
+  }
+}
+]]></definition>
+</dashboard>

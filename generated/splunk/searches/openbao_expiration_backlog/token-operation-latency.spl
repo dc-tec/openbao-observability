@@ -1,0 +1,9 @@
+| `openbao_metric_samples("vault_token_*")`
+| where metric_name="vault_token_create_sum" OR metric_name="vault_token_create_count" OR metric_name="vault_token_lookup_sum" OR metric_name="vault_token_lookup_count" OR metric_name="vault_token_store_sum" OR metric_name="vault_token_store_count" OR metric_name="vault_token_revoke_tree_sum" OR metric_name="vault_token_revoke_tree_count"
+| eval series=case(metric_name="vault_token_create_sum","create",metric_name="vault_token_create_count","create",metric_name="vault_token_lookup_sum","lookup",metric_name="vault_token_lookup_count","lookup",metric_name="vault_token_store_sum","store",metric_name="vault_token_store_count","store",metric_name="vault_token_revoke_tree_sum","revoke tree",metric_name="vault_token_revoke_tree_count","revoke tree") ." | ".coalesce(openbao_namespace,"(missing)") ." | ".cluster ." | ".scrape_profile
+| `openbao_metric_rate5m`
+| stats sum(eval(if(match(metric_name,"_sum$"),value,null()))) AS total sum(eval(if(match(metric_name,"_count$"),value,null()))) AS observations BY bucket_time cluster scrape_profile series
+| where observations>0
+| eval value=total/observations
+| eval _time=bucket_time
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

@@ -1,0 +1,3 @@
+`openbao_audit_events`
+| where audit_type="response" AND len(mvjoin(audit_error,""))>0
+| stats count AS response_errors

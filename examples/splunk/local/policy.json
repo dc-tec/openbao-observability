@@ -1,0 +1,41 @@
+{
+  "default": [
+    {
+      "type": "reject"
+    }
+  ],
+  "transports": {
+    "docker": {
+      "docker.io/splunk/splunk": [
+        {
+          "type": "insecureAcceptAnything"
+        }
+      ],
+      "quay.io/openbao/openbao": [
+        {
+          "type": "insecureAcceptAnything"
+        }
+      ],
+      "docker.io/library/postgres": [
+        {
+          "type": "insecureAcceptAnything"
+        }
+      ],
+      "docker.io/prom/prometheus": [
+        {
+          "type": "insecureAcceptAnything"
+        }
+      ],
+      "docker.io/otel/opentelemetry-collector-contrib": [
+        {
+          "type": "insecureAcceptAnything"
+        }
+      ],
+      "docker.io/prom/blackbox-exporter": [
+        {
+          "type": "insecureAcceptAnything"
+        }
+      ]
+    }
+  }
+}

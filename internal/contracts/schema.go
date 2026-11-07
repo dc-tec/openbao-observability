@@ -12,7 +12,7 @@ import (
 var metricSourcePrefixPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 type contractDocument interface {
-	MetricContract | AlertContract | StreamContract | DashboardContract
+	MetricContract | AlertContract | StreamContract | DashboardContract | SplunkProfileContract
 }
 
 func decodeContractYAML[T contractDocument](content []byte, target *T) error {

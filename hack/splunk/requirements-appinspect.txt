@@ -1,0 +1,2 @@
+# Optional vendor package checks, separate from the standard-library trial tools.
+splunk-appinspect==4.4.0

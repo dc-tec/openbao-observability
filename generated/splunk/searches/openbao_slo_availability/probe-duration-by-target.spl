@@ -1,0 +1,5 @@
+| `openbao_metric_samples("probe_duration_seconds")`
+| where metric_name="probe_duration_seconds"
+| search job=$probe_job|s$
+| eval _time=bucket_time, series=instance ." | ".job ." | ".cluster
+| timechart span=15s avg(value) BY series limit=20 useother=f cont=f

@@ -1,0 +1,12 @@
+| `openbao_metric_samples("vault_cache_*")`
+| where metric_name="vault_cache_hit" OR metric_name="vault_cache_miss"
+| `openbao_metric_rate5m`
+| stats sum(eval(if(match(metric_name,"_cache_hit$"),value,null()))) AS hits sum(eval(if(match(metric_name,"_cache_miss$"),value,null()))) AS misses count(eval(match(metric_name,"_cache_hit$"))) AS hit_series count(eval(match(metric_name,"_cache_miss$"))) AS miss_series BY bucket_time cluster scrape_profile
+| where hit_series>0 AND miss_series>0 AND hits+misses>0
+| eval value=hits/(hits+misses), series=cluster ." | ".scrape_profile
+| eval _time=bucket_time
+| `openbao_metric_fresh`
+| stats latest(value) AS value BY cluster scrape_profile series
+| stats max(value) AS value count AS contributing_series
+| where contributing_series>0
+| fields - contributing_series

@@ -1,0 +1,4 @@
+`openbao_platform_events`
+| where event_type="Warning" OR match(reason." ".message,"(?i)(warning|failed|unhealthy|backoff|evict|pressure|probe)")
+| sort 100 - _time
+| table _time host cluster kubernetes_namespace pod node event_type reason message

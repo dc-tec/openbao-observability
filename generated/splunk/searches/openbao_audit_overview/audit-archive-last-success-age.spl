@@ -1,0 +1,11 @@
+| `openbao_metric_samples("openbao_audit_archive_last_success_timestamp_seconds")`
+| where metric_name="openbao_audit_archive_last_success_timestamp_seconds"
+| search environment=$environment|s$ backend=$backend|s$ pipeline=$pipeline|s$
+| `openbao_metric_fresh`
+| stats latest(value) AS value BY _timeseries
+| stats max(value) AS value count AS contributing_series
+| where contributing_series>0
+| fields - contributing_series
+| addinfo
+| eval value=info_max_time-value
+| fields value

@@ -1,0 +1,4 @@
+| `openbao_metric_samples("vault_core_active")`
+| `openbao_metric_fresh`
+| stats latest(value) AS value BY cluster instance scrape_profile
+| stats sum(value) AS value BY cluster scrape_profile

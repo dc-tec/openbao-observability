@@ -1,0 +1,9 @@
+| `openbao_metric_samples("vault_database_*")`
+| where metric_name="vault_database_Initialize_sum" OR metric_name="vault_database_Initialize_count" OR metric_name="vault_database_NewUser_sum" OR metric_name="vault_database_NewUser_count" OR metric_name="vault_database_UpdateUser_sum" OR metric_name="vault_database_UpdateUser_count" OR metric_name="vault_database_DeleteUser_sum" OR metric_name="vault_database_DeleteUser_count" OR metric_name="vault_database_Close_sum" OR metric_name="vault_database_Close_count"
+| eval series=case(metric_name="vault_database_Initialize_sum","initialize",metric_name="vault_database_Initialize_count","initialize",metric_name="vault_database_NewUser_sum","create",metric_name="vault_database_NewUser_count","create",metric_name="vault_database_UpdateUser_sum","renew",metric_name="vault_database_UpdateUser_count","renew",metric_name="vault_database_DeleteUser_sum","revoke",metric_name="vault_database_DeleteUser_count","revoke",metric_name="vault_database_Close_sum","close",metric_name="vault_database_Close_count","close") ." | ".coalesce(openbao_namespace,"(missing)") ." | ".cluster ." | ".scrape_profile
+| `openbao_metric_rate5m`
+| stats sum(eval(if(match(metric_name,"_sum$"),value,null()))) AS total sum(eval(if(match(metric_name,"_count$"),value,null()))) AS observations BY bucket_time cluster scrape_profile series
+| where observations>0
+| eval value=total/observations
+| eval _time=bucket_time
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

@@ -1,0 +1,595 @@
+{
+  "title": "OpenBao SLO and availability",
+  "description": "OpenBao SLO and availability. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "inputs": {
+    "input_cluster": {
+      "type": "input.text",
+      "title": "cluster (wildcard)",
+      "options": {
+        "token": "cluster",
+        "defaultValue": "compose"
+      }
+    },
+    "input_host": {
+      "type": "input.text",
+      "title": "host (wildcard)",
+      "options": {
+        "token": "host",
+        "defaultValue": "*"
+      }
+    },
+    "input_instance": {
+      "type": "input.text",
+      "title": "instance (wildcard)",
+      "options": {
+        "token": "instance",
+        "defaultValue": "*"
+      }
+    },
+    "input_kubernetes_namespace": {
+      "type": "input.text",
+      "title": "kubernetes namespace (wildcard)",
+      "options": {
+        "token": "kubernetes_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_openbao_namespace": {
+      "type": "input.text",
+      "title": "openbao namespace (wildcard)",
+      "options": {
+        "token": "openbao_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_probe_job": {
+      "type": "input.text",
+      "title": "probe job (wildcard)",
+      "options": {
+        "token": "probe_job",
+        "defaultValue": "*openbao*"
+      }
+    },
+    "input_scrape_profile": {
+      "type": "input.text",
+      "title": "scrape profile (wildcard)",
+      "options": {
+        "token": "scrape_profile",
+        "defaultValue": "all_nodes"
+      }
+    },
+    "input_slo_target": {
+      "type": "input.text",
+      "title": "SLO objective (0 \u003c value \u003c 1)",
+      "options": {
+        "token": "slo_target",
+        "defaultValue": "0.999"
+      }
+    },
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time range",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-1h@h,now"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_active_node_context": {
+      "type": "ds.search",
+      "name": "Active node context",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_active\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_active\"\n| eval series=cluster .\" | \".scrape_profile\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_availability_30d": {
+      "type": "ds.search",
+      "name": "Availability 30d",
+      "options": {
+        "query": "| `openbao_metric_samples(\"probe_success\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"probe_success\"\n| search job=$probe_job|s$\n| stats avg(value) AS value min(_time) AS oldest max(_time) AS newest count AS observations BY _timeseries cluster\n| addinfo\n| eval complete=if(observations\u003e=171072 AND oldest\u003c=info_max_time-2591970 AND newest\u003e=info_max_time-45,1,0)\n| eventstats min(complete) AS complete_cluster BY cluster\n| where complete_cluster=1\n| stats avg(value) AS value BY cluster\n| fields value",
+        "queryParameters": {
+          "earliest": "-30d",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_availability_by_target": {
+      "type": "ds.search",
+      "name": "Availability by target",
+      "options": {
+        "query": "| `openbao_metric_samples(\"probe_success\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"probe_success\"\n| search job=$probe_job|s$\n| sort 0 _time\n| streamstats time_window=1h avg(value) AS value BY _timeseries\n| eval _time=bucket_time, series=instance .\" | \".job .\" | \".cluster\n| timechart span=15s avg(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_burn_rate_1h": {
+      "type": "ds.search",
+      "name": "Burn rate 1h",
+      "options": {
+        "query": "| `openbao_metric_samples(\"probe_success\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"probe_success\"\n| search job=$probe_job|s$\n| stats avg(value) AS value BY _timeseries cluster\n| stats avg(value) AS value BY cluster\n| eval objective=tonumber($slo_target|s$)\n| where objective\u003e0 AND objective\u003c1\n| eval value=((1-value)/(1-objective))\n| fields value",
+        "queryParameters": {
+          "earliest": "-1h",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_burn_rate_5m": {
+      "type": "ds.search",
+      "name": "Burn rate 5m",
+      "options": {
+        "query": "| `openbao_metric_samples(\"probe_success\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"probe_success\"\n| search job=$probe_job|s$\n| stats avg(value) AS value BY _timeseries cluster\n| stats avg(value) AS value BY cluster\n| eval objective=tonumber($slo_target|s$)\n| where objective\u003e0 AND objective\u003c1\n| eval value=((1-value)/(1-objective))\n| fields value",
+        "queryParameters": {
+          "earliest": "-5m",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_burn_rate_by_target": {
+      "type": "ds.search",
+      "name": "Burn rate by target",
+      "options": {
+        "query": "| `openbao_metric_samples(\"probe_success\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"probe_success\"\n| search job=$probe_job|s$\n| sort 0 _time\n| streamstats time_window=5m avg(value) AS value BY _timeseries\n| eval objective=tonumber($slo_target|s$)\n| where objective\u003e0 AND objective\u003c1\n| eval value=((1-value)/(1-objective))\n| eval _time=bucket_time, series=instance .\" | \".job .\" | \".cluster\n| timechart span=15s avg(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_error_budget_remaining": {
+      "type": "ds.search",
+      "name": "Error budget remaining",
+      "options": {
+        "query": "| `openbao_metric_samples(\"probe_success\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"probe_success\"\n| search job=$probe_job|s$\n| stats avg(value) AS value min(_time) AS oldest max(_time) AS newest count AS observations BY _timeseries cluster\n| addinfo\n| eval complete=if(observations\u003e=171072 AND oldest\u003c=info_max_time-2591970 AND newest\u003e=info_max_time-45,1,0)\n| eventstats min(complete) AS complete_cluster BY cluster\n| where complete_cluster=1\n| stats avg(value) AS value BY cluster\n| eval objective=tonumber($slo_target|s$)\n| where objective\u003e0 AND objective\u003c1\n| eval value=1-((1-value)/(1-objective))\n| fields value",
+        "queryParameters": {
+          "earliest": "-30d",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_login_latency": {
+      "type": "ds.search",
+      "name": "Login latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_handle_login_request_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_handle_login_request_sum\" OR metric_name=\"vault_core_handle_login_request_count\"\n| eval series=case(metric_name=\"vault_core_handle_login_request_sum\",\"core_handle_login_request\",metric_name=\"vault_core_handle_login_request_count\",\"core_handle_login_request\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_operational_availability_context": {
+      "type": "ds.search",
+      "name": "Operational availability context",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| where match(message,\"(?i)(timeout|unavailable|latency|slow|error|failed|connection refused)\")\n| sort 100 - _time\n| table _time host severity module message",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_probe_duration": {
+      "type": "ds.search",
+      "name": "Probe duration",
+      "options": {
+        "query": "| `openbao_metric_samples(\"probe_duration_seconds\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"probe_duration_seconds\"\n| search job=$probe_job|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY _timeseries cluster\n| stats avg(value) AS value BY cluster\n| fields value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_probe_duration_by_target": {
+      "type": "ds.search",
+      "name": "Probe duration by target",
+      "options": {
+        "query": "| `openbao_metric_samples(\"probe_duration_seconds\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"probe_duration_seconds\"\n| search job=$probe_job|s$\n| eval _time=bucket_time, series=instance .\" | \".job .\" | \".cluster\n| timechart span=15s avg(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_probe_success": {
+      "type": "ds.search",
+      "name": "Probe success",
+      "options": {
+        "query": "| `openbao_metric_samples(\"probe_success\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"probe_success\"\n| search job=$probe_job|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY _timeseries cluster\n| stats min(value) AS value BY cluster\n| fields value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_request_latency": {
+      "type": "ds.search",
+      "name": "Request latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_handle_request_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_handle_request_sum\" OR metric_name=\"vault_core_handle_request_count\"\n| eval series=case(metric_name=\"vault_core_handle_request_sum\",\"core_handle_request\",metric_name=\"vault_core_handle_request_count\",\"core_handle_request\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_scrape_availability": {
+      "type": "ds.search",
+      "name": "Scrape availability",
+      "options": {
+        "query": "| `openbao_metric_samples(\"up\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"up\"\n| sort 0 _time\n| streamstats time_window=1h avg(value) AS value BY _timeseries\n| eval series=instance .\" | \".job .\" | \".cluster .\" | \".scrape_profile\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_check_latency": {
+      "type": "ds.search",
+      "name": "Token check latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_check_token_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_check_token_sum\" OR metric_name=\"vault_core_check_token_count\"\n| eval series=case(metric_name=\"vault_core_check_token_sum\",\"core_check_token\",metric_name=\"vault_core_check_token_count\",\"core_check_token\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_active_node_context": {
+      "type": "splunk.line",
+      "title": "Active node context",
+      "description": "Sum of observed active flags across source targets per bucket. Missing targets are unknown; an observed zero remains zero.",
+      "dataSources": {
+        "primary": "ds_active_node_context"
+      }
+    },
+    "viz_availability_30d": {
+      "type": "splunk.singlevalue",
+      "title": "Availability 30d",
+      "description": "Requires stable probe targets with 30 days of history, at least 99% of expected 15-second samples per target, a first sample within 30 seconds of the window boundary, and a last sample within 45 seconds. Incomplete or stale history returns no value. Targets are weighted equally after averaging their observed samples. Fixed window to now, independent of the picker.",
+      "dataSources": {
+        "primary": "ds_availability_30d"
+      },
+      "options": {
+        "unit": "ratio (0-1)",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_availability_by_target": {
+      "type": "splunk.line",
+      "title": "Availability by target",
+      "description": "Requires externally collected probe_success and probe_duration_seconds with bounded job, instance, and cluster labels. Availability averages observed samples per target, then targets; absent probes are not successes. A 30-day result requires 30 days of source retention and collection. Fixed-window stats always use the trailing window to now, independent of the picker. Error budgets use a validated objective between zero and one.",
+      "dataSources": {
+        "primary": "ds_availability_by_target"
+      },
+      "options": {
+        "yAxisTitleText": "ratio (0-1)"
+      }
+    },
+    "viz_burn_rate_1h": {
+      "type": "splunk.singlevalue",
+      "title": "Burn rate 1h",
+      "description": "Requires externally collected probe_success and probe_duration_seconds with bounded job, instance, and cluster labels. Availability averages observed samples per target, then targets; absent probes are not successes. A 30-day result requires 30 days of source retention and collection. Fixed-window stats always use the trailing window to now, independent of the picker. Error budgets use a validated objective between zero and one.",
+      "dataSources": {
+        "primary": "ds_burn_rate_1h"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_burn_rate_5m": {
+      "type": "splunk.singlevalue",
+      "title": "Burn rate 5m",
+      "description": "Requires externally collected probe_success and probe_duration_seconds with bounded job, instance, and cluster labels. Availability averages observed samples per target, then targets; absent probes are not successes. A 30-day result requires 30 days of source retention and collection. Fixed-window stats always use the trailing window to now, independent of the picker. Error budgets use a validated objective between zero and one.",
+      "dataSources": {
+        "primary": "ds_burn_rate_5m"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_burn_rate_by_target": {
+      "type": "splunk.line",
+      "title": "Burn rate by target",
+      "description": "Requires externally collected probe_success and probe_duration_seconds with bounded job, instance, and cluster labels. Availability averages observed samples per target, then targets; absent probes are not successes. A 30-day result requires 30 days of source retention and collection. Fixed-window stats always use the trailing window to now, independent of the picker. Error budgets use a validated objective between zero and one.",
+      "dataSources": {
+        "primary": "ds_burn_rate_by_target"
+      }
+    },
+    "viz_error_budget_remaining": {
+      "type": "splunk.singlevalue",
+      "title": "Error budget remaining",
+      "description": "Requires stable probe targets with 30 days of history, at least 99% of expected 15-second samples per target, a first sample within 30 seconds of the window boundary, and a last sample within 45 seconds. Incomplete or stale history returns no value. Targets are weighted equally after averaging their observed samples. Fixed window to now, independent of the picker.",
+      "dataSources": {
+        "primary": "ds_error_budget_remaining"
+      },
+      "options": {
+        "unit": "ratio (0-1)",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_login_latency": {
+      "type": "splunk.line",
+      "title": "Login latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_login_latency"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_operational_availability_context": {
+      "type": "splunk.table",
+      "title": "Operational availability context",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_operational_availability_context"
+      }
+    },
+    "viz_probe_duration": {
+      "type": "splunk.singlevalue",
+      "title": "Probe duration",
+      "description": "Requires externally collected probe_success and probe_duration_seconds with bounded job, instance, and cluster labels. Availability averages observed samples per target, then targets; absent probes are not successes. A 30-day result requires 30 days of source retention and collection. Fixed-window stats always use the trailing window to now, independent of the picker. Error budgets use a validated objective between zero and one.",
+      "dataSources": {
+        "primary": "ds_probe_duration"
+      },
+      "options": {
+        "unit": "s",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_probe_duration_by_target": {
+      "type": "splunk.line",
+      "title": "Probe duration by target",
+      "description": "Requires externally collected probe_success and probe_duration_seconds with bounded job, instance, and cluster labels. Availability averages observed samples per target, then targets; absent probes are not successes. A 30-day result requires 30 days of source retention and collection. Fixed-window stats always use the trailing window to now, independent of the picker. Error budgets use a validated objective between zero and one.",
+      "dataSources": {
+        "primary": "ds_probe_duration_by_target"
+      },
+      "options": {
+        "yAxisTitleText": "s"
+      }
+    },
+    "viz_probe_success": {
+      "type": "splunk.singlevalue",
+      "title": "Probe success",
+      "description": "Requires externally collected probe_success and probe_duration_seconds with bounded job, instance, and cluster labels. Availability averages observed samples per target, then targets; absent probes are not successes. A 30-day result requires 30 days of source retention and collection. Fixed-window stats always use the trailing window to now, independent of the picker. Error budgets use a validated objective between zero and one.",
+      "dataSources": {
+        "primary": "ds_probe_success"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_request_latency": {
+      "type": "splunk.line",
+      "title": "Request latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_request_latency"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_scrape_availability": {
+      "type": "splunk.line",
+      "title": "Scrape availability",
+      "description": "One-hour mean of observed scrape-success samples per source target. Missing samples are not counted as success or failure. A successful scrape is not proof that authentication or secret writes work.",
+      "dataSources": {
+        "primary": "ds_scrape_availability"
+      },
+      "options": {
+        "yAxisTitleText": "ratio (0-1)"
+      }
+    },
+    "viz_token_check_latency": {
+      "type": "splunk.line",
+      "title": "Token check latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_check_latency"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    }
+  },
+  "layout": {
+    "globalInputs": [
+      "input_time",
+      "input_host",
+      "input_cluster",
+      "input_instance",
+      "input_scrape_profile",
+      "input_kubernetes_namespace",
+      "input_openbao_namespace",
+      "input_probe_job",
+      "input_slo_target"
+    ],
+    "layoutDefinitions": {
+      "layout_audit": {
+        "type": "absolute",
+        "options": {
+          "width": 1200,
+          "height": 1880,
+          "display": "auto-scale"
+        },
+        "structure": [
+          {
+            "item": "viz_probe_success",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_availability_30d",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_error_budget_remaining",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_burn_rate_5m",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_burn_rate_1h",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_probe_duration",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_availability_by_target",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 140,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_burn_rate_by_target",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 420,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_probe_duration_by_target",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 420,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_request_latency",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 700,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_login_latency",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 700,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_token_check_latency",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 980,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_scrape_availability",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 980,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_active_node_context",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1260,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_operational_availability_context",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1540,
+              "w": 1200,
+              "h": 300
+            }
+          }
+        ]
+      }
+    },
+    "tabs": {
+      "items": [
+        {
+          "label": "OpenBao SLO and availability",
+          "layoutId": "layout_audit"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,3 @@
+`openbao_audit_events`
+| eval balance=case(audit_type="request",1,audit_type="response",-1,true(),0)
+| timechart span=10m sum(balance) AS value

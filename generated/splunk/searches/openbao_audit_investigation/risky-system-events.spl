@@ -1,0 +1,4 @@
+`openbao_audit_events`
+| where match(operation,"^(create|update|delete)$") AND match(request_path,"^sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate)")
+| sort 100 - _time
+| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error

@@ -17,6 +17,7 @@ import (
 	"github.com/dc-tec/openbao-observability/internal/fixtures"
 	releasepkg "github.com/dc-tec/openbao-observability/internal/release"
 	"github.com/dc-tec/openbao-observability/internal/rules"
+	"github.com/dc-tec/openbao-observability/internal/splunk"
 )
 
 const (
@@ -111,6 +112,8 @@ func runGenerate(args []string) error {
 		return runGenerateGrafanaDashboard(args[1:])
 	case "prometheus-rules":
 		return runGeneratePrometheusRules(args[1:])
+	case "splunk-profile":
+		return runSplunkProfile(args[1:], false)
 	case "-h", helpFlag, helpCommand:
 		return generateUsage()
 	default:
@@ -126,6 +129,8 @@ func runRelease(args []string) error {
 	switch args[0] {
 	case "bundle":
 		return runReleaseBundle(args[1:])
+	case "splunk-app":
+		return runReleaseSplunkApp(args[1:])
 	case "checksums":
 		return runReleaseChecksums(args[1:])
 	case "-h", helpFlag, helpCommand:
@@ -147,6 +152,10 @@ func runValidate(ctx context.Context, args []string) error {
 		return runValidateDocs(args[1:])
 	case "site-links":
 		return runValidateSiteLinks(args[1:])
+	case "splunk-profile":
+		return runSplunkProfile(args[1:], true)
+	case "splunk-queries":
+		return runSplunkQueries(ctx, args[1:])
 	case "-h", helpFlag, helpCommand:
 		return validateUsage()
 	default:
@@ -520,6 +529,20 @@ func runReleaseChecksums(args []string) error {
 	return releasepkg.Checksums(opts)
 }
 
+func runReleaseSplunkApp(args []string) error {
+	fs := flag.NewFlagSet("release splunk-app", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := releasepkg.SplunkAppOptions{}
+	fs.StringVar(&opts.RepositoryRoot, "repository-root", ".", "repository root")
+	fs.StringVar(&opts.Version, "version", envString("VERSION", "0.0.0-dev"), "release version without a leading v")
+	fs.StringVar(&opts.OutputPath, "output", "", "installable .spl output path")
+	fs.Int64Var(&opts.SourceDateEpoch, "source-date-epoch", 0, "deterministic source timestamp as Unix epoch seconds")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	return releasepkg.SplunkApp(opts)
+}
+
 func runValidateDashboardQueries(ctx context.Context, args []string) error {
 	defaultDashboardContracts := strings.Join(defaultDashboardContractPaths(), ",")
 	defaultGeneratedDashboards := strings.Join([]string{
@@ -762,12 +785,14 @@ func generateUsageText() string {
   openbao-observability generate alert-rules [flags]
   openbao-observability generate compatibility-matrix [flags]
   openbao-observability generate grafana-dashboard [flags]
-  openbao-observability generate prometheus-rules [flags]`
+  openbao-observability generate prometheus-rules [flags]
+  openbao-observability generate splunk-profile [flags]`
 }
 
 func releaseUsageText() string {
 	return `usage:
   openbao-observability release bundle [flags]
+  openbao-observability release splunk-app [flags]
   openbao-observability release checksums [flags]`
 }
 
@@ -775,5 +800,47 @@ func validateUsageText() string {
 	return `usage:
   openbao-observability validate dashboard-queries [flags]
   openbao-observability validate docs [flags]
-  openbao-observability validate site-links [flags]`
+  openbao-observability validate site-links [flags]
+  openbao-observability validate splunk-profile [flags]
+  openbao-observability validate splunk-queries [flags]`
+}
+
+func splunkFlags(fs *flag.FlagSet) *splunk.Options {
+	opts := &splunk.Options{}
+	fs.StringVar(&opts.ContractPath, "contract", "contracts/profiles/splunk-enterprise.yaml", "Splunk profile contract")
+	fs.StringVar(&opts.RepositoryRoot, "repository-root", ".", "repository root")
+	fs.StringVar(&opts.OutputDir, "output", "generated/splunk", "generated profile directory")
+	return opts
+}
+
+func runSplunkProfile(args []string, verify bool) error {
+	fs := flag.NewFlagSet("splunk-profile", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := splunkFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if verify {
+		return splunk.Verify(*opts)
+	}
+	return splunk.Generate(*opts)
+}
+
+func runSplunkQueries(ctx context.Context, args []string) error {
+	fs := flag.NewFlagSet("splunk-queries", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	opts := splunkFlags(fs)
+	endpoint := fs.String("splunk-url", os.Getenv("SPLUNK_URL"), "Splunk management API URL for a test instance")
+	ca := fs.String("ca-cert", os.Getenv("SPLUNK_CA_CERT"), "PEM certificate authority for the management API")
+	scheme := fs.String(
+		"auth-scheme", envString("SPLUNK_AUTH_SCHEME", "Bearer"), "Bearer or Splunk session authentication",
+	)
+	insecure := fs.Bool("insecure-loopback", false, "allow the local trial API's self-signed certificate on loopback only")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	return splunk.ValidateQueries(ctx, splunk.LiveOptions{
+		Options: *opts, URL: *endpoint, Token: os.Getenv("SPLUNK_TOKEN"), CACertPath: *ca,
+		AuthScheme: *scheme, InsecureLoopback: *insecure,
+	})
 }

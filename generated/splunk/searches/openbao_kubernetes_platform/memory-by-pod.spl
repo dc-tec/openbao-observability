@@ -1,0 +1,6 @@
+| `openbao_metric_samples("container_memory_working_set_bytes")`
+| where metric_name="container_memory_working_set_bytes"
+| search pod=$pod|s$ container=$container|s$
+| stats max(value) AS value BY bucket_time pod cluster
+| eval _time=bucket_time, series=pod ." | ".cluster
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

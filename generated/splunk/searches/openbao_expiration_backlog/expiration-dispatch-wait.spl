@@ -1,0 +1,10 @@
+| `openbao_metric_samples("vault_expire_lease_expiration_time_in_queue*")`
+| where match(metric_name,"_(sum|count)$")
+| `openbao_metric_rate5m`
+| eval sum_rate=if(match(metric_name,"_sum$"),value,0), count_rate=if(match(metric_name,"_count$"),value,0)
+| stats sum(sum_rate) AS total sum(count_rate) AS events BY bucket_time cluster instance scrape_profile
+| where events>0
+| eval value=total/events
+| rename bucket_time AS _time
+| eval series=cluster." / ".scrape_profile." / ".instance
+| timechart span=15s latest(value) BY series limit=0 useother=f

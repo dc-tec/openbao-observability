@@ -1,0 +1,4 @@
+`openbao_audit_events`
+| where match(mvjoin(audit_error," "),"(?is)(permission denied|forbidden)") AND (audit_type="response" OR (audit_type="request" AND match(mvjoin(audit_error," "),"(?i)^forbidden$")))
+| sort 100 - _time
+| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error

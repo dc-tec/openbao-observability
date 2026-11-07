@@ -1,0 +1,1177 @@
+<dashboard version="2">
+  <label>OpenBao runtime and storage</label>
+  <description>OpenBao runtime and storage. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.</description>
+  <definition><![CDATA[{
+  "title": "OpenBao runtime and storage",
+  "description": "OpenBao runtime and storage. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "inputs": {
+    "input_cluster": {
+      "type": "input.text",
+      "title": "cluster (wildcard)",
+      "options": {
+        "token": "cluster",
+        "defaultValue": "compose"
+      }
+    },
+    "input_host": {
+      "type": "input.text",
+      "title": "host (wildcard)",
+      "options": {
+        "token": "host",
+        "defaultValue": "*"
+      }
+    },
+    "input_instance": {
+      "type": "input.text",
+      "title": "instance (wildcard)",
+      "options": {
+        "token": "instance",
+        "defaultValue": "*"
+      }
+    },
+    "input_kubernetes_namespace": {
+      "type": "input.text",
+      "title": "kubernetes namespace (wildcard)",
+      "options": {
+        "token": "kubernetes_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_openbao_namespace": {
+      "type": "input.text",
+      "title": "openbao namespace (wildcard)",
+      "options": {
+        "token": "openbao_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_scrape_profile": {
+      "type": "input.text",
+      "title": "scrape profile (wildcard)",
+      "options": {
+        "token": "scrape_profile",
+        "defaultValue": "all_nodes"
+      }
+    },
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time range",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-1h@h,now"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_barrier_delete_latency": {
+      "type": "ds.search",
+      "name": "Barrier DELETE latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_barrier_delete_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_barrier_delete_sum\" OR metric_name=\"vault_barrier_delete_count\"\n| eval series=case(metric_name=\"vault_barrier_delete_sum\",\"barrier_delete\",metric_name=\"vault_barrier_delete_count\",\"barrier_delete\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_barrier_delete_rate": {
+      "type": "ds.search",
+      "name": "Barrier DELETE rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_barrier_delete_count\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_barrier_delete_count\"\n| eval series=case(metric_name=\"vault_barrier_delete_count\",\"barrier_delete\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_barrier_encryptions": {
+      "type": "ds.search",
+      "name": "Barrier encryptions",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_barrier_estimated_encryptions\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_barrier_estimated_encryptions\"\n| eval series=case(metric_name=\"vault_barrier_estimated_encryptions\",\"barrier_estimated_encryptions\") .\" | \".coalesce(term,\"(missing)\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate15m`\n| eval value=value*900\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_barrier_get_latency": {
+      "type": "ds.search",
+      "name": "Barrier GET latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_barrier_get_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_barrier_get_sum\" OR metric_name=\"vault_barrier_get_count\"\n| eval series=case(metric_name=\"vault_barrier_get_sum\",\"barrier_get\",metric_name=\"vault_barrier_get_count\",\"barrier_get\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_barrier_get_latency_trend": {
+      "type": "ds.search",
+      "name": "Barrier GET latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_barrier_get_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_barrier_get_sum\" OR metric_name=\"vault_barrier_get_count\"\n| eval series=case(metric_name=\"vault_barrier_get_sum\",\"barrier_get\",metric_name=\"vault_barrier_get_count\",\"barrier_get\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_barrier_get_rate": {
+      "type": "ds.search",
+      "name": "Barrier GET rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_barrier_get_count\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_barrier_get_count\"\n| eval series=case(metric_name=\"vault_barrier_get_count\",\"barrier_get\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_barrier_list_latency": {
+      "type": "ds.search",
+      "name": "Barrier LIST latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_barrier_list_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_barrier_list_sum\" OR metric_name=\"vault_barrier_list_count\"\n| eval series=case(metric_name=\"vault_barrier_list_sum\",\"barrier_list\",metric_name=\"vault_barrier_list_count\",\"barrier_list\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_barrier_list_rate": {
+      "type": "ds.search",
+      "name": "Barrier LIST rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_barrier_list_count\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_barrier_list_count\"\n| eval series=case(metric_name=\"vault_barrier_list_count\",\"barrier_list\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_barrier_put_latency": {
+      "type": "ds.search",
+      "name": "Barrier PUT latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_barrier_put_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_barrier_put_sum\" OR metric_name=\"vault_barrier_put_count\"\n| eval series=case(metric_name=\"vault_barrier_put_sum\",\"barrier_put\",metric_name=\"vault_barrier_put_count\",\"barrier_put\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_barrier_put_latency_trend": {
+      "type": "ds.search",
+      "name": "Barrier PUT latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_barrier_put_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_barrier_put_sum\" OR metric_name=\"vault_barrier_put_count\"\n| eval series=case(metric_name=\"vault_barrier_put_sum\",\"barrier_put\",metric_name=\"vault_barrier_put_count\",\"barrier_put\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_barrier_put_rate": {
+      "type": "ds.search",
+      "name": "Barrier PUT rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_barrier_put_count\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_barrier_put_count\"\n| eval series=case(metric_name=\"vault_barrier_put_count\",\"barrier_put\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_cache_hit_rate": {
+      "type": "ds.search",
+      "name": "Cache hit rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_cache_hit\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_cache_hit\"\n| eval series=case(metric_name=\"vault_cache_hit\",\"cache_hit\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_cache_hit_ratio": {
+      "type": "ds.search",
+      "name": "Cache hit ratio",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_cache_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_cache_hit\" OR metric_name=\"vault_cache_miss\"\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_cache_hit$\"),value,null()))) AS hits sum(eval(if(match(metric_name,\"_cache_miss$\"),value,null()))) AS misses count(eval(match(metric_name,\"_cache_hit$\"))) AS hit_series count(eval(match(metric_name,\"_cache_miss$\"))) AS miss_series BY bucket_time cluster scrape_profile\n| where hit_series\u003e0 AND miss_series\u003e0 AND hits+misses\u003e0\n| eval value=hits/(hits+misses), series=cluster .\" | \".scrape_profile\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats max(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_cache_hit_ratio_trend": {
+      "type": "ds.search",
+      "name": "Cache hit ratio",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_cache_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_cache_hit\" OR metric_name=\"vault_cache_miss\"\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_cache_hit$\"),value,null()))) AS hits sum(eval(if(match(metric_name,\"_cache_miss$\"),value,null()))) AS misses count(eval(match(metric_name,\"_cache_hit$\"))) AS hit_series count(eval(match(metric_name,\"_cache_miss$\"))) AS miss_series BY bucket_time cluster scrape_profile openbao_namespace\n| where hit_series\u003e0 AND miss_series\u003e0 AND hits+misses\u003e0\n| eval value=hits/(hits+misses), series=openbao_namespace .\" | \".cluster .\" | \".scrape_profile\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_cache_miss_rate": {
+      "type": "ds.search",
+      "name": "Cache miss rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_cache_miss\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_cache_miss\"\n| eval series=case(metric_name=\"vault_cache_miss\",\"cache_miss\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_cache_write_rate": {
+      "type": "ds.search",
+      "name": "Cache write rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_cache_write\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_cache_write\"\n| eval series=case(metric_name=\"vault_cache_write\",\"cache_write\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_expiration_backlog": {
+      "type": "ds.search",
+      "name": "Waiting expiration jobs",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_active\" OR metric_name=\"vault_expire_job_manager_total_jobs\"\n| `openbao_metric_active_expiration`\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance\n| timechart span=15s latest(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_foreground_latency_by_target": {
+      "type": "ds.search",
+      "name": "Application handler latency by node",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_handle_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_handle_request_sum\" OR metric_name=\"vault_core_handle_request_count\" OR metric_name=\"vault_core_handle_login_request_sum\" OR metric_name=\"vault_core_handle_login_request_count\"\n| eval series=case(metric_name=\"vault_core_handle_request_sum\",\"regular request\",metric_name=\"vault_core_handle_request_count\",\"regular request\",metric_name=\"vault_core_handle_login_request_sum\",\"login request\",metric_name=\"vault_core_handle_login_request_count\",\"login request\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".instance .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_goroutines": {
+      "type": "ds.search",
+      "name": "Goroutines",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_runtime_num_goroutines\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_runtime_num_goroutines\"\n| eval series=case(metric_name=\"vault_runtime_num_goroutines\",\"runtime_num_goroutines\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".instance .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_mount_table_entries": {
+      "type": "ds.search",
+      "name": "Mount table entries",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_mount_table_num_entries\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_mount_table_num_entries\"\n| eval local=coalesce(local,\"(missing)\"), type=coalesce(type,\"(missing)\"), series=openbao_namespace .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series type local\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_mount_table_size": {
+      "type": "ds.search",
+      "name": "Mount table size",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_mount_table_size\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_mount_table_size\"\n| eval local=coalesce(local,\"(missing)\"), type=coalesce(type,\"(missing)\"), series=openbao_namespace .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series type local\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_batch_size": {
+      "type": "ds.search",
+      "name": "Logs per applied Raft batch",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_fsm_applyBatchNum_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_raft_fsm_applyBatchNum_sum\" OR metric_name=\"vault_raft_fsm_applyBatchNum_count\"\n| eval series=case(metric_name=\"vault_raft_fsm_applyBatchNum_sum\",\"raft_fsm_applyBatchNum\",metric_name=\"vault_raft_fsm_applyBatchNum_count\",\"raft_fsm_applyBatchNum\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".instance .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_fsm_busy": {
+      "type": "ds.search",
+      "name": "Raft FSM busy wall time",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_thread_fsm_saturation_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_raft_thread_fsm_saturation_sum\" OR metric_name=\"vault_raft_thread_fsm_saturation_count\"\n| eval series=case(metric_name=\"vault_raft_thread_fsm_saturation_sum\",\"raft_thread_fsm_saturation\",metric_name=\"vault_raft_thread_fsm_saturation_count\",\"raft_thread_fsm_saturation\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".instance .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_fsm_pending": {
+      "type": "ds.search",
+      "name": "Pending Raft apply work",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_storage_stats_fsm_pending\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance\n| timechart span=15s max(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_write_stages": {
+      "type": "ds.search",
+      "name": "Raft write and apply latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_raft_storage_put_sum\" OR metric_name=\"vault_raft_storage_put_count\" OR metric_name=\"vault_raft_storage_delete_sum\" OR metric_name=\"vault_raft_storage_delete_count\" OR metric_name=\"vault_raft_commitTime_sum\" OR metric_name=\"vault_raft_commitTime_count\" OR metric_name=\"vault_raft_fsm_applyBatch_sum\" OR metric_name=\"vault_raft_fsm_applyBatch_count\"\n| eval series=case(metric_name=\"vault_raft_storage_put_sum\",\"backend PUT\",metric_name=\"vault_raft_storage_put_count\",\"backend PUT\",metric_name=\"vault_raft_storage_delete_sum\",\"backend DELETE\",metric_name=\"vault_raft_storage_delete_count\",\"backend DELETE\",metric_name=\"vault_raft_commitTime_sum\",\"quorum commit\",metric_name=\"vault_raft_commitTime_count\",\"quorum commit\",metric_name=\"vault_raft_fsm_applyBatch_sum\",\"local batch apply\",metric_name=\"vault_raft_fsm_applyBatch_count\",\"local batch apply\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".instance .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_request_latency": {
+      "type": "ds.search",
+      "name": "Request latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_handle_request_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_handle_request_sum\" OR metric_name=\"vault_core_handle_request_count\"\n| eval series=case(metric_name=\"vault_core_handle_request_sum\",\"core_handle_request\",metric_name=\"vault_core_handle_request_count\",\"core_handle_request\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_runtime_alloc_bytes": {
+      "type": "ds.search",
+      "name": "Allocated bytes",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_runtime_alloc_bytes\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_runtime_alloc_bytes\"\n| eval series=case(metric_name=\"vault_runtime_alloc_bytes\",\"runtime_alloc_bytes\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".instance .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_runtime_gc_pause": {
+      "type": "ds.search",
+      "name": "GC pause",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_runtime_gc_pause_ns_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_runtime_gc_pause_ns_sum\" OR metric_name=\"vault_runtime_gc_pause_ns_count\"\n| eval series=case(metric_name=\"vault_runtime_gc_pause_ns_sum\",\"runtime_gc_pause_ns\",metric_name=\"vault_runtime_gc_pause_ns_count\",\"runtime_gc_pause_ns\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_runtime_heap_objects": {
+      "type": "ds.search",
+      "name": "Heap objects",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_runtime_heap_objects\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_runtime_heap_objects\"\n| eval series=case(metric_name=\"vault_runtime_heap_objects\",\"runtime_heap_objects\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".instance .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_runtime_storage_logs": {
+      "type": "ds.search",
+      "name": "Runtime and storage logs",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| where match(module.\" \".message,\"(?i)(storage|barrier|cache|runtime|gc|memory)\")\n| sort 100 - _time\n| table _time host severity module message",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_runtime_sys_bytes": {
+      "type": "ds.search",
+      "name": "System bytes",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_runtime_sys_bytes\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_runtime_sys_bytes\"\n| eval series=case(metric_name=\"vault_runtime_sys_bytes\",\"runtime_sys_bytes\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".instance .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_runtime_total_gc_pause": {
+      "type": "ds.search",
+      "name": "Total GC pause",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_runtime_total_gc_pause_ns\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_runtime_total_gc_pause_ns\"\n| eval series=case(metric_name=\"vault_runtime_total_gc_pause_ns\",\"runtime_total_gc_pause_ns\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".instance .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_runtime_total_gc_runs": {
+      "type": "ds.search",
+      "name": "Total GC runs",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_runtime_total_gc_runs\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_runtime_total_gc_runs\"\n| eval series=case(metric_name=\"vault_runtime_total_gc_runs\",\"runtime_total_gc_runs\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".instance .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_check_latency": {
+      "type": "ds.search",
+      "name": "Token check latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_check_token_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_check_token_sum\" OR metric_name=\"vault_core_check_token_count\"\n| eval series=case(metric_name=\"vault_core_check_token_sum\",\"core_check_token\",metric_name=\"vault_core_check_token_count\",\"core_check_token\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_barrier_delete_latency": {
+      "type": "splunk.line",
+      "title": "Barrier DELETE latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_barrier_delete_latency"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_barrier_delete_rate": {
+      "type": "splunk.line",
+      "title": "Barrier DELETE rate",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_barrier_delete_rate"
+      },
+      "options": {
+        "yAxisTitleText": "operations/s"
+      }
+    },
+    "viz_barrier_encryptions": {
+      "type": "splunk.line",
+      "title": "Barrier encryptions",
+      "description": "Rolling 15m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_barrier_encryptions"
+      }
+    },
+    "viz_barrier_get_latency": {
+      "type": "splunk.singlevalue",
+      "title": "Barrier GET latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_barrier_get_latency"
+      },
+      "options": {
+        "unit": "ms",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_barrier_get_latency_trend": {
+      "type": "splunk.line",
+      "title": "Barrier GET latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_barrier_get_latency_trend"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_barrier_get_rate": {
+      "type": "splunk.line",
+      "title": "Barrier GET rate",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_barrier_get_rate"
+      },
+      "options": {
+        "yAxisTitleText": "operations/s"
+      }
+    },
+    "viz_barrier_list_latency": {
+      "type": "splunk.line",
+      "title": "Barrier LIST latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_barrier_list_latency"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_barrier_list_rate": {
+      "type": "splunk.line",
+      "title": "Barrier LIST rate",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_barrier_list_rate"
+      },
+      "options": {
+        "yAxisTitleText": "operations/s"
+      }
+    },
+    "viz_barrier_put_latency": {
+      "type": "splunk.singlevalue",
+      "title": "Barrier PUT latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_barrier_put_latency"
+      },
+      "options": {
+        "unit": "ms",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_barrier_put_latency_trend": {
+      "type": "splunk.line",
+      "title": "Barrier PUT latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_barrier_put_latency_trend"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_barrier_put_rate": {
+      "type": "splunk.line",
+      "title": "Barrier PUT rate",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_barrier_put_rate"
+      },
+      "options": {
+        "yAxisTitleText": "operations/s"
+      }
+    },
+    "viz_cache_hit_rate": {
+      "type": "splunk.line",
+      "title": "Cache hit rate",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_cache_hit_rate"
+      },
+      "options": {
+        "yAxisTitleText": "operations/s"
+      }
+    },
+    "viz_cache_hit_ratio": {
+      "type": "splunk.singlevalue",
+      "title": "Cache hit ratio",
+      "description": "Five-minute cache hit ratio from reset-corrected hit and miss counters. Both counters and at least one observation are required; idle or incomplete data remains absent. The OpenBao cache is distinct from Salt disk caching.",
+      "dataSources": {
+        "primary": "ds_cache_hit_ratio"
+      },
+      "options": {
+        "unit": "ratio (0-1)",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_cache_hit_ratio_trend": {
+      "type": "splunk.line",
+      "title": "Cache hit ratio",
+      "description": "Five-minute cache hit ratio from reset-corrected hit and miss counters. Both counters and at least one observation are required; idle or incomplete data remains absent. The OpenBao cache is distinct from Salt disk caching.",
+      "dataSources": {
+        "primary": "ds_cache_hit_ratio_trend"
+      },
+      "options": {
+        "yAxisTitleText": "ratio (0-1)"
+      }
+    },
+    "viz_cache_miss_rate": {
+      "type": "splunk.line",
+      "title": "Cache miss rate",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_cache_miss_rate"
+      },
+      "options": {
+        "yAxisTitleText": "operations/s"
+      }
+    },
+    "viz_cache_write_rate": {
+      "type": "splunk.line",
+      "title": "Cache write rate",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_cache_write_rate"
+      },
+      "options": {
+        "yAxisTitleText": "operations/s"
+      }
+    },
+    "viz_expiration_backlog": {
+      "type": "splunk.line",
+      "title": "Waiting expiration jobs",
+      "description": "Waiting expiration jobs on the active target only. Missing queue metrics remain absent.",
+      "dataSources": {
+        "primary": "ds_expiration_backlog"
+      }
+    },
+    "viz_foreground_latency_by_target": {
+      "type": "splunk.line",
+      "title": "Application handler latency by node",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_foreground_latency_by_target"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_goroutines": {
+      "type": "splunk.singlevalue",
+      "title": "Goroutines",
+      "description": "Total goroutines across the selected source targets. Fresh observations are deduplicated per target before summing. Select one instance for a node comparison; the Grafana reference can display a separate stat per target.",
+      "dataSources": {
+        "primary": "ds_goroutines"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_mount_table_entries": {
+      "type": "splunk.line",
+      "title": "Mount table entries",
+      "description": "Mount inventory by bounded type and local labels. Deduplicates observations across nodes before summing categories; this does not expose mount paths.",
+      "dataSources": {
+        "primary": "ds_mount_table_entries"
+      }
+    },
+    "viz_mount_table_size": {
+      "type": "splunk.line",
+      "title": "Mount table size",
+      "description": "Mount inventory by bounded type and local labels. Deduplicates observations across nodes before summing categories; this does not expose mount paths.",
+      "dataSources": {
+        "primary": "ds_mount_table_size"
+      },
+      "options": {
+        "yAxisTitleText": "bytes"
+      }
+    },
+    "viz_raft_batch_size": {
+      "type": "splunk.line",
+      "title": "Logs per applied Raft batch",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_raft_batch_size"
+      }
+    },
+    "viz_raft_fsm_busy": {
+      "type": "splunk.line",
+      "title": "Raft FSM busy wall time",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_raft_fsm_busy"
+      },
+      "options": {
+        "yAxisTitleText": "ratio (0-1)"
+      }
+    },
+    "viz_raft_fsm_pending": {
+      "type": "splunk.line",
+      "title": "Pending Raft apply work",
+      "description": "Raft FSM pending operations by target.",
+      "dataSources": {
+        "primary": "ds_raft_fsm_pending"
+      }
+    },
+    "viz_raft_write_stages": {
+      "type": "splunk.line",
+      "title": "Raft write and apply latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_raft_write_stages"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_request_latency": {
+      "type": "splunk.singlevalue",
+      "title": "Request latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_request_latency"
+      },
+      "options": {
+        "unit": "ms",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_runtime_alloc_bytes": {
+      "type": "splunk.line",
+      "title": "Allocated bytes",
+      "description": "Fresh source gauge; duplicate node observations are combined before totals. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_runtime_alloc_bytes"
+      },
+      "options": {
+        "yAxisTitleText": "bytes"
+      }
+    },
+    "viz_runtime_gc_pause": {
+      "type": "splunk.line",
+      "title": "GC pause",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_runtime_gc_pause"
+      },
+      "options": {
+        "yAxisTitleText": "ns"
+      }
+    },
+    "viz_runtime_heap_objects": {
+      "type": "splunk.line",
+      "title": "Heap objects",
+      "description": "Fresh source gauge; duplicate node observations are combined before totals. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_runtime_heap_objects"
+      }
+    },
+    "viz_runtime_storage_logs": {
+      "type": "splunk.table",
+      "title": "Runtime and storage logs",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_runtime_storage_logs"
+      }
+    },
+    "viz_runtime_sys_bytes": {
+      "type": "splunk.line",
+      "title": "System bytes",
+      "description": "Fresh source gauge; duplicate node observations are combined before totals. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_runtime_sys_bytes"
+      },
+      "options": {
+        "yAxisTitleText": "bytes"
+      }
+    },
+    "viz_runtime_total_gc_pause": {
+      "type": "splunk.line",
+      "title": "Total GC pause",
+      "description": "Fresh source gauge; duplicate node observations are combined before totals. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_runtime_total_gc_pause"
+      },
+      "options": {
+        "yAxisTitleText": "ns"
+      }
+    },
+    "viz_runtime_total_gc_runs": {
+      "type": "splunk.line",
+      "title": "Total GC runs",
+      "description": "Fresh source gauge; duplicate node observations are combined before totals. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_runtime_total_gc_runs"
+      }
+    },
+    "viz_token_check_latency": {
+      "type": "splunk.singlevalue",
+      "title": "Token check latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_check_latency"
+      },
+      "options": {
+        "unit": "ms",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    }
+  },
+  "layout": {
+    "globalInputs": [
+      "input_time",
+      "input_host",
+      "input_cluster",
+      "input_instance",
+      "input_scrape_profile",
+      "input_kubernetes_namespace",
+      "input_openbao_namespace"
+    ],
+    "layoutDefinitions": {
+      "layout_audit": {
+        "type": "absolute",
+        "options": {
+          "width": 1200,
+          "height": 4400,
+          "display": "auto-scale"
+        },
+        "structure": [
+          {
+            "item": "viz_expiration_backlog",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_foreground_latency_by_target",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 0,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_write_stages",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_fsm_busy",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_fsm_pending",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 560,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_batch_size",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 560,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_request_latency",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 840,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_token_check_latency",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 840,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_barrier_get_latency",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 840,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_barrier_put_latency",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 840,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_cache_hit_ratio",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 980,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_goroutines",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 980,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_barrier_get_rate",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 980,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_barrier_put_rate",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1260,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_barrier_list_rate",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 1260,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_barrier_delete_rate",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1540,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_barrier_get_latency_trend",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 1540,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_barrier_put_latency_trend",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1820,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_barrier_list_latency",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 1820,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_barrier_delete_latency",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 2100,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_cache_hit_rate",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 2100,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_cache_miss_rate",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 2380,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_cache_write_rate",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 2380,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_cache_hit_ratio_trend",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 2660,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_runtime_alloc_bytes",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 2660,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_runtime_sys_bytes",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 2940,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_runtime_heap_objects",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 2940,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_runtime_gc_pause",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 3220,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_runtime_total_gc_pause",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 3220,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_runtime_total_gc_runs",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 3500,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_barrier_encryptions",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 3500,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_mount_table_entries",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 3780,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_mount_table_size",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 3780,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_runtime_storage_logs",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 4060,
+              "w": 1200,
+              "h": 300
+            }
+          }
+        ]
+      }
+    },
+    "tabs": {
+      "items": [
+        {
+          "label": "OpenBao runtime and storage",
+          "layoutId": "layout_audit"
+        }
+      ]
+    }
+  }
+}
+]]></definition>
+</dashboard>

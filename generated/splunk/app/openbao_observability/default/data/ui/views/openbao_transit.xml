@@ -1,0 +1,566 @@
+<dashboard version="2">
+  <label>OpenBao Transit</label>
+  <description>OpenBao Transit. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.</description>
+  <definition><![CDATA[{
+  "title": "OpenBao Transit",
+  "description": "OpenBao Transit. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "inputs": {
+    "input_host": {
+      "type": "input.text",
+      "title": "host (wildcard)",
+      "options": {
+        "token": "host",
+        "defaultValue": "*"
+      }
+    },
+    "input_logical_namespace": {
+      "type": "input.text",
+      "title": "logical namespace (wildcard)",
+      "options": {
+        "token": "logical_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_mount_path": {
+      "type": "input.text",
+      "title": "mount path (wildcard)",
+      "options": {
+        "token": "mount_path",
+        "defaultValue": "transit/*"
+      }
+    },
+    "input_operation": {
+      "type": "input.text",
+      "title": "operation (wildcard)",
+      "options": {
+        "token": "operation",
+        "defaultValue": "*"
+      }
+    },
+    "input_request_id": {
+      "type": "input.text",
+      "title": "request id (wildcard)",
+      "options": {
+        "token": "request_id",
+        "defaultValue": "*"
+      }
+    },
+    "input_request_path": {
+      "type": "input.text",
+      "title": "request path (wildcard)",
+      "options": {
+        "token": "request_path",
+        "defaultValue": "*"
+      }
+    },
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time range",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-1h@h,now"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_transit_audit_events": {
+      "type": "ds.search",
+      "name": "Transit audit events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"request\" AND match(request_path,\"^.+/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/|$)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_audit_events_by_node": {
+      "type": "ds.search",
+      "name": "Transit audit events by node",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"request\" AND match(request_path,\"^.+/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/|$)\")\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_crypto_events_by_node": {
+      "type": "ds.search",
+      "name": "Transit crypto requests by node",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"request\" AND match(request_path,\"^.+/(encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/|$)\")\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_crypto_log": {
+      "type": "ds.search",
+      "name": "Transit cryptographic request stream",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"request\" AND match(request_path,\"^.+/(encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/|$)\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_data_utility_events": {
+      "type": "ds.search",
+      "name": "Datakey, random, hash, and HMAC",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"request\" AND match(request_path,\"^.+/(datakey|random|hash|hmac)(/|$)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_decrypt_events": {
+      "type": "ds.search",
+      "name": "Decrypt requests",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"request\" AND match(request_path,\"^.+/decrypt(/|$)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_denied_requests": {
+      "type": "ds.search",
+      "name": "Transit denied requests",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where match(mvjoin(audit_error,\" \"),\"(?is)(permission denied|forbidden)\") AND (audit_type=\"response\" OR (audit_type=\"request\" AND match(mvjoin(audit_error,\" \"),\"(?i)^forbidden$\"))) AND match(request_path,\"^.+/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/|$)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_encrypt_events": {
+      "type": "ds.search",
+      "name": "Encrypt requests",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"request\" AND match(request_path,\"^.+/encrypt(/|$)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_key_events": {
+      "type": "ds.search",
+      "name": "Transit key events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"request\" AND match(request_path,\"^.+/keys(/|$)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_key_events_by_node": {
+      "type": "ds.search",
+      "name": "Transit key events by node",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"request\" AND match(request_path,\"^.+/keys(/|$)\")\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_key_management_log": {
+      "type": "ds.search",
+      "name": "Transit key management stream",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"request\" AND match(request_path,\"^.+/keys(/|$)\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_operational_symptoms": {
+      "type": "ds.search",
+      "name": "Transit operational symptoms",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| where match(module.\" \".message,\"(?i)(transit|sealwrap|cipher|crypto|key)\") AND match(message,\"(?i)(error|failed|warn|timeout|denied)\")\n| sort 100 - _time\n| table _time host severity module message",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_response_error_log": {
+      "type": "ds.search",
+      "name": "Transit response error stream",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"response\" AND len(mvjoin(audit_error,\"\"))\u003e0 AND match(request_path,\"^.+/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/|$)\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_response_errors": {
+      "type": "ds.search",
+      "name": "Transit response errors",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"response\" AND len(mvjoin(audit_error,\"\"))\u003e0 AND match(request_path,\"^.+/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/|$)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_response_errors_by_node": {
+      "type": "ds.search",
+      "name": "Transit response errors by node",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"response\" AND len(mvjoin(audit_error,\"\"))\u003e0 AND match(request_path,\"^.+/(keys|encrypt|decrypt|rewrap|sign|verify|hmac|random|hash|datakey)(/|$)\")\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_transit_sign_verify_events": {
+      "type": "ds.search",
+      "name": "Sign and verify requests",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| search request_path=$mount_path|s$\n| where audit_type=\"request\" AND match(request_path,\"^.+/(sign|verify)(/|$)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_transit_audit_events": {
+      "type": "splunk.singlevalue",
+      "title": "Transit audit events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_audit_events"
+      }
+    },
+    "viz_transit_audit_events_by_node": {
+      "type": "splunk.line",
+      "title": "Transit audit events by node",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_audit_events_by_node"
+      }
+    },
+    "viz_transit_crypto_events_by_node": {
+      "type": "splunk.line",
+      "title": "Transit crypto requests by node",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_crypto_events_by_node"
+      }
+    },
+    "viz_transit_crypto_log": {
+      "type": "splunk.table",
+      "title": "Transit cryptographic request stream",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_crypto_log"
+      }
+    },
+    "viz_transit_data_utility_events": {
+      "type": "splunk.singlevalue",
+      "title": "Datakey, random, hash, and HMAC",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_data_utility_events"
+      }
+    },
+    "viz_transit_decrypt_events": {
+      "type": "splunk.singlevalue",
+      "title": "Decrypt requests",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_decrypt_events"
+      }
+    },
+    "viz_transit_denied_requests": {
+      "type": "splunk.singlevalue",
+      "title": "Transit denied requests",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_denied_requests"
+      }
+    },
+    "viz_transit_encrypt_events": {
+      "type": "splunk.singlevalue",
+      "title": "Encrypt requests",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_encrypt_events"
+      }
+    },
+    "viz_transit_key_events": {
+      "type": "splunk.singlevalue",
+      "title": "Transit key events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_key_events"
+      }
+    },
+    "viz_transit_key_events_by_node": {
+      "type": "splunk.line",
+      "title": "Transit key events by node",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_key_events_by_node"
+      }
+    },
+    "viz_transit_key_management_log": {
+      "type": "splunk.table",
+      "title": "Transit key management stream",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_key_management_log"
+      }
+    },
+    "viz_transit_operational_symptoms": {
+      "type": "splunk.table",
+      "title": "Transit operational symptoms",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_transit_operational_symptoms"
+      }
+    },
+    "viz_transit_response_error_log": {
+      "type": "splunk.table",
+      "title": "Transit response error stream",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_response_error_log"
+      }
+    },
+    "viz_transit_response_errors": {
+      "type": "splunk.singlevalue",
+      "title": "Transit response errors",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_response_errors"
+      }
+    },
+    "viz_transit_response_errors_by_node": {
+      "type": "splunk.line",
+      "title": "Transit response errors by node",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_response_errors_by_node"
+      }
+    },
+    "viz_transit_sign_verify_events": {
+      "type": "splunk.singlevalue",
+      "title": "Sign and verify requests",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_transit_sign_verify_events"
+      }
+    }
+  },
+  "layout": {
+    "globalInputs": [
+      "input_time",
+      "input_request_id",
+      "input_request_path",
+      "input_logical_namespace",
+      "input_operation",
+      "input_host",
+      "input_mount_path"
+    ],
+    "layoutDefinitions": {
+      "layout_audit": {
+        "type": "absolute",
+        "options": {
+          "width": 1200,
+          "height": 2140,
+          "display": "auto-scale"
+        },
+        "structure": [
+          {
+            "item": "viz_transit_audit_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_transit_response_errors",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_transit_denied_requests",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_transit_key_events",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_transit_encrypt_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_transit_decrypt_events",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_transit_sign_verify_events",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_transit_data_utility_events",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_transit_audit_events_by_node",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_transit_response_errors_by_node",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_transit_key_events_by_node",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 560,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_transit_crypto_events_by_node",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 560,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_transit_key_management_log",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 840,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_transit_crypto_log",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1160,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_transit_response_error_log",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1480,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_transit_operational_symptoms",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1800,
+              "w": 1200,
+              "h": 300
+            }
+          }
+        ]
+      }
+    },
+    "tabs": {
+      "items": [
+        {
+          "label": "OpenBao Transit",
+          "layoutId": "layout_audit"
+        }
+      ]
+    }
+  }
+}
+]]></definition>
+</dashboard>

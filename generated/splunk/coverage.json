@@ -1,0 +1,464 @@
+{
+  "profile": "openbao_observability",
+  "status": "draft",
+  "validation": "Generated parity is checked offline. Runtime evidence is documented per tested Splunk version; SPL execution and Studio rendering require separate validation.",
+  "semantics": "Mapped means a native search binding exists, not that its data source is present or qualified. Audit counts use the selected range; metric windows are described per panel. Alert parity is not included.",
+  "dashboards": [
+    {
+      "source": "contracts/dashboards/openbao-audit-investigation.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "filtered-audit-events",
+        "risky-system-mutations",
+        "auth-activity",
+        "audit-response-errors",
+        "filtered-audit-events-by-node",
+        "risky-system-activity-by-node",
+        "audit-configuration-activity",
+        "privileged-configuration-mutations",
+        "high-risk-system-path-activity",
+        "permission-denied-responses",
+        "request-id-drilldown",
+        "risky-system-events",
+        "auth-activity-events",
+        "audit-error-events",
+        "audit-configuration-events",
+        "permission-denied-events",
+        "filtered-audit-stream"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "audit-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-audit-overview.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "audit-request-failures",
+        "audit-response-failures",
+        "audit-request-rate",
+        "audit-response-rate",
+        "audit-latency",
+        "audit-event-volume",
+        "audit-request-response-balance",
+        "high-risk-system-mutations",
+        "audit-configuration-activity",
+        "privileged-configuration-mutations",
+        "permission-denied-responses",
+        "audit-archive-enabled",
+        "audit-archive-delivery-success",
+        "audit-archive-last-success-age",
+        "audit-archive-delivery-failures",
+        "audit-archive-dead-letters",
+        "audit-stream",
+        "completed-request-logging"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "openbao-metrics",
+        "audit-json",
+        "archive-metrics",
+        "completed-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-auth-identity.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "auth-identity-events",
+        "login-events",
+        "token-lifecycle-events",
+        "identity-mutations",
+        "auth-method-changes",
+        "userpass-management",
+        "approle-activity",
+        "auth-identity-errors",
+        "auth-identity-events-by-node",
+        "token-lifecycle-by-node",
+        "auth-method-events",
+        "login-token-events",
+        "userpass-approle-events",
+        "identity-events",
+        "auth-identity-error-events",
+        "filtered-auth-identity-stream"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "audit-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-database-secrets.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "database-create-rate",
+        "database-renew-rate",
+        "database-revoke-rate",
+        "database-failures",
+        "database-operation-rates",
+        "database-operation-latency",
+        "database-failures-by-operation",
+        "database-dynamic-leases",
+        "database-dynamic-leases-by-namespace",
+        "database-audit-events",
+        "database-config-role-events",
+        "database-credential-events",
+        "database-lease-events",
+        "database-audit-events-by-node",
+        "database-error-events",
+        "database-config-role-log",
+        "database-credential-log",
+        "database-lease-log",
+        "database-error-log"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "openbao-metrics",
+        "audit-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-ha-raft.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "raft-peers",
+        "autopilot-health",
+        "failure-tolerance",
+        "unhealthy-raft-nodes",
+        "active-nodes",
+        "unsealed-nodes",
+        "leader-transitions",
+        "candidate-transitions",
+        "autopilot-node-health",
+        "raft-commit-index",
+        "raft-applied-index",
+        "raft-fsm-pending",
+        "raft-term",
+        "leader-last-contact",
+        "replication-heartbeat",
+        "append-entries-logs",
+        "raft-storage-logs"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "openbao-metrics",
+        "operational-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-kubernetes-platform.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "ready-containers",
+        "unready-containers",
+        "container-restarts",
+        "openbao-scrape-health",
+        "collector-scrape-health",
+        "audit-pvc-free",
+        "readiness-by-pod",
+        "restarts-by-pod",
+        "node-pressure",
+        "cpu-by-pod",
+        "memory-by-pod",
+        "pvc-free-by-claim",
+        "platform-events"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "platform-metrics",
+        "platform-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-namespaces-scale.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "namespace-audit-requests",
+        "namespace-response-errors",
+        "namespace-token-creations",
+        "namespace-dynamic-leases",
+        "token-creations-by-namespace",
+        "token-creations-by-auth-and-namespace",
+        "dynamic-leases-by-namespace-engine",
+        "mount-table-entries",
+        "mount-table-size",
+        "raft-peers",
+        "failure-tolerance",
+        "healthy-raft-nodes",
+        "unhealthy-raft-nodes",
+        "autopilot-node-health",
+        "raft-apply-gap",
+        "raft-fsm-pending",
+        "namespace-audit-stream",
+        "namespace-response-error-stream",
+        "scale-operational-symptoms"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "audit-json",
+        "openbao-metrics",
+        "operational-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-operational-logs.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "operational-log-volume",
+        "warning-error-volume",
+        "debug-trace-volume",
+        "raft-storage-warning-errors",
+        "seal-unseal-events",
+        "recent-warnings-errors",
+        "raft-storage-logs",
+        "operational-stream"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "operational-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-overview.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "scrape-health",
+        "active-nodes",
+        "unsealed-nodes",
+        "audit-request-failures",
+        "in-flight-requests",
+        "request-rate",
+        "request-latency",
+        "login-latency",
+        "token-check-latency",
+        "raft-peers",
+        "autopilot-health",
+        "autopilot-failure-tolerance",
+        "autopilot-unhealthy-nodes",
+        "autopilot-node-health",
+        "lease-count",
+        "goroutines",
+        "barrier-get-latency",
+        "barrier-put-latency",
+        "cache-hit-ratio",
+        "heap-objects",
+        "sys-bytes",
+        "mount-table-entries",
+        "audit-stream",
+        "operational-errors"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "openbao-metrics",
+        "audit-json",
+        "operational-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-pki.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "pki-issue-rate",
+        "pki-revoke-rate",
+        "pki-issue-failures",
+        "pki-revoke-failures",
+        "pki-audit-events",
+        "pki-response-errors",
+        "pki-denied-requests",
+        "pki-issuer-root-events",
+        "pki-issue-revoke-rates",
+        "pki-issue-revoke-latency",
+        "pki-issue-revoke-failures",
+        "pki-audit-events-by-node",
+        "pki-response-errors-by-node",
+        "pki-certificate-lifecycle-by-node",
+        "pki-issuer-root-log",
+        "pki-role-config-log",
+        "pki-certificate-log",
+        "pki-response-error-log"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "openbao-metrics",
+        "audit-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-runtime-storage.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "expiration-backlog",
+        "foreground-latency-by-target",
+        "raft-write-stages",
+        "raft-fsm-busy",
+        "raft-fsm-pending",
+        "raft-batch-size",
+        "request-latency",
+        "token-check-latency",
+        "barrier-get-latency",
+        "barrier-put-latency",
+        "cache-hit-ratio",
+        "goroutines",
+        "barrier-get-rate",
+        "barrier-put-rate",
+        "barrier-list-rate",
+        "barrier-delete-rate",
+        "barrier-get-latency-trend",
+        "barrier-put-latency-trend",
+        "barrier-list-latency",
+        "barrier-delete-latency",
+        "cache-hit-rate",
+        "cache-miss-rate",
+        "cache-write-rate",
+        "cache-hit-ratio-trend",
+        "runtime-alloc-bytes",
+        "runtime-sys-bytes",
+        "runtime-heap-objects",
+        "runtime-gc-pause",
+        "runtime-total-gc-pause",
+        "runtime-total-gc-runs",
+        "barrier-encryptions",
+        "mount-table-entries",
+        "mount-table-size",
+        "runtime-storage-logs"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "openbao-metrics",
+        "operational-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-secret-engines-mounts.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "secret-engine-events",
+        "mount-lifecycle-events",
+        "kv-events",
+        "dynamic-database-events",
+        "transit-events",
+        "pki-events",
+        "secret-engine-errors",
+        "denied-secret-engine-requests",
+        "mount-table-entries",
+        "mount-table-size",
+        "kv-secret-count",
+        "dynamic-lease-creations",
+        "kv-secret-count-by-namespace",
+        "kv-route-operation-rates",
+        "kv-route-operation-latency",
+        "kv-v2-route-operation-rates",
+        "kv-v2-route-operation-latency",
+        "pki-issue-rate",
+        "pki-revoke-rate",
+        "database-credential-creations",
+        "dynamic-leases-by-engine",
+        "pki-issue-revoke-rates",
+        "database-credential-operation-rates",
+        "pki-issue-revoke-latency",
+        "database-credential-operation-latency",
+        "secret-engine-events-by-node",
+        "mount-events-by-node",
+        "kv-database-transit-events-by-node",
+        "mount-lifecycle-log",
+        "kv-events-log",
+        "database-events-log",
+        "transit-events-log",
+        "secret-engine-error-log",
+        "filtered-secret-engine-stream"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "audit-json",
+        "openbao-metrics"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-slo-availability.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "probe-success",
+        "availability-30d",
+        "error-budget-remaining",
+        "burn-rate-5m",
+        "burn-rate-1h",
+        "probe-duration",
+        "availability-by-target",
+        "burn-rate-by-target",
+        "probe-duration-by-target",
+        "request-latency",
+        "login-latency",
+        "token-check-latency",
+        "scrape-availability",
+        "active-node-context",
+        "operational-availability-context"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "probe-metrics",
+        "openbao-metrics",
+        "operational-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-token-lease-lifecycle.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "token-count",
+        "lease-count",
+        "irrevocable-leases",
+        "token-creations",
+        "token-create-rate",
+        "token-lookup-rate",
+        "token-store-rate",
+        "token-revoke-tree-rate",
+        "token-lease-inventory",
+        "token-operation-rates",
+        "token-operation-latency",
+        "lease-operation-latency",
+        "token-creation-by-auth-method",
+        "lease-revoke-rate",
+        "expiration-pending-jobs",
+        "expiration-backlog-change",
+        "expiration-queue-length",
+        "expiration-dispatch-wait",
+        "token-lifecycle-audit-events",
+        "lease-management-audit-events",
+        "filtered-token-lease-stream"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "openbao-metrics",
+        "audit-json"
+      ]
+    },
+    {
+      "source": "contracts/dashboards/openbao-transit.yaml",
+      "status": "mapped",
+      "includedPanels": [
+        "transit-audit-events",
+        "transit-response-errors",
+        "transit-denied-requests",
+        "transit-key-events",
+        "transit-encrypt-events",
+        "transit-decrypt-events",
+        "transit-sign-verify-events",
+        "transit-data-utility-events",
+        "transit-audit-events-by-node",
+        "transit-response-errors-by-node",
+        "transit-key-events-by-node",
+        "transit-crypto-events-by-node",
+        "transit-key-management-log",
+        "transit-crypto-log",
+        "transit-response-error-log",
+        "transit-operational-symptoms"
+      ],
+      "unavailablePanels": [],
+      "requiredSources": [
+        "audit-json",
+        "operational-json"
+      ]
+    }
+  ]
+}

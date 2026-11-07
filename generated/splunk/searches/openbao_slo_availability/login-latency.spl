@@ -1,0 +1,9 @@
+| `openbao_metric_samples("vault_core_handle_login_request_*")`
+| where metric_name="vault_core_handle_login_request_sum" OR metric_name="vault_core_handle_login_request_count"
+| eval series=case(metric_name="vault_core_handle_login_request_sum","core_handle_login_request",metric_name="vault_core_handle_login_request_count","core_handle_login_request") ." | ".coalesce(openbao_namespace,"(missing)") ." | ".cluster ." | ".scrape_profile
+| `openbao_metric_rate5m`
+| stats sum(eval(if(match(metric_name,"_sum$"),value,null()))) AS total sum(eval(if(match(metric_name,"_count$"),value,null()))) AS observations BY bucket_time cluster scrape_profile series
+| where observations>0
+| eval value=total/observations
+| eval _time=bucket_time
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

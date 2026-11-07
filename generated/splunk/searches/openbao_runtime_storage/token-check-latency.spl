@@ -1,0 +1,13 @@
+| `openbao_metric_samples("vault_core_check_token_*")`
+| where metric_name="vault_core_check_token_sum" OR metric_name="vault_core_check_token_count"
+| eval series=case(metric_name="vault_core_check_token_sum","core_check_token",metric_name="vault_core_check_token_count","core_check_token") ." | ".cluster ." | ".scrape_profile
+| `openbao_metric_rate5m`
+| stats sum(eval(if(match(metric_name,"_sum$"),value,null()))) AS total sum(eval(if(match(metric_name,"_count$"),value,null()))) AS observations BY bucket_time cluster scrape_profile series
+| where observations>0
+| eval value=total/observations
+| eval _time=bucket_time
+| `openbao_metric_fresh`
+| stats latest(value) AS value BY cluster scrape_profile series
+| stats sum(value) AS value count AS contributing_series
+| where contributing_series>0
+| fields - contributing_series

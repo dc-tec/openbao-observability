@@ -1,0 +1,17 @@
+<nav>
+  <view name="openbao_audit_investigation" default="true"/>
+  <view name="openbao_overview"/>
+  <view name="openbao_ha_raft"/>
+  <view name="openbao_expiration_backlog"/>
+  <view name="openbao_audit_overview"/>
+  <view name="openbao_auth_identity"/>
+  <view name="openbao_database_secrets"/>
+  <view name="openbao_kubernetes_platform"/>
+  <view name="openbao_namespaces_scale"/>
+  <view name="openbao_operational_logs"/>
+  <view name="openbao_pki"/>
+  <view name="openbao_runtime_storage"/>
+  <view name="openbao_secret_engines_mounts"/>
+  <view name="openbao_slo_availability"/>
+  <view name="openbao_transit"/>
+</nav>

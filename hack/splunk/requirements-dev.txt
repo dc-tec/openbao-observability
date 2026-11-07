@@ -1,0 +1,2 @@
+# Formatting and linting only; the trial tools use the standard library at runtime.
+ruff==0.17.4

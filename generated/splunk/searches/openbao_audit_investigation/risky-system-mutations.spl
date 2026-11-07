@@ -1,0 +1,3 @@
+`openbao_audit_events`
+| where match(operation,"^(create|update|delete)$") AND match(request_path,"^sys/(auth|audit|mounts|policies|raw|plugins|storage/raft|rotate)")
+| stats count AS audit_events

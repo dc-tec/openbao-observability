@@ -1,0 +1,69 @@
+# Overlay for examples/docker-compose/compose.yaml. Start through make splunk-up.
+services:
+  # The developer launcher also uses this pin for its private probe service.
+  splunk-blackbox:
+    profiles: [qualification]
+    image: ${SPLUNK_BLACKBOX_IMAGE:-prom/blackbox-exporter:v0.29.1@sha256:66eae352a79e6f677aeddd8c25a9bdb017586dc5fbd230f22329213d891f94bd}
+    command: [--config.file=/config/blackbox.yaml]
+    volumes:
+      - ../splunk/local/blackbox.yaml:/config/blackbox.yaml:ro
+
+  splunk:
+    image: ${SPLUNK_IMAGE:-splunk/splunk:10.4@sha256:e8bd9fbd0c5f5dffc73d84fe62f60e69c1d811fd0c89b22a174a46ce99d2dc1b}
+    platform: linux/amd64
+    hostname: splunk
+    user: "0"
+    entrypoint: [/bin/sh, /openbao/start.sh]
+    environment:
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_GENERAL_TERMS: ${SPLUNK_GENERAL_TERMS:?Set only after accepting the Splunk General Terms for this trial}
+      SPLUNK_PASSWORD: ${SPLUNK_PASSWORD:?Run the local setup helper first}
+      SPLUNK_HEC_TOKEN: ${SPLUNK_HEC_TOKEN:?Run the local setup helper first}
+    ports:
+      - 127.0.0.1:${SPLUNK_WEB_PORT:-18000}:8000
+      - 127.0.0.1:${SPLUNK_API_PORT:-18089}:8089
+      - 127.0.0.1:${SPLUNK_HEC_PORT:-18088}:8088
+    volumes:
+      - splunk-etc:/opt/splunk/etc
+      - splunk-var:/opt/splunk/var
+      - ../../generated/splunk/app/openbao_observability:/openbao/profile:ro
+      - ../splunk/local/indexes.conf:/openbao/indexes.conf:ro
+      - ../splunk/local/start.sh:/openbao/start.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, 'curl --silent --fail --insecure --user "admin:$$SPLUNK_PASSWORD" https://localhost:8089/services/server/health/splunkd >/dev/null']
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 120s
+
+  splunk-otel:
+    # The local OpenBao fixture writes audit files as root with mode 0600.
+    user: "0"
+    image: ${SPLUNK_OTEL_IMAGE:-otel/opentelemetry-collector-contrib:0.164.0@sha256:340c9ca6a36617084c6661bdc4f0fe92b7cda5a805d61673ec8db375fddc522b}
+    command: [--config=/etc/otel/config.yaml]
+    depends_on:
+      openbao-node0:
+        condition: service_healthy
+      openbao-node1:
+        condition: service_healthy
+      openbao-node2:
+        condition: service_healthy
+    environment:
+      SPLUNK_HEC_TOKEN: ${SPLUNK_HEC_TOKEN:?Run the local setup helper first}
+      SPLUNK_HEC_ENDPOINT: ${SPLUNK_HEC_ENDPOINT:-https://splunk:8088/services/collector}
+    volumes:
+      - splunk-otel-state:/var/lib/otelcol
+      - ../splunk/local/otel.yaml:/etc/otel/config.yaml:ro
+      - ../splunk/.runtime/logs:/var/log/qualification:ro
+      - ../splunk/.runtime/archive:/var/lib/qualification/archive
+      - openbao-node0-audit:/var/log/openbao/node0/audit:ro
+      - openbao-node1-audit:/var/log/openbao/node1/audit:ro
+      - openbao-node2-audit:/var/log/openbao/node2/audit:ro
+      - openbao-node0-logs:/var/log/openbao/node0/logs:ro
+      - openbao-node1-logs:/var/log/openbao/node1/logs:ro
+      - openbao-node2-logs:/var/log/openbao/node2/logs:ro
+
+volumes:
+  splunk-etc:
+  splunk-var:
+  splunk-otel-state:

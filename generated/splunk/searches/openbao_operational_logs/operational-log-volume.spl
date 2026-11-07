@@ -1,0 +1,2 @@
+`openbao_operational_events`
+| timechart span=5m count BY host limit=10 useother=t

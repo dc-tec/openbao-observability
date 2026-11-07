@@ -1,0 +1,3 @@
+`openbao_audit_events`
+| where match(request_path,"^transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac)")
+| stats count AS value

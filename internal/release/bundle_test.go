@@ -79,6 +79,46 @@ func TestBundleRejectsUnsafeVersion(t *testing.T) {
 	}
 }
 
+func TestBundleExcludesPrivateEvaluationStateWithoutGit(t *testing.T) {
+	root := t.TempDir()
+	public := []string{"examples/splunk/local.py", "examples/splunk/.env.example", "generated/splunk/coverage.json"}
+	private := []string{
+		"examples/splunk/.env", "examples/splunk/.env.backup", "examples/docker-compose/.env",
+		"examples/splunk/.runtime/access-private.json", "examples/splunk/.runtime/archive/audit.jsonl",
+		"examples/splunk/__pycache__/local.pyc", "examples/splunk/local.pyc", "examples/.DS_Store",
+	}
+	for _, name := range append(append([]string{}, public...), private...) {
+		mustWriteFile(t, filepath.Join(root, name), "fixture data")
+	}
+	output := filepath.Join(root, "bundle.tar.gz")
+	if err := Bundle(BundleOptions{
+		RepositoryRoot: root, Includes: []string{"examples", "generated"},
+		OutputPath: output, SourceDateEpoch: 1_700_000_000,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries := strings.Join(tarEntries(t, data), "\n")
+	for _, name := range private {
+		if strings.Contains(entries, "/"+name+"\n") || strings.HasSuffix(entries, "/"+name) {
+			t.Fatalf("private path packaged: %s", name)
+		}
+	}
+	for _, name := range public {
+		if !strings.Contains(entries, "/"+name) {
+			t.Fatalf("public path omitted: %s", name)
+		}
+	}
+	for _, name := range private {
+		if err := Bundle(BundleOptions{RepositoryRoot: root, Includes: []string{name}}); err == nil {
+			t.Fatalf("explicit private include accepted: %s", name)
+		}
+	}
+}
+
 func TestChecksumsWritesSortedSHA256File(t *testing.T) {
 	dir := t.TempDir()
 	mustWriteFile(t, filepath.Join(dir, "z.txt"), "z\n")

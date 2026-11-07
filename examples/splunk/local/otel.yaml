@@ -1,0 +1,254 @@
+extensions:
+  file_storage:
+    directory: /var/lib/otelcol
+    create_directory: true
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: openbao
+          scrape_interval: 15s
+          metrics_path: /v1/sys/metrics
+          params:
+            format: [prometheus]
+          static_configs:
+            - targets: [openbao-node0:8200, openbao-node1:8200, openbao-node2:8200]
+              labels:
+                cluster: compose
+                deployment_profile: docker-compose
+                environment: local
+                scrape_profile: all_nodes
+          relabel_configs:
+            - source_labels: [__address__]
+              regex: '([^:]+):.*'
+              replacement: '$$1'
+              target_label: pod
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: '(vault|openbao)_core_unsealed'
+              target_label: seal_state_source
+              replacement: startup
+            - source_labels: [__name__, exported_cluster]
+              regex: '(vault|openbao)_core_unsealed;.+'
+              target_label: seal_state_source
+              replacement: cluster
+            - source_labels: [namespace]
+              regex: '(.+)'
+              replacement: '$$1'
+              target_label: openbao_namespace
+            - regex: 'namespace|exported_cluster'
+              action: labeldrop
+            # Collect only metric families used by the native dashboard bindings.
+            - source_labels: [__name__]
+              regex: 'up|(vault|openbao)_(core_(active|unsealed|in_flight_requests|mount_table_(num_entries|size)|handle_request_(count|sum)|handle_login_request_(count|sum)|check_token_(count|sum))|audit_log_(request|response)(_failure|_count|_sum)|autopilot_.*|expire_(num_leases|num_irrevocable_leases|job_manager_.*|revoke_(count|sum)|register_auth_(count|sum)|lease_expiration_time_in_queue_(count|sum))|token_(count|creation|create_(count|sum)|lookup_(count|sum)|store_(count|sum)|revoke_tree_(count|sum))|secret_(kv_count|lease_creation)|barrier_((get|put|list|delete)_(count|sum)|estimated_encryptions)|cache_(hit|miss|write)|raft_(peers|storage_stats_.*|state_(leader|candidate)|storage_(put|delete)_(count|sum)|commitTime_(count|sum)|fsm_applyBatch(Num)?_(count|sum)|thread_fsm_saturation_(count|sum)|leader_lastContact(_count|_sum)?|replication_(heartbeat(_count|_sum)?|appendEntries_logs))|runtime_(num_goroutines|alloc_bytes|heap_objects|sys_bytes|gc_pause_ns_(count|sum)|total_gc_(pause_ns|runs))|pki_(issue|revoke)(_count|_sum|_failure)|database_(Initialize|NewUser|UpdateUser|DeleteUser|Close)(_count|_sum|_error)|route_(create|read|list|delete)_(kv_v1|secret)__(count|sum))'
+              action: keep
+            - source_labels: [quantile]
+              regex: '0.5|0.9'
+              action: drop
+        - job_name: openbao-health
+          scrape_interval: 15s
+          metrics_path: /probe
+          params:
+            module: [http_2xx]
+          static_configs:
+            - targets: ['http://openbao-node0:8200/v1/sys/health?standbyok=true']
+              labels:
+                cluster: compose
+                scrape_profile: external
+          relabel_configs:
+            - source_labels: [__address__]
+              target_label: __param_target
+            - source_labels: [__param_target]
+              target_label: instance
+            - target_label: __address__
+              replacement: splunk-blackbox:9115
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: 'up|probe_success|probe_duration_seconds'
+              action: keep
+        - job_name: qualification-negative
+          scrape_interval: 15s
+          metrics_path: /probe
+          params:
+            module: [http_2xx]
+          static_configs:
+            - targets: ['http://openbao-node0:8200/v1/qualification-missing-endpoint']
+              labels:
+                cluster: compose
+                scrape_profile: external
+          relabel_configs:
+            - source_labels: [__address__]
+              target_label: __param_target
+            - source_labels: [__param_target]
+              target_label: instance
+            - target_label: __address__
+              replacement: splunk-blackbox:9115
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: 'up|probe_success|probe_duration_seconds'
+              action: keep
+        - job_name: splunk-archive-health
+          scrape_interval: 15s
+          static_configs:
+            - targets: [splunk-archive-health:19110]
+              labels:
+                cluster: compose
+                environment: local
+                scrape_profile: external
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: 'up|openbao_audit_archive_.*'
+              action: keep
+  filelog/audit:
+    include: [/var/log/openbao/*/audit/audit.jsonl]
+    start_at: beginning
+    storage: file_storage
+    include_file_path: true
+    operators:
+      - type: regex_parser
+        parse_from: attributes["log.file.path"]
+        regex: '^/var/log/openbao/(?P<node>[^/]+)/audit/audit.jsonl$'
+      - type: move
+        from: attributes.node
+        to: resource["host.name"]
+      - type: regex_parser
+        regex: '"time"\s*:\s*"(?P<audit_time>[^"]+)"'
+        timestamp:
+          parse_from: attributes.audit_time
+          layout_type: gotime
+          layout: '2006-01-02T15:04:05.999999999Z07:00'
+  filelog/operational:
+    include: [/var/log/openbao/*/logs/openbao*.log]
+    start_at: beginning
+    storage: file_storage
+    include_file_path: true
+    operators:
+      - type: regex_parser
+        parse_from: attributes["log.file.path"]
+        regex: '^/var/log/openbao/(?P<node>[^/]+)/logs/[^/]+$'
+      - type: move
+        from: attributes.node
+        to: resource["host.name"]
+      - type: json_parser
+        if: 'body matches "^\\{"'
+        timestamp:
+          parse_from: attributes["@timestamp"]
+          layout_type: gotime
+          layout: '2006-01-02T15:04:05.999999999Z07:00'
+  filelog/completed_fixture:
+    include: [/var/log/qualification/completed/*.log]
+    start_at: beginning
+    storage: file_storage
+    operators:
+      - type: add
+        field: resource["host.name"]
+        value: qualification-completed
+      - type: json_parser
+        if: 'body matches "^\\{"'
+        timestamp:
+          parse_from: attributes["@timestamp"]
+          layout_type: gotime
+          layout: '2006-01-02T15:04:05.999999999Z07:00'
+  filelog/platform:
+    include: [/var/log/qualification/platform/*.jsonl]
+    start_at: beginning
+    storage: file_storage
+    operators:
+      - type: add
+        field: resource["host.name"]
+        value: qualification-platform
+      - type: regex_parser
+        regex: '"(?:event_time|eventTime|lastTimestamp)"\s*:\s*"(?P<event_time>[^"]+)"'
+        timestamp:
+          parse_from: attributes.event_time
+          layout_type: gotime
+          layout: '2006-01-02T15:04:05.999999999Z07:00'
+processors:
+  filter/operational_only:
+    error_mode: propagate
+    logs:
+      log_record:
+        - 'attributes["@message"] == "completed_request"'
+  filter/completed_only:
+    error_mode: propagate
+    logs:
+      log_record:
+        - 'attributes["@message"] != "completed_request"'
+  transform/metric_identity:
+    error_mode: propagate
+    metric_statements:
+      - context: datapoint
+        statements:
+          - set(attributes["instance"], resource.attributes["service.instance.id"])
+          - set(attributes["job"], resource.attributes["service.name"])
+          - set(resource.attributes["host.name"], resource.attributes["service.instance.id"])
+  batch:
+    timeout: 1s
+    send_batch_size: 512
+exporters:
+  file/audit_archive:
+    path: /var/lib/qualification/archive/audit.jsonl
+    format: json
+    flush_interval: 1s
+    rotation:
+      max_megabytes: 10
+      max_backups: 1
+  splunk_hec/metrics:
+    endpoint: ${env:SPLUNK_HEC_ENDPOINT}
+    token: ${env:SPLUNK_HEC_TOKEN}
+    index: openbao_metrics
+    sourcetype: openbao:metrics
+    tls:
+      # Local disposable Compose network; production must verify the server certificate.
+      insecure_skip_verify: true
+  splunk_hec/audit:
+    endpoint: ${env:SPLUNK_HEC_ENDPOINT}
+    token: ${env:SPLUNK_HEC_TOKEN}
+    index: openbao_audit
+    sourcetype: openbao:audit
+    tls:
+      insecure_skip_verify: true
+  splunk_hec/operational:
+    endpoint: ${env:SPLUNK_HEC_ENDPOINT}
+    token: ${env:SPLUNK_HEC_TOKEN}
+    index: openbao_operational
+    sourcetype: openbao:operational
+    tls:
+      insecure_skip_verify: true
+  splunk_hec/completed:
+    endpoint: ${env:SPLUNK_HEC_ENDPOINT}
+    token: ${env:SPLUNK_HEC_TOKEN}
+    index: openbao_completed
+    sourcetype: openbao:completed
+    tls:
+      insecure_skip_verify: true
+  splunk_hec/platform:
+    endpoint: ${env:SPLUNK_HEC_ENDPOINT}
+    token: ${env:SPLUNK_HEC_TOKEN}
+    index: openbao_platform
+    sourcetype: openbao:platform
+    tls:
+      insecure_skip_verify: true
+service:
+  extensions: [file_storage]
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      processors: [transform/metric_identity, batch]
+      exporters: [splunk_hec/metrics]
+    logs/audit:
+      receivers: [filelog/audit]
+      processors: [batch]
+      exporters: [splunk_hec/audit, file/audit_archive]
+    logs/operational:
+      receivers: [filelog/operational]
+      processors: [filter/operational_only, batch]
+      exporters: [splunk_hec/operational]
+    logs/completed:
+      receivers: [filelog/operational, filelog/completed_fixture]
+      processors: [filter/completed_only, batch]
+      exporters: [splunk_hec/completed]
+    logs/platform:
+      receivers: [filelog/platform]
+      processors: [batch]
+      exporters: [splunk_hec/platform]

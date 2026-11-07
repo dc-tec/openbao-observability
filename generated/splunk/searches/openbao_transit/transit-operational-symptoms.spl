@@ -1,0 +1,4 @@
+`openbao_operational_events`
+| where match(module." ".message,"(?i)(transit|sealwrap|cipher|crypto|key)") AND match(message,"(?i)(error|failed|warn|timeout|denied)")
+| sort 100 - _time
+| table _time host severity module message

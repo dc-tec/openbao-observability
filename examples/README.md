@@ -14,6 +14,8 @@ observability profiles.
   observability artifacts against an operator-managed OpenBao cluster.
 - `kubernetes/operator-managed/`: merge patches and adoption steps for
   OpenBao clusters managed by `dc-tec/openbao-operator`.
+- `splunk/`: collection configuration and app-installation guidance. Disposable
+  trial tools and native SPL qualification checks live under `hack/splunk/`.
 - `synthetic-probes/`: optional blackbox-style probe contract for SLO and
   availability dashboard panels and alerts.
 - `signal-expectations/`: opt-in Prometheus markers for required optional
@@ -28,5 +30,6 @@ observability profiles.
 | `kubernetes/` | `reference` | `documented` |
 | `kubernetes/kind/operator-managed/` | `reference` | `profile-validated` when kind validation passes |
 | `kubernetes/operator-managed/` | `reference` | `documented` |
+| `splunk/` | `draft` | `documented`; bounded Enterprise trial validation |
 | `synthetic-probes/` | `reference` | `documented` |
 | `signal-expectations/` | `reference` | `documented` |

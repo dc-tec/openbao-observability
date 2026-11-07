@@ -1,0 +1,796 @@
+{
+  "title": "OpenBao token and lease lifecycle",
+  "description": "OpenBao token and lease lifecycle. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "inputs": {
+    "input_cluster": {
+      "type": "input.text",
+      "title": "cluster (wildcard)",
+      "options": {
+        "token": "cluster",
+        "defaultValue": "compose"
+      }
+    },
+    "input_host": {
+      "type": "input.text",
+      "title": "host (wildcard)",
+      "options": {
+        "token": "host",
+        "defaultValue": "*"
+      }
+    },
+    "input_instance": {
+      "type": "input.text",
+      "title": "instance (wildcard)",
+      "options": {
+        "token": "instance",
+        "defaultValue": "*"
+      }
+    },
+    "input_kubernetes_namespace": {
+      "type": "input.text",
+      "title": "kubernetes namespace (wildcard)",
+      "options": {
+        "token": "kubernetes_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_logical_namespace": {
+      "type": "input.text",
+      "title": "logical namespace (wildcard)",
+      "options": {
+        "token": "logical_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_openbao_namespace": {
+      "type": "input.text",
+      "title": "openbao namespace (wildcard)",
+      "options": {
+        "token": "openbao_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_operation": {
+      "type": "input.text",
+      "title": "operation (wildcard)",
+      "options": {
+        "token": "operation",
+        "defaultValue": "*"
+      }
+    },
+    "input_request_id": {
+      "type": "input.text",
+      "title": "request id (wildcard)",
+      "options": {
+        "token": "request_id",
+        "defaultValue": "*"
+      }
+    },
+    "input_request_path": {
+      "type": "input.text",
+      "title": "request path (wildcard)",
+      "options": {
+        "token": "request_path",
+        "defaultValue": "*"
+      }
+    },
+    "input_scrape_profile": {
+      "type": "input.text",
+      "title": "scrape profile (wildcard)",
+      "options": {
+        "token": "scrape_profile",
+        "defaultValue": "all_nodes"
+      }
+    },
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time range",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-1h@h,now"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_expiration_backlog_change": {
+      "type": "ds.search",
+      "name": "Net expiration backlog change",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_active\" OR metric_name=\"vault_expire_job_manager_total_jobs\"\n| `openbao_metric_active_expiration`\n| `openbao_metric_slope5m`\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance\n| timechart span=15s latest(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_expiration_dispatch_wait": {
+      "type": "ds.search",
+      "name": "Dispatched expiration job wait",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_expire_lease_expiration_time_in_queue*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where match(metric_name,\"_(sum|count)$\")\n| `openbao_metric_rate5m`\n| eval sum_rate=if(match(metric_name,\"_sum$\"),value,0), count_rate=if(match(metric_name,\"_count$\"),value,0)\n| stats sum(sum_rate) AS total sum(count_rate) AS events BY bucket_time cluster instance scrape_profile\n| where events\u003e0\n| eval value=total/events\n| rename bucket_time AS _time\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance\n| timechart span=15s latest(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_expiration_pending_jobs": {
+      "type": "ds.search",
+      "name": "Waiting expiration jobs",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_active\" OR metric_name=\"vault_expire_job_manager_total_jobs\"\n| `openbao_metric_active_expiration`\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance\n| timechart span=15s latest(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_expiration_queue_length": {
+      "type": "ds.search",
+      "name": "Waiting jobs by mount queue",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_active\" OR metric_name=\"vault_expire_job_manager_queue_length\"\n| `openbao_metric_active_expiration`\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance.\" / \".queue_id\n| timechart span=15s latest(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_filtered_token_lease_stream": {
+      "type": "ds.search",
+      "name": "Filtered token and lease stream",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^(auth/token/|sys/leases/)\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_irrevocable_leases": {
+      "type": "ds.search",
+      "name": "Irrevocable leases",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_expire_num_irrevocable_leases\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster instance scrape_profile\n| stats max(value) AS value BY cluster scrape_profile",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_lease_count": {
+      "type": "ds.search",
+      "name": "Lease count",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_expire_num_leases\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster instance scrape_profile\n| stats max(value) AS value BY cluster scrape_profile",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_lease_management_audit_events": {
+      "type": "ds.search",
+      "name": "Lease management audit events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^sys/leases/\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_lease_operation_latency": {
+      "type": "ds.search",
+      "name": "Lease operation latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_expire_re*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_expire_revoke_sum\" OR metric_name=\"vault_expire_revoke_count\" OR metric_name=\"vault_expire_register_auth_sum\" OR metric_name=\"vault_expire_register_auth_count\"\n| eval series=case(metric_name=\"vault_expire_revoke_sum\",\"revoke\",metric_name=\"vault_expire_revoke_count\",\"revoke\",metric_name=\"vault_expire_register_auth_sum\",\"register auth\",metric_name=\"vault_expire_register_auth_count\",\"register auth\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_lease_revoke_rate": {
+      "type": "ds.search",
+      "name": "Lease revoke rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_expire_revoke_count\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| `openbao_metric_rate5m`\n| `openbao_metric_fresh`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile\n| rename bucket_time AS _time\n| timechart span=15s latest(value) AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_count": {
+      "type": "ds.search",
+      "name": "Token count",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_count\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_count\"\n| sort 0 _time\n| streamstats time_window=30m max(value) AS value BY _timeseries\n| eval series=openbao_namespace .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "-30m",
+          "latest": "now"
+        }
+      }
+    },
+    "ds_token_create_rate": {
+      "type": "ds.search",
+      "name": "Token create rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_create_count\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_create_count\"\n| eval series=case(metric_name=\"vault_token_create_count\",\"token_create\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_creation_by_auth_method": {
+      "type": "ds.search",
+      "name": "Token creation by auth method",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_creation\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_creation\"\n| eval series=case(metric_name=\"vault_token_creation\",\"token_creation\") .\" | \".coalesce(auth_method,\"(missing)\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate15m`\n| eval value=value*900\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_creations": {
+      "type": "ds.search",
+      "name": "Token creations",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_creation\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_creation\"\n| eval series=case(metric_name=\"vault_token_creation\",\"token_creation\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate15m`\n| eval value=value*900\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_lease_inventory": {
+      "type": "ds.search",
+      "name": "Token and lease inventory",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_count\" OR metric_name=\"vault_expire_num_leases\" OR metric_name=\"vault_expire_num_irrevocable_leases\"\n| sort 0 _time\n| streamstats time_window=30m max(value) AS historical BY _timeseries\n| eval value=if(match(metric_name,\"_token_count$\"),historical,value), series=metric_name .\" | \".openbao_namespace .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_lifecycle_audit_events": {
+      "type": "ds.search",
+      "name": "Token lifecycle audit events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^auth/token/\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_lookup_rate": {
+      "type": "ds.search",
+      "name": "Token lookup rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_lookup_count\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_lookup_count\"\n| eval series=case(metric_name=\"vault_token_lookup_count\",\"token_lookup\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_operation_latency": {
+      "type": "ds.search",
+      "name": "Token operation latency",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_create_sum\" OR metric_name=\"vault_token_create_count\" OR metric_name=\"vault_token_lookup_sum\" OR metric_name=\"vault_token_lookup_count\" OR metric_name=\"vault_token_store_sum\" OR metric_name=\"vault_token_store_count\" OR metric_name=\"vault_token_revoke_tree_sum\" OR metric_name=\"vault_token_revoke_tree_count\"\n| eval series=case(metric_name=\"vault_token_create_sum\",\"create\",metric_name=\"vault_token_create_count\",\"create\",metric_name=\"vault_token_lookup_sum\",\"lookup\",metric_name=\"vault_token_lookup_count\",\"lookup\",metric_name=\"vault_token_store_sum\",\"store\",metric_name=\"vault_token_store_count\",\"store\",metric_name=\"vault_token_revoke_tree_sum\",\"revoke tree\",metric_name=\"vault_token_revoke_tree_count\",\"revoke tree\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(eval(if(match(metric_name,\"_sum$\"),value,null()))) AS total sum(eval(if(match(metric_name,\"_count$\"),value,null()))) AS observations BY bucket_time cluster scrape_profile series\n| where observations\u003e0\n| eval value=total/observations\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_operation_rates": {
+      "type": "ds.search",
+      "name": "Token operation rates",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_create_count\" OR metric_name=\"vault_token_lookup_count\" OR metric_name=\"vault_token_store_count\" OR metric_name=\"vault_token_revoke_tree_count\"\n| eval series=case(metric_name=\"vault_token_create_count\",\"create\",metric_name=\"vault_token_lookup_count\",\"lookup\",metric_name=\"vault_token_store_count\",\"store\",metric_name=\"vault_token_revoke_tree_count\",\"revoke tree\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_revoke_tree_rate": {
+      "type": "ds.search",
+      "name": "Token revoke-tree rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_revoke_tree_count\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_revoke_tree_count\"\n| eval series=case(metric_name=\"vault_token_revoke_tree_count\",\"token_revoke_tree\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_store_rate": {
+      "type": "ds.search",
+      "name": "Token store rate",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_store_count\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_store_count\"\n| eval series=case(metric_name=\"vault_token_store_count\",\"token_store\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_expiration_backlog_change": {
+      "type": "splunk.line",
+      "title": "Net expiration backlog change",
+      "description": "Rolling five-minute least-squares backlog slope in jobs per second per active target. Negative values indicate net drain; leader histories remain separate.",
+      "dataSources": {
+        "primary": "ds_expiration_backlog_change"
+      },
+      "options": {
+        "yAxisTitleText": "operations/s"
+      }
+    },
+    "viz_expiration_dispatch_wait": {
+      "type": "splunk.line",
+      "title": "Dispatched expiration job wait",
+      "description": "Rolling five-minute mean wait for dispatched jobs, in milliseconds. This excludes jobs still waiting.",
+      "dataSources": {
+        "primary": "ds_expiration_dispatch_wait"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_expiration_pending_jobs": {
+      "type": "splunk.line",
+      "title": "Waiting expiration jobs",
+      "description": "Waiting expiration jobs on the active target only. Missing queue metrics remain absent.",
+      "dataSources": {
+        "primary": "ds_expiration_pending_jobs"
+      }
+    },
+    "viz_expiration_queue_length": {
+      "type": "splunk.line",
+      "title": "Waiting jobs by mount queue",
+      "description": "Waiting jobs by mount queue on the active target. A queue ID identifies a mount, not a consumer.",
+      "dataSources": {
+        "primary": "ds_expiration_queue_length"
+      }
+    },
+    "viz_filtered_token_lease_stream": {
+      "type": "splunk.table",
+      "title": "Filtered token and lease stream",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_filtered_token_lease_stream"
+      }
+    },
+    "viz_irrevocable_leases": {
+      "type": "splunk.singlevalue",
+      "title": "Irrevocable leases",
+      "description": "Latest irrevocable lease count. Missing data is not zero.",
+      "dataSources": {
+        "primary": "ds_irrevocable_leases"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_lease_count": {
+      "type": "splunk.singlevalue",
+      "title": "Lease count",
+      "description": "Latest tracked lease inventory; this is not a count of expired leases alone.",
+      "dataSources": {
+        "primary": "ds_lease_count"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_lease_management_audit_events": {
+      "type": "splunk.table",
+      "title": "Lease management audit events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_lease_management_audit_events"
+      }
+    },
+    "viz_lease_operation_latency": {
+      "type": "splunk.line",
+      "title": "Lease operation latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_lease_operation_latency"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_lease_revoke_rate": {
+      "type": "splunk.line",
+      "title": "Lease revoke rate",
+      "description": "Rolling five-minute revocation observations per second. Backlog slope also includes new arrivals and is a different measure.",
+      "dataSources": {
+        "primary": "ds_lease_revoke_rate"
+      },
+      "options": {
+        "yAxisTitleText": "operations/s"
+      }
+    },
+    "viz_token_count": {
+      "type": "splunk.singlevalue",
+      "title": "Token count",
+      "description": "Rolling 30-minute maximum inventory. KV totals deduplicate each mount before summing; token inventory uses the source maximum. Missing series remain absent. Fixed-window stats use the trailing 30 minutes to now. Charts need 30 minutes of selected history; the freshness guard still applies.",
+      "dataSources": {
+        "primary": "ds_token_count"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_token_create_rate": {
+      "type": "splunk.singlevalue",
+      "title": "Token create rate",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_create_rate"
+      },
+      "options": {
+        "unit": "operations/s",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_token_creation_by_auth_method": {
+      "type": "splunk.line",
+      "title": "Token creation by auth method",
+      "description": "Rolling 15m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_creation_by_auth_method"
+      }
+    },
+    "viz_token_creations": {
+      "type": "splunk.singlevalue",
+      "title": "Token creations",
+      "description": "Rolling 15m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_creations"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_token_lease_inventory": {
+      "type": "splunk.line",
+      "title": "Token and lease inventory",
+      "description": "Token inventory uses a 30-minute maximum; lease and irrevocable inventory use fresh gauges. Series remain separate. Use the dedicated active-node expiration queue panels for backlog diagnosis.",
+      "dataSources": {
+        "primary": "ds_token_lease_inventory"
+      }
+    },
+    "viz_token_lifecycle_audit_events": {
+      "type": "splunk.table",
+      "title": "Token lifecycle audit events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_token_lifecycle_audit_events"
+      }
+    },
+    "viz_token_lookup_rate": {
+      "type": "splunk.singlevalue",
+      "title": "Token lookup rate",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_lookup_rate"
+      },
+      "options": {
+        "unit": "operations/s",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_token_operation_latency": {
+      "type": "splunk.line",
+      "title": "Token operation latency",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Means are weighted by observations; idle windows remain absent. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_operation_latency"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_token_operation_rates": {
+      "type": "splunk.line",
+      "title": "Token operation rates",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_operation_rates"
+      },
+      "options": {
+        "yAxisTitleText": "operations/s"
+      }
+    },
+    "viz_token_revoke_tree_rate": {
+      "type": "splunk.singlevalue",
+      "title": "Token revoke-tree rate",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_revoke_tree_rate"
+      },
+      "options": {
+        "unit": "operations/s",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_token_store_rate": {
+      "type": "splunk.singlevalue",
+      "title": "Token store rate",
+      "description": "Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_store_rate"
+      },
+      "options": {
+        "unit": "operations/s",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    }
+  },
+  "layout": {
+    "globalInputs": [
+      "input_time",
+      "input_request_id",
+      "input_request_path",
+      "input_logical_namespace",
+      "input_operation",
+      "input_host",
+      "input_cluster",
+      "input_instance",
+      "input_scrape_profile",
+      "input_kubernetes_namespace",
+      "input_openbao_namespace"
+    ],
+    "layoutDefinitions": {
+      "layout_audit": {
+        "type": "absolute",
+        "options": {
+          "width": 1200,
+          "height": 2660,
+          "display": "auto-scale"
+        },
+        "structure": [
+          {
+            "item": "viz_token_count",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_lease_count",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_irrevocable_leases",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_token_creations",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_token_create_rate",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_token_lookup_rate",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_token_store_rate",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_token_revoke_tree_rate",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_token_lease_inventory",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_token_operation_rates",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_token_operation_latency",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 560,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_lease_operation_latency",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 560,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_token_creation_by_auth_method",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 840,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_lease_revoke_rate",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 840,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_expiration_pending_jobs",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1120,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_expiration_backlog_change",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 1120,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_expiration_queue_length",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1400,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_expiration_dispatch_wait",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 1400,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_token_lifecycle_audit_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1680,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_lease_management_audit_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 2000,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_filtered_token_lease_stream",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 2320,
+              "w": 1200,
+              "h": 300
+            }
+          }
+        ]
+      }
+    },
+    "tabs": {
+      "items": [
+        {
+          "label": "OpenBao token and lease lifecycle",
+          "layoutId": "layout_audit"
+        }
+      ]
+    }
+  }
+}

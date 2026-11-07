@@ -1,0 +1,10 @@
+| `openbao_metric_samples("probe_success")`
+| where metric_name="probe_success"
+| search job=$probe_job|s$
+| stats avg(value) AS value min(_time) AS oldest max(_time) AS newest count AS observations BY _timeseries cluster
+| addinfo
+| eval complete=if(observations>=171072 AND oldest<=info_max_time-2591970 AND newest>=info_max_time-45,1,0)
+| eventstats min(complete) AS complete_cluster BY cluster
+| where complete_cluster=1
+| stats avg(value) AS value BY cluster
+| fields value

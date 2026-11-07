@@ -1,0 +1,8 @@
+| `openbao_metric_samples("vault_raft_storage_stats_*")`
+| where metric_name="vault_raft_storage_stats_commit_index" OR metric_name="vault_raft_storage_stats_applied_index"
+| eval peer_id=coalesce(peer_id,"(missing)"), series=instance ." | ".peer_id ." | ".cluster ." | ".scrape_profile
+| stats max(eval(if(match(metric_name,"_commit_index$"),value,null()))) AS committed max(eval(if(match(metric_name,"_applied_index$"),value,null()))) AS applied BY bucket_time cluster scrape_profile series
+| where isnotnull(committed) AND isnotnull(applied)
+| eval value=max(committed-applied,0)
+| eval _time=bucket_time
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

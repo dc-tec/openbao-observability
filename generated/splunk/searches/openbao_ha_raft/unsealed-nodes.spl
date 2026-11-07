@@ -1,0 +1,7 @@
+| `openbao_metric_samples("vault_core_unsealed")`
+| `openbao_metric_fresh`
+| stats latest(value) AS value BY cluster instance scrape_profile seal_state_source
+| eventstats max(eval(if(seal_state_source="cluster",1,0))) AS has_cluster BY cluster instance scrape_profile
+| where seal_state_source="cluster" OR has_cluster=0
+| stats max(value) AS value BY cluster instance scrape_profile
+| stats sum(value) AS value BY cluster scrape_profile

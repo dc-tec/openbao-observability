@@ -1,0 +1,562 @@
+{
+  "title": "OpenBao Kubernetes platform",
+  "description": "OpenBao Kubernetes platform. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "inputs": {
+    "input_cluster": {
+      "type": "input.text",
+      "title": "cluster (wildcard)",
+      "options": {
+        "token": "cluster",
+        "defaultValue": "compose"
+      }
+    },
+    "input_collector_job": {
+      "type": "input.text",
+      "title": "collector job (wildcard)",
+      "options": {
+        "token": "collector_job",
+        "defaultValue": "*alloy*"
+      }
+    },
+    "input_container": {
+      "type": "input.text",
+      "title": "container (wildcard)",
+      "options": {
+        "token": "container",
+        "defaultValue": "*"
+      }
+    },
+    "input_host": {
+      "type": "input.text",
+      "title": "host (wildcard)",
+      "options": {
+        "token": "host",
+        "defaultValue": "*"
+      }
+    },
+    "input_instance": {
+      "type": "input.text",
+      "title": "instance (wildcard)",
+      "options": {
+        "token": "instance",
+        "defaultValue": "*"
+      }
+    },
+    "input_kubernetes_namespace": {
+      "type": "input.text",
+      "title": "kubernetes namespace (wildcard)",
+      "options": {
+        "token": "kubernetes_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_node": {
+      "type": "input.text",
+      "title": "node (wildcard)",
+      "options": {
+        "token": "node",
+        "defaultValue": "*"
+      }
+    },
+    "input_openbao_job": {
+      "type": "input.text",
+      "title": "openbao job (wildcard)",
+      "options": {
+        "token": "openbao_job",
+        "defaultValue": "openbao"
+      }
+    },
+    "input_openbao_namespace": {
+      "type": "input.text",
+      "title": "openbao namespace (wildcard)",
+      "options": {
+        "token": "openbao_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_pod": {
+      "type": "input.text",
+      "title": "pod (wildcard)",
+      "options": {
+        "token": "pod",
+        "defaultValue": "openbao*"
+      }
+    },
+    "input_pvc": {
+      "type": "input.text",
+      "title": "pvc (wildcard)",
+      "options": {
+        "token": "pvc",
+        "defaultValue": "*openbao*"
+      }
+    },
+    "input_scrape_profile": {
+      "type": "input.text",
+      "title": "scrape profile (wildcard)",
+      "options": {
+        "token": "scrape_profile",
+        "defaultValue": "all_nodes"
+      }
+    },
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time range",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-1h@h,now"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_audit_pvc_free": {
+      "type": "ds.search",
+      "name": "Audit PVC free",
+      "options": {
+        "query": "| `openbao_metric_samples(\"kubelet_volume_stats_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"kubelet_volume_stats_available_bytes\" OR metric_name=\"kubelet_volume_stats_capacity_bytes\"\n| search persistentvolumeclaim=$pvc|s$\n| stats min(eval(if(metric_name=\"kubelet_volume_stats_available_bytes\",value,null()))) AS available min(eval(if(metric_name=\"kubelet_volume_stats_capacity_bytes\",value,null()))) AS capacity BY bucket_time cluster kubernetes_namespace persistentvolumeclaim\n| where isnotnull(available) AND capacity\u003e0\n| eval value=100*available/capacity, series=persistentvolumeclaim .\" | \".kubernetes_namespace .\" | \".cluster, scrape_profile=\"external\"\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats min(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_collector_scrape_health": {
+      "type": "ds.search",
+      "name": "Collector scrape health",
+      "options": {
+        "query": "| `openbao_metric_samples(\"up\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"up\"\n| search job=$collector_job|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY _timeseries\n| stats min(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_container_restarts": {
+      "type": "ds.search",
+      "name": "Restarts",
+      "options": {
+        "query": "| `openbao_metric_samples(\"kube_pod_container_status_restarts_total\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"kube_pod_container_status_restarts_total\"\n| search pod=$pod|s$ container=$container|s$\n| `openbao_metric_rate15m`\n| eval value=value*900\n| stats sum(value) AS value BY bucket_time pod cluster\n| eval series=pod .\" | \".cluster, scrape_profile=\"external\"\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_cpu_by_pod": {
+      "type": "ds.search",
+      "name": "CPU by pod",
+      "options": {
+        "query": "| `openbao_metric_samples(\"container_cpu_usage_seconds_total\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"container_cpu_usage_seconds_total\"\n| search pod=$pod|s$ container=$container|s$\n| `openbao_metric_rate5m`\n| stats sum(value) AS value BY bucket_time pod cluster\n| eval _time=bucket_time, series=pod .\" | \".cluster\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_memory_by_pod": {
+      "type": "ds.search",
+      "name": "Memory by pod",
+      "options": {
+        "query": "| `openbao_metric_samples(\"container_memory_working_set_bytes\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"container_memory_working_set_bytes\"\n| search pod=$pod|s$ container=$container|s$\n| stats max(value) AS value BY bucket_time pod cluster\n| eval _time=bucket_time, series=pod .\" | \".cluster\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_node_pressure": {
+      "type": "ds.search",
+      "name": "Node pressure",
+      "options": {
+        "query": "| `openbao_metric_samples(\"kube_node_status_condition\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"kube_node_status_condition\"\n| search node=$node|s$\n| where status=\"true\" AND match(condition,\"^(DiskPressure|MemoryPressure|PIDPressure)$\")\n| stats max(value) AS value BY bucket_time node condition cluster\n| eval _time=bucket_time, series=node .\" | \".condition .\" | \".cluster\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_openbao_scrape_health": {
+      "type": "ds.search",
+      "name": "OpenBao scrape health",
+      "options": {
+        "query": "| `openbao_metric_samples(\"up\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"up\"\n| search job=$openbao_job|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY _timeseries\n| stats min(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_platform_events": {
+      "type": "ds.search",
+      "name": "Platform events",
+      "options": {
+        "query": "`openbao_platform_events`\n| search cluster=$cluster|s$ kubernetes_namespace=$kubernetes_namespace|s$ pod=$pod|s$ host=$host|s$\n| where event_type=\"Warning\" OR match(reason.\" \".message,\"(?i)(warning|failed|unhealthy|backoff|evict|pressure|probe)\")\n| sort 100 - _time\n| table _time host cluster kubernetes_namespace pod node event_type reason message",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_pvc_free_by_claim": {
+      "type": "ds.search",
+      "name": "PVC free by claim",
+      "options": {
+        "query": "| `openbao_metric_samples(\"kubelet_volume_stats_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"kubelet_volume_stats_available_bytes\" OR metric_name=\"kubelet_volume_stats_capacity_bytes\"\n| search persistentvolumeclaim=$pvc|s$\n| stats min(eval(if(metric_name=\"kubelet_volume_stats_available_bytes\",value,null()))) AS available min(eval(if(metric_name=\"kubelet_volume_stats_capacity_bytes\",value,null()))) AS capacity BY bucket_time cluster kubernetes_namespace persistentvolumeclaim\n| where isnotnull(available) AND capacity\u003e0\n| eval value=100*available/capacity, series=persistentvolumeclaim .\" | \".kubernetes_namespace .\" | \".cluster, scrape_profile=\"external\"\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_readiness_by_pod": {
+      "type": "ds.search",
+      "name": "Readiness by pod",
+      "options": {
+        "query": "| `openbao_metric_samples(\"kube_pod_container_status_ready\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"kube_pod_container_status_ready\"\n| search pod=$pod|s$ container=$container|s$\n| stats min(value) AS value BY bucket_time pod cluster\n| eval _time=bucket_time, series=pod .\" | \".cluster\n| timechart span=15s min(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_ready_containers": {
+      "type": "ds.search",
+      "name": "Ready containers",
+      "options": {
+        "query": "| `openbao_metric_samples(\"kube_pod_container_status_ready\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"kube_pod_container_status_ready\"\n| search pod=$pod|s$ container=$container|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY _timeseries\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_restarts_by_pod": {
+      "type": "ds.search",
+      "name": "Restarts by pod",
+      "options": {
+        "query": "| `openbao_metric_samples(\"kube_pod_container_status_restarts_total\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"kube_pod_container_status_restarts_total\"\n| search pod=$pod|s$ container=$container|s$\n| `openbao_metric_rate15m`\n| eval value=value*900\n| stats sum(value) AS value BY bucket_time pod cluster\n| eval series=pod .\" | \".cluster, scrape_profile=\"external\"\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_unready_containers": {
+      "type": "ds.search",
+      "name": "Unready containers",
+      "options": {
+        "query": "| `openbao_metric_samples(\"kube_pod_container_status_ready\")`\n| search cluster=$cluster|s$ instance=$instance|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"kube_pod_container_status_ready\"\n| search pod=$pod|s$ container=$container|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY _timeseries\n| eval value=1-value\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_audit_pvc_free": {
+      "type": "splunk.singlevalue",
+      "title": "Audit PVC free",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_audit_pvc_free"
+      },
+      "options": {
+        "unit": "%",
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_collector_scrape_health": {
+      "type": "splunk.singlevalue",
+      "title": "Collector scrape health",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_collector_scrape_health"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_container_restarts": {
+      "type": "splunk.singlevalue",
+      "title": "Restarts",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_container_restarts"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_cpu_by_pod": {
+      "type": "splunk.line",
+      "title": "CPU by pod",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_cpu_by_pod"
+      },
+      "options": {
+        "yAxisTitleText": "CPU cores"
+      }
+    },
+    "viz_memory_by_pod": {
+      "type": "splunk.line",
+      "title": "Memory by pod",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_memory_by_pod"
+      },
+      "options": {
+        "yAxisTitleText": "bytes"
+      }
+    },
+    "viz_node_pressure": {
+      "type": "splunk.line",
+      "title": "Node pressure",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_node_pressure"
+      }
+    },
+    "viz_openbao_scrape_health": {
+      "type": "splunk.singlevalue",
+      "title": "OpenBao scrape health",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_openbao_scrape_health"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_platform_events": {
+      "type": "splunk.table",
+      "title": "Platform events",
+      "description": "Kubernetes core/v1 or events.k8s.io/v1 Event JSON, optionally inside an object envelope with cluster identity. Only event metadata and message text are exposed; message text can still be sensitive. Match Pod names with the pod wildcard.",
+      "dataSources": {
+        "primary": "ds_platform_events"
+      }
+    },
+    "viz_pvc_free_by_claim": {
+      "type": "splunk.line",
+      "title": "PVC free by claim",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_pvc_free_by_claim"
+      },
+      "options": {
+        "yAxisTitleText": "%"
+      }
+    },
+    "viz_readiness_by_pod": {
+      "type": "splunk.line",
+      "title": "Readiness by pod",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_readiness_by_pod"
+      }
+    },
+    "viz_ready_containers": {
+      "type": "splunk.singlevalue",
+      "title": "Ready containers",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_ready_containers"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_restarts_by_pod": {
+      "type": "splunk.line",
+      "title": "Restarts by pod",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_restarts_by_pod"
+      }
+    },
+    "viz_unready_containers": {
+      "type": "splunk.singlevalue",
+      "title": "Unready containers",
+      "description": "Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.",
+      "dataSources": {
+        "primary": "ds_unready_containers"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    }
+  },
+  "layout": {
+    "globalInputs": [
+      "input_time",
+      "input_host",
+      "input_cluster",
+      "input_instance",
+      "input_scrape_profile",
+      "input_kubernetes_namespace",
+      "input_openbao_namespace",
+      "input_pod",
+      "input_container",
+      "input_pvc",
+      "input_node",
+      "input_openbao_job",
+      "input_collector_job"
+    ],
+    "layoutDefinitions": {
+      "layout_audit": {
+        "type": "absolute",
+        "options": {
+          "width": 1200,
+          "height": 1600,
+          "display": "auto-scale"
+        },
+        "structure": [
+          {
+            "item": "viz_ready_containers",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_unready_containers",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_container_restarts",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_openbao_scrape_health",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_collector_scrape_health",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_audit_pvc_free",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_readiness_by_pod",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 140,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_restarts_by_pod",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 420,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_node_pressure",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 420,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_cpu_by_pod",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 700,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_memory_by_pod",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 700,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_pvc_free_by_claim",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 980,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_platform_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1260,
+              "w": 1200,
+              "h": 300
+            }
+          }
+        ]
+      }
+    },
+    "tabs": {
+      "items": [
+        {
+          "label": "OpenBao Kubernetes platform",
+          "layoutId": "layout_audit"
+        }
+      ]
+    }
+  }
+}

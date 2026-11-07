@@ -1,0 +1,4 @@
+`openbao_operational_events`
+| where match(severity,"^(warn|error)$")
+| sort 100 - _time
+| table _time host severity module message

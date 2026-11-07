@@ -1,0 +1,4 @@
+`openbao_audit_events`
+| where audit_type="response" AND len(mvjoin(audit_error,""))>0 AND match(request_path,"^(auth/|sys/auth/|identity/)")
+| sort 100 - _time
+| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error

@@ -1,0 +1,2 @@
+`openbao_completed_events`
+| stats count AS value

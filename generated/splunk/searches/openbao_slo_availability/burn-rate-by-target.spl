@@ -1,0 +1,10 @@
+| `openbao_metric_samples("probe_success")`
+| where metric_name="probe_success"
+| search job=$probe_job|s$
+| sort 0 _time
+| streamstats time_window=5m avg(value) AS value BY _timeseries
+| eval objective=tonumber($slo_target|s$)
+| where objective>0 AND objective<1
+| eval value=((1-value)/(1-objective))
+| eval _time=bucket_time, series=instance ." | ".job ." | ".cluster
+| timechart span=15s avg(value) BY series limit=20 useother=f cont=f

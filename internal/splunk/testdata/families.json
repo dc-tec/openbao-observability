@@ -1,0 +1,1790 @@
+[
+  {
+    "name": "auth entries keep request and response separate",
+    "dashboard": "openbao_auth_identity",
+    "panel": "auth-identity-events",
+    "source": "audit",
+    "events": [
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "auth/approle/login",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "response",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "auth/approle/login",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "secret/data/x",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "expectedValue": 2
+  },
+  {
+    "name": "database credential requests exclude response entries",
+    "dashboard": "openbao_database_secrets",
+    "panel": "database-credential-events",
+    "source": "audit",
+    "events": [
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "database/creds/demo",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "response",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "database/creds/demo",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "database/roles/demo",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "expectedValue": 1
+  },
+  {
+    "name": "custom database mount uses quoted wildcard",
+    "dashboard": "openbao_database_secrets",
+    "panel": "database-config-role-events",
+    "source": "audit",
+    "events": [
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "db-east/config/demo",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "database/config/demo",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "expectedValue": 1,
+    "tokens": {
+      "mount_path": "db-east/*"
+    }
+  },
+  {
+    "name": "PKI issue errors require response type",
+    "dashboard": "openbao_pki",
+    "panel": "pki-response-errors",
+    "source": "audit",
+    "events": [
+      {
+        "type": "response",
+        "error": "permission denied",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "pki/issue/demo",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "pki/issue/demo",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "response",
+        "error": "error",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "transit/encrypt/demo",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "expectedValue": 1
+  },
+  {
+    "name": "Transit decrypt requests exclude encrypt and response",
+    "dashboard": "openbao_transit",
+    "panel": "transit-decrypt-events",
+    "source": "audit",
+    "events": [
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "transit/decrypt/demo",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "response",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "transit/decrypt/demo",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "transit/encrypt/demo",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "expectedValue": 1
+  },
+  {
+    "name": "visible denial errors only",
+    "dashboard": "openbao_audit_investigation",
+    "panel": "permission-denied-responses",
+    "source": "audit",
+    "events": [
+      {
+        "type": "response",
+        "error": "permission denied",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "x",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "request",
+        "error": "forbidden",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "x",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "response",
+        "error": "hmac-sha256:unknown",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "x",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "expectedValue": 2
+  },
+  {
+    "name": "namespace path scopes audit counts",
+    "dashboard": "openbao_namespaces_scale",
+    "panel": "namespace-audit-requests",
+    "source": "audit",
+    "events": [
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "secret/data/x",
+          "operation": "read",
+          "namespace": {
+            "path": "team-a/"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "secret/data/x",
+          "operation": "read",
+          "namespace": {
+            "path": "team-b/"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "expectedValue": 1,
+    "tokens": {
+      "logical_namespace": "team-a/"
+    }
+  },
+  {
+    "name": "token stream excludes lease management",
+    "dashboard": "openbao_expiration_backlog",
+    "panel": "token-lifecycle-audit-events",
+    "source": "audit",
+    "events": [
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "auth/token/renew-self",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      },
+      {
+        "type": "request",
+        "error": "",
+        "auth": {
+          "display_name": "fixture-caller",
+          "client_token": "FIXTURE_SECRET_TOKEN"
+        },
+        "request": {
+          "id": "fixture-1",
+          "path": "sys/leases/renew",
+          "operation": "read",
+          "namespace": {
+            "path": "(root)"
+          },
+          "data": {
+            "secret": "FIXTURE_SECRET_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "expectedRows": 1
+  },
+  {
+    "name": "operational severity and payload projection",
+    "dashboard": "openbao_operational_logs",
+    "panel": "recent-warnings-errors",
+    "source": "operational",
+    "events": [
+      {
+        "@level": "WARN",
+        "@module": "storage.raft",
+        "@message": "fixture warning",
+        "password": "FIXTURE_SECRET_PAYLOAD"
+      },
+      {
+        "@level": "info",
+        "@message": "fixture info"
+      }
+    ],
+    "expectedRows": 1
+  },
+  {
+    "name": "mount categories deduplicate reporter nodes",
+    "dashboard": "openbao_secret_engines_mounts",
+    "panel": "mount-table-entries",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_core_mount_table_num_entries",
+          "instance": "a",
+          "type": "kv",
+          "local": "false"
+        },
+        "values": [
+          3
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_core_mount_table_num_entries",
+          "instance": "b",
+          "type": "kv",
+          "local": "false"
+        },
+        "values": [
+          3
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_core_mount_table_num_entries",
+          "type": "pki",
+          "local": "false"
+        },
+        "values": [
+          2
+        ]
+      }
+    ],
+    "expectedValue": 5
+  },
+  {
+    "name": "KV counts sum distinct mounts once",
+    "dashboard": "openbao_secret_engines_mounts",
+    "panel": "kv-secret-count",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_secret_kv_count",
+          "instance": "a",
+          "mount_point": "one/"
+        },
+        "values": [
+          3
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_secret_kv_count",
+          "instance": "b",
+          "mount_point": "one/"
+        },
+        "values": [
+          3
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_secret_kv_count",
+          "mount_point": "two/"
+        },
+        "values": [
+          4
+        ]
+      }
+    ],
+    "expectedValue": 7
+  },
+  {
+    "name": "missing token counter remains absent",
+    "dashboard": "openbao_expiration_backlog",
+    "panel": "token-creations",
+    "source": "metrics",
+    "series": [],
+    "expectedValue": null
+  },
+  {
+    "name": "observed zero token counter remains zero",
+    "dashboard": "openbao_expiration_backlog",
+    "panel": "token-creations",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_token_creation"
+        },
+        "values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "expectedValue": 0
+  },
+  {
+    "name": "namespace counters do not mix histories",
+    "dashboard": "openbao_namespaces_scale",
+    "panel": "namespace-token-creations",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_token_creation",
+          "openbao_namespace": "team-a/"
+        },
+        "values": [
+          1000,
+          1002,
+          1004,
+          1006,
+          1008,
+          1010,
+          1012,
+          1014,
+          1016,
+          1018,
+          1020,
+          1022,
+          1024,
+          1026,
+          1028,
+          1030,
+          1032,
+          1034,
+          1036,
+          1038,
+          1040
+        ],
+        "interval": 45
+      },
+      {
+        "labels": {
+          "metric_name": "vault_token_creation",
+          "openbao_namespace": "team-b/"
+        },
+        "values": [
+          2000,
+          2005,
+          2010,
+          2015,
+          2020,
+          2025,
+          2030,
+          2035,
+          2040,
+          2045,
+          2050,
+          2055,
+          2060,
+          2065,
+          2070,
+          2075,
+          2080,
+          2085,
+          2090,
+          2095,
+          2100
+        ],
+        "interval": 45
+      }
+    ],
+    "expectedValue": 40,
+    "tokens": {
+      "openbao_namespace": "team-a/"
+    }
+  },
+  {
+    "name": "15 minute reset correction",
+    "dashboard": "openbao_pki",
+    "panel": "pki-issue-failures",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_pki_issue_failure"
+        },
+        "values": [
+          100,
+          110,
+          0,
+          5
+        ],
+        "interval": 300
+      }
+    ],
+    "expectedValue": 7.5
+  },
+  {
+    "name": "30 minute transition counter",
+    "dashboard": "openbao_ha_raft",
+    "panel": "leader-transitions",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_raft_state_leader"
+        },
+        "values": [
+          100,
+          102,
+          104,
+          106,
+          108,
+          110,
+          112,
+          114,
+          116,
+          118,
+          120,
+          122,
+          124,
+          126,
+          128,
+          130,
+          132,
+          134,
+          136,
+          138,
+          140
+        ],
+        "interval": 90
+      }
+    ],
+    "expectedValue": 40
+  },
+  {
+    "name": "database create summary counter rate",
+    "dashboard": "openbao_database_secrets",
+    "panel": "database-create-rate",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_database_NewUser_count"
+        },
+        "values": [
+          100,
+          102,
+          104,
+          106,
+          108,
+          110,
+          112,
+          114,
+          116,
+          118,
+          120,
+          122,
+          124,
+          126,
+          128,
+          130,
+          132,
+          134,
+          136,
+          138,
+          140
+        ]
+      }
+    ],
+    "expectedValue": 0.13333333333333333
+  },
+  {
+    "name": "cache ratio uses both counters",
+    "dashboard": "openbao_runtime_storage",
+    "panel": "cache-hit-ratio",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_cache_hit"
+        },
+        "values": [
+          1000,
+          1008,
+          1016,
+          1024,
+          1032,
+          1040,
+          1048,
+          1056,
+          1064,
+          1072,
+          1080,
+          1088,
+          1096,
+          1104,
+          1112,
+          1120,
+          1128,
+          1136,
+          1144,
+          1152,
+          1160
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_cache_miss"
+        },
+        "values": [
+          1000,
+          1002,
+          1004,
+          1006,
+          1008,
+          1010,
+          1012,
+          1014,
+          1016,
+          1018,
+          1020,
+          1022,
+          1024,
+          1026,
+          1028,
+          1030,
+          1032,
+          1034,
+          1036,
+          1038,
+          1040
+        ]
+      }
+    ],
+    "expectedValue": 0.8
+  },
+  {
+    "name": "missing cache component stays absent",
+    "dashboard": "openbao_runtime_storage",
+    "panel": "cache-hit-ratio",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_cache_hit"
+        },
+        "values": [
+          1000,
+          1008,
+          1016,
+          1024,
+          1032,
+          1040,
+          1048,
+          1056,
+          1064,
+          1072,
+          1080,
+          1088,
+          1096,
+          1104,
+          1112,
+          1120,
+          1128,
+          1136,
+          1144,
+          1152,
+          1160
+        ]
+      }
+    ],
+    "expectedValue": null
+  },
+  {
+    "name": "idle cache ratio stays absent",
+    "dashboard": "openbao_runtime_storage",
+    "panel": "cache-hit-ratio",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_cache_hit"
+        },
+        "values": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_cache_miss"
+        },
+        "values": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    ],
+    "expectedValue": null
+  },
+  {
+    "name": "weighted storage stage latency",
+    "dashboard": "openbao_runtime_storage",
+    "panel": "raft-write-stages",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_raft_storage_put_count"
+        },
+        "values": [
+          100,
+          102,
+          104,
+          106,
+          108,
+          110,
+          112,
+          114,
+          116,
+          118,
+          120,
+          122,
+          124,
+          126,
+          128,
+          130,
+          132,
+          134,
+          136,
+          138,
+          140
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_raft_storage_put_sum"
+        },
+        "values": [
+          1000,
+          1080,
+          1160,
+          1240,
+          1320,
+          1400,
+          1480,
+          1560,
+          1640,
+          1720,
+          1800,
+          1880,
+          1960,
+          2040,
+          2120,
+          2200,
+          2280,
+          2360,
+          2440,
+          2520,
+          2600
+        ]
+      }
+    ],
+    "expectedLastValues": [
+      40
+    ]
+  },
+  {
+    "name": "apply gap requires same peer",
+    "dashboard": "openbao_namespaces_scale",
+    "panel": "raft-apply-gap",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_raft_storage_stats_commit_index",
+          "peer_id": "a"
+        },
+        "values": [
+          120
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_raft_storage_stats_applied_index",
+          "peer_id": "a"
+        },
+        "values": [
+          100
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_raft_storage_stats_commit_index",
+          "peer_id": "b"
+        },
+        "values": [
+          300
+        ]
+      }
+    ],
+    "expectedLastValues": [
+      20
+    ]
+  },
+  {
+    "name": "Kubernetes readiness accepts external scrape identity",
+    "dashboard": "openbao_kubernetes_platform",
+    "panel": "ready-containers",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "kube_pod_container_status_ready",
+          "pod": "openbao-0",
+          "container": "bao",
+          "scrape_profile": "external"
+        },
+        "values": [
+          1
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "kube_pod_container_status_ready",
+          "pod": "openbao-1",
+          "container": "bao",
+          "scrape_profile": "external"
+        },
+        "values": [
+          0
+        ]
+      }
+    ],
+    "expectedValue": 1
+  },
+  {
+    "name": "PVC ratio pairs capacity with its own claim",
+    "dashboard": "openbao_kubernetes_platform",
+    "panel": "audit-pvc-free",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "kubelet_volume_stats_available_bytes",
+          "persistentvolumeclaim": "openbao-a"
+        },
+        "values": [
+          60
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "kubelet_volume_stats_capacity_bytes",
+          "persistentvolumeclaim": "openbao-a"
+        },
+        "values": [
+          1000
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "kubelet_volume_stats_available_bytes",
+          "persistentvolumeclaim": "openbao-b"
+        },
+        "values": [
+          20
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "kubelet_volume_stats_capacity_bytes",
+          "persistentvolumeclaim": "openbao-b"
+        },
+        "values": [
+          100
+        ]
+      }
+    ],
+    "expectedValue": 6
+  },
+  {
+    "name": "partial availability history remains absent",
+    "dashboard": "openbao_slo_availability",
+    "panel": "availability-30d",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "probe_success",
+          "instance": "a",
+          "job": "openbao-health",
+          "scrape_profile": "external"
+        },
+        "values": [
+          1,
+          1
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "probe_success",
+          "instance": "b",
+          "job": "openbao-health",
+          "scrape_profile": "external"
+        },
+        "values": [
+          0,
+          0
+        ]
+      }
+    ],
+    "expectedValue": null
+  },
+  {
+    "name": "partial error budget history remains absent",
+    "dashboard": "openbao_slo_availability",
+    "panel": "error-budget-remaining",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "probe_success",
+          "instance": "a",
+          "job": "openbao-health",
+          "scrape_profile": "external"
+        },
+        "values": [
+          1,
+          1
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "probe_success",
+          "instance": "b",
+          "job": "openbao-health",
+          "scrape_profile": "external"
+        },
+        "values": [
+          0,
+          0
+        ]
+      }
+    ],
+    "expectedValue": null,
+    "tokens": {
+      "slo_target": "0.99"
+    }
+  },
+  {
+    "name": "burn rate uses configured objective",
+    "dashboard": "openbao_slo_availability",
+    "panel": "burn-rate-5m",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "probe_success",
+          "instance": "a",
+          "job": "openbao-health",
+          "scrape_profile": "external"
+        },
+        "values": [
+          1,
+          1
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "probe_success",
+          "instance": "b",
+          "job": "openbao-health",
+          "scrape_profile": "external"
+        },
+        "values": [
+          0,
+          0
+        ]
+      }
+    ],
+    "expectedValue": 50,
+    "tokens": {
+      "slo_target": "0.99"
+    }
+  },
+  {
+    "name": "invalid objective does not divide by zero",
+    "dashboard": "openbao_slo_availability",
+    "panel": "burn-rate-5m",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "probe_success",
+          "instance": "a",
+          "job": "openbao-health",
+          "scrape_profile": "external"
+        },
+        "values": [
+          1,
+          1
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "probe_success",
+          "instance": "b",
+          "job": "openbao-health",
+          "scrape_profile": "external"
+        },
+        "values": [
+          0,
+          0
+        ]
+      }
+    ],
+    "expectedValue": null,
+    "tokens": {
+      "slo_target": "1"
+    }
+  },
+  {
+    "name": "missing probes remain unknown",
+    "dashboard": "openbao_slo_availability",
+    "panel": "availability-30d",
+    "source": "metrics",
+    "series": [],
+    "expectedValue": null
+  },
+  {
+    "name": "archive disabled is a real zero",
+    "dashboard": "openbao_audit_overview",
+    "panel": "audit-archive-enabled",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "openbao_audit_archive_enabled",
+          "backend": "s3",
+          "pipeline": "audit",
+          "environment": "fixture",
+          "scrape_profile": "external"
+        },
+        "values": [
+          0
+        ]
+      }
+    ],
+    "expectedValue": 0
+  },
+  {
+    "name": "missing archive telemetry stays absent",
+    "dashboard": "openbao_audit_overview",
+    "panel": "audit-archive-enabled",
+    "source": "metrics",
+    "series": [],
+    "expectedValue": null
+  },
+  {
+    "name": "database means weight observations",
+    "dashboard": "openbao_database_secrets",
+    "panel": "database-operation-latency",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "cluster": "compose",
+          "scrape_profile": "all_nodes",
+          "openbao_namespace": "(root)",
+          "metric_name": "vault_database_NewUser_count",
+          "instance": "a"
+        },
+        "values": [
+          1000,
+          1002,
+          1004,
+          1006,
+          1008,
+          1010,
+          1012,
+          1014,
+          1016,
+          1018,
+          1020,
+          1022,
+          1024,
+          1026,
+          1028,
+          1030,
+          1032,
+          1034,
+          1036,
+          1038,
+          1040
+        ]
+      },
+      {
+        "labels": {
+          "cluster": "compose",
+          "scrape_profile": "all_nodes",
+          "openbao_namespace": "(root)",
+          "metric_name": "vault_database_NewUser_sum",
+          "instance": "a"
+        },
+        "values": [
+          1000,
+          1020,
+          1040,
+          1060,
+          1080,
+          1100,
+          1120,
+          1140,
+          1160,
+          1180,
+          1200,
+          1220,
+          1240,
+          1260,
+          1280,
+          1300,
+          1320,
+          1340,
+          1360,
+          1380,
+          1400
+        ]
+      },
+      {
+        "labels": {
+          "cluster": "compose",
+          "scrape_profile": "all_nodes",
+          "openbao_namespace": "(root)",
+          "metric_name": "vault_database_NewUser_count",
+          "instance": "b"
+        },
+        "values": [
+          1000,
+          1001,
+          1002,
+          1003,
+          1004,
+          1005,
+          1006,
+          1007,
+          1008,
+          1009,
+          1010,
+          1011,
+          1012,
+          1013,
+          1014,
+          1015,
+          1016,
+          1017,
+          1018,
+          1019,
+          1020
+        ]
+      },
+      {
+        "labels": {
+          "cluster": "compose",
+          "scrape_profile": "all_nodes",
+          "openbao_namespace": "(root)",
+          "metric_name": "vault_database_NewUser_sum",
+          "instance": "b"
+        },
+        "values": [
+          1000,
+          1100,
+          1200,
+          1300,
+          1400,
+          1500,
+          1600,
+          1700,
+          1800,
+          1900,
+          2000,
+          2100,
+          2200,
+          2300,
+          2400,
+          2500,
+          2600,
+          2700,
+          2800,
+          2900,
+          3000
+        ]
+      }
+    ],
+    "expectedLastValues": [
+      40
+    ]
+  },
+  {
+    "name": "stat means weight observations across namespaces",
+    "dashboard": "openbao_runtime_storage",
+    "panel": "request-latency",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_core_handle_request_count",
+          "openbao_namespace": "a/"
+        },
+        "values": [
+          1000,
+          1002,
+          1004,
+          1006,
+          1008,
+          1010,
+          1012,
+          1014,
+          1016,
+          1018,
+          1020,
+          1022,
+          1024,
+          1026,
+          1028,
+          1030,
+          1032,
+          1034,
+          1036,
+          1038,
+          1040
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_core_handle_request_sum",
+          "openbao_namespace": "a/"
+        },
+        "values": [
+          1000,
+          1020,
+          1040,
+          1060,
+          1080,
+          1100,
+          1120,
+          1140,
+          1160,
+          1180,
+          1200,
+          1220,
+          1240,
+          1260,
+          1280,
+          1300,
+          1320,
+          1340,
+          1360,
+          1380,
+          1400
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_core_handle_request_count",
+          "openbao_namespace": "b/"
+        },
+        "values": [
+          1000,
+          1001,
+          1002,
+          1003,
+          1004,
+          1005,
+          1006,
+          1007,
+          1008,
+          1009,
+          1010,
+          1011,
+          1012,
+          1013,
+          1014,
+          1015,
+          1016,
+          1017,
+          1018,
+          1019,
+          1020
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_core_handle_request_sum",
+          "openbao_namespace": "b/"
+        },
+        "values": [
+          1000,
+          1100,
+          1200,
+          1300,
+          1400,
+          1500,
+          1600,
+          1700,
+          1800,
+          1900,
+          2000,
+          2100,
+          2200,
+          2300,
+          2400,
+          2500,
+          2600,
+          2700,
+          2800,
+          2900,
+          3000
+        ]
+      }
+    ],
+    "expectedValue": 40
+  },
+  {
+    "name": "stat cache ratio weights namespaces",
+    "dashboard": "openbao_runtime_storage",
+    "panel": "cache-hit-ratio",
+    "source": "metrics",
+    "series": [
+      {
+        "labels": {
+          "metric_name": "vault_cache_hit",
+          "openbao_namespace": "a/"
+        },
+        "values": [
+          1000,
+          1008,
+          1016,
+          1024,
+          1032,
+          1040,
+          1048,
+          1056,
+          1064,
+          1072,
+          1080,
+          1088,
+          1096,
+          1104,
+          1112,
+          1120,
+          1128,
+          1136,
+          1144,
+          1152,
+          1160
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_cache_miss",
+          "openbao_namespace": "a/"
+        },
+        "values": [
+          1000,
+          1002,
+          1004,
+          1006,
+          1008,
+          1010,
+          1012,
+          1014,
+          1016,
+          1018,
+          1020,
+          1022,
+          1024,
+          1026,
+          1028,
+          1030,
+          1032,
+          1034,
+          1036,
+          1038,
+          1040
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_cache_hit",
+          "openbao_namespace": "b/"
+        },
+        "values": [
+          1000,
+          1003,
+          1006,
+          1009,
+          1012,
+          1015,
+          1018,
+          1021,
+          1024,
+          1027,
+          1030,
+          1033,
+          1036,
+          1039,
+          1042,
+          1045,
+          1048,
+          1051,
+          1054,
+          1057,
+          1060
+        ]
+      },
+      {
+        "labels": {
+          "metric_name": "vault_cache_miss",
+          "openbao_namespace": "b/"
+        },
+        "values": [
+          1000,
+          1007,
+          1014,
+          1021,
+          1028,
+          1035,
+          1042,
+          1049,
+          1056,
+          1063,
+          1070,
+          1077,
+          1084,
+          1091,
+          1098,
+          1105,
+          1112,
+          1119,
+          1126,
+          1133,
+          1140
+        ]
+      }
+    ],
+    "expectedValue": 0.55
+  },
+  {
+    "name": "completed requests exclude ordinary operational logs and payloads",
+    "dashboard": "openbao_audit_overview",
+    "panel": "completed-request-logging",
+    "source": "completed",
+    "events": [
+      {
+        "@message": "completed_request",
+        "request_path": "secret/data/demo",
+        "client_id": "FIXTURE_SECRET_CLIENT",
+        "payload": "FIXTURE_SECRET_PAYLOAD"
+      },
+      {
+        "@message": "ordinary operational log"
+      }
+    ],
+    "expectedValue": 1
+  },
+  {
+    "name": "Kubernetes core events project metadata and drop annotations",
+    "dashboard": "openbao_kubernetes_platform",
+    "panel": "platform-events",
+    "source": "platform",
+    "events": [
+      {
+        "cluster": "compose",
+        "object": {
+          "type": "Warning",
+          "reason": "FailedMount",
+          "message": "fixture mount unavailable",
+          "metadata": {
+            "namespace": "fixture",
+            "annotations": {
+              "secret": "FIXTURE_SECRET_ANNOTATION"
+            }
+          },
+          "involvedObject": {
+            "kind": "Pod",
+            "name": "openbao-0"
+          }
+        }
+      },
+      {
+        "cluster": "compose",
+        "object": {
+          "type": "Normal",
+          "reason": "Scheduled",
+          "message": "pod scheduled",
+          "metadata": {
+            "namespace": "fixture"
+          },
+          "involvedObject": {
+            "kind": "Pod",
+            "name": "openbao-0"
+          }
+        }
+      }
+    ],
+    "expectedRows": 1
+  },
+  {
+    "name": "Kubernetes events v1 uses regarding and note",
+    "dashboard": "openbao_kubernetes_platform",
+    "panel": "platform-events",
+    "source": "platform",
+    "events": [
+      {
+        "cluster": "compose",
+        "object": {
+          "apiVersion": "events.k8s.io/v1",
+          "type": "Warning",
+          "reason": "Unhealthy",
+          "note": "fixture probe failed",
+          "metadata": {
+            "namespace": "fixture"
+          },
+          "regarding": {
+            "kind": "Pod",
+            "name": "openbao-1"
+          }
+        }
+      }
+    ],
+    "expectedRows": 1
+  }
+]

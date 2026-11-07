@@ -1,0 +1,10 @@
+| `openbao_metric_samples("openbao_audit_archive_dead_letter_records_total")`
+| where metric_name="openbao_audit_archive_dead_letter_records_total"
+| search environment=$environment|s$ backend=$backend|s$ pipeline=$pipeline|s$
+| `openbao_metric_rate15m`
+| eval value=value*900
+| `openbao_metric_fresh`
+| stats latest(value) AS value BY _timeseries
+| stats sum(value) AS value count AS contributing_series
+| where contributing_series>0
+| fields - contributing_series
