@@ -1,0 +1,25 @@
+| `openbao_metric_alert_samples(filter=metric_name="vault_audit_log_request_failure")`
+| search cluster="compose" scrape_profile="all_nodes"
+| `openbao_metric_rate5m`
+| stats sum(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+| eval value=value*300, condition=if(value>0,1,0)
+
+| eval kubernetes_namespace=coalesce(kubernetes_namespace,"(none)"), instance=coalesce(instance,"(cluster)")
+| eval condition_at=bucket_time
+| eval alert_key=sha256(cluster . "|" . kubernetes_namespace . "|" . scrape_profile . "|" . instance)
+| appendpipe [ stats count BY alert_key cluster kubernetes_namespace scrape_profile instance
+  | addinfo | eval anchor=floor(info_max_time/15)*15-15, bucket_time=mvrange(anchor-0,anchor+1,15)
+  | mvexpand bucket_time | fields - count ]
+| stats max(condition) AS condition max(condition_at) AS condition_at max(value) AS value
+  BY bucket_time alert_key cluster kubernetes_namespace scrape_profile instance
+| eval _time=bucket_time
+| sort 0 alert_key bucket_time
+| streamstats last(condition) AS held last(condition_at) AS held_at last(value) AS value BY alert_key
+| addinfo | eval anchor=floor(info_max_time/15)*15-15
+| where bucket_time>=anchor-0 AND bucket_time<=anchor
+| eval satisfied=if(held=1 AND bucket_time-held_at<=30,1,0)
+| stats min(satisfied) AS sustained count AS steps latest(value) AS value
+  BY cluster kubernetes_namespace scrape_profile instance
+| where sustained=1 AND steps>=1
+| eval alert_id="OpenBaoAuditRequestFailures", severity="critical", summary="OpenBao audit request logging failed", runbook_url="https://dc-tec.github.io/openbao-observability/runbooks/audit-request-response-failures/"
+| fields alert_id severity summary runbook_url cluster kubernetes_namespace scrape_profile instance value

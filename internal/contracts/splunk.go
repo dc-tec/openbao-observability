@@ -30,6 +30,19 @@ type SplunkProfileContract struct {
 	PlatformSourcetype    string                   `yaml:"platformSourcetype"`
 	Fields                map[string]string        `yaml:"fields"`
 	Dashboards            []SplunkDashboardBinding `yaml:"dashboards"`
+	AlertLogHostPattern   string                   `yaml:"alertLogHostPattern"`
+	Alerts                []SplunkAlertBinding     `yaml:"alerts"`
+}
+
+// SplunkAlertBinding supplies a native condition history for a canonical alert.
+// Severity, runbook, and persistence duration come from the canonical contract.
+type SplunkAlertBinding struct {
+	Source        string `yaml:"source"`
+	SourceAlert   string `yaml:"sourceAlert"`
+	ExpressionSHA string `yaml:"sourceExpressionSHA256"`
+	Search        string `yaml:"search"`
+	WarmupSeconds int    `yaml:"warmupSeconds"`
+	Description   string `yaml:"description"`
 }
 
 type SplunkDashboardBinding struct {
@@ -95,6 +108,9 @@ func LoadSplunkProfile(path, root string) (*SplunkProfileContract, error) {
 		}
 	}
 	if err := validateSplunkReferences(profile); err != nil {
+		return nil, err
+	}
+	if err := validateSplunkAlerts(profile, root); err != nil {
 		return nil, err
 	}
 	return &profile, nil
@@ -269,6 +285,9 @@ func validateSplunkReferences(profile SplunkProfileContract) error {
 		for _, panel := range dashboard.Panels {
 			searches = append(searches, panel.Search)
 		}
+	}
+	for _, alert := range profile.Alerts {
+		searches = append(searches, alert.Search)
 	}
 	for _, search := range searches {
 		for _, match := range reference.FindAllStringSubmatch(search, -1) {

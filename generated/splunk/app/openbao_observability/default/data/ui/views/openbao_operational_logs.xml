@@ -1,9 +1,9 @@
 <dashboard version="2">
   <label>OpenBao operational logs</label>
-  <description>OpenBao operational logs. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.</description>
+  <description>OpenBao operational logs. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.</description>
   <definition><![CDATA[{
   "title": "OpenBao operational logs",
-  "description": "OpenBao operational logs. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "description": "OpenBao operational logs. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.",
   "inputs": {
     "input_host": {
       "type": "input.text",

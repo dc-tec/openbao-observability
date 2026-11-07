@@ -24,7 +24,7 @@ tools and delivery mechanisms.
 | Profile | Status | Use it for | Main entrypoint |
 | ------- | ------ | ---------- | --------------- |
 | Prometheus, Loki, Grafana, and Alloy | Implemented | Generated artifacts, local validation, and direct adoption by teams already using this stack. | [Prometheus, Loki, Grafana, and Alloy profile](./prometheus-loki-grafana-alloy.md) |
-| Splunk Enterprise / Cloud Platform | Draft profile | Native SPL bindings for 15 dashboard families, Dashboard Studio generation, and trial validation. Alert parity is not mapped. | [Splunk profile](./splunk-enterprise.md) |
+| Splunk Enterprise / Cloud Platform | Draft profile | Native SPL bindings for 15 dashboard families, 17 native alerts, Dashboard Studio generation, and trial validation. The other 32 canonical alerts remain unmapped. | [Splunk profile](./splunk-enterprise.md) |
 | Docker Compose | Implemented local profile | Evaluation, screenshots, dashboard review, fixture scenarios, and live query validation. | [Run the Docker Compose stack](../docker-compose.md) |
 | Kubernetes secure active-node scrape | Implemented example | Production-oriented authenticated metrics collection from the active OpenBao node. | [Secure metrics scrape](../metrics/secure-metrics-scrape.md) |
 | Kubernetes private all-node scrape | Implemented example | Per-node HA, Raft, standby, sealed-node, and runtime visibility. | [All-node metrics scrape](../metrics/all-node-metrics-scrape.md) |

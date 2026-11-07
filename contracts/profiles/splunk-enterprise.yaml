@@ -58,10 +58,15 @@ macros:
     sort 0 _time | streamstats current=f last(value) AS previous BY _timeseries | eval reset=if(value<previous,previous,0) | streamstats sum(reset) AS correction BY _timeseries | eval corrected=value+correction | streamstats time_window=30m count AS samples first(corrected) AS first_value
       first(_time) AS first_time first(value) AS first_raw BY _timeseries
     | eval duration=_time-first_time, delta=corrected-first_value | where samples>1 AND duration>0 | eval interval=duration/(samples-1), to_start=1800-duration | eval to_start=if(delta>0 AND first_raw>=0,min(to_start,duration*first_raw/delta),to_start) | eval extrapolated=if(to_start<interval*1.1,to_start,interval/2) | eval value=delta*(duration+extrapolated)/duration/1800 | fields - previous reset correction corrected samples first_value first_time first_raw duration delta interval to_start extrapolated
+- name: openbao_metric_alert_samples
+  arguments:
+  - filter
+  definition: mstats latest(_value) AS value latest_time(_value) AS observed_at WHERE `openbao_metric_source` AND ($filter$) BY _timeseries span=15s | spath input=_timeseries | eval bucket_time=_time, _time=observed_at | eval kubernetes_namespace=coalesce(kubernetes_namespace,"(none)"), openbao_namespace=coalesce(openbao_namespace,"(root)"), instance=coalesce(instance,"(missing)") | eval scrape_profile=coalesce(scrape_profile,"external"), kubernetes_namespace=if(kubernetes_namespace="(none)",coalesce(namespace,"(none)"),kubernetes_namespace)
+
 dashboards:
 - id: openbao_audit_investigation
   source: contracts/dashboards/openbao-audit-investigation.yaml
-  description: OpenBao audit investigation. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao audit investigation. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: filtered-audit-events
     description: Audit entries in the selected time range. Request and response entries are separate events; this is not a unique API request count.
@@ -170,7 +175,7 @@ dashboards:
       | table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error
 - id: openbao_overview
   source: contracts/dashboards/openbao-overview.yaml
-  description: OpenBao overview. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao overview. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: scrape-health
     description: Latest scrape success per target, then the minimum across targets. Samples older than 45 seconds are absent.
@@ -424,7 +429,7 @@ dashboards:
       | table _time host severity module message
 - id: openbao_ha_raft
   source: contracts/dashboards/openbao-ha-raft.yaml
-  description: OpenBao HA/Raft. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao HA/Raft. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: raft-peers
     description: Maximum current Raft peer count.
@@ -569,7 +574,7 @@ dashboards:
       | table _time host severity module message
 - id: openbao_expiration_backlog
   source: contracts/dashboards/openbao-token-lease-lifecycle.yaml
-  description: OpenBao token and lease lifecycle. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao token and lease lifecycle. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: token-count
     description: Rolling 30-minute maximum inventory. KV totals deduplicate each mount before summing; token inventory uses the source maximum. Missing series remain absent. Fixed-window stats use the trailing 30 minutes to now. Charts need 30 minutes of selected history; the freshness guard still applies.
@@ -798,7 +803,7 @@ dashboards:
       | table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error
 - id: openbao_audit_overview
   source: contracts/dashboards/openbao-audit-overview.yaml
-  description: OpenBao audit overview. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao audit overview. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: audit-request-failures
     description: Reset-corrected request audit-delivery failures over a rolling five-minute window. An absent metric is unknown, not zero.
@@ -994,7 +999,7 @@ dashboards:
     default: "*"
 - id: openbao_auth_identity
   source: contracts/dashboards/openbao-auth-identity.yaml
-  description: OpenBao auth and identity. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao auth and identity. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: auth-identity-events
     description: Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.
@@ -1100,7 +1105,7 @@ dashboards:
       | table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error
 - id: openbao_database_secrets
   source: contracts/dashboards/openbao-database-secrets.yaml
-  description: OpenBao database secrets. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao database secrets. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: database-create-rate
     description: Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.
@@ -1293,7 +1298,7 @@ dashboards:
     default: database/*
 - id: openbao_kubernetes_platform
   source: contracts/dashboards/openbao-kubernetes-platform.yaml
-  description: OpenBao Kubernetes platform. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao Kubernetes platform. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: ready-containers
     description: Requires Kubernetes exporter metrics with cluster and Kubernetes namespace labels. Normalize the exporter namespace into kubernetes_namespace. Container, pod, PVC, node, and job inputs use quoted wildcards. Missing exporter data is unknown. This source is not collected by the Compose fixture.
@@ -1466,7 +1471,7 @@ dashboards:
     default: "*alloy*"
 - id: openbao_namespaces_scale
   source: contracts/dashboards/openbao-namespaces-scale.yaml
-  description: OpenBao namespaces and scale. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao namespaces and scale. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: namespace-audit-requests
     description: Audit entries filtered by logical namespace path using the shared input. This profile uses request.namespace.path; the Grafana reference can use namespace IDs. Counts use the selected range.
@@ -1651,7 +1656,7 @@ dashboards:
       | table _time host severity module message
 - id: openbao_operational_logs
   source: contracts/dashboards/openbao-operational-logs.yaml
-  description: OpenBao operational logs. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao operational logs. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: operational-log-volume
     description: OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.
@@ -1704,7 +1709,7 @@ dashboards:
       | table _time host severity module message
 - id: openbao_pki
   source: contracts/dashboards/openbao-pki.yaml
-  description: OpenBao PKI. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao PKI. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: pki-issue-rate
     description: Rolling 5m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.
@@ -1883,7 +1888,7 @@ dashboards:
     default: pki/*
 - id: openbao_runtime_storage
   source: contracts/dashboards/openbao-runtime-storage.yaml
-  description: OpenBao runtime and storage. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao runtime and storage. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: expiration-backlog
     description: Waiting expiration jobs on the active target only. Missing queue metrics remain absent.
@@ -2265,7 +2270,7 @@ dashboards:
       | table _time host severity module message
 - id: openbao_secret_engines_mounts
   source: contracts/dashboards/openbao-secret-engines-mounts.yaml
-  description: OpenBao secret engines and mounts. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao secret engines and mounts. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: secret-engine-events
     description: Audit metadata for the reference secret, kv-v1, database, transit, and pki mounts. Customize the source binding for other mount names. Counts use the selected range and include separate audit entries unless a type is selected.
@@ -2590,7 +2595,7 @@ dashboards:
       | table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error
 - id: openbao_slo_availability
   source: contracts/dashboards/openbao-slo-availability.yaml
-  description: OpenBao SLO and availability. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao SLO and availability. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: probe-success
     description: Requires externally collected probe_success and probe_duration_seconds with bounded job, instance, and cluster labels. Availability averages observed samples per target, then targets; absent probes are not successes. A 30-day result requires 30 days of source retention and collection. Fixed-window stats always use the trailing window to now, independent of the picker. Error budgets use a validated objective between zero and one.
@@ -2778,7 +2783,7 @@ dashboards:
     default: '0.999'
 - id: openbao_transit
   source: contracts/dashboards/openbao-transit.yaml
-  description: OpenBao Transit. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.
+  description: OpenBao Transit. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. See the profile validation record for tested environments and native alert coverage.
   panels:
   - sourcePanel: transit-audit-events
     description: Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.
@@ -2904,3 +2909,190 @@ completedIndex: openbao_completed
 completedSourcetype: openbao:completed
 platformIndex: openbao_platform
 platformSourcetype: openbao:platform
+
+alertLogHostPattern: openbao-node*
+alerts:
+- source: contracts/alerts/critical.yaml
+  sourceAlert: OpenBaoUnreachable
+  sourceExpressionSHA256: d76b3a5ad5e8b798ce090d8adc99f69a1491a9c58a5f91678de640031c552221
+  warmupSeconds: 0
+  description: Reported target failures use scrape samples. Whole-target absence requires a matching row in openbao_alert_targets.csv. Empty inventory does not invent expected targets.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="up")`
+    | where job="openbao"
+    | append [ | inputlookup openbao_alert_targets.csv
+      | search cluster=${cluster} scrape_profile=${scrapeProfile}
+      | addinfo | eval anchor=floor(info_max_time/15)*15-15, bucket_time=mvrange(anchor-300,anchor+1,15)
+      | mvexpand bucket_time | eval expected=1, value=null() ]
+    | eval kubernetes_namespace=coalesce(kubernetes_namespace,"(none)")
+    | stats max(value) AS value max(expected) AS expected BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | eval condition=case(value=0,1,isnotnull(value),0,expected=1,1,1=1,-1)
+- source: contracts/alerts/critical.yaml
+  sourceAlert: OpenBaoSealedUnexpectedly
+  sourceExpressionSHA256: 862698e89ca3f60478759c6cb6eace8b8033edfa4cd81cf677c7138863901ba7
+  warmupSeconds: 0
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_core_unsealed")`
+    | eval cluster_report=if(seal_state_source="cluster",1,0)
+    | eventstats max(cluster_report) AS prefer_cluster BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | where prefer_cluster=0 OR cluster_report=1
+    | stats min(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | eval condition=if(value=0,1,0)
+- source: contracts/alerts/critical.yaml
+  sourceAlert: OpenBaoNoActiveNode
+  sourceExpressionSHA256: b22d20131b6003064b18ba06722f27b3239e7f63d9ca478c129f8128316d9361
+  warmupSeconds: 0
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_core_active")`
+    | stats max(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | stats sum(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile
+    | eval instance="(cluster)", condition=if(value=0,1,0)
+- source: contracts/alerts/critical.yaml
+  sourceAlert: OpenBaoMultipleActiveNodes
+  sourceExpressionSHA256: dc406aa0f5f9826f65906b4d0df1f02943840ffdf77d70df69f0b7093e28ddaa
+  warmupSeconds: 0
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_core_active")`
+    | stats max(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | stats sum(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile
+    | eval instance="(cluster)", condition=if(value>1,1,0)
+- source: contracts/alerts/critical.yaml
+  sourceAlert: OpenBaoRaftPeerCountLow
+  sourceExpressionSHA256: 99ba7203ee6750179862df0b29502009a50724ddd56cbf9ce2bf4aefe71a94bb
+  warmupSeconds: 0
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_raft_peers")`
+    | stats max(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | eval condition=if(value<3,1,0)
+- source: contracts/alerts/critical.yaml
+  sourceAlert: OpenBaoAutopilotUnhealthy
+  sourceExpressionSHA256: 760783d74980348efd2b6d2f2025e9b78fdb5cf1e6728e9e89b6669a3e1f1670
+  warmupSeconds: 0
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_autopilot_healthy")`
+    | stats max(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | eval condition=if(value=0,1,0)
+- source: contracts/alerts/critical.yaml
+  sourceAlert: OpenBaoAutopilotNodeUnhealthy
+  sourceExpressionSHA256: 5d0b9557a28bee2d87bd239f60cb6d137d402d96e2d9543e67dba268c85a57fb
+  warmupSeconds: 0
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_autopilot_node_healthy")`
+    | stats min(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | eval condition=if(value=0,1,0)
+- source: contracts/alerts/warning.yaml
+  sourceAlert: OpenBaoIrrevocableLeasesPresent
+  sourceExpressionSHA256: 46b4a0358bafac31088315f06ec84be19f56ee9961393cb79cbc78bd66fed9f6
+  warmupSeconds: 0
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_expire_num_irrevocable_leases")`
+    | stats max(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | eval condition=if(value>0,1,0)
+- source: contracts/alerts/critical.yaml
+  sourceAlert: OpenBaoAutopilotFailureToleranceLost
+  sourceExpressionSHA256: 4116857d5aea2c174717a2ee2f6cefc15191a9832a6e53264ebbff540e16b9b3
+  warmupSeconds: 0
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_raft_peers" OR metric_name="${p}_autopilot_failure_tolerance")`
+    | stats max(eval(if(match(metric_name,"_raft_peers$"),value,null()))) AS peers max(eval(if(match(metric_name,"_autopilot_failure_tolerance$"),value,null()))) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | eval condition=case(isnull(peers) OR isnull(value),-1,peers>=3 AND value<1,1,1=1,0)
+- source: contracts/alerts/critical.yaml
+  sourceAlert: OpenBaoAuditRequestFailures
+  sourceExpressionSHA256: d3d96a4fab65deb824ef456cfc2606451a58d3035c2a7239bbbdb8311fd56922
+  warmupSeconds: 300
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_audit_log_request_failure")`
+    | `openbao_metric_rate5m`
+    | stats sum(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | eval value=value*300, condition=if(value>0,1,0)
+- source: contracts/alerts/critical.yaml
+  sourceAlert: OpenBaoAuditResponseFailures
+  sourceExpressionSHA256: 3851a0d7eb0f80be467559e719597e3b702c0df6a57d80680f78c0e0bcf47dd7
+  warmupSeconds: 300
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_audit_log_response_failure")`
+    | `openbao_metric_rate5m`
+    | stats sum(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | eval value=value*300, condition=if(value>0,1,0)
+- source: contracts/alerts/warning.yaml
+  sourceAlert: OpenBaoExpirationBacklogGrowing
+  sourceExpressionSHA256: b8e36fc5fb0f815a4038a9b21e1a21af83cc5840d314c46eb2430241bca957a5
+  warmupSeconds: 300
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_core_active" OR metric_name="${p}_expire_job_manager_total_jobs")`
+    | `openbao_metric_active_expiration`
+    | where match(metric_name,"_expire_job_manager_total_jobs$")
+    | stats max(value) AS queue max(_time) AS _time BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | eval value=queue
+    | `openbao_metric_slope5m`
+    | eval condition=if(queue>0 AND value>0,1,0), value=queue
+- source: contracts/alerts/warning.yaml
+  sourceAlert: OpenBaoExpirationBacklogWithHighLatency
+  sourceExpressionSHA256: 0405554f6947e3c42a32066bf4111fec9daf953bb6cd2420a803e508c88ce674
+  warmupSeconds: 300
+  description: Current observations supply condition history; missing inputs reset persistence.
+  search: |
+    | `openbao_metric_alert_samples(filter=metric_name="${p}_core_active" OR metric_name="${p}_expire_job_manager_total_jobs" OR metric_name="${p}_core_handle_request_*" OR metric_name="${p}_core_handle_login_request_*")`
+    | `openbao_metric_active_expiration`
+    | eventstats max(eval(if(match(metric_name,"_expire_job_manager_total_jobs$"),value,null()))) AS queue BY bucket_time cluster kubernetes_namespace scrape_profile instance
+    | where match(metric_name,"_core_handle_(login_)?request_(sum|count)$")
+    | eval operation=if(match(metric_name,"login"),"login","request")
+    | `openbao_metric_rate5m`
+    | stats sum(eval(if(match(metric_name,"_sum$"),value,null()))) AS total sum(eval(if(match(metric_name,"_count$"),value,null()))) AS observations max(queue) AS queue BY bucket_time cluster kubernetes_namespace scrape_profile instance operation
+    | eval value=if(observations>0,total/observations,null()), condition=case(isnull(queue) OR isnull(value),-1,queue>0 AND value>1000,1,1=1,0)
+    | stats max(condition) AS condition max(value) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+- source: contracts/alerts/security.yaml
+  sourceAlert: OpenBaoAuditConfigurationActivity
+  sourceExpressionSHA256: 7fca951a678b6094ca05951ea6415faf4eea082aaa80997ba93afcd93ed859fd
+  warmupSeconds: 300
+  description: Five-minute audited activity over the configured log host scope; aggregates that scope into one deployment alert. Counts include request and response entries. No request payload, caller, or token field is retained.
+  search: |
+    `openbao_audit_events`
+    | where match(operation,"^(create|update|delete)$") AND match(request_path,"^sys/audit(/.*)?$")
+    | stats count AS value
+    | where value>0
+    | addinfo | eval bucket_time=floor(info_max_time/15)*15-15, instance="(deployment)", condition=1
+- source: contracts/alerts/security.yaml
+  sourceAlert: OpenBaoRootPolicyMutation
+  sourceExpressionSHA256: 96511e0892d88d222a7bc8ea654cc65a6e93a054e2ac922330075ddd601a898c
+  warmupSeconds: 300
+  description: Five-minute audited activity over the configured log host scope; aggregates that scope into one deployment alert. Counts include request and response entries. No request payload, caller, or token field is retained.
+  search: |
+    `openbao_audit_events`
+    | where match(operation,"^(create|update|delete)$") AND match(request_path,"^sys/policies/(acl/)?root$")
+    | stats count AS value
+    | where value>0
+    | addinfo | eval bucket_time=floor(info_max_time/15)*15-15, instance="(deployment)", condition=1
+- source: contracts/alerts/security.yaml
+  sourceAlert: OpenBaoPrivilegedConfigurationMutation
+  sourceExpressionSHA256: 31a6fb67bdba182cd8e2b9adeb0a4cf99e54e762f29da520694a9bccfa576b3d
+  warmupSeconds: 300
+  description: Five-minute audited activity over the configured log host scope; aggregates that scope into one deployment alert. Counts include request and response entries. No request payload, caller, or token field is retained.
+  search: |
+    `openbao_audit_events`
+    | where match(operation,"^(create|update|delete)$") AND match(request_path,"^sys/(policies|auth|mounts)(/.*)?$")
+    | stats count AS value
+    | where value>0
+    | addinfo | eval bucket_time=floor(info_max_time/15)*15-15, instance="(deployment)", condition=1
+- source: contracts/alerts/security.yaml
+  sourceAlert: OpenBaoHighRiskSystemPathActivity
+  sourceExpressionSHA256: bcd251e47abd5e31a3e1104ca95524ee44e8399d417a75c85e2345b7cfde185c
+  warmupSeconds: 300
+  description: Five-minute audited activity over the configured log host scope; aggregates that scope into one deployment alert. Counts include request and response entries. No request payload, caller, or token field is retained.
+  search: |
+    `openbao_audit_events`
+    | where match(request_path,"^sys/(raw|plugins|storage/raft|rotate)(/.*)?$")
+    | stats count AS value
+    | where value>0
+    | addinfo | eval bucket_time=floor(info_max_time/15)*15-15, instance="(deployment)", condition=1

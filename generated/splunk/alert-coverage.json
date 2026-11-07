@@ -1,0 +1,495 @@
+{
+  "semantics": "Mapped native searches preserve selected alert intent. Persistence uses complete retrospective condition history, with a 30-second sampling-gap tolerance. All alerts are disabled by default. Missing inputs reset persistence. Unmapped alerts are future work.",
+  "alerts": [
+    {
+      "id": "OpenBaoUnreachable",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "mapped",
+      "severity": "critical",
+      "holdSeconds": 300,
+      "earliest": "-6m",
+      "runbook": "docs/runbooks/openbao-metrics-scrape-failing.md",
+      "description": "Reported target failures use scrape samples. Whole-target absence requires a matching row in openbao_alert_targets.csv. Empty inventory does not invent expected targets."
+    },
+    {
+      "id": "OpenBaoSealedUnexpectedly",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "mapped",
+      "severity": "critical",
+      "holdSeconds": 120,
+      "earliest": "-3m",
+      "runbook": "docs/runbooks/openbao-sealed-unexpectedly.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoCoreUnsealedSignalMissing",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "unmapped",
+      "severity": "critical",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/openbao-sealed-unexpectedly.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoNoActiveNode",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "mapped",
+      "severity": "critical",
+      "holdSeconds": 120,
+      "earliest": "-3m",
+      "runbook": "docs/runbooks/no-active-openbao-leader.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoCoreActiveSignalMissing",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "unmapped",
+      "severity": "critical",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/no-active-openbao-leader.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoMultipleActiveNodes",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "mapped",
+      "severity": "critical",
+      "holdSeconds": 120,
+      "earliest": "-3m",
+      "runbook": "docs/runbooks/multiple-active-nodes.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoAllPodsUnavailable",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "unmapped",
+      "severity": "critical",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/kubernetes-platform-health.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoAuditPVCPressure",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "unmapped",
+      "severity": "critical",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/kubernetes-platform-health.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoRaftPeerCountLow",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "mapped",
+      "severity": "critical",
+      "holdSeconds": 120,
+      "earliest": "-3m",
+      "runbook": "docs/runbooks/raft-autopilot-health.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoAutopilotUnhealthy",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "mapped",
+      "severity": "critical",
+      "holdSeconds": 120,
+      "earliest": "-3m",
+      "runbook": "docs/runbooks/raft-autopilot-health.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoAutopilotFailureToleranceLost",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "mapped",
+      "severity": "critical",
+      "holdSeconds": 120,
+      "earliest": "-3m",
+      "runbook": "docs/runbooks/raft-autopilot-health.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoAutopilotNodeUnhealthy",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "mapped",
+      "severity": "critical",
+      "holdSeconds": 120,
+      "earliest": "-3m",
+      "runbook": "docs/runbooks/raft-autopilot-health.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoAuditRequestFailures",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "mapped",
+      "severity": "critical",
+      "holdSeconds": 0,
+      "earliest": "-6m",
+      "runbook": "docs/runbooks/audit-request-response-failures.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoAuditResponseFailures",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "mapped",
+      "severity": "critical",
+      "holdSeconds": 0,
+      "earliest": "-6m",
+      "runbook": "docs/runbooks/audit-request-response-failures.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoAuditCanaryMissing",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "unmapped",
+      "severity": "critical",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/audit-canary-missing.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoAuditArchiveDegraded",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "unmapped",
+      "severity": "critical",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/audit-archive-degraded.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoAuditArchiveSignalMissing",
+      "source": "contracts/alerts/critical.yaml",
+      "status": "unmapped",
+      "severity": "critical",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/audit-archive-degraded.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoAuditConfigurationActivity",
+      "source": "contracts/alerts/security.yaml",
+      "status": "mapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "-6m",
+      "runbook": "docs/runbooks/security-audit-detections.md",
+      "description": "Five-minute audited activity over the configured log host scope; aggregates that scope into one deployment alert. Counts include request and response entries. No request payload, caller, or token field is retained."
+    },
+    {
+      "id": "OpenBaoRootPolicyMutation",
+      "source": "contracts/alerts/security.yaml",
+      "status": "mapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "-6m",
+      "runbook": "docs/runbooks/security-audit-detections.md",
+      "description": "Five-minute audited activity over the configured log host scope; aggregates that scope into one deployment alert. Counts include request and response entries. No request payload, caller, or token field is retained."
+    },
+    {
+      "id": "OpenBaoPrivilegedConfigurationMutation",
+      "source": "contracts/alerts/security.yaml",
+      "status": "mapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "-6m",
+      "runbook": "docs/runbooks/security-audit-detections.md",
+      "description": "Five-minute audited activity over the configured log host scope; aggregates that scope into one deployment alert. Counts include request and response entries. No request payload, caller, or token field is retained."
+    },
+    {
+      "id": "OpenBaoHighRiskSystemPathActivity",
+      "source": "contracts/alerts/security.yaml",
+      "status": "mapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "-6m",
+      "runbook": "docs/runbooks/security-audit-detections.md",
+      "description": "Five-minute audited activity over the configured log host scope; aggregates that scope into one deployment alert. Counts include request and response entries. No request payload, caller, or token field is retained."
+    },
+    {
+      "id": "OpenBaoPermissionDeniedBurst",
+      "source": "contracts/alerts/security.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/security-audit-detections.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoCompletedRequestLoggingObserved",
+      "source": "contracts/alerts/security.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/completed-request-logging-enabled.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoIrrevocableLeasesPresent",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "mapped",
+      "severity": "warning",
+      "holdSeconds": 600,
+      "earliest": "-11m",
+      "runbook": "docs/runbooks/irrevocable-leases.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoExpirationBacklogGrowing",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "mapped",
+      "severity": "warning",
+      "holdSeconds": 900,
+      "earliest": "-21m",
+      "runbook": "docs/runbooks/expiration-backlog.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoExpirationBacklogWithHighLatency",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "mapped",
+      "severity": "warning",
+      "holdSeconds": 900,
+      "earliest": "-21m",
+      "runbook": "docs/runbooks/expiration-backlog.md",
+      "description": "Current observations supply condition history; missing inputs reset persistence."
+    },
+    {
+      "id": "OpenBaoStorageBarrierLatencyElevated",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/runtime-storage-warnings.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoStorageCacheHitRatioLow",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/runtime-storage-warnings.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoRuntimeMemoryGrowth",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/runtime-storage-warnings.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoMountTableGrowth",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/runtime-storage-warnings.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoPKIOperationFailures",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/secret-engine-feature-warnings.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoPKIOperationLatencyElevated",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/secret-engine-feature-warnings.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoTransitOperationErrors",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/secret-engine-feature-warnings.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoDatabaseCredentialOperationFailures",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/secret-engine-feature-warnings.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoDatabaseCredentialOperationLatencyElevated",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/secret-engine-feature-warnings.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoSyntheticProbeFailing",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/slo-availability.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoSyntheticProbeSignalMissing",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/slo-availability.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoAvailabilityFastBurn",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/slo-availability.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoAvailabilitySlowBurn",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/slo-availability.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoSyntheticProbeLatencyElevated",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/slo-availability.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoKubernetesPodNotReady",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/kubernetes-platform-health.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoKubernetesPodSignalMissing",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/kubernetes-platform-health.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoKubernetesPodRestartsIncreasing",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/kubernetes-platform-health.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoKubernetesNodePressure",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/kubernetes-platform-health.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoLogCollectorTargetDown",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/kubernetes-platform-health.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoLogCollectorSignalMissing",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/kubernetes-platform-health.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoOperationalLogStreamMissing",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/operational-log-stream-missing.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoAuditStreamMissing",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/audit-log-stream-missing.md",
+      "description": "Outside the focused first native-alert set."
+    },
+    {
+      "id": "OpenBaoDebugTraceLoggingEnabled",
+      "source": "contracts/alerts/warning.yaml",
+      "status": "unmapped",
+      "severity": "warning",
+      "holdSeconds": 0,
+      "earliest": "",
+      "runbook": "docs/runbooks/debug-logging-enabled.md",
+      "description": "Outside the focused first native-alert set."
+    }
+  ]
+}

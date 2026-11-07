@@ -32,7 +32,9 @@ The [coverage manifest](../../generated/splunk/coverage.json) lists bindings,
 unavailable panels, and required sources. `mapped` describes search coverage;
 it does not establish collection, visual rendering, or production equivalence.
 Completed-request and Kubernetes Event log adapters have collection checks.
-Native alerts remain unmapped.
+A [focused native alert set](./splunk-alerts.md) covers 17 of the 49 canonical
+alerts. The other 32 remain unmapped. Alerts install disabled and require an
+execution owner, deployment scope, and operator-defined routing before use.
 The [trial validation record](./splunk-enterprise-validation.md) states the
 versions, checks, and limits of the current evidence.
 
@@ -219,6 +221,7 @@ repository does not claim Cloud vetting or Splunkbase certification.
    the documented `|s` quoting filter. The trial includes a Brave check; repeat
    it on the target platform.
 6. Review app and index permissions with the intended role before sharing.
+7. Configure and test [native alerts](./splunk-alerts.md) before enabling them.
 
 Generated knowledge objects restrict access to the platform administrators:
 `admin` on Enterprise and `sc_admin` on Cloud Platform. Dashboard filters do

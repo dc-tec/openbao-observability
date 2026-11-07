@@ -1,0 +1,30 @@
+| `openbao_metric_alert_samples(filter=metric_name="up")`
+| search cluster="compose" scrape_profile="all_nodes"
+| where job="openbao"
+| append [ | inputlookup openbao_alert_targets.csv
+  | search cluster="compose" scrape_profile="all_nodes"
+  | addinfo | eval anchor=floor(info_max_time/15)*15-15, bucket_time=mvrange(anchor-300,anchor+1,15)
+  | mvexpand bucket_time | eval expected=1, value=null() ]
+| eval kubernetes_namespace=coalesce(kubernetes_namespace,"(none)")
+| stats max(value) AS value max(expected) AS expected BY bucket_time cluster kubernetes_namespace scrape_profile instance
+| eval condition=case(value=0,1,isnotnull(value),0,expected=1,1,1=1,-1)
+
+| eval kubernetes_namespace=coalesce(kubernetes_namespace,"(none)"), instance=coalesce(instance,"(cluster)")
+| eval condition_at=bucket_time
+| eval alert_key=sha256(cluster . "|" . kubernetes_namespace . "|" . scrape_profile . "|" . instance)
+| appendpipe [ stats count BY alert_key cluster kubernetes_namespace scrape_profile instance
+  | addinfo | eval anchor=floor(info_max_time/15)*15-15, bucket_time=mvrange(anchor-300,anchor+1,15)
+  | mvexpand bucket_time | fields - count ]
+| stats max(condition) AS condition max(condition_at) AS condition_at max(value) AS value
+  BY bucket_time alert_key cluster kubernetes_namespace scrape_profile instance
+| eval _time=bucket_time
+| sort 0 alert_key bucket_time
+| streamstats last(condition) AS held last(condition_at) AS held_at last(value) AS value BY alert_key
+| addinfo | eval anchor=floor(info_max_time/15)*15-15
+| where bucket_time>=anchor-300 AND bucket_time<=anchor
+| eval satisfied=if(held=1 AND bucket_time-held_at<=30,1,0)
+| stats min(satisfied) AS sustained count AS steps latest(value) AS value
+  BY cluster kubernetes_namespace scrape_profile instance
+| where sustained=1 AND steps>=21
+| eval alert_id="OpenBaoUnreachable", severity="critical", summary="OpenBao metrics scrape is failing", runbook_url="https://dc-tec.github.io/openbao-observability/runbooks/openbao-metrics-scrape-failing/"
+| fields alert_id severity summary runbook_url cluster kubernetes_namespace scrape_profile instance value

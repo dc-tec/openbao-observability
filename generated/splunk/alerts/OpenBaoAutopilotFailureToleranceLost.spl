@@ -1,0 +1,24 @@
+| `openbao_metric_alert_samples(filter=metric_name="vault_raft_peers" OR metric_name="vault_autopilot_failure_tolerance")`
+| search cluster="compose" scrape_profile="all_nodes"
+| stats max(eval(if(match(metric_name,"_raft_peers$"),value,null()))) AS peers max(eval(if(match(metric_name,"_autopilot_failure_tolerance$"),value,null()))) AS value BY bucket_time cluster kubernetes_namespace scrape_profile instance
+| eval condition=case(isnull(peers) OR isnull(value),-1,peers>=3 AND value<1,1,1=1,0)
+
+| eval kubernetes_namespace=coalesce(kubernetes_namespace,"(none)"), instance=coalesce(instance,"(cluster)")
+| eval condition_at=bucket_time
+| eval alert_key=sha256(cluster . "|" . kubernetes_namespace . "|" . scrape_profile . "|" . instance)
+| appendpipe [ stats count BY alert_key cluster kubernetes_namespace scrape_profile instance
+  | addinfo | eval anchor=floor(info_max_time/15)*15-15, bucket_time=mvrange(anchor-120,anchor+1,15)
+  | mvexpand bucket_time | fields - count ]
+| stats max(condition) AS condition max(condition_at) AS condition_at max(value) AS value
+  BY bucket_time alert_key cluster kubernetes_namespace scrape_profile instance
+| eval _time=bucket_time
+| sort 0 alert_key bucket_time
+| streamstats last(condition) AS held last(condition_at) AS held_at last(value) AS value BY alert_key
+| addinfo | eval anchor=floor(info_max_time/15)*15-15
+| where bucket_time>=anchor-120 AND bucket_time<=anchor
+| eval satisfied=if(held=1 AND bucket_time-held_at<=30,1,0)
+| stats min(satisfied) AS sustained count AS steps latest(value) AS value
+  BY cluster kubernetes_namespace scrape_profile instance
+| where sustained=1 AND steps>=9
+| eval alert_id="OpenBaoAutopilotFailureToleranceLost", severity="critical", summary="OpenBao Autopilot has no tolerated voter failure", runbook_url="https://dc-tec.github.io/openbao-observability/runbooks/raft-autopilot-health/"
+| fields alert_id severity summary runbook_url cluster kubernetes_namespace scrape_profile instance value

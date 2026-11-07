@@ -208,6 +208,9 @@ func build(opts Options) (map[string][]byte, error) {
 	artifacts[app+"metadata/default.meta"] = []byte("[]\n" +
 		"access = read : [ admin, sc_admin ], write : [ admin, sc_admin ]\nexport = none\n")
 	artifacts[app+"default/macros.conf"] = []byte(macros(*profile))
+	if err := addAlerts(artifacts, opts.RepositoryRoot, *profile); err != nil {
+		return nil, err
+	}
 	var nav strings.Builder
 	nav.WriteString("<nav>\n")
 	for i, binding := range profile.Dashboards {
@@ -505,7 +508,8 @@ func buildCoverage(root string, profile contracts.SplunkProfileContract) (covera
 		Validation: "Generated parity is checked offline. Runtime evidence is documented per tested Splunk version; " +
 			"SPL execution and Studio rendering require separate validation.",
 		Semantics: "Mapped means a native search binding exists, not that its data source is present or qualified. " +
-			"Audit counts use the selected range; metric windows are described per panel. Alert parity is not included.",
+			"Audit counts use the selected range; metric windows are described per panel. " +
+			"Focused native alert coverage is listed separately in alert-coverage.json.",
 	}
 	paths, err := filepath.Glob(filepath.Join(root, "contracts/dashboards/*.yaml"))
 	if err != nil {
