@@ -1,0 +1,3 @@
+| `openbao_metric_samples("vault_raft_storage_stats_fsm_pending")`
+| eval series=cluster." / ".scrape_profile." / ".instance
+| timechart span=15s max(value) BY series limit=0 useother=f

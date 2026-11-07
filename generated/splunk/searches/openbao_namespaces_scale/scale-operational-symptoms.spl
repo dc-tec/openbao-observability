@@ -1,0 +1,4 @@
+`openbao_operational_events`
+| where match(module." ".message,"(?i)(namespace|raft|autopilot|non-voter|replica|storage)") AND match(message,"(?i)(warn|error|failed|lag|behind|timeout|unhealthy)")
+| sort 100 - _time
+| table _time host severity module message

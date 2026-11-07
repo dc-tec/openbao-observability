@@ -1,0 +1,711 @@
+{
+  "title": "OpenBao namespaces and scale",
+  "description": "OpenBao namespaces and scale. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "inputs": {
+    "input_cluster": {
+      "type": "input.text",
+      "title": "cluster (wildcard)",
+      "options": {
+        "token": "cluster",
+        "defaultValue": "compose"
+      }
+    },
+    "input_host": {
+      "type": "input.text",
+      "title": "host (wildcard)",
+      "options": {
+        "token": "host",
+        "defaultValue": "*"
+      }
+    },
+    "input_instance": {
+      "type": "input.text",
+      "title": "instance (wildcard)",
+      "options": {
+        "token": "instance",
+        "defaultValue": "*"
+      }
+    },
+    "input_kubernetes_namespace": {
+      "type": "input.text",
+      "title": "kubernetes namespace (wildcard)",
+      "options": {
+        "token": "kubernetes_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_logical_namespace": {
+      "type": "input.text",
+      "title": "logical namespace (wildcard)",
+      "options": {
+        "token": "logical_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_openbao_namespace": {
+      "type": "input.text",
+      "title": "openbao namespace (wildcard)",
+      "options": {
+        "token": "openbao_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_operation": {
+      "type": "input.text",
+      "title": "operation (wildcard)",
+      "options": {
+        "token": "operation",
+        "defaultValue": "*"
+      }
+    },
+    "input_request_id": {
+      "type": "input.text",
+      "title": "request id (wildcard)",
+      "options": {
+        "token": "request_id",
+        "defaultValue": "*"
+      }
+    },
+    "input_request_path": {
+      "type": "input.text",
+      "title": "request path (wildcard)",
+      "options": {
+        "token": "request_path",
+        "defaultValue": "*"
+      }
+    },
+    "input_scrape_profile": {
+      "type": "input.text",
+      "title": "scrape profile (wildcard)",
+      "options": {
+        "token": "scrape_profile",
+        "defaultValue": "all_nodes"
+      }
+    },
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time range",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-1h@h,now"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_autopilot_node_health": {
+      "type": "ds.search",
+      "name": "Autopilot node health",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_autopilot_node_healthy\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| eval series=cluster.\" / \".scrape_profile.\" / \".node_id\n| timechart span=15s max(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_dynamic_leases_by_namespace_engine": {
+      "type": "ds.search",
+      "name": "Dynamic leases by namespace and engine",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_secret_lease_creation\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_secret_lease_creation\"\n| eval series=case(metric_name=\"vault_secret_lease_creation\",\"secret_lease_creation\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".coalesce(secret_engine,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate15m`\n| eval value=value*900\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_failure_tolerance": {
+      "type": "ds.search",
+      "name": "Failure tolerance",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_autopilot_failure_tolerance\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster instance scrape_profile\n| stats max(value) AS value BY cluster scrape_profile",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_healthy_raft_nodes": {
+      "type": "ds.search",
+      "name": "Healthy Raft nodes",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_autopilot_node_healthy\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_autopilot_node_healthy\"\n| eval node_id=coalesce(node_id,\"(missing)\"), series=cluster .\" | \".scrape_profile\n| stats min(value) AS value BY bucket_time cluster scrape_profile series node_id\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_mount_table_entries": {
+      "type": "ds.search",
+      "name": "Mount table entries",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_mount_table_num_entries\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_mount_table_num_entries\"\n| eval local=coalesce(local,\"(missing)\"), type=coalesce(type,\"(missing)\"), series=openbao_namespace .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series type local\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_mount_table_size": {
+      "type": "ds.search",
+      "name": "Mount table size",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_mount_table_size\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_core_mount_table_size\"\n| eval local=coalesce(local,\"(missing)\"), type=coalesce(type,\"(missing)\"), series=openbao_namespace .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series type local\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_namespace_audit_requests": {
+      "type": "ds.search",
+      "name": "Namespace audit requests",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where audit_type=\"request\"\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_namespace_audit_stream": {
+      "type": "ds.search",
+      "name": "Namespace audit stream",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_namespace_dynamic_leases": {
+      "type": "ds.search",
+      "name": "Namespace dynamic leases",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_secret_lease_creation\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_secret_lease_creation\"\n| eval series=case(metric_name=\"vault_secret_lease_creation\",\"secret_lease_creation\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".coalesce(secret_engine,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate15m`\n| eval value=value*900\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_namespace_response_error_stream": {
+      "type": "ds.search",
+      "name": "Namespace response error stream",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where audit_type=\"response\" AND len(mvjoin(audit_error,\"\"))\u003e0\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_namespace_response_errors": {
+      "type": "ds.search",
+      "name": "Namespace response errors",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where audit_type=\"response\" AND len(mvjoin(audit_error,\"\"))\u003e0\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_namespace_token_creations": {
+      "type": "ds.search",
+      "name": "Namespace token creations",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_creation\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_creation\"\n| eval series=case(metric_name=\"vault_token_creation\",\"token_creation\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate15m`\n| eval value=value*900\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_apply_gap": {
+      "type": "ds.search",
+      "name": "Raft apply gap",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_storage_stats_*\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_raft_storage_stats_commit_index\" OR metric_name=\"vault_raft_storage_stats_applied_index\"\n| eval peer_id=coalesce(peer_id,\"(missing)\"), series=instance .\" | \".peer_id .\" | \".cluster .\" | \".scrape_profile\n| stats max(eval(if(match(metric_name,\"_commit_index$\"),value,null()))) AS committed max(eval(if(match(metric_name,\"_applied_index$\"),value,null()))) AS applied BY bucket_time cluster scrape_profile series\n| where isnotnull(committed) AND isnotnull(applied)\n| eval value=max(committed-applied,0)\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_fsm_pending": {
+      "type": "ds.search",
+      "name": "Raft FSM pending",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_storage_stats_fsm_pending\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance\n| timechart span=15s max(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_peers": {
+      "type": "ds.search",
+      "name": "Raft peers",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_peers\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster instance scrape_profile\n| stats max(value) AS value BY cluster scrape_profile",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_scale_operational_symptoms": {
+      "type": "ds.search",
+      "name": "Scale operational symptoms",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| where match(module.\" \".message,\"(?i)(namespace|raft|autopilot|non-voter|replica|storage)\") AND match(message,\"(?i)(warn|error|failed|lag|behind|timeout|unhealthy)\")\n| sort 100 - _time\n| table _time host severity module message",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_creations_by_auth_and_namespace": {
+      "type": "ds.search",
+      "name": "Token creations by auth and namespace",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_creation\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_creation\"\n| eval series=case(metric_name=\"vault_token_creation\",\"token_creation\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".coalesce(auth_method,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate15m`\n| eval value=value*900\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_creations_by_namespace": {
+      "type": "ds.search",
+      "name": "Token creations by namespace",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_token_creation\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_token_creation\"\n| eval series=case(metric_name=\"vault_token_creation\",\"token_creation\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate15m`\n| eval value=value*900\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_unhealthy_raft_nodes": {
+      "type": "ds.search",
+      "name": "Unhealthy Raft nodes",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_autopilot_node_healthy\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_autopilot_node_healthy\"\n| eval node_id=coalesce(node_id,\"(missing)\"), series=cluster .\" | \".scrape_profile\n| stats min(value) AS value BY bucket_time cluster scrape_profile series node_id\n| eval value=1-value\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_autopilot_node_health": {
+      "type": "splunk.line",
+      "title": "Autopilot node health",
+      "description": "Raft node health by node_id.",
+      "dataSources": {
+        "primary": "ds_autopilot_node_health"
+      }
+    },
+    "viz_dynamic_leases_by_namespace_engine": {
+      "type": "splunk.line",
+      "title": "Dynamic leases by namespace and engine",
+      "description": "Rolling 15m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_dynamic_leases_by_namespace_engine"
+      }
+    },
+    "viz_failure_tolerance": {
+      "type": "splunk.singlevalue",
+      "title": "Failure tolerance",
+      "description": "Latest available Autopilot failure tolerance.",
+      "dataSources": {
+        "primary": "ds_failure_tolerance"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_healthy_raft_nodes": {
+      "type": "splunk.singlevalue",
+      "title": "Healthy Raft nodes",
+      "description": "Autopilot node-health flags deduplicated by node_id using the minimum across reporters, then counted. This measures peer health, not voter count or quorum margin.",
+      "dataSources": {
+        "primary": "ds_healthy_raft_nodes"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_mount_table_entries": {
+      "type": "splunk.line",
+      "title": "Mount table entries",
+      "description": "Mount inventory by bounded type and local labels. Deduplicates observations across nodes before summing categories; this does not expose mount paths.",
+      "dataSources": {
+        "primary": "ds_mount_table_entries"
+      }
+    },
+    "viz_mount_table_size": {
+      "type": "splunk.line",
+      "title": "Mount table size",
+      "description": "Mount inventory by bounded type and local labels. Deduplicates observations across nodes before summing categories; this does not expose mount paths.",
+      "dataSources": {
+        "primary": "ds_mount_table_size"
+      },
+      "options": {
+        "yAxisTitleText": "bytes"
+      }
+    },
+    "viz_namespace_audit_requests": {
+      "type": "splunk.singlevalue",
+      "title": "Namespace audit requests",
+      "description": "Audit entries filtered by logical namespace path using the shared input. This profile uses request.namespace.path; the Grafana reference can use namespace IDs. Counts use the selected range.",
+      "dataSources": {
+        "primary": "ds_namespace_audit_requests"
+      }
+    },
+    "viz_namespace_audit_stream": {
+      "type": "splunk.table",
+      "title": "Namespace audit stream",
+      "description": "Audit entries filtered by logical namespace path using the shared input. This profile uses request.namespace.path; the Grafana reference can use namespace IDs. Counts use the selected range.",
+      "dataSources": {
+        "primary": "ds_namespace_audit_stream"
+      }
+    },
+    "viz_namespace_dynamic_leases": {
+      "type": "splunk.singlevalue",
+      "title": "Namespace dynamic leases",
+      "description": "Rolling 15m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_namespace_dynamic_leases"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_namespace_response_error_stream": {
+      "type": "splunk.table",
+      "title": "Namespace response error stream",
+      "description": "Audit entries filtered by logical namespace path using the shared input. This profile uses request.namespace.path; the Grafana reference can use namespace IDs. Counts use the selected range.",
+      "dataSources": {
+        "primary": "ds_namespace_response_error_stream"
+      }
+    },
+    "viz_namespace_response_errors": {
+      "type": "splunk.singlevalue",
+      "title": "Namespace response errors",
+      "description": "Audit entries filtered by logical namespace path using the shared input. This profile uses request.namespace.path; the Grafana reference can use namespace IDs. Counts use the selected range.",
+      "dataSources": {
+        "primary": "ds_namespace_response_errors"
+      }
+    },
+    "viz_namespace_token_creations": {
+      "type": "splunk.singlevalue",
+      "title": "Namespace token creations",
+      "description": "Rolling 15m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_namespace_token_creations"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_raft_apply_gap": {
+      "type": "splunk.line",
+      "title": "Raft apply gap",
+      "description": "Commit minus applied index for the same target and peer, clamped at zero. Both samples must be present in the same bucket; this is local apply backlog, not wall-clock replication lag.",
+      "dataSources": {
+        "primary": "ds_raft_apply_gap"
+      }
+    },
+    "viz_raft_fsm_pending": {
+      "type": "splunk.line",
+      "title": "Raft FSM pending",
+      "description": "Raft FSM pending operations by target.",
+      "dataSources": {
+        "primary": "ds_raft_fsm_pending"
+      }
+    },
+    "viz_raft_peers": {
+      "type": "splunk.singlevalue",
+      "title": "Raft peers",
+      "description": "Maximum current Raft peer count.",
+      "dataSources": {
+        "primary": "ds_raft_peers"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_scale_operational_symptoms": {
+      "type": "splunk.table",
+      "title": "Scale operational symptoms",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_scale_operational_symptoms"
+      }
+    },
+    "viz_token_creations_by_auth_and_namespace": {
+      "type": "splunk.line",
+      "title": "Token creations by auth and namespace",
+      "description": "Rolling 15m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_creations_by_auth_and_namespace"
+      }
+    },
+    "viz_token_creations_by_namespace": {
+      "type": "splunk.line",
+      "title": "Token creations by namespace",
+      "description": "Rolling 15m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_token_creations_by_namespace"
+      }
+    },
+    "viz_unhealthy_raft_nodes": {
+      "type": "splunk.singlevalue",
+      "title": "Unhealthy Raft nodes",
+      "description": "Autopilot node-health flags deduplicated by node_id using the minimum across reporters, then counted. This measures peer health, not voter count or quorum margin.",
+      "dataSources": {
+        "primary": "ds_unhealthy_raft_nodes"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    }
+  },
+  "layout": {
+    "globalInputs": [
+      "input_time",
+      "input_request_id",
+      "input_request_path",
+      "input_logical_namespace",
+      "input_operation",
+      "input_host",
+      "input_cluster",
+      "input_instance",
+      "input_scrape_profile",
+      "input_kubernetes_namespace",
+      "input_openbao_namespace"
+    ],
+    "layoutDefinitions": {
+      "layout_audit": {
+        "type": "absolute",
+        "options": {
+          "width": 1200,
+          "height": 2520,
+          "display": "auto-scale"
+        },
+        "structure": [
+          {
+            "item": "viz_namespace_audit_requests",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_namespace_response_errors",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_namespace_token_creations",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_namespace_dynamic_leases",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_token_creations_by_namespace",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 140,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_token_creations_by_auth_and_namespace",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 140,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_dynamic_leases_by_namespace_engine",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 420,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_mount_table_entries",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 420,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_mount_table_size",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 700,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_peers",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 700,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_failure_tolerance",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 700,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_healthy_raft_nodes",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 980,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_unhealthy_raft_nodes",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 980,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_autopilot_node_health",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 980,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_apply_gap",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1260,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_fsm_pending",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 1260,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_namespace_audit_stream",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1540,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_namespace_response_error_stream",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1860,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_scale_operational_symptoms",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 2180,
+              "w": 1200,
+              "h": 300
+            }
+          }
+        ]
+      }
+    },
+    "tabs": {
+      "items": [
+        {
+          "label": "OpenBao namespaces and scale",
+          "layoutId": "layout_audit"
+        }
+      ]
+    }
+  }
+}

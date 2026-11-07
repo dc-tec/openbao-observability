@@ -1,0 +1,8 @@
+| `openbao_metric_samples("vault_secret_lease_creation")`
+| where metric_name="vault_secret_lease_creation"
+| eval series=case(metric_name="vault_secret_lease_creation","secret_lease_creation") ." | ".coalesce(secret_engine,"(missing)") ." | ".coalesce(openbao_namespace,"(missing)") ." | ".cluster ." | ".scrape_profile
+| `openbao_metric_rate15m`
+| eval value=value*900
+| stats sum(value) AS value BY bucket_time cluster scrape_profile series
+| eval _time=bucket_time
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

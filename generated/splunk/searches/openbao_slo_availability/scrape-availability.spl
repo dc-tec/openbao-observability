@@ -1,0 +1,7 @@
+| `openbao_metric_samples("up")`
+| where metric_name="up"
+| sort 0 _time
+| streamstats time_window=1h avg(value) AS value BY _timeseries
+| eval series=instance ." | ".job ." | ".cluster ." | ".scrape_profile
+| eval _time=bucket_time
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

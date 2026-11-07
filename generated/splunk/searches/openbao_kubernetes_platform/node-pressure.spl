@@ -1,0 +1,7 @@
+| `openbao_metric_samples("kube_node_status_condition")`
+| where metric_name="kube_node_status_condition"
+| search node=$node|s$
+| where status="true" AND match(condition,"^(DiskPressure|MemoryPressure|PIDPressure)$")
+| stats max(value) AS value BY bucket_time node condition cluster
+| eval _time=bucket_time, series=node ." | ".condition ." | ".cluster
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

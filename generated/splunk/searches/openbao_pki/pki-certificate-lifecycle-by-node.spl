@@ -1,0 +1,4 @@
+`openbao_audit_events`
+| search request_path=$mount_path|s$
+| where audit_type="request" AND match(request_path,"^.+/(issue|sign|sign-verbatim|cert|certs|revoke)(/|$)")
+| timechart span=5m count BY host limit=10 useother=t

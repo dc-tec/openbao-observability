@@ -1,0 +1,14 @@
+| `openbao_metric_samples("vault_barrier_put*")`
+| where match(metric_name,"_(sum|count)$")
+| `openbao_metric_rate5m`
+| eval sum_rate=if(match(metric_name,"_sum$"),value,0), count_rate=if(match(metric_name,"_count$"),value,0)
+| stats sum(sum_rate) AS total sum(count_rate) AS events BY bucket_time cluster instance scrape_profile
+| where events>0
+| eval value=total/events
+| rename bucket_time AS _time
+| `openbao_metric_fresh`
+| stats latest(total) AS total latest(events) AS events BY cluster instance scrape_profile
+| stats sum(total) AS total sum(events) AS events BY cluster scrape_profile
+| where events>0
+| eval value=total/events
+| fields cluster scrape_profile value

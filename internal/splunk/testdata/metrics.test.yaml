@@ -1,0 +1,231 @@
+rule_files: []
+fuzzy_compare: true
+evaluation_interval: 15s
+tests:
+  - name: linear-counter
+    interval: 15s
+    input_series:
+      - series: splunk_fixture_metric
+        values: "1000 1010 1020 1030 1040 1050 1060 1070 1080 1090 1100 1110 1120 1130 1140 1150 1160 1170 1180 1190 1200"
+    promql_expr_test:
+      - expr: rate(splunk_fixture_metric[5m])
+        eval_time: 5m
+        exp_samples:
+          - labels: "{}"
+            value: 0.6666666666666666
+  - name: counter-reset
+    interval: 100s
+    input_series:
+      - series: splunk_fixture_metric
+        values: "100 110 0 5"
+    promql_expr_test:
+      - expr: rate(splunk_fixture_metric[5m])
+        eval_time: 5m
+        exp_samples:
+          - labels: "{}"
+            value: 0.025
+  - name: zero-counter
+    interval: 15s
+    input_series:
+      - series: splunk_fixture_metric
+        values: "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
+    promql_expr_test:
+      - expr: rate(splunk_fixture_metric[5m])
+        eval_time: 5m
+        exp_samples:
+          - labels: "{}"
+            value: 0
+  - name: sparse-counter
+    interval: 15s
+    input_series:
+      - series: splunk_fixture_metric
+        values: "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 1200"
+    promql_expr_test:
+      - expr: rate(splunk_fixture_metric[5m])
+        eval_time: 5m
+        exp_samples: []
+  - name: growing-backlog
+    interval: 15s
+    input_series:
+      - series: splunk_fixture_metric
+        values: "100 130 160 190 220 250 280 310 340 370 400 430 460 490 520 550 580 610 640 670 700"
+    promql_expr_test:
+      - expr: deriv(splunk_fixture_metric[5m])
+        eval_time: 5m
+        exp_samples:
+          - labels: "{}"
+            value: 2
+  - name: draining-backlog
+    interval: 15s
+    input_series:
+      - series: splunk_fixture_metric
+        values: "700 670 640 610 580 550 520 490 460 430 400 370 340 310 280 250 220 190 160 130 100"
+    promql_expr_test:
+      - expr: deriv(splunk_fixture_metric[5m])
+        eval_time: 5m
+        exp_samples:
+          - labels: "{}"
+            value: -2
+  - name: zero-backlog
+    interval: 15s
+    input_series:
+      - series: splunk_fixture_metric
+        values: "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
+    promql_expr_test:
+      - expr: deriv(splunk_fixture_metric[5m])
+        eval_time: 5m
+        exp_samples:
+          - labels: "{}"
+            value: 0
+  - name: weighted-latency-ms
+    interval: 15s
+    input_series:
+      - series: fixture_count{instance="a"}
+        values: "0+2x20"
+      - series: fixture_sum{instance="a"}
+        values: "0+20x20"
+      - series: fixture_count{instance="b"}
+        values: "0+1x20"
+      - series: fixture_sum{instance="b"}
+        values: "0+100x20"
+    promql_expr_test:
+      - expr: sum(rate(fixture_sum[5m])) / sum(rate(fixture_count[5m]))
+        eval_time: 5m
+        exp_samples:
+          - labels: "{}"
+            value: 40
+  - name: namespace-counter-increase-15m
+    interval: 45s
+    input_series:
+      - series: fixture_counter{openbao_namespace="team-a/"}
+        values: "1000+2x20"
+      - series: fixture_counter{openbao_namespace="team-b/"}
+        values: "2000+5x20"
+    promql_expr_test:
+      - expr: sum(increase(fixture_counter{openbao_namespace="team-a/"}[15m]))
+        eval_time: 15m
+        exp_samples:
+          - labels: "{}"
+            value: 40
+  - name: counter-reset-increase-15m
+    interval: 5m
+    input_series:
+      - series: fixture_counter
+        values: "100 110 0 5"
+    promql_expr_test:
+      - expr: increase(fixture_counter[15m])
+        eval_time: 15m
+        exp_samples:
+          - labels: "{}"
+            value: 7.5
+  - name: transition-increase-30m
+    interval: 90s
+    input_series:
+      - series: fixture_counter
+        values: "100+2x20"
+    promql_expr_test:
+      - expr: increase(fixture_counter[30m])
+        eval_time: 30m
+        exp_samples:
+          - labels: "{}"
+            value: 40
+  - name: cache-hit-ratio
+    interval: 15s
+    input_series:
+      - series: fixture_hits
+        values: "1000+8x20"
+      - series: fixture_misses
+        values: "1000+2x20"
+    promql_expr_test:
+      - expr: rate(fixture_hits[5m]) / (rate(fixture_hits[5m]) + rate(fixture_misses[5m]))
+        eval_time: 5m
+        exp_samples:
+          - labels: "{}"
+            value: 0.8
+  - name: duplicate-mount-reporters
+    interval: 15s
+    input_series:
+      - series: fixture_mounts{instance="a",type="kv",local="false"}
+        values: "3"
+      - series: fixture_mounts{instance="b",type="kv",local="false"}
+        values: "3"
+      - series: fixture_mounts{instance="a",type="pki",local="false"}
+        values: "2"
+    promql_expr_test:
+      - expr: sum(max by (type, local) (fixture_mounts))
+        eval_time: 0s
+        exp_samples:
+          - labels: "{}"
+            value: 5
+  - name: kv-inventory-distinct-mounts
+    interval: 15s
+    input_series:
+      - series: fixture_inventory{instance="a",mount_point="one/"}
+        values: "3"
+      - series: fixture_inventory{instance="b",mount_point="one/"}
+        values: "3"
+      - series: fixture_inventory{instance="a",mount_point="two/"}
+        values: "4"
+    promql_expr_test:
+      - expr: sum(max by (mount_point) (max_over_time(fixture_inventory[30m])))
+        eval_time: 0s
+        exp_samples:
+          - labels: "{}"
+            value: 7
+  - name: observed-probe-target-weighting
+    interval: 15s
+    input_series:
+      - series: fixture_probe{instance="a"}
+        values: "1 1"
+      - series: fixture_probe{instance="b"}
+        values: "0 0"
+    promql_expr_test:
+      - expr: avg(avg_over_time(fixture_probe[30d]))
+        eval_time: 15s
+        exp_samples:
+          - labels: "{}"
+            value: 0.5
+      - expr: 1 - ((1 - avg(avg_over_time(fixture_probe[30d]))) / (1 - 0.99))
+        eval_time: 15s
+        exp_samples:
+          - labels: "{}"
+            value: -48.99999999999996
+      - expr: (1 - avg(avg_over_time(fixture_probe[5m]))) / (1 - 0.99)
+        eval_time: 15s
+        exp_samples:
+          - labels: "{}"
+            value: 49.99999999999996
+  - name: pvc-pairs-before-minimum
+    interval: 15s
+    input_series:
+      - series: fixture_available{persistentvolumeclaim="a"}
+        values: "60"
+      - series: fixture_capacity{persistentvolumeclaim="a"}
+        values: "1000"
+      - series: fixture_available{persistentvolumeclaim="b"}
+        values: "20"
+      - series: fixture_capacity{persistentvolumeclaim="b"}
+        values: "100"
+    promql_expr_test:
+      - expr: min(100 * fixture_available / fixture_capacity)
+        eval_time: 0s
+        exp_samples:
+          - labels: "{}"
+            value: 6
+  - name: cache-ratio-weights-namespaces
+    interval: 15s
+    input_series:
+      - series: fixture_hits{openbao_namespace="a/"}
+        values: "1000+8x20"
+      - series: fixture_misses{openbao_namespace="a/"}
+        values: "1000+2x20"
+      - series: fixture_hits{openbao_namespace="b/"}
+        values: "1000+3x20"
+      - series: fixture_misses{openbao_namespace="b/"}
+        values: "1000+7x20"
+    promql_expr_test:
+      - expr: sum(rate(fixture_hits[5m])) / (sum(rate(fixture_hits[5m])) + sum(rate(fixture_misses[5m])))
+        eval_time: 5m
+        exp_samples:
+          - labels: "{}"
+            value: 0.55

@@ -1,0 +1,12 @@
+| `openbao_metric_samples("vault_audit_log_response_failure")`
+| where metric_name="vault_audit_log_response_failure"
+| eval series=case(metric_name="vault_audit_log_response_failure","audit_log_response_failure") ." | ".coalesce(openbao_namespace,"(missing)") ." | ".cluster ." | ".scrape_profile
+| `openbao_metric_rate5m`
+| eval value=value*300
+| stats sum(value) AS value BY bucket_time cluster scrape_profile series
+| eval _time=bucket_time
+| `openbao_metric_fresh`
+| stats latest(value) AS value BY cluster scrape_profile series
+| stats sum(value) AS value count AS contributing_series
+| where contributing_series>0
+| fields - contributing_series

@@ -1,0 +1,3 @@
+`openbao_audit_events`
+| where (match(request_path,"^(secret/(data|metadata)/|kv-v1/)") OR match(request_path,"^database/(config|roles|creds|rotate-root)") OR match(request_path,"^transit/(keys|encrypt|decrypt|rewrap|sign|verify|hmac)"))
+| timechart span=5m count BY host limit=10 useother=t

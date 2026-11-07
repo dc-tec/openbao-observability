@@ -21,6 +21,9 @@ portable architecture, and generated artifacts implement one tested profile.
 ## Set up your environment
 
 - Install Go.
+- Install Python 3.10 or later and ShellCheck for the Splunk development checks.
+  Run `make install-splunk-tools` to install the pinned formatter in an ignored
+  virtual environment. Installing the Splunk app does not require these tools.
 - Install Docker with Docker Compose when you work on fixtures, the local
   stack, or live dashboard query validation.
 - Run commands from the repository root.
@@ -126,6 +129,7 @@ make contracts-verify
 make docs-verify
 make docs-build
 make validate-generated
+make test-splunk-tools lint-splunk-tools
 ```
 
 Run the full verification before publishing generated artifacts.
@@ -176,6 +180,13 @@ Use the same target locally when validating release contents:
 ```shell
 make release-artifacts VERSION=0.1.0 SOURCE_DATE_EPOCH=0
 ```
+
+The release includes the reference archive, an installable
+`openbao_observability_<version>.spl` app, and SHA256 checksums. The app contains
+generated knowledge objects and the license, without trial configuration or
+development scripts. The reference archive excludes `.env`, `.runtime`, and
+Python cache files even when built from a used checkout without Git metadata.
+These exclusions do not replace review of public source files before release.
 
 ## Pull request checklist
 

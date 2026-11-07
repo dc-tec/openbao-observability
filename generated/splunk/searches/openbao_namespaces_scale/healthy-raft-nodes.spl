@@ -1,0 +1,11 @@
+| `openbao_metric_samples("vault_autopilot_node_healthy")`
+| where metric_name="vault_autopilot_node_healthy"
+| eval node_id=coalesce(node_id,"(missing)"), series=cluster ." | ".scrape_profile
+| stats min(value) AS value BY bucket_time cluster scrape_profile series node_id
+| stats sum(value) AS value BY bucket_time cluster scrape_profile series
+| eval _time=bucket_time
+| `openbao_metric_fresh`
+| stats latest(value) AS value BY cluster scrape_profile series
+| stats sum(value) AS value count AS contributing_series
+| where contributing_series>0
+| fields - contributing_series

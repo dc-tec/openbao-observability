@@ -1,0 +1,7 @@
+| `openbao_metric_samples("vault_barrier_get_count")`
+| where metric_name="vault_barrier_get_count"
+| eval series=case(metric_name="vault_barrier_get_count","barrier_get") ." | ".coalesce(openbao_namespace,"(missing)") ." | ".cluster ." | ".scrape_profile
+| `openbao_metric_rate5m`
+| stats sum(value) AS value BY bucket_time cluster scrape_profile series
+| eval _time=bucket_time
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

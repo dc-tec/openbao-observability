@@ -36,6 +36,7 @@ type bundleEntry struct {
 	AbsolutePath string
 	RelativePath string
 	Info         fs.FileInfo
+	Content      []byte
 }
 
 var (
@@ -151,6 +152,9 @@ func (o BundleOptions) withDefaults() (BundleOptions, error) {
 			return o, fmt.Errorf("release include path %q must be relative to the repository root", include)
 		}
 		o.Includes[i] = cleaned
+		if localReleasePath(cleaned) {
+			return o, fmt.Errorf("release include %q contains local runtime or credential data", include)
+		}
 	}
 	return o, nil
 }
@@ -241,6 +245,16 @@ func bundleEntryFromDirEntry(root, filePath string, d fs.DirEntry, walkErr error
 	if walkErr != nil {
 		return bundleEntry{}, false, walkErr
 	}
+	rel, err := filepath.Rel(root, filePath)
+	if err != nil {
+		return bundleEntry{}, false, err
+	}
+	if localReleasePath(rel) {
+		if d.IsDir() {
+			return bundleEntry{}, false, filepath.SkipDir
+		}
+		return bundleEntry{}, false, nil
+	}
 	if d.Type()&os.ModeSymlink != 0 {
 		return bundleEntry{}, false, releaseSymlinkError(root, filePath)
 	}
@@ -253,6 +267,19 @@ func bundleEntryFromDirEntry(root, filePath string, d fs.DirEntry, walkErr error
 	}
 	entry, err := bundleEntryFor(root, filePath, info)
 	return entry, err == nil, err
+}
+
+// localReleasePath excludes private evaluation state independently of Git.
+// Release bundles can also be built from a source archive without a .git directory.
+func localReleasePath(rel string) bool {
+	for _, component := range strings.Split(filepath.ToSlash(rel), "/") {
+		if component == ".env" || strings.HasPrefix(component, ".env.") && component != ".env.example" ||
+			component == ".runtime" || component == "__pycache__" || component == ".DS_Store" ||
+			strings.HasSuffix(component, ".pyc") || strings.HasSuffix(component, ".pyo") {
+			return true
+		}
+	}
+	return false
 }
 
 func releaseSymlinkError(root, filePath string) error {
@@ -283,10 +310,14 @@ func bundleEntryFor(root, absolutePath string, info fs.FileInfo) (bundleEntry, e
 }
 
 func writeBundle(opts BundleOptions, entries []bundleEntry) error {
-	if err := os.MkdirAll(filepath.Dir(opts.OutputPath), 0o755); err != nil {
+	return writeArchive(opts.OutputPath, projectName+"_"+opts.Version, entries, opts.SourceDateEpoch)
+}
+
+func writeArchive(outputPath, rootName string, entries []bundleEntry, sourceDateEpoch int64) error {
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
 		return fmt.Errorf("create release output directory: %w", err)
 	}
-	tmp, err := os.CreateTemp(filepath.Dir(opts.OutputPath), "."+filepath.Base(opts.OutputPath)+".tmp-*")
+	tmp, err := os.CreateTemp(filepath.Dir(outputPath), "."+filepath.Base(outputPath)+".tmp-*")
 	if err != nil {
 		return fmt.Errorf("create release bundle temp file: %w", err)
 	}
@@ -294,13 +325,12 @@ func writeBundle(opts BundleOptions, entries []bundleEntry) error {
 		_ = os.Remove(tmp.Name())
 	}()
 
-	epoch := time.Unix(opts.SourceDateEpoch, 0).UTC()
+	epoch := time.Unix(sourceDateEpoch, 0).UTC()
 	gzipWriter := gzip.NewWriter(tmp)
 	gzipWriter.Name = ""
 	gzipWriter.Comment = ""
 	gzipWriter.ModTime = epoch
 	tarWriter := tar.NewWriter(gzipWriter)
-	rootName := projectName + "_" + opts.Version
 
 	if err := tarWriter.WriteHeader(&tar.Header{
 		Name:       rootName + "/",
@@ -334,7 +364,7 @@ func writeBundle(opts BundleOptions, entries []bundleEntry) error {
 	if err := tmp.Close(); err != nil {
 		return fmt.Errorf("close release bundle temp file: %w", err)
 	}
-	if err := os.Rename(tmp.Name(), opts.OutputPath); err != nil {
+	if err := os.Rename(tmp.Name(), outputPath); err != nil {
 		return fmt.Errorf("move release bundle into place: %w", err)
 	}
 	return nil
@@ -364,10 +394,17 @@ func writeBundleEntry(tarWriter *tar.Writer, rootName string, entry bundleEntry,
 		Uid:        0,
 		Gid:        0,
 	}
+	if entry.Content != nil {
+		header.Size = int64(len(entry.Content))
+	}
 	if err := tarWriter.WriteHeader(header); err != nil {
 		return fmt.Errorf("write release bundle header for %s: %w", entry.RelativePath, err)
 	}
-	if _, err := io.Copy(tarWriter, file); err != nil {
+	var content io.Reader = file
+	if entry.Content != nil {
+		content = strings.NewReader(string(entry.Content))
+	}
+	if _, err := io.Copy(tarWriter, content); err != nil {
 		return fmt.Errorf("write release bundle file %s: %w", entry.RelativePath, err)
 	}
 	return nil

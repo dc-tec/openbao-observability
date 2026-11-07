@@ -1,0 +1,9 @@
+| `openbao_metric_samples("vault_expire_re*")`
+| where metric_name="vault_expire_revoke_sum" OR metric_name="vault_expire_revoke_count" OR metric_name="vault_expire_register_auth_sum" OR metric_name="vault_expire_register_auth_count"
+| eval series=case(metric_name="vault_expire_revoke_sum","revoke",metric_name="vault_expire_revoke_count","revoke",metric_name="vault_expire_register_auth_sum","register auth",metric_name="vault_expire_register_auth_count","register auth") ." | ".coalesce(openbao_namespace,"(missing)") ." | ".cluster ." | ".scrape_profile
+| `openbao_metric_rate5m`
+| stats sum(eval(if(match(metric_name,"_sum$"),value,null()))) AS total sum(eval(if(match(metric_name,"_count$"),value,null()))) AS observations BY bucket_time cluster scrape_profile series
+| where observations>0
+| eval value=total/observations
+| eval _time=bucket_time
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

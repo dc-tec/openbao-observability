@@ -42,7 +42,9 @@ jobs:
 
       - name: Install quality tools
         if: matrix.openbao == '2.7.0'
-        run: make install-go-tools
+        run: |
+          make install-go-tools install-splunk-tools
+          command -v shellcheck || { sudo apt-get update && sudo apt-get install --yes shellcheck; }
 
       - name: Capture OpenBao fixtures
         run: make fixtures-openbao
@@ -57,6 +59,12 @@ jobs:
 
       - name: Check whitespace
         run: git diff --check
+
+      - name: Inspect installable Splunk app
+        if: matrix.openbao == '2.7.0'
+        run: |
+          make install-splunk-appinspect
+          make inspect-splunk-app
 
   compose:
     name: Compose validation
@@ -74,6 +82,17 @@ jobs:
 
       - name: Validate Compose configurations
         run: make compose-config compose-audit-archive-config >/dev/null
+
+      - name: Validate Splunk collection configuration without starting Splunk
+        env:
+          SPLUNK_PASSWORD: config-validation-only
+          SPLUNK_HEC_TOKEN: 00000000-0000-0000-0000-000000000000
+          SPLUNK_GENERAL_TERMS: config-validation-only
+        run: |
+          compose=(docker compose --project-directory examples/docker-compose
+            -f examples/docker-compose/compose.yaml -f examples/splunk/compose.yaml)
+          "${compose[@]}" --profile qualification config --quiet
+          "${compose[@]}" run --rm --no-deps -T splunk-otel validate --config=/etc/otel/config.yaml
 
       - name: Validate configurations with the Compose images
         run: |

@@ -1,0 +1,7 @@
+| `openbao_metric_samples("container_cpu_usage_seconds_total")`
+| where metric_name="container_cpu_usage_seconds_total"
+| search pod=$pod|s$ container=$container|s$
+| `openbao_metric_rate5m`
+| stats sum(value) AS value BY bucket_time pod cluster
+| eval _time=bucket_time, series=pod ." | ".cluster
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

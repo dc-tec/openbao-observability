@@ -1,0 +1,633 @@
+<dashboard version="2">
+  <label>OpenBao HA/Raft</label>
+  <description>OpenBao HA/Raft. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.</description>
+  <definition><![CDATA[{
+  "title": "OpenBao HA/Raft",
+  "description": "OpenBao HA/Raft. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "inputs": {
+    "input_cluster": {
+      "type": "input.text",
+      "title": "cluster (wildcard)",
+      "options": {
+        "token": "cluster",
+        "defaultValue": "compose"
+      }
+    },
+    "input_host": {
+      "type": "input.text",
+      "title": "host (wildcard)",
+      "options": {
+        "token": "host",
+        "defaultValue": "*"
+      }
+    },
+    "input_instance": {
+      "type": "input.text",
+      "title": "instance (wildcard)",
+      "options": {
+        "token": "instance",
+        "defaultValue": "*"
+      }
+    },
+    "input_kubernetes_namespace": {
+      "type": "input.text",
+      "title": "kubernetes namespace (wildcard)",
+      "options": {
+        "token": "kubernetes_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_openbao_namespace": {
+      "type": "input.text",
+      "title": "openbao namespace (wildcard)",
+      "options": {
+        "token": "openbao_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_scrape_profile": {
+      "type": "input.text",
+      "title": "scrape profile (wildcard)",
+      "options": {
+        "token": "scrape_profile",
+        "defaultValue": "all_nodes"
+      }
+    },
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time range",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-1h@h,now"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_active_nodes": {
+      "type": "ds.search",
+      "name": "Active nodes",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_active\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster instance scrape_profile\n| stats sum(value) AS value BY cluster scrape_profile",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_append_entries_logs": {
+      "type": "ds.search",
+      "name": "Append entries logs",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_replication_appendEntries_logs\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_raft_replication_appendEntries_logs\"\n| eval series=case(metric_name=\"vault_raft_replication_appendEntries_logs\",\"raft_replication_appendEntries_logs\") .\" | \".coalesce(peer_id,\"(missing)\") .\" | \".instance .\" | \".cluster .\" | \".scrape_profile\n| stats max(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| timechart span=15s max(value) BY series limit=20 useother=f cont=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_autopilot_health": {
+      "type": "ds.search",
+      "name": "Autopilot health",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_autopilot_healthy\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster instance scrape_profile\n| stats max(value) AS value BY cluster scrape_profile",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_autopilot_node_health": {
+      "type": "ds.search",
+      "name": "Autopilot node health",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_autopilot_node_healthy\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| eval series=cluster.\" / \".scrape_profile.\" / \".node_id\n| timechart span=15s max(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_candidate_transitions": {
+      "type": "ds.search",
+      "name": "Candidate transitions",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_state_candidate\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_raft_state_candidate\"\n| eval series=case(metric_name=\"vault_raft_state_candidate\",\"raft_state_candidate\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate30m`\n| eval value=value*1800\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_failure_tolerance": {
+      "type": "ds.search",
+      "name": "Failure tolerance",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_autopilot_failure_tolerance\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster instance scrape_profile\n| stats max(value) AS value BY cluster scrape_profile",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_leader_last_contact": {
+      "type": "ds.search",
+      "name": "Leader last contact p99",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_leader_lastContact_0.99\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance\n| timechart span=15s max(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_leader_transitions": {
+      "type": "ds.search",
+      "name": "Leader transitions",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_state_leader\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_raft_state_leader\"\n| eval series=case(metric_name=\"vault_raft_state_leader\",\"raft_state_leader\") .\" | \".coalesce(openbao_namespace,\"(missing)\") .\" | \".cluster .\" | \".scrape_profile\n| `openbao_metric_rate30m`\n| eval value=value*1800\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_applied_index": {
+      "type": "ds.search",
+      "name": "Raft applied index",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_storage_stats_applied_index\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance\n| timechart span=15s max(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_commit_index": {
+      "type": "ds.search",
+      "name": "Raft commit index",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_storage_stats_commit_index\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance\n| timechart span=15s max(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_fsm_pending": {
+      "type": "ds.search",
+      "name": "FSM pending",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_storage_stats_fsm_pending\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance\n| timechart span=15s max(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_peers": {
+      "type": "ds.search",
+      "name": "Raft peers",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_peers\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster instance scrape_profile\n| stats max(value) AS value BY cluster scrape_profile",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_storage_logs": {
+      "type": "ds.search",
+      "name": "Raft and storage logs",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| where match(module.\" \".message,\"(?i)(raft|storage|autopilot)\")\n| sort 100 - _time\n| table _time host severity module message",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_term": {
+      "type": "ds.search",
+      "name": "Raft term",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_storage_stats_term\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| eval series=cluster.\" / \".scrape_profile.\" / \".instance\n| timechart span=15s max(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_replication_heartbeat": {
+      "type": "ds.search",
+      "name": "Replication heartbeat p99",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_raft_replication_heartbeat_0.99\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| eval series=cluster.\" / \".scrape_profile.\" / \".peer_id\n| timechart span=15s max(value) BY series limit=0 useother=f",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_unhealthy_raft_nodes": {
+      "type": "ds.search",
+      "name": "Unhealthy Raft nodes",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_autopilot_node_healthy\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| where metric_name=\"vault_autopilot_node_healthy\"\n| eval node_id=coalesce(node_id,\"(missing)\"), series=cluster .\" | \".scrape_profile\n| stats min(value) AS value BY bucket_time cluster scrape_profile series node_id\n| eval value=1-value\n| stats sum(value) AS value BY bucket_time cluster scrape_profile series\n| eval _time=bucket_time\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster scrape_profile series\n| stats sum(value) AS value count AS contributing_series\n| where contributing_series\u003e0\n| fields - contributing_series",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_unsealed_nodes": {
+      "type": "ds.search",
+      "name": "Unsealed nodes",
+      "options": {
+        "query": "| `openbao_metric_samples(\"vault_core_unsealed\")`\n| search cluster=$cluster|s$ instance=$instance|s$ scrape_profile=$scrape_profile|s$ kubernetes_namespace=$kubernetes_namespace|s$ openbao_namespace=$openbao_namespace|s$\n| `openbao_metric_fresh`\n| stats latest(value) AS value BY cluster instance scrape_profile seal_state_source\n| eventstats max(eval(if(seal_state_source=\"cluster\",1,0))) AS has_cluster BY cluster instance scrape_profile\n| where seal_state_source=\"cluster\" OR has_cluster=0\n| stats max(value) AS value BY cluster instance scrape_profile\n| stats sum(value) AS value BY cluster scrape_profile",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_active_nodes": {
+      "type": "splunk.singlevalue",
+      "title": "Active nodes",
+      "description": "Sum of fresh active flags across targets.",
+      "dataSources": {
+        "primary": "ds_active_nodes"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_append_entries_logs": {
+      "type": "splunk.line",
+      "title": "Append entries logs",
+      "description": "Fresh source gauge; duplicate node observations are combined before totals. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_append_entries_logs"
+      }
+    },
+    "viz_autopilot_health": {
+      "type": "splunk.singlevalue",
+      "title": "Autopilot health",
+      "description": "Latest available Autopilot health state.",
+      "dataSources": {
+        "primary": "ds_autopilot_health"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_autopilot_node_health": {
+      "type": "splunk.line",
+      "title": "Autopilot node health",
+      "description": "Raft node health by node_id.",
+      "dataSources": {
+        "primary": "ds_autopilot_node_health"
+      }
+    },
+    "viz_candidate_transitions": {
+      "type": "splunk.singlevalue",
+      "title": "Candidate transitions",
+      "description": "Rolling 30m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_candidate_transitions"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_failure_tolerance": {
+      "type": "splunk.singlevalue",
+      "title": "Failure tolerance",
+      "description": "Latest available Autopilot failure tolerance.",
+      "dataSources": {
+        "primary": "ds_failure_tolerance"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_leader_last_contact": {
+      "type": "splunk.line",
+      "title": "Leader last contact p99",
+      "description": "Per-target source p99 last-contact duration in milliseconds. Quantiles are not averaged across targets.",
+      "dataSources": {
+        "primary": "ds_leader_last_contact"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_leader_transitions": {
+      "type": "splunk.singlevalue",
+      "title": "Leader transitions",
+      "description": "Rolling 30m calculation from upstream counters; resets are corrected per complete source series before aggregation. Namespace and deployment identity are retained. Chart series are limited to 20; select one cluster and scrape profile for single-value panels.",
+      "dataSources": {
+        "primary": "ds_leader_transitions"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_raft_applied_index": {
+      "type": "splunk.line",
+      "title": "Raft applied index",
+      "description": "Raft applied index by target.",
+      "dataSources": {
+        "primary": "ds_raft_applied_index"
+      }
+    },
+    "viz_raft_commit_index": {
+      "type": "splunk.line",
+      "title": "Raft commit index",
+      "description": "Raft commit index by target.",
+      "dataSources": {
+        "primary": "ds_raft_commit_index"
+      }
+    },
+    "viz_raft_fsm_pending": {
+      "type": "splunk.line",
+      "title": "FSM pending",
+      "description": "Raft FSM pending operations by target.",
+      "dataSources": {
+        "primary": "ds_raft_fsm_pending"
+      }
+    },
+    "viz_raft_peers": {
+      "type": "splunk.singlevalue",
+      "title": "Raft peers",
+      "description": "Maximum current Raft peer count.",
+      "dataSources": {
+        "primary": "ds_raft_peers"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_raft_storage_logs": {
+      "type": "splunk.table",
+      "title": "Raft and storage logs",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_raft_storage_logs"
+      }
+    },
+    "viz_raft_term": {
+      "type": "splunk.line",
+      "title": "Raft term",
+      "description": "Current Raft term by target.",
+      "dataSources": {
+        "primary": "ds_raft_term"
+      }
+    },
+    "viz_replication_heartbeat": {
+      "type": "splunk.line",
+      "title": "Replication heartbeat p99",
+      "description": "Source p99 replication heartbeat duration by peer_id, in milliseconds.",
+      "dataSources": {
+        "primary": "ds_replication_heartbeat"
+      },
+      "options": {
+        "yAxisTitleText": "ms"
+      }
+    },
+    "viz_unhealthy_raft_nodes": {
+      "type": "splunk.singlevalue",
+      "title": "Unhealthy Raft nodes",
+      "description": "Autopilot node-health flags deduplicated by node_id using the minimum across reporters, then counted. This measures peer health, not voter count or quorum margin.",
+      "dataSources": {
+        "primary": "ds_unhealthy_raft_nodes"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    },
+    "viz_unsealed_nodes": {
+      "type": "splunk.singlevalue",
+      "title": "Unsealed nodes",
+      "description": "Sum of fresh unsealed states, with duplicate-source preference and missing-state preservation.",
+      "dataSources": {
+        "primary": "ds_unsealed_nodes"
+      },
+      "options": {
+        "unitPosition": "after",
+        "majorValue": "\u003e primary | seriesByName('value') | lastPoint()"
+      }
+    }
+  },
+  "layout": {
+    "globalInputs": [
+      "input_time",
+      "input_host",
+      "input_cluster",
+      "input_instance",
+      "input_scrape_profile",
+      "input_kubernetes_namespace",
+      "input_openbao_namespace"
+    ],
+    "layoutDefinitions": {
+      "layout_audit": {
+        "type": "absolute",
+        "options": {
+          "width": 1200,
+          "height": 1740,
+          "display": "auto-scale"
+        },
+        "structure": [
+          {
+            "item": "viz_raft_peers",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_autopilot_health",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_failure_tolerance",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_unhealthy_raft_nodes",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_active_nodes",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_unsealed_nodes",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_leader_transitions",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_candidate_transitions",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_autopilot_node_health",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_commit_index",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_applied_index",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 560,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_fsm_pending",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 560,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_term",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 840,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_leader_last_contact",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 840,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_replication_heartbeat",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1120,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_append_entries_logs",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 1120,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_storage_logs",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1400,
+              "w": 1200,
+              "h": 300
+            }
+          }
+        ]
+      }
+    },
+    "tabs": {
+      "items": [
+        {
+          "label": "OpenBao HA/Raft",
+          "layoutId": "layout_audit"
+        }
+      ]
+    }
+  }
+}
+]]></definition>
+</dashboard>

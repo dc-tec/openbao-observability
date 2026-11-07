@@ -8,7 +8,10 @@ metrics, operational logs, audit logs, dashboards, alerts, and runbooks.
 The project is contract-first: source contracts describe portable OpenBao
 signal intent, and generated artifacts provide one tested Prometheus, Loki,
 Grafana, and Grafana Alloy implementation profile. It starts from verified
-OpenBao behavior instead of copied Vault dashboard assumptions.
+OpenBao behavior instead of copied Vault dashboard assumptions. A draft Splunk
+Enterprise / Cloud Platform profile maps all 289 panels across 15 dashboard
+families to native SPL. Enterprise trial checks include collection, restricted
+roles, and Brave rendering. Native alert parity remains unmapped.
 
 This is a reference architecture, not a drop-in production monitoring
 distribution. You still own retention, access control, alert routing, platform
@@ -22,6 +25,7 @@ sizing, release packaging, and audit archive controls.
 
 - Source contracts for OpenBao metrics, log streams, alerts, and dashboards.
 - Generated Prometheus, Loki, and Grafana artifacts.
+- Draft Dashboard Studio audit and metrics artifacts with native SPL and trial validation.
 - Grafana Alloy examples for operational logs, audit logs, and collection
   pipelines.
 - Runnable Docker Compose and Kubernetes examples.
@@ -61,6 +65,7 @@ make compose-down
 | Check maturity and boundaries | [Project status and maturity](docs/reference-architecture/project-status.md) |
 | Adopt the design on your platform | [Adopt the reference architecture](docs/reference-architecture/adoption.md) |
 | Use the Prometheus, Loki, Grafana, and Alloy profile | [Implementation profile](docs/implementation-profiles/prometheus-loki-grafana-alloy.md) |
+| Evaluate the Splunk profile | [Draft Splunk profile](docs/implementation-profiles/splunk-enterprise.md) |
 | Use this with the OpenBao Operator | [OpenBao Operator companion profile](docs/implementation-profiles/openbao-operator.md) |
 | Browse all docs and runbooks | [Documentation index](docs/README.md) |
 | Contribute changes | [Contributing](CONTRIBUTING.md) |

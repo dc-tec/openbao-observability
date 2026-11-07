@@ -3,6 +3,14 @@ OPENBAO_IMAGE ?= quay.io/openbao/openbao:$(OPENBAO_VERSION)
 POSTGRES_IMAGE ?= postgres:17-alpine
 PROMETHEUS_IMAGE ?= prom/prometheus:v3.11.2
 GO ?= go
+PYTHON ?= python3
+SPLUNK_TOOLS_VENV ?= $(CURDIR)/hack/splunk/.venv
+RUFF ?= $(if $(wildcard $(SPLUNK_TOOLS_VENV)/bin/ruff),$(SPLUNK_TOOLS_VENV)/bin/ruff,ruff)
+SHELLCHECK ?= shellcheck
+SPLUNK_APPINSPECT_VENV ?= $(CURDIR)/hack/splunk/.venv-appinspect
+APPINSPECT ?= $(SPLUNK_APPINSPECT_VENV)/bin/splunk-appinspect
+SPLUNK_APP_PACKAGE ?= $(DIST_DIR)/openbao_observability_$(VERSION).spl
+APPINSPECT_REPORT ?= tmp/splunk-appinspect.json
 GO_SOURCE_DIRS ?= cmd internal examples hack
 GOBIN ?= $(CURDIR)/bin
 GOFUMPT ?= $(if $(wildcard $(GOBIN)/gofumpt),$(GOBIN)/gofumpt,gofumpt)
@@ -179,7 +187,7 @@ fixtures-scenarios:
 	$(GO) run ./cmd/openbao-observability fixtures scenario \
 		--output "$(FIXTURE_DIR)/metadata/openbao-$(OPENBAO_VERSION)-compose-scenario.json"
 
-generate:
+generate: generate-splunk
 	$(GO) run ./cmd/openbao-observability generate prometheus-rules \
 		--contract "contracts/metrics/openbao-core.yaml" \
 		--output "generated/prometheusrules/openbao-recording-rules.yaml" \
@@ -314,7 +322,30 @@ generate:
 		--contract "contracts/dashboards/openbao-slo-availability.yaml" \
 		--output "generated/grafana/openbao-slo-availability.json"
 
-test: test-fixtures contracts-verify docs-verify docs-build docs-site-links validate-generated lint vulncheck test-unit
+test: test-fixtures contracts-verify docs-verify docs-build docs-site-links validate-generated lint vulncheck test-unit test-splunk-tools lint-splunk-tools
+
+.PHONY: install-splunk-tools test-splunk-tools lint-splunk-tools
+install-splunk-tools:
+	$(PYTHON) -m venv "$(SPLUNK_TOOLS_VENV)"
+	"$(SPLUNK_TOOLS_VENV)/bin/python" -m pip install --disable-pip-version-check -r hack/splunk/requirements-dev.txt
+
+test-splunk-tools:
+	$(PYTHON) -m unittest discover -s hack/splunk -p 'test_*.py'
+
+lint-splunk-tools:
+	$(RUFF) check hack/splunk
+	$(RUFF) format --check hack/splunk
+	$(SHELLCHECK) hack/splunk/*.sh examples/splunk/local/start.sh
+
+.PHONY: install-splunk-appinspect inspect-splunk-app
+install-splunk-appinspect:
+	$(PYTHON) -m venv "$(SPLUNK_APPINSPECT_VENV)"
+	"$(SPLUNK_APPINSPECT_VENV)/bin/python" -m pip install --disable-pip-version-check -r hack/splunk/requirements-appinspect.txt
+
+inspect-splunk-app: release-splunk-app
+	@mkdir -p "$(dir $(APPINSPECT_REPORT))"
+	$(APPINSPECT) inspect "$(SPLUNK_APP_PACKAGE)" --mode precert --output-file "$(APPINSPECT_REPORT)"
+	$(PYTHON) -c 'import json,sys; summary=json.load(open(sys.argv[1]))["summary"]; print(summary); sys.exit(not summary.get("success") or any(summary.get(key, 0) for key in ("error", "failure", "future_failure", "warning")))' "$(APPINSPECT_REPORT)"
 
 verify: generate test
 	git diff --exit-code -- generated
@@ -364,7 +395,15 @@ vulncheck:
 		printf '%s\n' 'govulncheck not installed; skipping govulncheck.'; \
 	fi
 
-release-artifacts: release-bundle checksums
+release-artifacts: release-bundle release-splunk-app
+	$(MAKE) checksums
+
+.PHONY: release-splunk-app
+release-splunk-app: validate-splunk
+	$(GO) run ./cmd/openbao-observability release splunk-app \
+		--version "$(VERSION)" \
+		--output "$(SPLUNK_APP_PACKAGE)" \
+		--source-date-epoch "$(SOURCE_DATE_EPOCH)"
 
 release-bundle:
 	$(GO) run ./cmd/openbao-observability release bundle \
@@ -385,7 +424,7 @@ test-fixtures:
 		--version "$(OPENBAO_VERSION)" \
 		--dir "$(FIXTURE_DIR)"
 
-validate-generated:
+validate-generated: validate-splunk
 	$(PROMTOOL) check rules \
 		/workspace/generated/prometheus/openbao-recording-rules.yaml \
 		/workspace/generated/prometheus/openbao-alerts.yaml \
@@ -403,7 +442,8 @@ validate-generated:
 	$(PROMTOOL) test rules /workspace/internal/rules/testdata/seal-state.test.yaml \
 		/workspace/internal/rules/testdata/seal-state-openbao.test.yaml \
 		/workspace/internal/rules/testdata/expiration-backlog.test.yaml \
-		/workspace/internal/rules/testdata/expiration-backlog-openbao.test.yaml
+		/workspace/internal/rules/testdata/expiration-backlog-openbao.test.yaml \
+		/workspace/internal/splunk/testdata/metrics.test.yaml
 
 docs-verify:
 	$(GO) run ./cmd/openbao-observability validate docs \
@@ -427,3 +467,15 @@ validate-dashboard-queries:
 		--generated "$(GENERATED_DASHBOARDS)" \
 		--prometheus-url "$(PROMETHEUS_URL)" \
 		--loki-url "$(LOKI_URL)"
+
+.PHONY: generate-splunk validate-splunk validate-splunk-queries
+
+generate-splunk:
+	$(GO) run ./cmd/openbao-observability generate splunk-profile
+
+validate-splunk:
+	$(GO) run ./cmd/openbao-observability validate splunk-profile
+
+# Optional: requires an authorized Splunk test instance and SPLUNK_TOKEN.
+validate-splunk-queries:
+	$(GO) run ./cmd/openbao-observability validate splunk-queries

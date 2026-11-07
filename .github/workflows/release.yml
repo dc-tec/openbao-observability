@@ -68,7 +68,9 @@ jobs:
           gh version
 
       - name: Install quality tools
-        run: make install-go-tools
+        run: |
+          make install-go-tools install-splunk-tools
+          command -v shellcheck || { sudo apt-get update && sudo apt-get install --yes shellcheck; }
 
       - name: Capture OpenBao fixtures
         run: make fixtures-openbao
@@ -79,6 +81,13 @@ jobs:
       - name: Build release artifacts
         run: |
           make release-artifacts \
+            VERSION="${{ steps.release.outputs.version }}" \
+            SOURCE_DATE_EPOCH="${{ steps.release.outputs.source_date_epoch }}"
+
+      - name: Inspect installable Splunk app
+        run: |
+          make install-splunk-appinspect
+          make inspect-splunk-app \
             VERSION="${{ steps.release.outputs.version }}" \
             SOURCE_DATE_EPOCH="${{ steps.release.outputs.source_date_epoch }}"
 

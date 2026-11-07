@@ -14,6 +14,7 @@ local OpenBao, Prometheus, Loki, Alloy, and Grafana environment.
 - [Adopt the reference architecture](./reference-architecture/adoption.md)
 - [Implementation profiles](./implementation-profiles/README.md)
 - [Prometheus, Loki, Grafana, and Alloy](./implementation-profiles/prometheus-loki-grafana-alloy.md)
+- [Splunk Enterprise and Cloud Platform (draft profile)](./implementation-profiles/splunk-enterprise.md)
 - [OpenBao Operator companion profile](./implementation-profiles/openbao-operator.md)
 - [OpenBao Operator integration contract](./implementation-profiles/openbao-operator-integration-contract.md)
 

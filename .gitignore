@@ -8,3 +8,10 @@
 /tmp/
 /workstreams/
 /examples/docker-compose/.env
+
+/examples/splunk/.env
+/examples/splunk/.runtime/
+/examples/splunk/__pycache__/
+/hack/splunk/__pycache__/
+/hack/splunk/.venv/
+/hack/splunk/.venv-appinspect/

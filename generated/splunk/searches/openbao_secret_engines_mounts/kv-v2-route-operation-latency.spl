@@ -1,0 +1,9 @@
+| `openbao_metric_samples("vault_route_*")`
+| where metric_name="vault_route_create_secret__sum" OR metric_name="vault_route_create_secret__count" OR metric_name="vault_route_read_secret__sum" OR metric_name="vault_route_read_secret__count" OR metric_name="vault_route_list_secret__sum" OR metric_name="vault_route_list_secret__count" OR metric_name="vault_route_delete_secret__sum" OR metric_name="vault_route_delete_secret__count"
+| eval series=case(metric_name="vault_route_create_secret__sum","create",metric_name="vault_route_create_secret__count","create",metric_name="vault_route_read_secret__sum","read",metric_name="vault_route_read_secret__count","read",metric_name="vault_route_list_secret__sum","list",metric_name="vault_route_list_secret__count","list",metric_name="vault_route_delete_secret__sum","delete",metric_name="vault_route_delete_secret__count","delete") ." | ".coalesce(openbao_namespace,"(missing)") ." | ".cluster ." | ".scrape_profile
+| `openbao_metric_rate5m`
+| stats sum(eval(if(match(metric_name,"_sum$"),value,null()))) AS total sum(eval(if(match(metric_name,"_count$"),value,null()))) AS observations BY bucket_time cluster scrape_profile series
+| where observations>0
+| eval value=total/observations
+| eval _time=bucket_time
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

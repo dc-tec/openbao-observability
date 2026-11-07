@@ -1,0 +1,3 @@
+`openbao_audit_events`
+| where match(request_path,"^database/(config|roles|creds|rotate-root)")
+| stats count AS value

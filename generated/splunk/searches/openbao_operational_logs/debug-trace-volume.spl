@@ -1,0 +1,3 @@
+`openbao_operational_events`
+| where match(severity,"^(debug|trace)$")
+| timechart span=5m count BY host limit=10 useother=t

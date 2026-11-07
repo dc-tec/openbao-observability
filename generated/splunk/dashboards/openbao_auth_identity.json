@@ -1,0 +1,552 @@
+{
+  "title": "OpenBao auth and identity",
+  "description": "OpenBao auth and identity. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "inputs": {
+    "input_host": {
+      "type": "input.text",
+      "title": "host (wildcard)",
+      "options": {
+        "token": "host",
+        "defaultValue": "*"
+      }
+    },
+    "input_logical_namespace": {
+      "type": "input.text",
+      "title": "logical namespace (wildcard)",
+      "options": {
+        "token": "logical_namespace",
+        "defaultValue": "*"
+      }
+    },
+    "input_operation": {
+      "type": "input.text",
+      "title": "operation (wildcard)",
+      "options": {
+        "token": "operation",
+        "defaultValue": "*"
+      }
+    },
+    "input_request_id": {
+      "type": "input.text",
+      "title": "request id (wildcard)",
+      "options": {
+        "token": "request_id",
+        "defaultValue": "*"
+      }
+    },
+    "input_request_path": {
+      "type": "input.text",
+      "title": "request path (wildcard)",
+      "options": {
+        "token": "request_path",
+        "defaultValue": "*"
+      }
+    },
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time range",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-1h@h,now"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_approle_activity": {
+      "type": "ds.search",
+      "name": "AppRole activity",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^auth/approle/\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_auth_identity_error_events": {
+      "type": "ds.search",
+      "name": "Response error events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where audit_type=\"response\" AND len(mvjoin(audit_error,\"\"))\u003e0 AND match(request_path,\"^(auth/|sys/auth/|identity/)\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_auth_identity_errors": {
+      "type": "ds.search",
+      "name": "Response errors",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where audit_type=\"response\" AND len(mvjoin(audit_error,\"\"))\u003e0 AND match(request_path,\"^(auth/|sys/auth/|identity/)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_auth_identity_events": {
+      "type": "ds.search",
+      "name": "Auth and identity events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^(auth/|sys/auth/|identity/)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_auth_identity_events_by_node": {
+      "type": "ds.search",
+      "name": "Auth and identity by node",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^(auth/|sys/auth/|identity/)\")\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_auth_method_changes": {
+      "type": "ds.search",
+      "name": "Auth method changes",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(operation,\"^(create|update|delete)$\") AND match(request_path,\"^sys/auth/\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_auth_method_events": {
+      "type": "ds.search",
+      "name": "Auth method events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^sys/auth/\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_filtered_auth_identity_stream": {
+      "type": "ds.search",
+      "name": "Filtered auth and identity stream",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^(auth/|sys/auth/|identity/)\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_identity_events": {
+      "type": "ds.search",
+      "name": "Identity events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^identity/\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_identity_mutations": {
+      "type": "ds.search",
+      "name": "Identity mutations",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(operation,\"^(create|update|delete)$\") AND match(request_path,\"^identity/(entity|entity-alias|group|group-alias|oidc)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_login_events": {
+      "type": "ds.search",
+      "name": "Login events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^auth/.*/login\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_login_token_events": {
+      "type": "ds.search",
+      "name": "Login and token events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where (match(request_path,\"^auth/token/(create|create-orphan|renew|revoke|lookup)\") OR match(request_path,\"^auth/.*/login\"))\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_lifecycle_by_node": {
+      "type": "ds.search",
+      "name": "Token lifecycle by node",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^auth/token/(create|create-orphan|renew|revoke|lookup)\")\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_token_lifecycle_events": {
+      "type": "ds.search",
+      "name": "Token lifecycle events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^auth/token/(create|create-orphan|renew|revoke|lookup)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_userpass_approle_events": {
+      "type": "ds.search",
+      "name": "Userpass and AppRole events",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^auth/(userpass|approle)/\")\n| sort 100 - _time\n| table _time host audit_type request_id logical_namespace request_path operation caller client_ip audit_error",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_userpass_management": {
+      "type": "ds.search",
+      "name": "Userpass management",
+      "options": {
+        "query": "`openbao_audit_events`\n| search request_id=$request_id|s$ request_path=$request_path|s$ logical_namespace=$logical_namespace|s$ operation=$operation|s$ host=$host|s$\n| where match(request_path,\"^auth/userpass/(users|config)\")\n| stats count AS value",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_approle_activity": {
+      "type": "splunk.singlevalue",
+      "title": "AppRole activity",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_approle_activity"
+      }
+    },
+    "viz_auth_identity_error_events": {
+      "type": "splunk.table",
+      "title": "Response error events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_auth_identity_error_events"
+      }
+    },
+    "viz_auth_identity_errors": {
+      "type": "splunk.singlevalue",
+      "title": "Response errors",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_auth_identity_errors"
+      }
+    },
+    "viz_auth_identity_events": {
+      "type": "splunk.singlevalue",
+      "title": "Auth and identity events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_auth_identity_events"
+      }
+    },
+    "viz_auth_identity_events_by_node": {
+      "type": "splunk.line",
+      "title": "Auth and identity by node",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_auth_identity_events_by_node"
+      }
+    },
+    "viz_auth_method_changes": {
+      "type": "splunk.singlevalue",
+      "title": "Auth method changes",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_auth_method_changes"
+      }
+    },
+    "viz_auth_method_events": {
+      "type": "splunk.table",
+      "title": "Auth method events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_auth_method_events"
+      }
+    },
+    "viz_filtered_auth_identity_stream": {
+      "type": "splunk.table",
+      "title": "Filtered auth and identity stream",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_filtered_auth_identity_stream"
+      }
+    },
+    "viz_identity_events": {
+      "type": "splunk.table",
+      "title": "Identity events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_identity_events"
+      }
+    },
+    "viz_identity_mutations": {
+      "type": "splunk.singlevalue",
+      "title": "Identity mutations",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_identity_mutations"
+      }
+    },
+    "viz_login_events": {
+      "type": "splunk.singlevalue",
+      "title": "Login events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_login_events"
+      }
+    },
+    "viz_login_token_events": {
+      "type": "splunk.table",
+      "title": "Login and token events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_login_token_events"
+      }
+    },
+    "viz_token_lifecycle_by_node": {
+      "type": "splunk.line",
+      "title": "Token lifecycle by node",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_token_lifecycle_by_node"
+      }
+    },
+    "viz_token_lifecycle_events": {
+      "type": "splunk.singlevalue",
+      "title": "Token lifecycle events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_token_lifecycle_events"
+      }
+    },
+    "viz_userpass_approle_events": {
+      "type": "splunk.table",
+      "title": "Userpass and AppRole events",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_userpass_approle_events"
+      }
+    },
+    "viz_userpass_management": {
+      "type": "splunk.singlevalue",
+      "title": "Userpass management",
+      "description": "Allowlisted audit metadata. Counts include separate request and response entries unless the query selects a type. Counts use the selected range; charts use disjoint five-minute buckets. Missing caller names do not imply anonymous access.",
+      "dataSources": {
+        "primary": "ds_userpass_management"
+      }
+    }
+  },
+  "layout": {
+    "globalInputs": [
+      "input_time",
+      "input_request_id",
+      "input_request_path",
+      "input_logical_namespace",
+      "input_operation",
+      "input_host"
+    ],
+    "layoutDefinitions": {
+      "layout_audit": {
+        "type": "absolute",
+        "options": {
+          "width": 1200,
+          "height": 2500,
+          "display": "auto-scale"
+        },
+        "structure": [
+          {
+            "item": "viz_auth_identity_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_login_events",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_token_lifecycle_events",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_identity_mutations",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 0,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_auth_method_changes",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_userpass_management",
+            "type": "block",
+            "position": {
+              "x": 300,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_approle_activity",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_auth_identity_errors",
+            "type": "block",
+            "position": {
+              "x": 900,
+              "y": 140,
+              "w": 300,
+              "h": 120
+            }
+          },
+          {
+            "item": "viz_auth_identity_events_by_node",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_token_lifecycle_by_node",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_auth_method_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 560,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_login_token_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 880,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_userpass_approle_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1200,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_identity_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1520,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_auth_identity_error_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1840,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_filtered_auth_identity_stream",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 2160,
+              "w": 1200,
+              "h": 300
+            }
+          }
+        ]
+      }
+    },
+    "tabs": {
+      "items": [
+        {
+          "label": "OpenBao auth and identity",
+          "layoutId": "layout_audit"
+        }
+      ]
+    }
+  }
+}

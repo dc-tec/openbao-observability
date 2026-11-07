@@ -1,0 +1,5 @@
+| `openbao_metric_samples("vault_*")`
+| where metric_name="vault_core_active" OR metric_name="vault_expire_job_manager_total_jobs"
+| `openbao_metric_active_expiration`
+| eval series=cluster." / ".scrape_profile." / ".instance
+| timechart span=15s latest(value) BY series limit=0 useother=f

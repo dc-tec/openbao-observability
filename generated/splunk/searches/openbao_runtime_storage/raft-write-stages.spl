@@ -1,0 +1,9 @@
+| `openbao_metric_samples("vault_raft_*")`
+| where metric_name="vault_raft_storage_put_sum" OR metric_name="vault_raft_storage_put_count" OR metric_name="vault_raft_storage_delete_sum" OR metric_name="vault_raft_storage_delete_count" OR metric_name="vault_raft_commitTime_sum" OR metric_name="vault_raft_commitTime_count" OR metric_name="vault_raft_fsm_applyBatch_sum" OR metric_name="vault_raft_fsm_applyBatch_count"
+| eval series=case(metric_name="vault_raft_storage_put_sum","backend PUT",metric_name="vault_raft_storage_put_count","backend PUT",metric_name="vault_raft_storage_delete_sum","backend DELETE",metric_name="vault_raft_storage_delete_count","backend DELETE",metric_name="vault_raft_commitTime_sum","quorum commit",metric_name="vault_raft_commitTime_count","quorum commit",metric_name="vault_raft_fsm_applyBatch_sum","local batch apply",metric_name="vault_raft_fsm_applyBatch_count","local batch apply") ." | ".coalesce(openbao_namespace,"(missing)") ." | ".instance ." | ".cluster ." | ".scrape_profile
+| `openbao_metric_rate5m`
+| stats sum(eval(if(match(metric_name,"_sum$"),value,null()))) AS total sum(eval(if(match(metric_name,"_count$"),value,null()))) AS observations BY bucket_time cluster scrape_profile series
+| where observations>0
+| eval value=total/observations
+| eval _time=bucket_time
+| timechart span=15s max(value) BY series limit=20 useother=f cont=f

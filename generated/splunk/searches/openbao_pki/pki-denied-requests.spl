@@ -1,0 +1,4 @@
+`openbao_audit_events`
+| search request_path=$mount_path|s$
+| where match(mvjoin(audit_error," "),"(?is)(permission denied|forbidden)") AND (audit_type="response" OR (audit_type="request" AND match(mvjoin(audit_error," "),"(?i)^forbidden$"))) AND match(request_path,"^.+/(roles|issue|issuer|issuers|root|cert|certs|tidy|revoke|crl|config|intermediate|sign|sign-verbatim)(/|$)")
+| stats count AS value

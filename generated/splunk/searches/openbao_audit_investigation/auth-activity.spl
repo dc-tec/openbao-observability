@@ -1,0 +1,3 @@
+`openbao_audit_events`
+| where match(request_path,"^(auth/|sys/auth/)")
+| stats count AS audit_events

@@ -1,0 +1,4 @@
+`openbao_operational_events`
+| where match(message,"(?i)(timeout|unavailable|latency|slow|error|failed|connection refused)")
+| sort 100 - _time
+| table _time host severity module message

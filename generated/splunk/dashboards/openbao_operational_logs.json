@@ -1,0 +1,284 @@
+{
+  "title": "OpenBao operational logs",
+  "description": "OpenBao operational logs. Native SPL operator-question bindings. Read panel descriptions for windows, missing data, and required external sources. Native alert parity is not mapped. See the profile validation record for tested environments.",
+  "inputs": {
+    "input_host": {
+      "type": "input.text",
+      "title": "host (wildcard)",
+      "options": {
+        "token": "host",
+        "defaultValue": "*"
+      }
+    },
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time range",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-1h@h,now"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_debug_trace_volume": {
+      "type": "ds.search",
+      "name": "Debug or trace logs",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| where match(severity,\"^(debug|trace)$\")\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_operational_log_volume": {
+      "type": "ds.search",
+      "name": "Operational log volume",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_operational_stream": {
+      "type": "ds.search",
+      "name": "Operational stream",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| sort 100 - _time\n| table _time host severity module message",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_storage_logs": {
+      "type": "ds.search",
+      "name": "Raft and storage logs",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| where match(module.\" \".message,\"(?i)(raft|storage|autopilot)\")\n| sort 100 - _time\n| table _time host severity module message",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_raft_storage_warning_errors": {
+      "type": "ds.search",
+      "name": "Raft/storage warning and error logs",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| where match(module.\" \".message,\"(?i)(raft|storage|autopilot)\") AND (match(severity,\"^(warn|error)$\") OR match(message,\"(?i)failed\"))\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_recent_warnings_errors": {
+      "type": "ds.search",
+      "name": "Recent warnings and errors",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| where match(severity,\"^(warn|error)$\")\n| sort 100 - _time\n| table _time host severity module message",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_seal_unseal_events": {
+      "type": "ds.search",
+      "name": "Seal and unseal logs",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| where match(module.\" \".message,\"(?i)(seal|unseal)\")\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    },
+    "ds_warning_error_volume": {
+      "type": "ds.search",
+      "name": "Warning and error logs",
+      "options": {
+        "query": "`openbao_operational_events`\n| search host=$host|s$\n| where match(severity,\"^(warn|error)$\")\n| timechart span=5m count BY host limit=10 useother=t",
+        "queryParameters": {
+          "earliest": "$global_time.earliest$",
+          "latest": "$global_time.latest$"
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_debug_trace_volume": {
+      "type": "splunk.line",
+      "title": "Debug or trace logs",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_debug_trace_volume"
+      }
+    },
+    "viz_operational_log_volume": {
+      "type": "splunk.line",
+      "title": "Operational log volume",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_operational_log_volume"
+      }
+    },
+    "viz_operational_stream": {
+      "type": "splunk.table",
+      "title": "Operational stream",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_operational_stream"
+      }
+    },
+    "viz_raft_storage_logs": {
+      "type": "splunk.table",
+      "title": "Raft and storage logs",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_raft_storage_logs"
+      }
+    },
+    "viz_raft_storage_warning_errors": {
+      "type": "splunk.line",
+      "title": "Raft/storage warning and error logs",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_raft_storage_warning_errors"
+      }
+    },
+    "viz_recent_warnings_errors": {
+      "type": "splunk.table",
+      "title": "Recent warnings and errors",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_recent_warnings_errors"
+      }
+    },
+    "viz_seal_unseal_events": {
+      "type": "splunk.line",
+      "title": "Seal and unseal logs",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_seal_unseal_events"
+      }
+    },
+    "viz_warning_error_volume": {
+      "type": "splunk.line",
+      "title": "Warning and error logs",
+      "description": "OpenBao JSON operational logs. Only timestamp, host, severity, module, and message are exposed. Error text can contain sensitive information. Charts use disjoint five-minute buckets; this is not a client-latency measurement.",
+      "dataSources": {
+        "primary": "ds_warning_error_volume"
+      }
+    }
+  },
+  "layout": {
+    "globalInputs": [
+      "input_time",
+      "input_host"
+    ],
+    "layoutDefinitions": {
+      "layout_audit": {
+        "type": "absolute",
+        "options": {
+          "width": 1200,
+          "height": 1820,
+          "display": "auto-scale"
+        },
+        "structure": [
+          {
+            "item": "viz_operational_log_volume",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_warning_error_volume",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 0,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_debug_trace_volume",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_raft_storage_warning_errors",
+            "type": "block",
+            "position": {
+              "x": 600,
+              "y": 280,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_seal_unseal_events",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 560,
+              "w": 600,
+              "h": 260
+            }
+          },
+          {
+            "item": "viz_recent_warnings_errors",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 840,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_raft_storage_logs",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1160,
+              "w": 1200,
+              "h": 300
+            }
+          },
+          {
+            "item": "viz_operational_stream",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 1480,
+              "w": 1200,
+              "h": 300
+            }
+          }
+        ]
+      }
+    },
+    "tabs": {
+      "items": [
+        {
+          "label": "OpenBao operational logs",
+          "layoutId": "layout_audit"
+        }
+      ]
+    }
+  }
+}
