@@ -118,7 +118,7 @@ services:
       retries: 24
 
   prometheus:
-    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.15.1}
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.16.0}
     depends_on:
       openbao-node0:
         condition: service_healthy
