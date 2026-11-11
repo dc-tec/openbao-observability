@@ -3,7 +3,7 @@ services:
   # The developer launcher also uses this pin for its private probe service.
   splunk-blackbox:
     profiles: [qualification]
-    image: ${SPLUNK_BLACKBOX_IMAGE:-prom/blackbox-exporter:v0.29.1@sha256:66eae352a79e6f677aeddd8c25a9bdb017586dc5fbd230f22329213d891f94bd}
+    image: ${SPLUNK_BLACKBOX_IMAGE:-prom/blackbox-exporter:v0.29.1@sha256:ea1c7aa3ef3f307cd03e85f34abb604478ccb90b567fc690da0cd9776da76b13}
     command: [--config.file=/config/blackbox.yaml]
     volumes:
       - ../splunk/local/blackbox.yaml:/config/blackbox.yaml:ro
