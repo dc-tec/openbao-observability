@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/dc-tec/openbao-observability/compare/0.3.0...0.3.1) (2026-11-11)
+
+
+### Documentation
+
+* expose Splunk guides in site navigation ([#83](https://github.com/dc-tec/openbao-observability/issues/83)) ([7d7d4d7](https://github.com/dc-tec/openbao-observability/commit/7d7d4d70324ded4e2cd85c9cd9423f345e8b0aae))
+
 ## [0.3.0](https://github.com/dc-tec/openbao-observability/compare/0.2.3...0.3.0) (2026-11-07)
 
 
