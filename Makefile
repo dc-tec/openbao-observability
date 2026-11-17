@@ -419,6 +419,10 @@ checksums:
 test-unit:
 	$(GO) test ./...
 
+.PHONY: qualify-otel-hec
+qualify-otel-hec:
+	$(GO) run ./hack/otelhec --artifacts tmp/otel-hec-qualification
+
 test-fixtures:
 	$(GO) run ./cmd/openbao-observability fixtures verify \
 		--version "$(OPENBAO_VERSION)" \
