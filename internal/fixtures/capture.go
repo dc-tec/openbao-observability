@@ -22,6 +22,9 @@ type CaptureOptions struct {
 	RootToken     string
 }
 
+// DefaultPostgresImage matches the current Compose profile's PostgreSQL major.
+const DefaultPostgresImage = "postgres:18-alpine"
+
 type captureRun struct {
 	options    CaptureOptions
 	containers []string
@@ -90,7 +93,7 @@ func (o CaptureOptions) withDefaults() CaptureOptions {
 		o.Image = "quay.io/openbao/openbao:" + o.Version
 	}
 	if o.PostgresImage == "" {
-		o.PostgresImage = "postgres:17-alpine"
+		o.PostgresImage = DefaultPostgresImage
 	}
 	if o.OutputDir == "" {
 		o.OutputDir = filepath.Join("fixtures", "captured", "openbao-"+o.Version)

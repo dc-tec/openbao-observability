@@ -1,6 +1,6 @@
 OPENBAO_VERSION ?= 2.7.0
 OPENBAO_IMAGE ?= quay.io/openbao/openbao:$(OPENBAO_VERSION)
-POSTGRES_IMAGE ?= postgres:17-alpine
+POSTGRES_IMAGE ?= postgres:18-alpine
 PROMETHEUS_IMAGE ?= prom/prometheus:v3.11.2
 GO ?= go
 PYTHON ?= python3
