@@ -91,6 +91,8 @@ class Fixture:
             "POSTGRES_DB=" + database,
             "--env",
             "POSTGRES_PASSWORD=" + PASSWORD,
+            "--env",
+            "POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=trust",
             image,
         )
         info = json.loads(docker("inspect", name).stdout)[0]
