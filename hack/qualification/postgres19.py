@@ -1,6 +1,7 @@
 """Hosted-only synthetic PostgreSQL qualification; never attach existing volumes."""
 
 import hashlib
+import ipaddress
 import json
 import os
 import subprocess
@@ -43,6 +44,21 @@ def docker(*args, data=None, check=True):
 def image_identity(image):
     item = json.loads(docker("image", "inspect", image).stdout)[0]
     return {key: item[key] for key in ("Id", "RepoDigests", "Os", "Architecture")}
+
+
+def openbao_address(info, network):
+    state = info["State"]
+    if not state["Running"]:
+        raise RuntimeError(
+            "OpenBao container is not running "
+            f"(exit {state['ExitCode']}, OOM killed: {state['OOMKilled']})"
+        )
+    address = info["NetworkSettings"]["Networks"].get(network, {}).get("IPAddress")
+    if not address:
+        raise RuntimeError("OpenBao has no address on the qualification network")
+    # The hosted Linux runner can reach this owned internal bridge directly.
+    # An internal-only network has no gateway for Docker to publish host ports.
+    return f"http://{ipaddress.IPv4Address(address)}:8200"
 
 
 class Fixture:
@@ -149,8 +165,6 @@ class Fixture:
             name,
             "--network",
             self.network,
-            "--publish",
-            "127.0.0.1::8200",
             "--mount",
             f"type=bind,source={config},target=/bao/config/telemetry.hcl,readonly",
             OPENBAO,
@@ -162,9 +176,9 @@ class Fixture:
         )
         info = json.loads(docker("inspect", name).stdout)[0]
         require_equal(info["Image"], image_identity(OPENBAO)["Id"])
-        port = info["NetworkSettings"]["Ports"]["8200/tcp"][0]["HostPort"]
-        self.address = "http://127.0.0.1:" + port
         for _ in range(60):
+            info = json.loads(docker("inspect", name).stdout)[0]
+            self.address = openbao_address(info, self.network)
             try:
                 require_equal(self.api("sys/health")["version"], "2.7.3")
                 return name
