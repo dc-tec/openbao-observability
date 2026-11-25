@@ -154,6 +154,29 @@ When the exporter is not enabled and the status file does not enable archive
 delivery, it emits only `openbao_audit_archive_enabled` as `0`. This keeps local
 and exempt environments quiet.
 
+## Container qualification
+
+The separate **Exporter Alpine builder qualification** pull request workflow
+builds a temporary copy of the exporter Dockerfile with
+`golang:1.27.4-alpine`. It resolves the tag to a repository digest and changes
+only the builder `FROM` instruction in that temporary copy. The source
+Dockerfile and the Go 1.27.4 source toolchain remain unchanged.
+
+The hosted Linux amd64 job verifies the inherited builder layers, actual Go
+and Alpine versions, binary build metadata, and existing exporter unit tests.
+It checks that the scratch image has one layer containing only the exporter,
+uses UID 65532, and contains the same binary as the inspected build stage.
+
+The runtime test uses temporary synthetic status files. It checks healthy,
+degraded, malformed, disabled, and missing status; atomic file replacement;
+the health endpoint; all expected metric values and labels; invalid flags;
+and process termination on SIGTERM. The exporter runs with a read-only root
+filesystem, no capabilities, and no additional privileges.
+
+The workflow records image IDs, resolved digests, Dockerfile and binary hashes,
+and test results in its artifact. It does not publish images or test an
+external archive service. This qualification covers Linux amd64 only.
+
 ## Related pages
 
 - Use [Audit archive reference design](../../docs/audit/audit-archive-reference-design.md)
