@@ -294,7 +294,7 @@ func runFixturesCapture(ctx context.Context, args []string) error {
 	fs.StringVar(
 		&opts.PostgresImage,
 		"postgres-image",
-		envString("POSTGRES_IMAGE", "postgres:17-alpine"),
+		envString("POSTGRES_IMAGE", fixtures.DefaultPostgresImage),
 		"PostgreSQL container image for dynamic secret fixtures",
 	)
 	fs.StringVar(&opts.OutputDir, "output", envString("OUTPUT_DIR", defaultOutput), "fixture output directory")

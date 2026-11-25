@@ -1,0 +1,40 @@
+name: PostgreSQL 19 qualification
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    name: OpenBao 2.7.3 / PostgreSQL 19
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      OPENBAO_VERSION: "2.7.3"
+      OPENBAO_IMAGE: quay.io/openbao/openbao:2.7.3
+      POSTGRES_IMAGE: postgres:19-alpine
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+      - name: Check qualification harness
+        run: python3 -m unittest discover -s hack/qualification -p 'test_postgres19.py' -v
+      - name: Verify fresh fixtures with existing observability assertions
+        run: make fixtures-openbao test-fixtures
+      - name: Verify issued credentials and disposable PostgreSQL 18 to 19 migration
+        run: python3 hack/qualification/postgres19.py
+      - name: Save sanitized qualification evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: postgres19-qualification-${{ github.sha }}
+          path: tmp/qualification/postgres19.json
+          if-no-files-found: warn
+          retention-days: 7
