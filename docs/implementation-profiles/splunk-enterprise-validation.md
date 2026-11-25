@@ -24,6 +24,32 @@ The browser review used a temporary VPN proxy restricted to the review Mac.
 The proxy and its firewall rule were removed after logout. SSH forwarding
 configuration did not change.
 
+## Collector upgrade regression gate
+
+The `OTel HEC qualification` CI job compares the digest-pinned Collector Contrib
+0.164.0 baseline with the collector image declared in the Splunk Compose
+example. It runs the example's OpenBao metrics relabeling, identity transform,
+and HEC exporter against synthetic metrics and an HTTP capture sink. Four
+gauges in two logical namespaces check values, target identity, deployment
+labels, and separation of `openbao_namespace` from `kubernetes_namespace`.
+
+Collector Contrib 0.165.0 retains two additional Prometheus scrape attributes:
+`__scheme__=http` and `__metrics_path__=/v1/sys/metrics` for this fixture. The
+gate requires both attributes on candidate series and rejects other changes
+to the baseline dimensions, metric identity, or values. It also checks repeated
+scrapes and rejects an unselected control metric. Consumers that enumerate all
+metric dimensions must account for these two new keys. Historical series
+continuity across the upgrade is outside this test's scope.
+
+Each run retains image metadata, binary versions, derived collector
+configurations, collector logs, captured HEC events, and a comparison report
+in the `otel-hec-qualification` artifact. See the
+[fixture guide](../../hack/otelhec/README.md) for its inputs and execution
+limits. A passing run qualifies this synthetic HEC payload comparison. It
+does not establish Splunk indexing, search or dashboard parity, Splunk Cloud
+support, production capacity, or external alert delivery. The Enterprise
+validation below remains specific to its recorded environment and versions.
+
 ## Verified behavior
 
 - Audit, operational, completed-request, Kubernetes Event, and metrics data
